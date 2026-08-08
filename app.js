@@ -19,8 +19,8 @@
     defaultAgent:"codex",defaultEngine:"local",defaultModel:"",defaultMode:"guided",defaultConceptCount:5,activeProfileId:""
   };
   const LOCAL_SYSTEM_PROFILES = [
-    {id:"system-standard",name:"Standard",description:"Geführter Standarddurchlauf mit Qualitäts- und Rechtschecks.",is_default:true,sort_order:10,config:{mode:"guided",targetAgent:"codex",engine:"local",model:"",conceptCount:5,settings:{...DEFAULT_SETTINGS}}},
-    {id:"system-fast",name:"Schneller Entwurf",description:"Weniger Rückfragen und drei Vorschauen für schnelle Ideen.",is_default:false,sort_order:20,config:{mode:"auto",targetAgent:"codex",engine:"local",model:"",conceptCount:3,settings:{...DEFAULT_SETTINGS,maxQuestions:2,criticalBehavior:"warn",defaultMode:"auto",defaultConceptCount:3}}}
+    {id:"system-standard",name:"Standard",description:"GefÃ¼hrter Standarddurchlauf mit QualitÃ¤ts- und Rechtschecks.",is_default:true,sort_order:10,config:{mode:"guided",targetAgent:"codex",engine:"local",model:"",conceptCount:5,settings:{...DEFAULT_SETTINGS}}},
+    {id:"system-fast",name:"Schneller Entwurf",description:"Weniger RÃ¼ckfragen und drei Vorschauen fÃ¼r schnelle Ideen.",is_default:false,sort_order:20,config:{mode:"auto",targetAgent:"codex",engine:"local",model:"",conceptCount:3,settings:{...DEFAULT_SETTINGS,maxQuestions:2,criticalBehavior:"warn",defaultMode:"auto",defaultConceptCount:3}}}
   ];
 
   const state = {
@@ -193,10 +193,10 @@
       const ui=aiConnectionEls(provider); if(!ui.status) continue;
       const conn=aiConnection(provider), logged=cloudReady();
       ui.status.className='connection-status'+(conn?' connected':'');
-      ui.status.textContent=conn?`Verbunden · ••••${conn.last4||''}`:(logged?'Nicht verbunden':'Login erforderlich');
+      ui.status.textContent=conn?`Verbunden Â· â€¢â€¢â€¢â€¢${conn.last4||''}`:(logged?'Nicht verbunden':'Login erforderlich');
       ui.input.disabled=!logged;ui.connect.disabled=!logged;ui.disconnect.hidden=!conn;ui.test.disabled=false;
       if(!logged && !conn) ui.message.textContent='Zum Speichern eines eigenen API-Keys zuerst anmelden.';
-      else if(conn && !ui.message.classList.contains('error')) ui.message.textContent='Verschlüsselt in Supabase Vault gespeichert.';
+      else if(conn && !ui.message.classList.contains('error')) ui.message.textContent='VerschlÃ¼sselt in Supabase Vault gespeichert.';
       else if(!conn && !ui.message.classList.contains('error')) ui.message.textContent='';
     }
     if(el.connectionLoginRow) el.connectionLoginRow.hidden=cloudReady();
@@ -206,12 +206,12 @@
     const ui=aiConnectionEls(provider);
     if(!cloudReady()){ui.message.textContent='Bitte zuerst bei SiteBrief anmelden.';ui.message.className='connection-message error';return;}
     const secret=ui.input.value.trim();
-    if(secret.length<8){ui.message.textContent='Bitte einen gültigen API-Key eingeben.';ui.message.className='connection-message error';return;}
+    if(secret.length<8){ui.message.textContent='Bitte einen gÃ¼ltigen API-Key eingeben.';ui.message.className='connection-message error';return;}
     try{
-      ui.connect.disabled=true;ui.message.textContent='Wird verschlüsselt gespeichert…';ui.message.className='connection-message';
+      ui.connect.disabled=true;ui.message.textContent='Wird verschlÃ¼sselt gespeichertâ€¦';ui.message.className='connection-message';
       await window.SiteBriefCloud.saveAiConnection(provider,secret);
       state.aiConnections=[...(window.SiteBriefCloud.aiConnections||[])];ui.input.value='';renderAiConnections();
-      ui.message.textContent='Gespeichert. Verbindung wird geprüft…';ui.message.className='connection-message good';
+      ui.message.textContent='Gespeichert. Verbindung wird geprÃ¼ftâ€¦';ui.message.className='connection-message good';
       await testAiProviderConnection(provider,true);
       state.modelsLoaded=false;if(state.engine===provider && provider!=='openai')loadProviderModels(provider);
     }catch(err){ui.message.textContent=err?.message||'Verbindung konnte nicht gespeichert werden.';ui.message.className='connection-message error';}
@@ -221,7 +221,7 @@
   async function testAiProviderConnection(provider,quiet=false){
     const ui=aiConnectionEls(provider);
     try{
-      ui.test.disabled=true;if(!quiet){ui.message.textContent='Verbindung wird getestet…';ui.message.className='connection-message';}
+      ui.test.disabled=true;if(!quiet){ui.message.textContent='Verbindung wird getestetâ€¦';ui.message.className='connection-message';}
       const res=await sitebriefApiFetch(`/api/ai-test?provider=${encodeURIComponent(provider)}`,{cache:'no-store'});
       const data=await res.json();if(!res.ok)throw new Error(data.error||'Verbindungstest fehlgeschlagen');
       ui.message.textContent=data.source==='account'?'Verbindung funktioniert mit deinem gespeicherten Key.':'Verbindung funktioniert mit dem serverweiten Key.';ui.message.className='connection-message good';
@@ -273,7 +273,7 @@
   async function syncSettings(){
     if(!cloudReady()) return;
     try{
-      state.cloud.syncing=true;setSyncState("Speichert…","syncing");
+      state.cloud.syncing=true;setSyncState("Speichertâ€¦","syncing");
       await window.SiteBriefCloud.saveUserSettings(state.settings,state.activeProfileId||null);
       state.cloud.syncing=false;state.cloud.lastSynced=new Date();state.cloud.error="";setSyncState("Cloud","synced");
     }catch(err){state.cloud.syncing=false;state.cloud.error=err?.message||"Sync fehlgeschlagen";setSyncState("Sync-Fehler","error");}
@@ -282,7 +282,7 @@
   async function syncCurrentProject(){
     if(!cloudReady()) return;
     try{
-      state.cloud.syncing=true;setSyncState("Speichert…","syncing");
+      state.cloud.syncing=true;setSyncState("Speichertâ€¦","syncing");
       const snapshot=serializableProjectState();
       const title=project().name||project().description.slice(0,60)||"Unbenanntes Projekt";
       await window.SiteBriefCloud.saveProject(state.currentProjectId,title,snapshot,state.currentStep>=8?"complete":"draft");
@@ -301,7 +301,7 @@
     const localLibrary={templates:[...state.templates],modules:[...state.modules],skills:[...state.skills]};
     const localProfiles=[...state.profiles];
     try{
-      state.cloud.syncing=true;setSyncState("Lädt…","syncing");
+      state.cloud.syncing=true;setSyncState("LÃ¤dtâ€¦","syncing");
       const bundle=await window.SiteBriefCloud.loadUserBundle();
       if(bundle.settings){
         state.settings={...DEFAULT_SETTINGS,...bundle.settings,checks:{...DEFAULT_SETTINGS.checks,...(bundle.settings.checks||{})}};
@@ -329,7 +329,7 @@
   async function syncEverything(){
     if(!cloudReady()) return;
     try{
-      setSyncState("Synchronisiert…","syncing");
+      setSyncState("Synchronisiertâ€¦","syncing");
       for(const item of state.templates) await window.SiteBriefCloud.saveLibraryItem("template",item);
       for(const item of state.modules) await window.SiteBriefCloud.saveLibraryItem("module",item);
       for(const item of state.skills) await window.SiteBriefCloud.saveLibraryItem("skill",item);
@@ -356,19 +356,19 @@
       if(state.cloud.user) await loadCloudBundle();
       if(!state.activeProfileId){const def=state.systemProfiles.find(x=>x.is_default)||state.systemProfiles[0];if(def){state.activeProfileId=def.id;state.settings.activeProfileId=def.id;saveProfiles();}}
       renderProfileUi();updateAccountUi();
-    }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();}
+    }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfÃ¼gbar";updateAccountUi();}
   }
 
   async function signIn(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||!password)return;
-    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await window.SiteBriefCloud.signIn(email,password);state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Angemeldet.";el.authMessage.className="auth-message good";updateAccountUi();}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
+    try{el.authMessage.textContent="Anmeldung lÃ¤uftâ€¦";el.authMessage.className="auth-message";const data=await window.SiteBriefCloud.signIn(email,password);state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Angemeldet.";el.authMessage.className="auth-message good";updateAccountUi();}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
   }
 
   async function signUp(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||password.length<8){el.authMessage.textContent="Bitte E-Mail und mindestens 8 Zeichen Passwort eingeben.";el.authMessage.className="auth-message error";return;}
-    try{const data=await window.SiteBriefCloud.signUp(email,password);if(data.session){state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Konto angelegt und angemeldet.";}else el.authMessage.textContent="Konto angelegt. Bitte bestätige die E-Mail und melde dich danach an.";el.authMessage.className="auth-message good";updateAccountUi();}catch(err){el.authMessage.textContent=err?.message||"Konto konnte nicht angelegt werden.";el.authMessage.className="auth-message error";}
+    try{const data=await window.SiteBriefCloud.signUp(email,password);if(data.session){state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Konto angelegt und angemeldet.";}else el.authMessage.textContent="Konto angelegt. Bitte bestÃ¤tige die E-Mail und melde dich danach an.";el.authMessage.className="auth-message good";updateAccountUi();}catch(err){el.authMessage.textContent=err?.message||"Konto konnte nicht angelegt werden.";el.authMessage.className="auth-message error";}
   }
 
   async function signOut(){
@@ -430,7 +430,7 @@
     if(!state.cloudProjects.length){el.cloudProjectList.innerHTML='<div class="cloud-project-row"><div><strong>Noch keine Cloud-Projekte</strong><small>Der aktuelle Entwurf wird nach Login automatisch gespeichert.</small></div></div>';return;}
     state.cloudProjects.slice(0,8).forEach(row=>{
       const div=document.createElement("div");div.className="cloud-project-row";const date=row.updated_at?new Date(row.updated_at).toLocaleString("de-DE"):"";
-      div.innerHTML=`<div><strong>${escapeHtml(row.title||"Unbenanntes Projekt")}</strong><small>${escapeHtml(date)} · ${escapeHtml(row.status||"draft")}</small></div><button type="button" data-load>laden</button><button type="button" data-delete>löschen</button>`;
+      div.innerHTML=`<div><strong>${escapeHtml(row.title||"Unbenanntes Projekt")}</strong><small>${escapeHtml(date)} Â· ${escapeHtml(row.status||"draft")}</small></div><button type="button" data-load>laden</button><button type="button" data-delete>lÃ¶schen</button>`;
       div.querySelector("[data-load]").addEventListener("click",()=>loadCloudProject(row));div.querySelector("[data-delete]").addEventListener("click",()=>deleteCloudProject(row.id));el.cloudProjectList.appendChild(div);
     });
   }
@@ -440,18 +440,18 @@
   }
 
   async function deleteCloudProject(id){
-    if(!confirm("Dieses Cloud-Projekt wirklich löschen?"))return;try{await window.SiteBriefCloud.deleteProject(id);state.cloudProjects=state.cloudProjects.filter(x=>x.id!==id);renderCloudProjects();updateAccountUi()}catch(err){el.syncMessage.textContent=err?.message||"Projekt konnte nicht gelöscht werden.";el.syncMessage.className="auth-message error";}
+    if(!confirm("Dieses Cloud-Projekt wirklich lÃ¶schen?"))return;try{await window.SiteBriefCloud.deleteProject(id);state.cloudProjects=state.cloudProjects.filter(x=>x.id!==id);renderCloudProjects();updateAccountUi()}catch(err){el.syncMessage.textContent=err?.message||"Projekt konnte nicht gelÃ¶scht werden.";el.syncMessage.className="auth-message error";}
   }
 
   function tokenize(text){
-    return [...new Set(String(text||"").toLowerCase().replace(/[^a-z0-9äöüß\s-]/g," ").split(/\s+/).filter(x => x.length > 3))];
+    return [...new Set(String(text||"").toLowerCase().replace(/[^a-z0-9Ã¤Ã¶Ã¼ÃŸ\s-]/g," ").split(/\s+/).filter(x => x.length > 3))];
   }
 
   function inferDomain(text){
     const t = String(text||"").toLowerCase();
     if(/fitness|gym|training|sport|crossfit|boxstudio|boxing/.test(t)) return "fitness";
-    if(/restaurant|café|cafe|döner|doener|pizza|bistro|küche|food|imbiss|bar\b|bäck/.test(t)) return "food";
-    if(/handwerk|elektr|hausmeister|garten|reparatur|maler|sanitär|tischler|bau\b|montage|servicebetrieb/.test(t)) return "craft";
+    if(/restaurant|cafÃ©|cafe|dÃ¶ner|doener|pizza|bistro|kÃ¼che|food|imbiss|bar\b|bÃ¤ck/.test(t)) return "food";
+    if(/handwerk|elektr|hausmeister|garten|reparatur|maler|sanitÃ¤r|tischler|bau\b|montage|servicebetrieb/.test(t)) return "craft";
     if(/friseur|beauty|kosmetik|nagel|nail|barber|salon|spa\b/.test(t)) return "beauty";
     if(/shop|produkt|e-?commerce|warenkorb|verkauf|store\b/.test(t)) return "retail";
     if(/web-?app|software|saas|dashboard|tool\b|plattform|portal|login|community/.test(t)) return "digital";
@@ -467,18 +467,18 @@
     else if(/web-?app|dashboard|portal|tool\b|login/.test(text.toLowerCase())) detectedType = "Web-App";
     else if(/landingpage|kampagne/.test(text.toLowerCase())) detectedType = "Landingpage";
     const priorities = [];
-    if(p.goal.includes("Anfragen")) priorities.push("Kontakt und Anfrageweg müssen ohne Umwege verständlich sein.");
-    if(p.goal === "Verkaufen" || detectedType === "Onlineshop") priorities.push("Produktverständnis, Vertrauen und Kaufweg gehören vor dekorative Elemente.");
-    if(p.goal.includes("Termine")) priorities.push("Buchung oder Termin-Kontakt sollte früh im Ablauf sichtbar sein.");
+    if(p.goal.includes("Anfragen")) priorities.push("Kontakt und Anfrageweg mÃ¼ssen ohne Umwege verstÃ¤ndlich sein.");
+    if(p.goal === "Verkaufen" || detectedType === "Onlineshop") priorities.push("ProduktverstÃ¤ndnis, Vertrauen und Kaufweg gehÃ¶ren vor dekorative Elemente.");
+    if(p.goal.includes("Termine")) priorities.push("Buchung oder Termin-Kontakt sollte frÃ¼h im Ablauf sichtbar sein.");
     if(/lokal|umkreis|stadt|region|vor ort|vor ort|handwerk|hausmeister/.test(text.toLowerCase())) priorities.push("Lokaler Bezug und echte Belege sind wichtiger als austauschbare Marketing-Claims.");
-    if(/nicht.*ki|kein.*ki|anti.?ki|keine.*karten|nicht.*agentur|bodenständig|echt/.test(text.toLowerCase())) priorities.push("Eigenständige Gestaltung ohne typische KI-/SaaS-Muster ist eine harte Designvorgabe.");
+    if(/nicht.*ki|kein.*ki|anti.?ki|keine.*karten|nicht.*agentur|bodenstÃ¤ndig|echt/.test(text.toLowerCase())) priorities.push("EigenstÃ¤ndige Gestaltung ohne typische KI-/SaaS-Muster ist eine harte Designvorgabe.");
     if(p.audience) priorities.push(`Zielgruppe: ${p.audience}.`);
     if(p.special) priorities.push(`Besonderer Wunsch: ${p.special}.`);
     if(!priorities.length) priorities.push("Struktur, Bildsprache und Ton sollen direkt aus dem beschriebenen Projekt entstehen.");
     const domainLabel = ({fitness:"Fitness-/Sportangebot",food:"Gastronomie",craft:"lokaler Dienstleistungs-/Handwerksbetrieb",beauty:"Beauty-/Studioangebot",retail:"Shop-/Produktprojekt",digital:"digitales Produkt",generic:"Website-Projekt"})[domain];
     const summary = p.name
-      ? `${p.name} wird als ${domainLabel} mit dem Hauptziel „${p.goal}“ aufgebaut. Der Entwurf soll sich aus deinem konkreten Angebot und deinen Referenzen ableiten, nicht aus einem Standard-Template.`
-      : `Es entsteht ein ${domainLabel} mit dem Hauptziel „${p.goal}“. Der Entwurf soll sich aus deinem konkreten Angebot und deinen Referenzen ableiten, nicht aus einem Standard-Template.`;
+      ? `${p.name} wird als ${domainLabel} mit dem Hauptziel â€ž${p.goal}â€œ aufgebaut. Der Entwurf soll sich aus deinem konkreten Angebot und deinen Referenzen ableiten, nicht aus einem Standard-Template.`
+      : `Es entsteht ein ${domainLabel} mit dem Hauptziel â€ž${p.goal}â€œ. Der Entwurf soll sich aus deinem konkreten Angebot und deinen Referenzen ableiten, nicht aus einem Standard-Template.`;
     return {summary,priorities,detectedType,detectedGoal:p.goal,domain};
   }
 
@@ -495,7 +495,7 @@
   }
 
   function activeCheckNames(){
-    const labels={privacy:"Datenschutz",imprint:"Impressum / Anbieterangaben",legal:"rechtliche Plausibilität",accessibility:"Barrierefreiheit",security:"Sicherheit",performance:"Performance",seo:"SEO-Grundlagen"};
+    const labels={privacy:"Datenschutz",imprint:"Impressum / Anbieterangaben",legal:"rechtliche PlausibilitÃ¤t",accessibility:"Barrierefreiheit",security:"Sicherheit",performance:"Performance",seo:"SEO-Grundlagen"};
     return Object.entries(state.settings.checks||{}).filter(([,v])=>v).map(([k])=>labels[k]).filter(Boolean);
   }
 
@@ -542,10 +542,10 @@
   function renderProfileImpact(){
     if(!el.profileImpact)return;
     const profile=allProfiles().find(x=>x.id===el.setActiveProfile?.value),c=profile?.config;
-    if(!c){el.profileImpact.innerHTML='<span class="empty">Wähle ein Profil, um den enthaltenen Projektaufbau zu sehen.</span>';return;}
+    if(!c){el.profileImpact.innerHTML='<span class="empty">WÃ¤hle ein Profil, um den enthaltenen Projektaufbau zu sehen.</span>';return;}
     const mods=(c.selectedModuleIds||[]).filter(id=>state.modules.some(x=>x.id===id)).length;
     const skills=(c.selectedSkillIds||[]).filter(id=>state.skills.some(x=>x.id===id)).length;
-    const values=[AGENT_NAMES[c.targetAgent]||c.targetAgent||'Codex',c.engine==='gemini'?'Gemini direkt':c.engine==='openai'?'OpenAI direkt':c.engine==='gateway'?'AI Gateway':'Lokal',c.model||'Standardmodell',c.mode==='expert'?'Experte':c.mode==='auto'?'Auto':'Geführt',`${Number(c.conceptCount)||5} Vorschauen`,`${mods} Module`,`${skills} Skills`];
+    const values=[AGENT_NAMES[c.targetAgent]||c.targetAgent||'Codex',c.engine==='gemini'?'Gemini direkt':c.engine==='openai'?'OpenAI direkt':c.engine==='gateway'?'AI Gateway':'Lokal',c.model||'Standardmodell',c.mode==='expert'?'Experte':c.mode==='auto'?'Auto':'GefÃ¼hrt',`${Number(c.conceptCount)||5} Vorschauen`,`${mods} Module`,`${skills} Skills`];
     el.profileImpact.innerHTML=values.map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   }
 
@@ -601,7 +601,7 @@
     if(!profiles.length){el.profileList.innerHTML='<div class="library-item"><div><strong>Noch keine Profile</strong><p>Systemprofile erscheinen nach der Supabase-Verbindung.</p></div></div>';return;}
     profiles.forEach(profile=>{
       const system=profile._kind==="system";const row=document.createElement("div");row.className=`library-item ${system?"profile-system":""}`;
-      row.innerHTML=`<div><span class="profile-badge">${system?"SYSTEM":"EIGEN"}</span><strong>${escapeHtml(profile.name)}</strong><p>${escapeHtml(profile.description||"")}</p></div><div class="library-item-actions"><button type="button" data-apply>anwenden</button>${system?'<button type="button" data-duplicate>duplizieren</button>':'<button type="button" data-delete>löschen</button>'}</div>`;
+      row.innerHTML=`<div><span class="profile-badge">${system?"SYSTEM":"EIGEN"}</span><strong>${escapeHtml(profile.name)}</strong><p>${escapeHtml(profile.description||"")}</p></div><div class="library-item-actions"><button type="button" data-apply>anwenden</button>${system?'<button type="button" data-duplicate>duplizieren</button>':'<button type="button" data-delete>lÃ¶schen</button>'}</div>`;
       row.querySelector("[data-apply]").addEventListener("click",()=>{applyProfileById(profile.id,{persist:true,forNewProject:true});el.profileDialog.close()});
       const dup=row.querySelector("[data-duplicate]");if(dup)dup.addEventListener("click",()=>duplicateSystemProfile(profile));
       const del=row.querySelector("[data-delete]");if(del)del.addEventListener("click",()=>deleteOwnProfile(profile.id));
@@ -610,11 +610,11 @@
   }
 
   async function duplicateSystemProfile(profile){
-    const own={id:uid("profile"),name:`${profile.name} – Kopie`,description:profile.description||"",config:JSON.parse(JSON.stringify(profile.config||{})),isDefault:false};state.profiles.unshift(own);saveProfiles();renderProfileUi();if(cloudReady())try{await window.SiteBriefCloud.saveProfile(own)}catch{};
+    const own={id:uid("profile"),name:`${profile.name} â€“ Kopie`,description:profile.description||"",config:JSON.parse(JSON.stringify(profile.config||{})),isDefault:false};state.profiles.unshift(own);saveProfiles();renderProfileUi();if(cloudReady())try{await window.SiteBriefCloud.saveProfile(own)}catch{};
   }
 
   async function deleteOwnProfile(id){
-    if(!confirm("Dieses eigene Profil wirklich löschen?"))return;state.profiles=state.profiles.filter(x=>x.id!==id);if(state.activeProfileId===id)state.activeProfileId="";saveProfiles();renderProfileUi();if(cloudReady())try{await window.SiteBriefCloud.deleteProfile(id)}catch{};
+    if(!confirm("Dieses eigene Profil wirklich lÃ¶schen?"))return;state.profiles=state.profiles.filter(x=>x.id!==id);if(state.activeProfileId===id)state.activeProfileId="";saveProfiles();renderProfileUi();if(cloudReady())try{await window.SiteBriefCloud.deleteProfile(id)}catch{};
   }
 
   async function createProfileFromDialog(){
@@ -643,41 +643,41 @@
 
   function localProjectReview(){
     const p=project(), questions=[], warnings=[], blockers=[];
-    if(state.settings.askMissing && !p.audience) questions.push({id:uid("q"),question:"Für wen soll die Seite hauptsächlich funktionieren?",reason:"Zielgruppe beeinflusst Ton, Informationsdichte und wichtigste Handlungen.",suggestedAnswer:"",required:false});
+    if(state.settings.askMissing && !p.audience) questions.push({id:uid("q"),question:"FÃ¼r wen soll die Seite hauptsÃ¤chlich funktionieren?",reason:"Zielgruppe beeinflusst Ton, Informationsdichte und wichtigste Handlungen.",suggestedAnswer:"",required:false});
     if(state.settings.askMissing && /shop|onlineshop/i.test(p.type) && !/produkt|sortiment|verkauf/i.test(p.description)) questions.push({id:uid("q"),question:"Was wird im Shop verkauft und gibt es besondere Varianten, Versand- oder Zahlungsanforderungen?",reason:"Ohne diese Angaben bleibt die Shop-Struktur zu allgemein.",suggestedAnswer:"",required:false});
-    if(state.settings.checks?.privacy) warnings.push({area:"Datenschutz",severity:"info",message:"Formulare, Tracking, Karten, Videos, Fonts und andere externe Dienste müssen im späteren Projekt auf Datenschutzfolgen geprüft werden."});
-    if(state.settings.checks?.imprint) warnings.push({area:"Impressum",severity:"info",message:`Anbieterangaben für den Rechtsraum „${state.settings.legalRegion}“ als Pflichtpunkt prüfen; fehlende Firmendaten nicht erfinden.`});
-    if(state.settings.noInventLegal) warnings.push({area:"Recht",severity:"info",message:"Rechtliche Pflichttexte und Unternehmensdaten dürfen nicht aus Vermutungen erzeugt werden."});
+    if(state.settings.checks?.privacy) warnings.push({area:"Datenschutz",severity:"info",message:"Formulare, Tracking, Karten, Videos, Fonts und andere externe Dienste mÃ¼ssen im spÃ¤teren Projekt auf Datenschutzfolgen geprÃ¼ft werden."});
+    if(state.settings.checks?.imprint) warnings.push({area:"Impressum",severity:"info",message:`Anbieterangaben fÃ¼r den Rechtsraum â€ž${state.settings.legalRegion}â€œ als Pflichtpunkt prÃ¼fen; fehlende Firmendaten nicht erfinden.`});
+    if(state.settings.noInventLegal) warnings.push({area:"Recht",severity:"info",message:"Rechtliche Pflichttexte und Unternehmensdaten dÃ¼rfen nicht aus Vermutungen erzeugt werden."});
     return {ready:questions.length===0,questions:questions.slice(0,state.settings.maxQuestions),warnings,blockers,assumptions:[]};
   }
 
   function renderAiReviewCard(){
     if(!el.aiReviewCard) return;
     if(state.engine==="local"){
-      el.aiReviewTitle.textContent="Lokale Grundprüfung aktiv";el.aiReviewText.textContent=`Ohne externe KI werden Grundhinweise geprüft. Aktive Pflichtbereiche: ${activeCheckNames().join(", ")||"keine"}.`;el.runAiReviewBtn.textContent="Grundprüfung anzeigen";return;
+      el.aiReviewTitle.textContent="Lokale GrundprÃ¼fung aktiv";el.aiReviewText.textContent=`Ohne externe KI werden Grundhinweise geprÃ¼ft. Aktive Pflichtbereiche: ${activeCheckNames().join(", ")||"keine"}.`;el.runAiReviewBtn.textContent="GrundprÃ¼fung anzeigen";return;
     }
     if(!state.settings.aiClarifications){el.aiReviewTitle.textContent="KI-Gegenfragen sind deaktiviert";el.aiReviewText.textContent="Du kannst sie unter Einstellungen wieder aktivieren. Die Pflichtbereiche bleiben trotzdem Bestandteil des Master-Prompts.";el.runAiReviewBtn.textContent="Einstellungen";return;}
     const review=state.projectReview;
     if(review && state.reviewSignature===projectSignature()){
       const unanswered=(review.questions||[]).filter(q=>!state.clarifications.some(a=>a.question===q.question && a.answer?.trim())).length;
-      el.aiReviewTitle.textContent=unanswered?`${unanswered} offene Gegenfrage${unanswered===1?"":"n"}`:"Projektprüfung erledigt";
+      el.aiReviewTitle.textContent=unanswered?`${unanswered} offene Gegenfrage${unanswered===1?"":"n"}`:"ProjektprÃ¼fung erledigt";
       el.aiReviewText.textContent=`${(review.warnings||[]).length} Hinweis${(review.warnings||[]).length===1?"":"e"}, ${(review.blockers||[]).length} kritische Punkte. Rechtsraum: ${state.settings.legalRegion}.`;
-      el.runAiReviewBtn.textContent=unanswered?"Fragen öffnen":"Erneut prüfen";
-    }else{el.aiReviewTitle.textContent="Noch nicht mit der Generator-KI geprüft";el.aiReviewText.textContent="Die KI kann fehlende Angaben, Widersprüche, nicht machbare Anforderungen und aktive Pflichtbereiche vor der Konzeptphase prüfen.";el.runAiReviewBtn.textContent="Jetzt prüfen";}
+      el.runAiReviewBtn.textContent=unanswered?"Fragen Ã¶ffnen":"Erneut prÃ¼fen";
+    }else{el.aiReviewTitle.textContent="Noch nicht mit der Generator-KI geprÃ¼ft";el.aiReviewText.textContent="Die KI kann fehlende Angaben, WidersprÃ¼che, nicht machbare Anforderungen und aktive Pflichtbereiche vor der Konzeptphase prÃ¼fen.";el.runAiReviewBtn.textContent="Jetzt prÃ¼fen";}
   }
 
   function renderClarificationDialog(review){
     const warnings=[...(review.blockers||[]).map(x=>({...x,severity:"critical",area:x.area||"Blocker"})),...(review.warnings||[])];
-    el.clarificationWarnings.innerHTML=warnings.map(w=>`<div class="clarification-warning ${w.severity==="critical"?"critical":""}"><strong>${escapeHtml(w.area||"Hinweis")}</strong> — ${escapeHtml(w.message||w.alternative||"")}${w.alternative?`<br><span>Alternative: ${escapeHtml(w.alternative)}</span>`:""}</div>`).join("");
+    el.clarificationWarnings.innerHTML=warnings.map(w=>`<div class="clarification-warning ${w.severity==="critical"?"critical":""}"><strong>${escapeHtml(w.area||"Hinweis")}</strong> â€” ${escapeHtml(w.message||w.alternative||"")}${w.alternative?`<br><span>Alternative: ${escapeHtml(w.alternative)}</span>`:""}</div>`).join("");
     el.clarificationQuestions.innerHTML="";
     (review.questions||[]).slice(0,state.settings.maxQuestions).forEach((q,i)=>{
       const existing=state.clarifications.find(a=>a.question===q.question)?.answer||"";
       const row=document.createElement("div");row.className="clarification-question";row.dataset.questionId=q.id||String(i);
-      row.innerHTML=`<span>FRAGE ${String(i+1).padStart(2,"0")}${q.required?" · ERFORDERLICH":""}</span><h3>${escapeHtml(q.question)}</h3><p>${escapeHtml(q.reason||"")}</p><textarea ${q.required?"required":""} placeholder="Deine Antwort…">${escapeHtml(existing)}</textarea>${q.suggestedAnswer?`<div class="suggested-answer"><small>Vorschlag: ${escapeHtml(q.suggestedAnswer)}</small><button type="button">Vorschlag übernehmen</button></div>`:""}`;
+      row.innerHTML=`<span>FRAGE ${String(i+1).padStart(2,"0")}${q.required?" Â· ERFORDERLICH":""}</span><h3>${escapeHtml(q.question)}</h3><p>${escapeHtml(q.reason||"")}</p><textarea ${q.required?"required":""} placeholder="Deine Antwortâ€¦">${escapeHtml(existing)}</textarea>${q.suggestedAnswer?`<div class="suggested-answer"><small>Vorschlag: ${escapeHtml(q.suggestedAnswer)}</small><button type="button">Vorschlag Ã¼bernehmen</button></div>`:""}`;
       if(q.suggestedAnswer) row.querySelector(".suggested-answer button").addEventListener("click",()=>{row.querySelector("textarea").value=q.suggestedAnswer});
       el.clarificationQuestions.appendChild(row);
     });
-    el.clarificationIntro.textContent=(review.questions||[]).length?"Die Generator-KI braucht bzw. empfiehlt diese Klärungen, damit Konzept und Master-Prompt nicht auf stillen Annahmen beruhen.":"Keine Gegenfragen nötig. Die Hinweise werden trotzdem in Blueprint und Master-Prompt übernommen.";
+    el.clarificationIntro.textContent=(review.questions||[]).length?"Die Generator-KI braucht bzw. empfiehlt diese KlÃ¤rungen, damit Konzept und Master-Prompt nicht auf stillen Annahmen beruhen.":"Keine Gegenfragen nÃ¶tig. Die Hinweise werden trotzdem in Blueprint und Master-Prompt Ã¼bernommen.";
     el.deferClarificationsBtn.hidden=state.settings.criticalBehavior==="block" && (review.blockers||[]).length>0;
     el.clarificationDialog.showModal();
   }
@@ -697,19 +697,19 @@
       if(unanswered.length || hasAnyUnresolved){renderClarificationDialog(state.projectReview);return false;}
       return !(state.settings.criticalBehavior==="block" && (state.projectReview.blockers||[]).length && !state.clarifications.some(a=>a.answer?.trim()));
     }
-    el.aiReviewTitle.textContent="Projekt wird geprüft…";el.runAiReviewBtn.disabled=true;
+    el.aiReviewTitle.textContent="Projekt wird geprÃ¼ftâ€¦";el.runAiReviewBtn.disabled=true;
     let review;
     try{
       if(state.engine==="local") review=localProjectReview();
       else{
         const payload={action:"review",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:state.urls.map(x=>({url:x.url,aspects:x.aspects,note:x.like,dislike:x.dislike})),images:state.images.filter(x=>x.dataUrl).slice(0,3).map(x=>({name:x.name,dataUrl:x.dataUrl,aspects:x.aspects,note:x.like,dislike:x.dislike})),settings:settingsForApi(),template:selectedTemplate()||{},modules:selectedModules(),clarifications:state.clarifications};
-        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Projektprüfung fehlgeschlagen");review=data;
+        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"ProjektprÃ¼fung fehlgeschlagen");review=data;
       }
       review.questions=Array.isArray(review.questions)?review.questions.slice(0,state.settings.maxQuestions):[];review.warnings=Array.isArray(review.warnings)?review.warnings:[];review.blockers=Array.isArray(review.blockers)?review.blockers:[];review.assumptions=Array.isArray(review.assumptions)?review.assumptions:[];
-      if(state.settings.criticalBehavior==="block" && review.blockers.length && !review.questions.some(q=>q.required)) review.questions.unshift({id:uid("q"),question:"Wie soll mit dem kritischen Punkt umgegangen werden?",reason:review.blockers[0].message||"Vor der Umsetzung ist eine Entscheidung nötig.",suggestedAnswer:state.settings.suggestAlternatives?(review.blockers[0].alternative||""):"",required:true});
+      if(state.settings.criticalBehavior==="block" && review.blockers.length && !review.questions.some(q=>q.required)) review.questions.unshift({id:uid("q"),question:"Wie soll mit dem kritischen Punkt umgegangen werden?",reason:review.blockers[0].message||"Vor der Umsetzung ist eine Entscheidung nÃ¶tig.",suggestedAnswer:state.settings.suggestAlternatives?(review.blockers[0].alternative||""):"",required:true});
       state.projectReview=review;state.reviewSignature=sig;state.reviewDeferred=false;saveState();renderAiReviewCard();renderClarificationDialog(review);return review.questions.length===0 && !(state.settings.criticalBehavior==="block"&&review.blockers.length);
     }catch(err){
-      review=localProjectReview();state.projectReview=review;state.reviewSignature=sig;saveState();renderAiReviewCard();renderClarificationDialog(review);el.clarificationIntro.textContent=`Externe KI-Prüfung war nicht verfügbar (${err.message}). SiteBrief zeigt deshalb die lokale Grundprüfung.`;return true;
+      review=localProjectReview();state.projectReview=review;state.reviewSignature=sig;saveState();renderAiReviewCard();renderClarificationDialog(review);el.clarificationIntro.textContent=`Externe KI-PrÃ¼fung war nicht verfÃ¼gbar (${err.message}). SiteBrief zeigt deshalb die lokale GrundprÃ¼fung.`;return true;
     }finally{el.runAiReviewBtn.disabled=false;}
   }
 
@@ -727,7 +727,7 @@
     let value = el.referenceUrl.value.trim();
     if(!value) return;
     if(!/^https?:\/\//i.test(value)) value = `https://${value}`;
-    try{ new URL(value); }catch{ el.referenceUrl.setCustomValidity("Bitte eine gültige URL eingeben."); el.referenceUrl.reportValidity(); return; }
+    try{ new URL(value); }catch{ el.referenceUrl.setCustomValidity("Bitte eine gÃ¼ltige URL eingeben."); el.referenceUrl.reportValidity(); return; }
     el.referenceUrl.setCustomValidity("");
     if(state.urls.some(x => x.url === value)){ el.referenceUrl.value=""; return; }
     state.urls.push({id:uid("url"),url:value,aspects:["Layout","Stimmung"],like:"",dislike:""});
@@ -755,7 +755,7 @@
     state.urls.forEach(item => {
       const card=document.createElement("div"); card.className="reference-item";
       const host = (()=>{try{return new URL(item.url).hostname.replace(/^www\./,"")}catch{return item.url}})();
-      card.innerHTML=`<div class="reference-main"><span class="reference-mark">URL</span><div><strong>${escapeHtml(host)}</strong><small>${escapeHtml(item.url)}</small></div><button type="button" class="remove-btn" aria-label="Referenz entfernen">×</button></div><div class="aspect-row"></div><div class="ref-notes"><input type="text" class="like-note" placeholder="Was gefällt dir daran?" value="${escapeHtml(item.like||"")}"><input type="text" class="dislike-note" placeholder="Was gefällt dir NICHT?" value="${escapeHtml(item.dislike||"")}"></div>`;
+      card.innerHTML=`<div class="reference-main"><span class="reference-mark">URL</span><div><strong>${escapeHtml(host)}</strong><small>${escapeHtml(item.url)}</small></div><button type="button" class="remove-btn" aria-label="Referenz entfernen">Ã—</button></div><div class="aspect-row"></div><div class="ref-notes"><input type="text" class="like-note" placeholder="Was gefÃ¤llt dir daran?" value="${escapeHtml(item.like||"")}"><input type="text" class="dislike-note" placeholder="Was gefÃ¤llt dir NICHT?" value="${escapeHtml(item.dislike||"")}"></div>`;
       card.querySelector(".remove-btn").addEventListener("click",()=>{state.urls=state.urls.filter(x=>x.id!==item.id);renderReferences();saveState();updateGuide();});
       renderAspectChips(card.querySelector(".aspect-row"), item);
       card.querySelector(".like-note").addEventListener("input",e=>{item.like=e.target.value;saveState()});
@@ -768,10 +768,10 @@
       const card=document.createElement("div"); card.className="image-reference";
       const img=document.createElement("img"); img.alt=`Referenz ${item.name}`; if(item.dataUrl||item.previewUrl) img.src=item.dataUrl||item.previewUrl; else img.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='450'%3E%3Crect width='100%25' height='100%25' fill='%23cbc6ba'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' fill='%236e6c64'%3EBild lokal nicht geladen%3C/text%3E%3C/svg%3E";
       card.appendChild(img);
-      const head=document.createElement("div"); head.className="image-reference-head"; head.innerHTML=`<span title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span><button class="remove-btn" type="button" aria-label="Bild entfernen">×</button>`; card.appendChild(head);
+      const head=document.createElement("div"); head.className="image-reference-head"; head.innerHTML=`<span title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span><button class="remove-btn" type="button" aria-label="Bild entfernen">Ã—</button>`; card.appendChild(head);
       head.querySelector("button").addEventListener("click",async()=>{state.images=state.images.filter(x=>x.id!==item.id);renderReferences();saveState();updateGuide();if(cloudReady()&&item.storagePath)try{await window.SiteBriefCloud.removeReference(item.storagePath)}catch{}});
       const aspects=document.createElement("div"); aspects.className="aspect-row"; card.appendChild(aspects); renderAspectChips(aspects,item);
-      const notes=document.createElement("div"); notes.className="ref-notes"; notes.innerHTML=`<input type="text" class="like-note" placeholder="Gefällt mir..." value="${escapeHtml(item.like||"")}"><input type="text" class="dislike-note" placeholder="Nicht übernehmen..." value="${escapeHtml(item.dislike||"")}">`; card.appendChild(notes);
+      const notes=document.createElement("div"); notes.className="ref-notes"; notes.innerHTML=`<input type="text" class="like-note" placeholder="GefÃ¤llt mir..." value="${escapeHtml(item.like||"")}"><input type="text" class="dislike-note" placeholder="Nicht Ã¼bernehmen..." value="${escapeHtml(item.dislike||"")}">`; card.appendChild(notes);
       notes.querySelector(".like-note").addEventListener("input",e=>{item.like=e.target.value;saveState()});
       notes.querySelector(".dislike-note").addEventListener("input",e=>{item.dislike=e.target.value;saveState()});
       el.imageReferences.appendChild(card);
@@ -812,11 +812,11 @@
     if(state.engine === "local"){
       el.generatorModel.disabled=true; el.engineHelp.textContent="Lokal: kostenlos, kein API-Key. Bilder werden als visuelle Referenz in der Vorschau genutzt, aber nicht semantisch von einem Modell analysiert."; el.engineStatus.textContent="Lokal bereit";
     }else if(state.engine === "gateway"){
-      el.generatorModel.disabled=false; if(el.generatorModel.value && !el.generatorModel.value.includes("/")) el.generatorModel.value=""; state.model=el.generatorModel.value; el.engineHelp.textContent="Vercel AI Gateway: Ein Key für OpenAI-, Claude-, Gemini- und weitere Modelle. Verbinde ihn unter Einstellungen → KI-Verbindungen."; el.engineStatus.textContent=aiConnection("gateway")?"Gateway verbunden":"Gateway gewählt"; loadProviderModels("gateway");
+      el.generatorModel.disabled=false; if(el.generatorModel.value && !el.generatorModel.value.includes("/")) el.generatorModel.value=""; state.model=el.generatorModel.value; el.engineHelp.textContent="Vercel AI Gateway: Ein Key fÃ¼r OpenAI-, Claude-, Gemini- und weitere Modelle. Verbinde ihn unter Einstellungen â†’ KI-Verbindungen."; el.engineStatus.textContent=aiConnection("gateway")?"Gateway verbunden":"Gateway gewÃ¤hlt"; loadProviderModels("gateway");
     }else if(state.engine === "openai"){
-      el.generatorModel.disabled=false; if(!el.generatorModel.value || el.generatorModel.value.includes("/")) el.generatorModel.value="gpt-5"; state.model=el.generatorModel.value; el.engineHelp.textContent="OpenAI direkt: eigenen API-Key unter Einstellungen → KI-Verbindungen hinterlegen. Alternativ kann ein serverweiter Key verwendet werden."; el.engineStatus.textContent=aiConnection("openai")?"OpenAI verbunden":"OpenAI gewählt";
+      el.generatorModel.disabled=false; if(!el.generatorModel.value || el.generatorModel.value.includes("/")) el.generatorModel.value="gpt-5"; state.model=el.generatorModel.value; el.engineHelp.textContent="OpenAI direkt: eigenen API-Key unter Einstellungen â†’ KI-Verbindungen hinterlegen. Alternativ kann ein serverweiter Key verwendet werden."; el.engineStatus.textContent=aiConnection("openai")?"OpenAI verbunden":"OpenAI gewÃ¤hlt";
     }else{
-      el.generatorModel.disabled=false;if(!el.generatorModel.value||el.generatorModel.value.includes("/"))el.generatorModel.value="gemini-2.5-flash";state.model=el.generatorModel.value;el.engineHelp.textContent="Google Gemini direkt: API-Key unter Einstellungen → KI-Verbindungen hinterlegen. Text und Referenzbilder werden gemeinsam analysiert.";el.engineStatus.textContent=aiConnection("gemini")?"Gemini verbunden":"Gemini gewählt";loadProviderModels("gemini");
+      el.generatorModel.disabled=false;if(!el.generatorModel.value||el.generatorModel.value.includes("/")||/^gemini-2\.5(?:-|$)/.test(el.generatorModel.value))el.generatorModel.value="gemini-3.6-flash";state.model=el.generatorModel.value;el.engineHelp.textContent="Google Gemini direkt: Gemini 3.6 Flash ist fÃ¼r neue ZugÃ¤nge empfohlen. Text und Referenzbilder werden gemeinsam analysiert.";el.engineStatus.textContent=aiConnection("gemini")?"Gemini verbunden":"Gemini gewÃ¤hlt";loadProviderModels("gemini");
     }
     saveState(); renderAiReviewCard(); updateGuide();
   }
@@ -825,13 +825,14 @@
     if(state.modelsLoaded) return;
     try{
       const res=await sitebriefApiFetch(`/api/models?provider=${encodeURIComponent(provider)}`,{cache:"no-store"}); if(!res.ok) return; const data=await res.json();
-      el.modelOptions.innerHTML=""; (data.models||[]).forEach(id=>{const o=document.createElement("option");o.value=id;el.modelOptions.appendChild(o)}); if(!el.generatorModel.value && data.models?.length){ el.generatorModel.value=data.models[0]; state.model=data.models[0]; } state.modelsLoaded=true;
+      const models=provider==="gemini"?[...new Set(["gemini-3.6-flash",...(data.models||[])])]:(data.models||[]);
+      el.modelOptions.innerHTML="";models.forEach(id=>{const o=document.createElement("option");o.value=id;el.modelOptions.appendChild(o)});if(!el.generatorModel.value&&models.length){el.generatorModel.value=models[0];state.model=models[0]}state.modelsLoaded=true;
     }catch{}
   }
 
   function renderTemplateSelect(){
     const old=state.templateId; el.templateSelect.innerHTML='<option value="">Ohne Vorlage</option>';
-    state.templates.forEach(t=>{const o=document.createElement("option");o.value=t.id;o.textContent=t.name+(t.tag?` · ${t.tag}`:"");el.templateSelect.appendChild(o)});
+    state.templates.forEach(t=>{const o=document.createElement("option");o.value=t.id;o.textContent=t.name+(t.tag?` Â· ${t.tag}`:"");el.templateSelect.appendChild(o)});
     if(state.templates.some(x=>x.id===old)) el.templateSelect.value=old; else {state.templateId="";el.templateSelect.value=""}
   }
 
@@ -842,7 +843,7 @@
     const proj=`${p.description} ${p.type} ${p.goal} ${p.audience} ${p.special}`.toLowerCase();
     if(/seo|local|lokal/.test(low) && /lokal|umkreis|stadt|region|handwerk|dienstleistung/.test(proj)) score+=4;
     if(/shop|checkout|e.?commerce|produkt/.test(low) && /shop|verkauf|produkt|warenkorb/.test(proj)) score+=4;
-    if(/anti|slop|ki.?design|design/.test(low) && /ki|design|agentur|karten|eigenständig/.test(proj)) score+=3;
+    if(/anti|slop|ki.?design|design/.test(low) && /ki|design|agentur|karten|eigenstÃ¤ndig/.test(proj)) score+=3;
     if(/review|bewertung/.test(low) && /bewertung|google|vertrauen|lokal/.test(proj)) score+=3;
     if(/cms|content/.test(low) && /blog|inhalt|redaktion|cms/.test(proj)) score+=3;
     return score;
@@ -860,7 +861,7 @@
     el.moduleSelection.innerHTML="";
     state.modules.forEach(m=>{
       const row=document.createElement("label");row.className="selection-row";const recommended=state.recommendedModuleIds.includes(m.id);
-      const always=m.activation==="always";row.innerHTML=`<input type="checkbox" ${state.selectedModuleIds.includes(m.id)||always?"checked":""} ${always?"disabled":""}><div><strong>${escapeHtml(m.name)}</strong>${always?'<span class="recommended-mark"> · IMMER</span>':recommended?'<span class="recommended-mark"> · EMPFOHLEN</span>':""}<p>${escapeHtml(m.summary||"Eigener Prompt-Baustein")}</p></div><code>${escapeHtml(m.tag||"MODUL")}</code>`;
+      const always=m.activation==="always";row.innerHTML=`<input type="checkbox" ${state.selectedModuleIds.includes(m.id)||always?"checked":""} ${always?"disabled":""}><div><strong>${escapeHtml(m.name)}</strong>${always?'<span class="recommended-mark"> Â· IMMER</span>':recommended?'<span class="recommended-mark"> Â· EMPFOHLEN</span>':""}<p>${escapeHtml(m.summary||"Eigener Prompt-Baustein")}</p></div><code>${escapeHtml(m.tag||"MODUL")}</code>`;
       if(always&&!state.selectedModuleIds.includes(m.id))state.selectedModuleIds.push(m.id);row.querySelector("input").addEventListener("change",e=>{if(always)return;state.selectedModuleIds=e.target.checked?[...new Set([...state.selectedModuleIds,m.id])]:state.selectedModuleIds.filter(id=>id!==m.id);updateGuideContext();saveState()});
       el.moduleSelection.appendChild(row);
     });
@@ -868,10 +869,10 @@
 
   function renderSkillSelection(){
     el.skillSelection.innerHTML=""; const skills=visibleSkills();
-    el.skillContextLabel.textContent=`Skills für ${AGENT_NAMES[state.targetAgent]} plus globale Skills.`;
+    el.skillContextLabel.textContent=`Skills fÃ¼r ${AGENT_NAMES[state.targetAgent]} plus globale Skills.`;
     skills.forEach(s=>{
       const row=document.createElement("label");row.className="selection-row";
-      const always=s.activation==="always";row.innerHTML=`<input type="checkbox" ${state.selectedSkillIds.includes(s.id)||always?"checked":""} ${always?"disabled":""}><div><strong>${escapeHtml(s.name)}</strong>${always?'<span class="recommended-mark"> · IMMER</span>':""}<p>${escapeHtml(s.trigger||"Bei passender Aufgabe anwenden")}${s.sourceFile?` · Quelle: ${escapeHtml(s.sourceFile)}`:""}</p></div><code>${escapeHtml(s.agent==="all"?"ALLE":AGENT_NAMES[s.agent]||s.agent)}</code>`;
+      const always=s.activation==="always";row.innerHTML=`<input type="checkbox" ${state.selectedSkillIds.includes(s.id)||always?"checked":""} ${always?"disabled":""}><div><strong>${escapeHtml(s.name)}</strong>${always?'<span class="recommended-mark"> Â· IMMER</span>':""}<p>${escapeHtml(s.trigger||"Bei passender Aufgabe anwenden")}${s.sourceFile?` Â· Quelle: ${escapeHtml(s.sourceFile)}`:""}</p></div><code>${escapeHtml(s.agent==="all"?"ALLE":AGENT_NAMES[s.agent]||s.agent)}</code>`;
       if(always&&!state.selectedSkillIds.includes(s.id))state.selectedSkillIds.push(s.id);row.querySelector("input").addEventListener("change",e=>{if(always)return;state.selectedSkillIds=e.target.checked?[...new Set([...state.selectedSkillIds,s.id])]:state.selectedSkillIds.filter(id=>id!==s.id);updateGuideContext();saveState()});
       el.skillSelection.appendChild(row);
     });
@@ -936,35 +937,35 @@
   function renderBlueprint(){
     const b=buildBlueprint(); const refs=b.references.websites.length+b.references.images.length;
     const sections=[
-      ["Projekt",`<strong>${escapeHtml(b.project.name||"Ohne Projektnamen")}</strong><br>${escapeHtml(b.project.type)} · ${escapeHtml(b.project.goal)}${b.project.audience?`<br>Zielgruppe: ${escapeHtml(b.project.audience)}`:""}`],
-      ["Verständnis",`${escapeHtml(b.understanding.summary)}<ul>${b.understanding.priorities.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul>`],
-      ["Referenzen",refs?`${b.references.websites.length} Website${b.references.websites.length===1?"":"s"} · ${b.references.images.length} Bild${b.references.images.length===1?"":"er"}`:"Keine Referenzen — Konzept wird nur aus dem Briefing entwickelt."],
-      ["Agent",`${escapeHtml(b.targetAgent.name)}<br><span class="muted">Generator: ${escapeHtml(b.generator.engine)}${b.generator.model?` · ${escapeHtml(b.generator.model)}`:""}</span>`],
-      ["Vorlage",b.template?`${escapeHtml(b.template.name)}${b.template.tag?` · ${escapeHtml(b.template.tag)}`:""}`:"Ohne Master-Vorlage"],
+      ["Projekt",`<strong>${escapeHtml(b.project.name||"Ohne Projektnamen")}</strong><br>${escapeHtml(b.project.type)} Â· ${escapeHtml(b.project.goal)}${b.project.audience?`<br>Zielgruppe: ${escapeHtml(b.project.audience)}`:""}`],
+      ["VerstÃ¤ndnis",`${escapeHtml(b.understanding.summary)}<ul>${b.understanding.priorities.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul>`],
+      ["Referenzen",refs?`${b.references.websites.length} Website${b.references.websites.length===1?"":"s"} Â· ${b.references.images.length} Bild${b.references.images.length===1?"":"er"}`:"Keine Referenzen â€” Konzept wird nur aus dem Briefing entwickelt."],
+      ["Agent",`${escapeHtml(b.targetAgent.name)}<br><span class="muted">Generator: ${escapeHtml(b.generator.engine)}${b.generator.model?` Â· ${escapeHtml(b.generator.model)}`:""}</span>`],
+      ["Vorlage",b.template?`${escapeHtml(b.template.name)}${b.template.tag?` Â· ${escapeHtml(b.template.tag)}`:""}`:"Ohne Master-Vorlage"],
       ["Module",b.modules.length?`<div class="tag-line">${b.modules.map(x=>`<span>${escapeHtml(x.name)}</span>`).join("")}</div>`:"Keine Module aktiv"],
       ["Skills",b.skills.length?`<div class="tag-line">${b.skills.map(x=>`<span>${escapeHtml(x.name)}</span>`).join("")}</div>`:"Keine Agent-Skills aktiv"],
-      ["Pflichtprüfungen",`${activeCheckNames().map(x=>escapeHtml(x)).join(" · ")||"Keine"}<br><span class="muted">Rechtsraum: ${escapeHtml(state.settings.legalRegion||"nicht festgelegt")}</span>`],
+      ["PflichtprÃ¼fungen",`${activeCheckNames().map(x=>escapeHtml(x)).join(" Â· ")||"Keine"}<br><span class="muted">Rechtsraum: ${escapeHtml(state.settings.legalRegion||"nicht festgelegt")}</span>`],
       ["Gegenfragen",state.clarifications.length?`${state.clarifications.filter(x=>x.answer).length} beantwortet`:(state.settings.aiClarifications?"Noch keine Antworten gespeichert":"Deaktiviert")]
     ];
     el.blueprintSummary.innerHTML=sections.map(([label,content])=>`<div class="blueprint-section"><span>${label}</span><div>${content}</div></div>`).join("");
   }
 
   const THEMES = {
-    craft:{palette:[["#ede8dd","#1c1d19","#df5d39","#b9b4a8"],["#172127","#f0ecdf","#bbd52b","#59636a"],["#eeeae2","#24211c","#ad7443","#cbc1b2"],["#deddd5","#19201d","#d34f39","#9aa19d"],["#f3eee5","#342d25","#bd8a52","#d4c7b6"]],headline:["Arbeit, die man sieht.","Sauber gelöst. Ohne Umwege.","Vor Ort statt versprochen.","Reparieren. Pflegen. Erledigen.","Direkt ansprechbar."]},
+    craft:{palette:[["#ede8dd","#1c1d19","#df5d39","#b9b4a8"],["#172127","#f0ecdf","#bbd52b","#59636a"],["#eeeae2","#24211c","#ad7443","#cbc1b2"],["#deddd5","#19201d","#d34f39","#9aa19d"],["#f3eee5","#342d25","#bd8a52","#d4c7b6"]],headline:["Arbeit, die man sieht.","Sauber gelÃ¶st. Ohne Umwege.","Vor Ort statt versprochen.","Reparieren. Pflegen. Erledigen.","Direkt ansprechbar."]},
     fitness:{palette:[["#171717","#f0eadf","#ef5a33","#6f6d68"],["#f0f2eb","#15201d","#a7d935","#abb3ac"],["#3b2e26","#f2e5cf","#e19b47","#7e6a5c"],["#e9e7df","#1d2730","#d54b3a","#a2aaa9"],["#121412","#f0ede5","#cce64b","#484d47"]],headline:["Train hard. Stay local.","Leistung ohne Show.","Dein Training. Dein Club.","Kraft braucht keinen Hochglanz.","Komm rein. Fang an."]},
     food:{palette:[["#f1dfc0","#261b16","#d54025","#76935d"],["#161412","#ede4d2","#ff6a2a","#645d54"],["#f5f1e7","#20352b","#bd372f","#c8bfae"],["#e8e0d1","#2a211c","#c47832","#8b8e63"],["#231f1b","#f2eadf","#d9563c","#6d7967"]],headline:["Gemacht, nicht inszeniert.","Heute auf den Tisch.","Ein Ort mit Geschmack.","Gutes Essen braucht keinen Filter.","Komm hungrig."]},
-    beauty:{palette:[["#eee9e1","#1d1c1a","#9b6a5d","#cfc5bc"],["#f6f4ef","#131313","#3652ff","#d4d4cf"],["#211b1d","#f1e8df","#db6f8c","#66575c"],["#e7e2da","#28211f","#a17768","#bcb3aa"],["#faf7f0","#201f1d","#b64563","#d3cdc3"]],headline:["Weniger Kulisse. Mehr Stil.","Dein Termin. Dein Look.","Studio, nicht Schablone.","Ruhig. Präzise. Persönlich.","Schön ohne Standard."]},
-    retail:{palette:[["#f1eee6","#171816","#e65b35","#c7c3b8"],["#161a1e","#f0ede5","#d5ef42","#596068"],["#efe5d7","#302720","#ba7845","#c8b49e"],["#e7e9e5","#152027","#315be8","#9fa7a8"],["#1c1917","#f5ede0","#dd6040","#635c55"]],headline:["Finden. Verstehen. Kaufen.","Produkte ohne Umwege.","Gute Auswahl, klar gezeigt.","Weniger Shop-Lärm.","Das Richtige schneller finden."]},
-    digital:{palette:[["#f2f0e9","#16191b","#ff5c35","#c9cbc7"],["#131313","#f1eee6","#a7ff4f","#383838"],["#ffffff","#111111","#2f55ff","#dedede"],["#e9e7df","#14222a","#d2a83a","#adb4b3"],["#1a1f1d","#f3efe7","#73d3b2","#505955"]],headline:["Das Werkzeug zuerst.","Weniger erklären. Mehr benutzen.","Ein klarer Weg durch das Produkt.","Funktion vor Fassade.","So fühlt sich das Produkt an."]},
-    generic:{palette:[["#eee9df","#191915","#dc5d38","#beb8aa"],["#e4e5df","#18303a","#b9df36","#9ca7a5"],["#f2e8d7","#3b3027","#c57c3d","#cbb9a4"],["#efeee8","#20211e","#355cca","#b7b8b2"],["#171715","#f1ede3","#d38348","#5f5d56"]],headline:["Klar zeigen, worum es geht.","Eigenständig statt austauschbar.","Mehr Charakter. Weniger Vorlage.","Eine Seite mit Haltung.","Inhalt zuerst."]}
+    beauty:{palette:[["#eee9e1","#1d1c1a","#9b6a5d","#cfc5bc"],["#f6f4ef","#131313","#3652ff","#d4d4cf"],["#211b1d","#f1e8df","#db6f8c","#66575c"],["#e7e2da","#28211f","#a17768","#bcb3aa"],["#faf7f0","#201f1d","#b64563","#d3cdc3"]],headline:["Weniger Kulisse. Mehr Stil.","Dein Termin. Dein Look.","Studio, nicht Schablone.","Ruhig. PrÃ¤zise. PersÃ¶nlich.","SchÃ¶n ohne Standard."]},
+    retail:{palette:[["#f1eee6","#171816","#e65b35","#c7c3b8"],["#161a1e","#f0ede5","#d5ef42","#596068"],["#efe5d7","#302720","#ba7845","#c8b49e"],["#e7e9e5","#152027","#315be8","#9fa7a8"],["#1c1917","#f5ede0","#dd6040","#635c55"]],headline:["Finden. Verstehen. Kaufen.","Produkte ohne Umwege.","Gute Auswahl, klar gezeigt.","Weniger Shop-LÃ¤rm.","Das Richtige schneller finden."]},
+    digital:{palette:[["#f2f0e9","#16191b","#ff5c35","#c9cbc7"],["#131313","#f1eee6","#a7ff4f","#383838"],["#ffffff","#111111","#2f55ff","#dedede"],["#e9e7df","#14222a","#d2a83a","#adb4b3"],["#1a1f1d","#f3efe7","#73d3b2","#505955"]],headline:["Das Werkzeug zuerst.","Weniger erklÃ¤ren. Mehr benutzen.","Ein klarer Weg durch das Produkt.","Funktion vor Fassade.","So fÃ¼hlt sich das Produkt an."]},
+    generic:{palette:[["#eee9df","#191915","#dc5d38","#beb8aa"],["#e4e5df","#18303a","#b9df36","#9ca7a5"],["#f2e8d7","#3b3027","#c57c3d","#cbb9a4"],["#efeee8","#20211e","#355cca","#b7b8b2"],["#171715","#f1ede3","#d38348","#5f5d56"]],headline:["Klar zeigen, worum es geht.","EigenstÃ¤ndig statt austauschbar.","Mehr Charakter. Weniger Vorlage.","Eine Seite mit Haltung.","Inhalt zuerst."]}
   };
 
   const VARIANTS = [
-    {name:"Editorial Split",variant:"split",mood:"Redaktionell und direkt. Text und Bild teilen sich die Bühne, ohne typische Hero-Schablone.",type:"Charaktervolle Serif + nüchterne Utility-Sans",layout:"Asymmetrischer 55/45-Aufbau, klare Linien, wenige Container",hero:"Statement und echtes Motiv stehen gleichwertig nebeneinander",display:"Georgia, serif"},
-    {name:"Image Poster",variant:"poster",mood:"Bildstark und plakativ. Der erste Eindruck kommt aus Motiv, Maßstab und knapper Typografie.",type:"Kräftige Grotesk + kleine technische Labels",layout:"Vollflächiger visueller Einstieg, Inhalte danach in harten Kapiteln",hero:"Großes Motiv als Fläche, Text bewusst darüber oder daneben",display:"Arial Black, Arial, sans-serif"},
-    {name:"Field Ledger",variant:"ledger",mood:"Sachlich, glaubwürdig und fast dokumentarisch. Wie ein gut geführtes Arbeitsbuch.",type:"Utility-Sans + nummerierte Mikrotypografie",layout:"Raster, Nummerierung und klare Informationszonen statt Karten",hero:"Projekt-/Leistungslogik direkt im ersten Bildschirm",display:"Arial, Helvetica, sans-serif"},
-    {name:"Stacked Narrative",variant:"stacked",mood:"Ruhiger Seitenrhythmus mit deutlichen Bild- und Textkapiteln. Weniger Werbefläche, mehr Erzählung.",type:"Ruhige Serif + kleine Sans",layout:"Große horizontale Abschnitte, wechselnde Bild-/Textgewichte",hero:"Breites Bild mit kompakter Aussage als zweiter Takt",display:"Georgia, serif"},
-    {name:"Offset Magazine",variant:"editorial",mood:"Eigenständiger und etwas experimenteller. Überlagerung und Versatz ersetzen typische Zentrierung.",type:"Große Editorial-Serif + kleine Grotesk",layout:"Versetzte Bildfläche, überlappende Typografie, bewusster Weißraum",hero:"Headline und Bild überschneiden sich kontrolliert",display:"Georgia, serif"}
+    {name:"Editorial Split",variant:"split",mood:"Redaktionell und direkt. Text und Bild teilen sich die BÃ¼hne, ohne typische Hero-Schablone.",type:"Charaktervolle Serif + nÃ¼chterne Utility-Sans",layout:"Asymmetrischer 55/45-Aufbau, klare Linien, wenige Container",hero:"Statement und echtes Motiv stehen gleichwertig nebeneinander",display:"Georgia, serif"},
+    {name:"Image Poster",variant:"poster",mood:"Bildstark und plakativ. Der erste Eindruck kommt aus Motiv, MaÃŸstab und knapper Typografie.",type:"KrÃ¤ftige Grotesk + kleine technische Labels",layout:"VollflÃ¤chiger visueller Einstieg, Inhalte danach in harten Kapiteln",hero:"GroÃŸes Motiv als FlÃ¤che, Text bewusst darÃ¼ber oder daneben",display:"Arial Black, Arial, sans-serif"},
+    {name:"Field Ledger",variant:"ledger",mood:"Sachlich, glaubwÃ¼rdig und fast dokumentarisch. Wie ein gut gefÃ¼hrtes Arbeitsbuch.",type:"Utility-Sans + nummerierte Mikrotypografie",layout:"Raster, Nummerierung und klare Informationszonen statt Karten",hero:"Projekt-/Leistungslogik direkt im ersten Bildschirm",display:"Arial, Helvetica, sans-serif"},
+    {name:"Stacked Narrative",variant:"stacked",mood:"Ruhiger Seitenrhythmus mit deutlichen Bild- und Textkapiteln. Weniger WerbeflÃ¤che, mehr ErzÃ¤hlung.",type:"Ruhige Serif + kleine Sans",layout:"GroÃŸe horizontale Abschnitte, wechselnde Bild-/Textgewichte",hero:"Breites Bild mit kompakter Aussage als zweiter Takt",display:"Georgia, serif"},
+    {name:"Offset Magazine",variant:"editorial",mood:"EigenstÃ¤ndiger und etwas experimenteller. Ãœberlagerung und Versatz ersetzen typische Zentrierung.",type:"GroÃŸe Editorial-Serif + kleine Grotesk",layout:"Versetzte BildflÃ¤che, Ã¼berlappende Typografie, bewusster WeiÃŸraum",hero:"Headline und Bild Ã¼berschneiden sich kontrolliert",display:"Georgia, serif"}
   ];
 
   function brandName(){
@@ -1004,9 +1005,9 @@
   async function generateConcepts(){
     if(state.engine!=="local" && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
       const ready=await runProjectReview(false);
-      if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}
+      if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klÃ¤ren oder bewusst auf spÃ¤ter verschieben.";return;}
     }
-    const count=clamp(el.conceptCount.value,3,5); el.generateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";
+    const count=clamp(el.conceptCount.value,3,5); el.generateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitetâ€¦";
     let concepts=[];
     try{
       if(state.engine === "local") concepts=localConcepts(count);
@@ -1016,9 +1017,9 @@
         if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
       }
       state.concepts=concepts.slice(0,count).map(normalizedConcept); state.selectedConceptId=state.concepts[0]?.id||""; state.refinements=[]; renderConcepts(); renderSelectedPreview();
-      el.generationStatus.className="generation-status"; el.generationStatus.textContent=`${state.concepts.length} Richtungen erstellt. Wähle die aus, die als Basis weitergehen soll.`;
+      el.generationStatus.className="generation-status"; el.generationStatus.textContent=`${state.concepts.length} Richtungen erstellt. WÃ¤hle die aus, die als Basis weitergehen soll.`;
     }catch(err){
-      state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent=`KI-Verbindung nicht verfügbar (${err.message}). Lokale Vorschauen wurden stattdessen erstellt.`;
+      state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent=`KI-Verbindung nicht verfÃ¼gbar (${err.message}). Lokale Vorschauen wurden stattdessen erstellt.`;
     }finally{el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
   }
 
@@ -1027,7 +1028,7 @@
   function createConceptScreen(c){
     const screen=document.createElement("div"); screen.className=`concept-screen ${c.layoutVariant}`;
     screen.style.setProperty("--c-bg",c.bg);screen.style.setProperty("--c-text",c.text);screen.style.setProperty("--c-accent",c.accent);screen.style.setProperty("--c-soft",c.soft);screen.style.setProperty("--c-display",c.display||"Georgia, serif");
-    screen.innerHTML=`<div class="screen-nav"><strong>${escapeHtml(brandName())}</strong><span>WORK &nbsp; ABOUT &nbsp; CONTACT</span></div><div class="screen-body"><div class="screen-copy"><span class="screen-micro">${escapeHtml(project().type)} / ${escapeHtml(project().goal)}</span><h3>${escapeHtml(c.headline)}</h3><p>${escapeHtml(c.subline)}</p><span class="screen-cta">MEHR ANSEHEN →</span></div><div class="screen-photo"></div><span class="screen-micro">${escapeHtml(c.name)}</span></div>`;
+    screen.innerHTML=`<div class="screen-nav"><strong>${escapeHtml(brandName())}</strong><span>WORK &nbsp; ABOUT &nbsp; CONTACT</span></div><div class="screen-body"><div class="screen-copy"><span class="screen-micro">${escapeHtml(project().type)} / ${escapeHtml(project().goal)}</span><h3>${escapeHtml(c.headline)}</h3><p>${escapeHtml(c.subline)}</p><span class="screen-cta">MEHR ANSEHEN â†’</span></div><div class="screen-photo"></div><span class="screen-micro">${escapeHtml(c.name)}</span></div>`;
     const photo=screen.querySelector(".screen-photo"); const ref=firstReferenceImage(); if(ref) photo.style.backgroundImage=`url(${JSON.stringify(ref).slice(1,-1)})`;
     return screen;
   }
@@ -1043,7 +1044,7 @@
   }
 
   function renderSelectedPreview(){
-    el.selectedPreviewLarge.innerHTML=""; const c=selectedConcept(); if(!c){el.selectedPreviewLarge.innerHTML='<p class="lead">Bitte zuerst in Schritt 6 eine Vorschau auswählen.</p>';return;}
+    el.selectedPreviewLarge.innerHTML=""; const c=selectedConcept(); if(!c){el.selectedPreviewLarge.innerHTML='<p class="lead">Bitte zuerst in Schritt 6 eine Vorschau auswÃ¤hlen.</p>';return;}
     el.selectedPreviewLarge.appendChild(createConceptScreen(c)); const cap=document.createElement("div");cap.className="concept-caption";cap.innerHTML=`<h3>${escapeHtml(c.name)}</h3><p>${escapeHtml(c.mood)}</p>`;el.selectedPreviewLarge.appendChild(cap); renderRefinementHistory();
   }
 
@@ -1056,7 +1057,7 @@
     const next={...c,palette:[...c.palette]};const t=instruction.toLowerCase();
     if(/heller|light/.test(t)){next.bg=hexMix(next.bg,"#ffffff",.28);next.text=hexMix(next.text,"#000000",.08)}
     if(/dunkler|dark/.test(t)){next.bg=hexMix(next.bg,"#000000",.55);next.text="#f1eee6";next.soft=hexMix(next.soft,"#000000",.35)}
-    if(/bild größer|mehr bild|image/.test(t)) next.layoutVariant="poster";
+    if(/bild grÃ¶ÃŸer|mehr bild|image/.test(t)) next.layoutVariant="poster";
     if(/mehr typografie|typograf/.test(t)) next.layoutVariant="editorial";
     if(/ruhiger|weniger beweg|calm/.test(t)) el.motion.value=8;
     if(/weniger ki|anti.?ki|kein ki/.test(t)) el.antiSlop.value=100;
@@ -1082,71 +1083,71 @@
   }
 
   const AGENT_INSTRUCTIONS = {
-    claude:`Arbeite wie ein sorgfältiger Implementierungsagent. Lies vorhandene Projekt- und Regeldateien zuerst. Leite aus diesem Briefing einen kurzen Umsetzungsplan ab, arbeite danach direkt am Projekt und erhalte bestehende Konventionen, sofern sie nicht dem Briefing widersprechen. Prüfe die fertige Oberfläche und behebe offensichtliche Fehler vor Abschluss.`,
-    codex:`Behandle dies als ausführbaren Repo-Auftrag. Prüfe zuerst Repository, Projektanweisungen und vorhandene Struktur. Implementiere die Aufgabe vollständig in den vorhandenen Dateien, führe passende Checks/Builds aus und behebe gefundene Fehler. Lass keine Platzhalter oder unnötigen TODOs zurück.`,
-    gemini:`Nutze das Briefing als verbindliche Produktspezifikation. Analysiere zuerst Struktur, Referenzregeln und aktive Skills, bevor du Code oder Dateien erzeugst. Halte Designentscheidung und Implementierung konsistent und prüfe Desktop sowie Mobile.`,
-    chatgpt:`Nutze dieses Dokument als Master-Briefing. Erstelle keine neue generische Interpretation, sondern halte die gewählte Richtung, Verbote und Referenzregeln ein. Wenn Code erzeugt wird, liefere zusammenhängende, ausführbare Änderungen statt isolierter Snippets.`,
-    cursor:`Nutze das Briefing zusammen mit allen vorhandenen Repository-/Cursor-Regeln. Prüfe den bestehenden Code vor Änderungen, halte Dateistruktur und Konventionen ein und verifiziere die betroffenen Flows nach der Umsetzung.`,
-    v0:`Setze die ausgewählte visuelle Richtung und Informationshierarchie möglichst konkret in UI um. Vermeide Standard-Dashboard-/SaaS-Schablonen und erhalte die beschriebenen Bildgrößen, Typografie, Rhythmik und Mobile-Komposition.`,
-    universal:`Lies das gesamte Briefing vor der Umsetzung. Verwende aktive Skills als zusätzliche Arbeitsregeln, halte Referenz- und Anti-Slop-Vorgaben ein und prüfe das Ergebnis gegen die Definition of Done.`
+    claude:`Arbeite wie ein sorgfÃ¤ltiger Implementierungsagent. Lies vorhandene Projekt- und Regeldateien zuerst. Leite aus diesem Briefing einen kurzen Umsetzungsplan ab, arbeite danach direkt am Projekt und erhalte bestehende Konventionen, sofern sie nicht dem Briefing widersprechen. PrÃ¼fe die fertige OberflÃ¤che und behebe offensichtliche Fehler vor Abschluss.`,
+    codex:`Behandle dies als ausfÃ¼hrbaren Repo-Auftrag. PrÃ¼fe zuerst Repository, Projektanweisungen und vorhandene Struktur. Implementiere die Aufgabe vollstÃ¤ndig in den vorhandenen Dateien, fÃ¼hre passende Checks/Builds aus und behebe gefundene Fehler. Lass keine Platzhalter oder unnÃ¶tigen TODOs zurÃ¼ck.`,
+    gemini:`Nutze das Briefing als verbindliche Produktspezifikation. Analysiere zuerst Struktur, Referenzregeln und aktive Skills, bevor du Code oder Dateien erzeugst. Halte Designentscheidung und Implementierung konsistent und prÃ¼fe Desktop sowie Mobile.`,
+    chatgpt:`Nutze dieses Dokument als Master-Briefing. Erstelle keine neue generische Interpretation, sondern halte die gewÃ¤hlte Richtung, Verbote und Referenzregeln ein. Wenn Code erzeugt wird, liefere zusammenhÃ¤ngende, ausfÃ¼hrbare Ã„nderungen statt isolierter Snippets.`,
+    cursor:`Nutze das Briefing zusammen mit allen vorhandenen Repository-/Cursor-Regeln. PrÃ¼fe den bestehenden Code vor Ã„nderungen, halte Dateistruktur und Konventionen ein und verifiziere die betroffenen Flows nach der Umsetzung.`,
+    v0:`Setze die ausgewÃ¤hlte visuelle Richtung und Informationshierarchie mÃ¶glichst konkret in UI um. Vermeide Standard-Dashboard-/SaaS-Schablonen und erhalte die beschriebenen BildgrÃ¶ÃŸen, Typografie, Rhythmik und Mobile-Komposition.`,
+    universal:`Lies das gesamte Briefing vor der Umsetzung. Verwende aktive Skills als zusÃ¤tzliche Arbeitsregeln, halte Referenz- und Anti-Slop-Vorgaben ein und prÃ¼fe das Ergebnis gegen die Definition of Done.`
   };
 
   function referencePromptBlock(){
-    const urlLines=state.urls.length?state.urls.map((r,i)=>`${i+1}. ${r.url}\n   Übernehmen: ${r.aspects.join(", ")||"nur allgemeine Inspiration"}\n   Gefällt: ${r.like||"nicht angegeben"}\n   Nicht übernehmen: ${r.dislike||"nicht angegeben"}`).join("\n"):"Keine Website-Referenzen.";
-    const imageLines=state.images.length?state.images.map((r,i)=>`${i+1}. ${r.name}\n   Übernehmen: ${r.aspects.join(", ")||"nur allgemeine Inspiration"}\n   Gefällt: ${r.like||"nicht angegeben"}\n   Nicht übernehmen: ${r.dislike||"nicht angegeben"}`).join("\n"):"Keine Bild-Referenzen.";
+    const urlLines=state.urls.length?state.urls.map((r,i)=>`${i+1}. ${r.url}\n   Ãœbernehmen: ${r.aspects.join(", ")||"nur allgemeine Inspiration"}\n   GefÃ¤llt: ${r.like||"nicht angegeben"}\n   Nicht Ã¼bernehmen: ${r.dislike||"nicht angegeben"}`).join("\n"):"Keine Website-Referenzen.";
+    const imageLines=state.images.length?state.images.map((r,i)=>`${i+1}. ${r.name}\n   Ãœbernehmen: ${r.aspects.join(", ")||"nur allgemeine Inspiration"}\n   GefÃ¤llt: ${r.like||"nicht angegeben"}\n   Nicht Ã¼bernehmen: ${r.dislike||"nicht angegeben"}`).join("\n"):"Keine Bild-Referenzen.";
     return `Websites:\n${urlLines}\n\nBilder / Screenshots:\n${imageLines}`;
   }
 
   function compliancePromptBlock(){
     const checks=activeCheckNames();
     const rules=[];
-    if(state.settings.checks?.privacy) rules.push("Datenschutz: externe Dienste, Tracking, Cookies, Formulare, Karten, Videos, Fonts und Datenübertragungen bewusst prüfen; keine Einwilligungslogik erfinden.");
-    if(state.settings.checks?.imprint) rules.push("Impressum / Anbieterangaben: erforderliche Anbieterinformationen für den eingestellten Rechtsraum berücksichtigen; fehlende Unternehmensdaten als offene Punkte markieren.");
-    if(state.settings.checks?.legal) rules.push("Rechtliche Plausibilität: keine rechtliche Konformität behaupten und keine Pflichttexte aus Vermutungen erzeugen; bei Unsicherheit konkret benennen, was fachlich oder rechtlich geprüft werden muss.");
-    if(state.settings.checks?.accessibility) rules.push("Barrierefreiheit: Semantik, Tastaturbedienung, Fokuszustände, Kontraste, Formularbeschriftungen und sinnvolle Alternativtexte prüfen.");
+    if(state.settings.checks?.privacy) rules.push("Datenschutz: externe Dienste, Tracking, Cookies, Formulare, Karten, Videos, Fonts und DatenÃ¼bertragungen bewusst prÃ¼fen; keine Einwilligungslogik erfinden.");
+    if(state.settings.checks?.imprint) rules.push("Impressum / Anbieterangaben: erforderliche Anbieterinformationen fÃ¼r den eingestellten Rechtsraum berÃ¼cksichtigen; fehlende Unternehmensdaten als offene Punkte markieren.");
+    if(state.settings.checks?.legal) rules.push("Rechtliche PlausibilitÃ¤t: keine rechtliche KonformitÃ¤t behaupten und keine Pflichttexte aus Vermutungen erzeugen; bei Unsicherheit konkret benennen, was fachlich oder rechtlich geprÃ¼ft werden muss.");
+    if(state.settings.checks?.accessibility) rules.push("Barrierefreiheit: Semantik, Tastaturbedienung, FokuszustÃ¤nde, Kontraste, Formularbeschriftungen und sinnvolle Alternativtexte prÃ¼fen.");
     if(state.settings.checks?.security) rules.push("Sicherheit: Secrets nie im Frontend, Eingaben validieren, Auth/Autorisierung und externe APIs passend absichern.");
-    if(state.settings.checks?.performance) rules.push("Performance: Bilder, Fonts, Abhängigkeiten, Rendering und Ladeverhalten bewusst optimieren.");
-    if(state.settings.checks?.seo) rules.push("SEO-Grundlagen: sinnvolle Titel/Descriptions, Überschriftenhierarchie, Crawlability und strukturierte interne Navigation berücksichtigen.");
+    if(state.settings.checks?.performance) rules.push("Performance: Bilder, Fonts, AbhÃ¤ngigkeiten, Rendering und Ladeverhalten bewusst optimieren.");
+    if(state.settings.checks?.seo) rules.push("SEO-Grundlagen: sinnvolle Titel/Descriptions, Ãœberschriftenhierarchie, Crawlability und strukturierte interne Navigation berÃ¼cksichtigen.");
     if(state.settings.noInventLegal) rules.push("Rechtliche Inhalte, Firmenangaben, Einwilligungen, AGB-/Widerrufs-/Datenschutztexte oder vergleichbare Pflichtinformationen niemals frei erfinden.");
-    return `Rechtsraum / Markt: ${state.settings.legalRegion||"nicht festgelegt"}\nAktive Pflichtprüfungen: ${checks.join(", ")||"keine"}\n\n${rules.map(x=>`- ${x}`).join("\n")}`;
+    return `Rechtsraum / Markt: ${state.settings.legalRegion||"nicht festgelegt"}\nAktive PflichtprÃ¼fungen: ${checks.join(", ")||"keine"}\n\n${rules.map(x=>`- ${x}`).join("\n")}`;
   }
 
   function clarificationPromptBlock(){
     const answers=state.clarifications.filter(x=>x.answer?.trim());
     const review=state.projectReview;
-    const answerText=answers.length?answers.map((x,i)=>`${i+1}. Frage: ${x.question}\n   Antwort: ${x.answer}`).join("\n"):"Keine zusätzlichen Antworten.";
+    const answerText=answers.length?answers.map((x,i)=>`${i+1}. Frage: ${x.question}\n   Antwort: ${x.answer}`).join("\n"):"Keine zusÃ¤tzlichen Antworten.";
     const warnings=review?.warnings?.length?review.warnings.map(x=>`- ${x.area||"Hinweis"}: ${x.message||""}`).join("\n"):"Keine gespeicherten Hinweise.";
-    const blockers=review?.blockers?.length?review.blockers.map(x=>`- ${x.message||""}${x.alternative?` | mögliche Alternative: ${x.alternative}`:""}`).join("\n"):"Keine gespeicherten Blocker.";
-    return `Antworten aus der Projektprüfung:\n${answerText}\n\nHinweise:\n${warnings}\n\nKritische Punkte:\n${blockers}`;
+    const blockers=review?.blockers?.length?review.blockers.map(x=>`- ${x.message||""}${x.alternative?` | mÃ¶gliche Alternative: ${x.alternative}`:""}`).join("\n"):"Keine gespeicherten Blocker.";
+    return `Antworten aus der ProjektprÃ¼fung:\n${answerText}\n\nHinweise:\n${warnings}\n\nKritische Punkte:\n${blockers}`;
   }
 
   function buildMasterPrompt(){
     const p=project();const c=selectedConcept();const t=selectedTemplate();const mods=selectedModules();const skills=selectedSkills();const u=state.understanding||localAnalyzeProject();const ctrl=controls();
     const templateBlock=t?`\n## EIGENE MASTER-VORLAGE: ${t.name}\n${t.prompt}\n`:"";
     const moduleBlock=mods.length?`\n## AKTIVE PROMPT-MODULE\n${mods.map((m,i)=>`### ${i+1}. ${m.name}${m.tag?` [${m.tag}]`:""}\n${m.prompt}`).join("\n\n")}\n`:"";
-    const skillBlock=skills.length?`\n## AKTIVE AGENT-SKILLS\nDiese Regeln sind zusätzlich verbindlich, wenn ihr Trigger zur Aufgabe passt. Wenn ein Skill aus einer Datei importiert wurde, behandle den eingebetteten Inhalt wie die gelesene Skill-/Agent-Datei.\n\n${skills.map((s,i)=>`### ${i+1}. ${s.name}\nAgent: ${s.agent==="all"?"Alle Agents":AGENT_NAMES[s.agent]||s.agent}\nTrigger: ${s.trigger||"bei passender Aufgabe"}${s.sourceFile?`\nQuelle: ${s.sourceFile}`:""}\n\n${s.prompt}`).join("\n\n")}\n`:"";
-    const refinementBlock=state.refinements.length?state.refinements.map((r,i)=>`${i+1}. ${r.text}`).join("\n"):"Keine zusätzlichen Änderungen nach der Vorschau.";
-    const finalCompliance=state.settings.finalChecklist?`\n8. alle unter „Pflichtprüfungen & rechtlicher Rahmen“ aktivierten Bereiche geprüft und offene Punkte transparent benannt wurden,\n9. keine rechtliche Konformität, Einwilligung oder Pflichtinformation erfunden wurde.`:"";
-    const agentQuestionRule=state.settings.aiClarifications?"Wenn während der Umsetzung ein fehlender, widersprüchlicher oder nicht machbarer Punkt auftaucht, stelle eine kurze konkrete Gegenfrage, sofern die Antwort das Ergebnis wesentlich verändert. Bei einem Blocker erkläre das Problem knapp und nenne eine machbare Alternative, wenn eine existiert.":"Stelle keine zusätzlichen Präferenzfragen. Wenn ein echter Blocker auftritt, benenne ihn knapp und markiere die nötige Entscheidung; erfinde keine fehlenden Fakten.";
-    return `# SITEBRIEF MASTER-PROMPT — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhältst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fünf neue Richtungen. Setze die ausgewählte Richtung konsequent um und nutze Referenzen nur für die ausdrücklich freigegebenen Eigenschaften.\n${templateBlock}\n## 1. PROJEKT\nName: ${p.name||"nicht festgelegt"}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${p.audience||"nicht ausdrücklich angegeben"}\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusätzlicher Wunsch."}\n\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritäten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}\n\n## 3. PROJEKTPRÜFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÜFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese Entwicklungsprüfung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen Prüfpunkt statt Sicherheit vorzutäuschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Übernimm nur die jeweils ausgewählten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÄHLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nKomposition: ${c.layoutVariant}\nLayoutprinzip: ${c.layout}\nHero: ${c.hero}\nTypografie: ${c.type}\nPalette: ${c.palette.join(" / ")}\nPreview-Headline: ${c.headline}\nPreview-Subline: ${c.subline}`:"Es wurde noch keine Designrichtung ausgewählt."}\n\n## 7. FEINSCHLIFF NACH DER VORSCHAU\n${refinementBlock}\n\n## 8. DESIGNREGLER\n- Originalität: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und anschließend drei Karten.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-Flächen, Glow-Effekte oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als Standardlösung für beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Kundenlogos, Zertifikate, Projekte oder Behauptungen.\n- Keine generischen Marketingfloskeln oder künstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewählten Richtung gehören.\n- Bildsprache und Typografie müssen den Charakter tragen; Container dürfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenständig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÜR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n## 11. UMSETZUNGSANFORDERUNGEN\n- Responsive ab kleinen Mobilgeräten bis große Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und Bildgrößen bewusst behandeln; unnötige Abhängigkeiten vermeiden.\n- Zentrale Design-Tokens für Farben, Typografie, Abstände, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. die gewählte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist,\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berücksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster übrig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsächlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen.${finalCompliance}\n\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`;
+    const skillBlock=skills.length?`\n## AKTIVE AGENT-SKILLS\nDiese Regeln sind zusÃ¤tzlich verbindlich, wenn ihr Trigger zur Aufgabe passt. Wenn ein Skill aus einer Datei importiert wurde, behandle den eingebetteten Inhalt wie die gelesene Skill-/Agent-Datei.\n\n${skills.map((s,i)=>`### ${i+1}. ${s.name}\nAgent: ${s.agent==="all"?"Alle Agents":AGENT_NAMES[s.agent]||s.agent}\nTrigger: ${s.trigger||"bei passender Aufgabe"}${s.sourceFile?`\nQuelle: ${s.sourceFile}`:""}\n\n${s.prompt}`).join("\n\n")}\n`:"";
+    const refinementBlock=state.refinements.length?state.refinements.map((r,i)=>`${i+1}. ${r.text}`).join("\n"):"Keine zusÃ¤tzlichen Ã„nderungen nach der Vorschau.";
+    const finalCompliance=state.settings.finalChecklist?`\n8. alle unter â€žPflichtprÃ¼fungen & rechtlicher Rahmenâ€œ aktivierten Bereiche geprÃ¼ft und offene Punkte transparent benannt wurden,\n9. keine rechtliche KonformitÃ¤t, Einwilligung oder Pflichtinformation erfunden wurde.`:"";
+    const agentQuestionRule=state.settings.aiClarifications?"Wenn wÃ¤hrend der Umsetzung ein fehlender, widersprÃ¼chlicher oder nicht machbarer Punkt auftaucht, stelle eine kurze konkrete Gegenfrage, sofern die Antwort das Ergebnis wesentlich verÃ¤ndert. Bei einem Blocker erklÃ¤re das Problem knapp und nenne eine machbare Alternative, wenn eine existiert.":"Stelle keine zusÃ¤tzlichen PrÃ¤ferenzfragen. Wenn ein echter Blocker auftritt, benenne ihn knapp und markiere die nÃ¶tige Entscheidung; erfinde keine fehlenden Fakten.";
+    return `# SITEBRIEF MASTER-PROMPT â€” ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhÃ¤ltst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fÃ¼nf neue Richtungen. Setze die ausgewÃ¤hlte Richtung konsequent um und nutze Referenzen nur fÃ¼r die ausdrÃ¼cklich freigegebenen Eigenschaften.\n${templateBlock}\n## 1. PROJEKT\nName: ${p.name||"nicht festgelegt"}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${p.audience||"nicht ausdrÃ¼cklich angegeben"}\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusÃ¤tzlicher Wunsch."}\n\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritÃ¤ten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}\n\n## 3. PROJEKTPRÃœFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÃœFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese EntwicklungsprÃ¼fung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen PrÃ¼fpunkt statt Sicherheit vorzutÃ¤uschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Ãœbernimm nur die jeweils ausgewÃ¤hlten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÃ„HLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nKomposition: ${c.layoutVariant}\nLayoutprinzip: ${c.layout}\nHero: ${c.hero}\nTypografie: ${c.type}\nPalette: ${c.palette.join(" / ")}\nPreview-Headline: ${c.headline}\nPreview-Subline: ${c.subline}`:"Es wurde noch keine Designrichtung ausgewÃ¤hlt."}\n\n## 7. FEINSCHLIFF NACH DER VORSCHAU\n${refinementBlock}\n\n## 8. DESIGNREGLER\n- OriginalitÃ¤t: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und anschlieÃŸend drei Karten.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-FlÃ¤chen, Glow-Effekte oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als StandardlÃ¶sung fÃ¼r beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Kundenlogos, Zertifikate, Projekte oder Behauptungen.\n- Keine generischen Marketingfloskeln oder kÃ¼nstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewÃ¤hlten Richtung gehÃ¶ren.\n- Bildsprache und Typografie mÃ¼ssen den Charakter tragen; Container dÃ¼rfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenstÃ¤ndig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÃœR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n## 11. UMSETZUNGSANFORDERUNGEN\n- Responsive ab kleinen MobilgerÃ¤ten bis groÃŸe Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und BildgrÃ¶ÃŸen bewusst behandeln; unnÃ¶tige AbhÃ¤ngigkeiten vermeiden.\n- Zentrale Design-Tokens fÃ¼r Farben, Typografie, AbstÃ¤nde, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. die gewÃ¤hlte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist,\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berÃ¼cksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster Ã¼brig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsÃ¤chlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen.${finalCompliance}\n\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`;
   }
 
   function updateMasterPrompt(){
-    const prompt=buildMasterPrompt();el.masterPrompt.value=prompt;const c=selectedConcept();el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} · ${escapeHtml(c?.name||"keine Richtung")}</span><span>${prompt.length.toLocaleString("de-DE")} Zeichen · ${selectedModules().length} Module · ${selectedSkills().length} Skills</span>`;
+    const prompt=buildMasterPrompt();el.masterPrompt.value=prompt;const c=selectedConcept();el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} Â· ${escapeHtml(c?.name||"keine Richtung")}</span><span>${prompt.length.toLocaleString("de-DE")} Zeichen Â· ${selectedModules().length} Module Â· ${selectedSkills().length} Skills</span>`;
   }
 
   function guideConfig(step){
     const refs=referenceCount(); const mods=selectedModules().length; const skills=selectedSkills().length; const c=selectedConcept();
     if(step===1){
-      const enough=project().description.length>=20;return {label:"PROJEKT",title:enough?"Das reicht schon für eine erste Auswertung.":"Beschreibe zuerst nur das Vorhaben.",text:enough?"Ich kann daraus Ziel, Charakter und erste Prioritäten ableiten. Du kannst die Zusammenfassung danach korrigieren.":"Du musst noch keine perfekte Design-Sprache kennen. Betrieb, Angebot, Ziel und ein Satz darüber, was du nicht willst, reichen.",suggestions:enough?["<b>Automatisch:</b> Projektart und Hauptziel bleiben unter deiner Kontrolle.","<b>Gut zu nennen:</b> Zielgruppe, lokaler Bezug, besondere Funktionen oder klare Design-Verbote."]:[],action:enough?{label:"Beschreibung auswerten",fn:analyzeProject}:null};
+      const enough=project().description.length>=20;return {label:"PROJEKT",title:enough?"Das reicht schon fÃ¼r eine erste Auswertung.":"Beschreibe zuerst nur das Vorhaben.",text:enough?"Ich kann daraus Ziel, Charakter und erste PrioritÃ¤ten ableiten. Du kannst die Zusammenfassung danach korrigieren.":"Du musst noch keine perfekte Design-Sprache kennen. Betrieb, Angebot, Ziel und ein Satz darÃ¼ber, was du nicht willst, reichen.",suggestions:enough?["<b>Automatisch:</b> Projektart und Hauptziel bleiben unter deiner Kontrolle.","<b>Gut zu nennen:</b> Zielgruppe, lokaler Bezug, besondere Funktionen oder klare Design-Verbote."]:[],action:enough?{label:"Beschreibung auswerten",fn:analyzeProject}:null};
     }
-    if(step===2){return {label:"REFERENZEN",title:refs?`${refs} Referenz${refs===1?"":"en"} vorhanden.`:"Referenzen sind optional.",text:refs?"Lege pro Quelle fest, was wirklich übernommen werden darf. Das verhindert, dass eine KI blind den kompletten Stil nachbaut.":"Ohne Referenzen funktioniert der Durchlauf ebenfalls. Für schwer beschreibbare Layouts sind Screenshots besonders hilfreich.",suggestions:[state.urls.length&&!state.images.length?"<b>Tipp:</b> Wenn dir eine URL optisch wichtig ist, ergänze einen Screenshot.":"<b>Grundregel:</b> Layout, Farben und Bildsprache getrennt bewerten.","<b>Nützlich:</b> Schreib auch hinein, was dir an einer Referenz ausdrücklich nicht gefällt."],action:null};}
-    if(step===3){return {label:"AGENT",title:`Master-Prompt für ${AGENT_NAMES[state.targetAgent]}.`,text:state.engine==="local"?"Die Konzeptvorschläge werden aktuell kostenlos lokal erstellt. Der finale Prompt wird trotzdem agentenspezifisch aufgebaut.":"Die externe Generator-KI entwickelt die Vorschauen und darf vorab gezielt nachfragen; der Ziel-Agent bestimmt dagegen Arbeitsweise und Skills des finalen Prompts.",suggestions:["<b>Generator ≠ Ziel-Agent:</b> Du kannst z. B. Bilder mit einem Modell analysieren und trotzdem für Codex exportieren.",state.settings.aiClarifications?`<b>Gegenfragen:</b> aktiv, maximal ${state.settings.maxQuestions} pro Prüfung.`:"<b>Gegenfragen:</b> in den Einstellungen deaktiviert.",`<b>Pflichtprüfung:</b> ${activeCheckNames().join(", ")||"keine Bereiche"}.`,"<b>KI-Verbindungen:</b> eigene Keys direkt unter Einstellungen verbinden; gespeichert werden sie verschlüsselt in Supabase Vault."],action:null};}
-    if(step===4){const rec=state.recommendedModuleIds.length;return {label:"MODULE & SKILLS",title:state.modules.length||state.skills.length?"Nur das aktivieren, was diesen Auftrag besser macht.":"Deine Bibliotheken sind noch leer.",text:state.modules.length||state.skills.length?`${mods} Module und ${skills} Skills sind gerade aktiv. Skills werden passend zum gewählten Agenten gefiltert.`:"Lege eigene Module und Skills über „Bibliotheken“ an oder lies vorhandene AGENTS.md-, CLAUDE.md-, GEMINI.md- oder SKILL.md-Dateien ein.",suggestions:[rec?`<b>${rec} Modul${rec===1?"":"e"}</b> passen anhand deiner eigenen Beschreibungen zum Projekt.`:"<b>Keine festen Module:</b> SiteBrief erfindet dir keine Bibliothek. Du entscheidest die Regeln.","<b>Skill-Dateien:</b> importierter Inhalt wird später vollständig in den Master-Prompt eingebettet."],action:state.modules.length?{label:"Passende Module auswählen",fn:()=>recommendModules(true)}:null};}
-    if(step===5){return {label:"KONZEPT",title:"Das Blueprint ist die gemeinsame Wahrheit.",text:"Aus diesem strukturierten Stand entstehen die Vorschauen. Änderst du vorher Projekt, Referenzen, Module oder globale Prüfregeln, wird das Blueprint neu aufgebaut.",suggestions:[`<b>Anti-KI-Look:</b> aktuell ${controls().antiSlop}/100.`,`<b>Originalität:</b> aktuell ${controls().originality}/100.`,`<b>Rechtsraum:</b> ${escapeHtml(state.settings.legalRegion||"nicht festgelegt")}.`],action:null};}
-    if(step===6){return {label:"VORSCHAUEN",title:state.concepts.length?`${state.concepts.length} Richtungen — eine davon wird die Basis.`:"Erzeuge jetzt 3 bis 5 Richtungen.",text:state.concepts.length?"Die Karten sind kleine echte HTML/CSS-Kompositionen, nicht nur Farbfelder. Wähle die strukturell beste Richtung; Details kannst du im nächsten Schritt ändern.":"Die Varianten bekommen unterschiedliche Kompositionssysteme. Eine reine Farbvariation zählt nicht als neue Richtung.",suggestions:[c?`<b>Ausgewählt:</b> ${escapeHtml(c.name)}.`:"<b>Noch offen:</b> keine Richtung ausgewählt.",firstReferenceImage()?"<b>Referenzbild:</b> wird in den Mini-Layouts als Motiv genutzt.":"<b>Ohne Bild:</b> Vorschauen zeigen neutrale Fotoflächen."],action:state.concepts.length?null:{label:`${el.conceptCount.value} Richtungen erzeugen`,fn:generateConcepts}};}
-    if(step===7){return {label:"FEINSCHLIFF",title:c?`${c.name} ist jetzt die Basis.`:"Bitte zuerst eine Richtung auswählen.",text:"Ändere nur noch gezielt. Jeder Änderungswunsch bleibt im Verlauf und wird zusätzlich in den Master-Prompt geschrieben.",suggestions:[state.refinements.length?`<b>${state.refinements.length} Änderung${state.refinements.length===1?"":"en"}</b> gespeichert.`:"<b>Tipp:</b> Hero behalten + Struktur aus einer anderen Vorschau ist ein guter konkreter Änderungswunsch.","<b>Lokaler Modus:</b> einfache Stiländerungen werden direkt simuliert; der Textwunsch bleibt trotzdem verbindlich für den Agenten."],action:null};}
-    return {label:"MASTER-PROMPT",title:`Bereit für ${AGENT_NAMES[state.targetAgent]}.`,text:"Der Prompt verbindet Briefing, Referenzen, Designentscheidung, deine eigenen Module und die aktiven Agent-Skills zu einem einzigen Arbeitsauftrag.",suggestions:[`<b>${selectedModules().length}</b> Module eingebettet.`,`<b>${selectedSkills().length}</b> Skills eingebettet.`,state.refinements.length?`<b>${state.refinements.length}</b> Feinschliff-Anweisungen übernommen.`:"<b>Keine</b> nachträglichen Feinschliff-Anweisungen."],action:null};
+    if(step===2){return {label:"REFERENZEN",title:refs?`${refs} Referenz${refs===1?"":"en"} vorhanden.`:"Referenzen sind optional.",text:refs?"Lege pro Quelle fest, was wirklich Ã¼bernommen werden darf. Das verhindert, dass eine KI blind den kompletten Stil nachbaut.":"Ohne Referenzen funktioniert der Durchlauf ebenfalls. FÃ¼r schwer beschreibbare Layouts sind Screenshots besonders hilfreich.",suggestions:[state.urls.length&&!state.images.length?"<b>Tipp:</b> Wenn dir eine URL optisch wichtig ist, ergÃ¤nze einen Screenshot.":"<b>Grundregel:</b> Layout, Farben und Bildsprache getrennt bewerten.","<b>NÃ¼tzlich:</b> Schreib auch hinein, was dir an einer Referenz ausdrÃ¼cklich nicht gefÃ¤llt."],action:null};}
+    if(step===3){return {label:"AGENT",title:`Master-Prompt fÃ¼r ${AGENT_NAMES[state.targetAgent]}.`,text:state.engine==="local"?"Die KonzeptvorschlÃ¤ge werden aktuell kostenlos lokal erstellt. Der finale Prompt wird trotzdem agentenspezifisch aufgebaut.":"Die externe Generator-KI entwickelt die Vorschauen und darf vorab gezielt nachfragen; der Ziel-Agent bestimmt dagegen Arbeitsweise und Skills des finalen Prompts.",suggestions:["<b>Generator â‰  Ziel-Agent:</b> Du kannst z. B. Bilder mit einem Modell analysieren und trotzdem fÃ¼r Codex exportieren.",state.settings.aiClarifications?`<b>Gegenfragen:</b> aktiv, maximal ${state.settings.maxQuestions} pro PrÃ¼fung.`:"<b>Gegenfragen:</b> in den Einstellungen deaktiviert.",`<b>PflichtprÃ¼fung:</b> ${activeCheckNames().join(", ")||"keine Bereiche"}.`,"<b>KI-Verbindungen:</b> eigene Keys direkt unter Einstellungen verbinden; gespeichert werden sie verschlÃ¼sselt in Supabase Vault."],action:null};}
+    if(step===4){const rec=state.recommendedModuleIds.length;return {label:"MODULE & SKILLS",title:state.modules.length||state.skills.length?"Nur das aktivieren, was diesen Auftrag besser macht.":"Deine Bibliotheken sind noch leer.",text:state.modules.length||state.skills.length?`${mods} Module und ${skills} Skills sind gerade aktiv. Skills werden passend zum gewÃ¤hlten Agenten gefiltert.`:"Lege eigene Module und Skills Ã¼ber â€žBibliothekenâ€œ an oder lies vorhandene AGENTS.md-, CLAUDE.md-, GEMINI.md- oder SKILL.md-Dateien ein.",suggestions:[rec?`<b>${rec} Modul${rec===1?"":"e"}</b> passen anhand deiner eigenen Beschreibungen zum Projekt.`:"<b>Keine festen Module:</b> SiteBrief erfindet dir keine Bibliothek. Du entscheidest die Regeln.","<b>Skill-Dateien:</b> importierter Inhalt wird spÃ¤ter vollstÃ¤ndig in den Master-Prompt eingebettet."],action:state.modules.length?{label:"Passende Module auswÃ¤hlen",fn:()=>recommendModules(true)}:null};}
+    if(step===5){return {label:"KONZEPT",title:"Das Blueprint ist die gemeinsame Wahrheit.",text:"Aus diesem strukturierten Stand entstehen die Vorschauen. Ã„nderst du vorher Projekt, Referenzen, Module oder globale PrÃ¼fregeln, wird das Blueprint neu aufgebaut.",suggestions:[`<b>Anti-KI-Look:</b> aktuell ${controls().antiSlop}/100.`,`<b>OriginalitÃ¤t:</b> aktuell ${controls().originality}/100.`,`<b>Rechtsraum:</b> ${escapeHtml(state.settings.legalRegion||"nicht festgelegt")}.`],action:null};}
+    if(step===6){return {label:"VORSCHAUEN",title:state.concepts.length?`${state.concepts.length} Richtungen â€” eine davon wird die Basis.`:"Erzeuge jetzt 3 bis 5 Richtungen.",text:state.concepts.length?"Die Karten sind kleine echte HTML/CSS-Kompositionen, nicht nur Farbfelder. WÃ¤hle die strukturell beste Richtung; Details kannst du im nÃ¤chsten Schritt Ã¤ndern.":"Die Varianten bekommen unterschiedliche Kompositionssysteme. Eine reine Farbvariation zÃ¤hlt nicht als neue Richtung.",suggestions:[c?`<b>AusgewÃ¤hlt:</b> ${escapeHtml(c.name)}.`:"<b>Noch offen:</b> keine Richtung ausgewÃ¤hlt.",firstReferenceImage()?"<b>Referenzbild:</b> wird in den Mini-Layouts als Motiv genutzt.":"<b>Ohne Bild:</b> Vorschauen zeigen neutrale FotoflÃ¤chen."],action:state.concepts.length?null:{label:`${el.conceptCount.value} Richtungen erzeugen`,fn:generateConcepts}};}
+    if(step===7){return {label:"FEINSCHLIFF",title:c?`${c.name} ist jetzt die Basis.`:"Bitte zuerst eine Richtung auswÃ¤hlen.",text:"Ã„ndere nur noch gezielt. Jeder Ã„nderungswunsch bleibt im Verlauf und wird zusÃ¤tzlich in den Master-Prompt geschrieben.",suggestions:[state.refinements.length?`<b>${state.refinements.length} Ã„nderung${state.refinements.length===1?"":"en"}</b> gespeichert.`:"<b>Tipp:</b> Hero behalten + Struktur aus einer anderen Vorschau ist ein guter konkreter Ã„nderungswunsch.","<b>Lokaler Modus:</b> einfache StilÃ¤nderungen werden direkt simuliert; der Textwunsch bleibt trotzdem verbindlich fÃ¼r den Agenten."],action:null};}
+    return {label:"MASTER-PROMPT",title:`Bereit fÃ¼r ${AGENT_NAMES[state.targetAgent]}.`,text:"Der Prompt verbindet Briefing, Referenzen, Designentscheidung, deine eigenen Module und die aktiven Agent-Skills zu einem einzigen Arbeitsauftrag.",suggestions:[`<b>${selectedModules().length}</b> Module eingebettet.`,`<b>${selectedSkills().length}</b> Skills eingebettet.`,state.refinements.length?`<b>${state.refinements.length}</b> Feinschliff-Anweisungen Ã¼bernommen.`:"<b>Keine</b> nachtrÃ¤glichen Feinschliff-Anweisungen."],action:null};
   }
 
   function updateGuide(){
@@ -1160,7 +1161,7 @@
 
   function validateStep(next){
     if(next>1 && project().description.length<20){el.projectValidation.textContent="Bitte zuerst das Projekt kurz beschreiben.";goStep(1,true);return false}
-    if(next===7 && !selectedConcept()){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst mindestens eine Vorschau erzeugen und auswählen.";return false}
+    if(next===7 && !selectedConcept()){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst mindestens eine Vorschau erzeugen und auswÃ¤hlen.";return false}
     if(next===8 && !selectedConcept()) return false;
     return true;
   }
@@ -1195,8 +1196,8 @@
     const map={template:[state.templates,el.templateLibraryList],module:[state.modules,el.moduleLibraryList],skill:[state.skills,el.skillLibraryList]}; const [arr,container]=map[type]; container.innerHTML="";
     if(!arr.length){container.innerHTML='<div class="library-item"><div><strong>Noch leer</strong><p>Lege rechts deinen ersten eigenen Eintrag an.</p></div></div>';return}
     arr.forEach(item=>{
-      const row=document.createElement("div");row.className="library-item"; const meta=type==="skill"?`${item.agent==="all"?"Alle Agents":AGENT_NAMES[item.agent]||item.agent}${item.sourceFile?` · ${item.sourceFile}`:""}`:(item.tag||"");
-      row.innerHTML=`<div><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.summary||item.trigger||"Eigener Eintrag")}</p>${meta?`<code>${escapeHtml(meta)}</code>`:""}</div><div class="library-item-actions"><button type="button" data-edit>bearbeiten</button><button type="button" data-delete>löschen</button></div>`;
+      const row=document.createElement("div");row.className="library-item"; const meta=type==="skill"?`${item.agent==="all"?"Alle Agents":AGENT_NAMES[item.agent]||item.agent}${item.sourceFile?` Â· ${item.sourceFile}`:""}`:(item.tag||"");
+      row.innerHTML=`<div><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.summary||item.trigger||"Eigener Eintrag")}</p>${meta?`<code>${escapeHtml(meta)}</code>`:""}</div><div class="library-item-actions"><button type="button" data-edit>bearbeiten</button><button type="button" data-delete>lÃ¶schen</button></div>`;
       row.querySelector("[data-edit]").addEventListener("click",()=>editLibraryItem(type,item.id));row.querySelector("[data-delete]").addEventListener("click",()=>deleteLibraryItem(type,item.id));container.appendChild(row);
     });
   }
@@ -1231,12 +1232,12 @@
   }
 
   async function deleteLibraryItem(type,id){
-    if(!confirm("Diesen Eintrag wirklich löschen?"))return;
+    if(!confirm("Diesen Eintrag wirklich lÃ¶schen?"))return;
     if(type==="template"){state.templates=state.templates.filter(x=>x.id!==id);if(state.templateId===id)state.templateId="";}
     if(type==="module"){state.modules=state.modules.filter(x=>x.id!==id);state.selectedModuleIds=state.selectedModuleIds.filter(x=>x!==id);}
     if(type==="skill"){state.skills=state.skills.filter(x=>x.id!==id);state.selectedSkillIds=state.selectedSkillIds.filter(x=>x!==id);}
     saveLibrary();renderLibrary();renderDefaultActivationSettings();updateGuide();saveState();
-    if(cloudReady())try{await window.SiteBriefCloud.deleteLibraryItem(type,id)}catch(err){state.cloud.error=err?.message||"Löschen konnte nicht synchronisiert werden";setSyncState("Sync-Fehler","error")}
+    if(cloudReady())try{await window.SiteBriefCloud.deleteLibraryItem(type,id)}catch(err){state.cloud.error=err?.message||"LÃ¶schen konnte nicht synchronisiert werden";setSyncState("Sync-Fehler","error")}
   }
 
   function openLibrary(tab="templates"){
@@ -1259,7 +1260,7 @@
   function downloadText(filename,text,type="text/plain") { const blob=new Blob([text],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500); }
 
   function resetProject(){
-    if(!confirm("Projekt zurücksetzen? Deine Bibliotheken bleiben erhalten."))return;localStorage.removeItem(STORAGE_KEY);location.reload();
+    if(!confirm("Projekt zurÃ¼cksetzen? Deine Bibliotheken bleiben erhalten."))return;localStorage.removeItem(STORAGE_KEY);location.reload();
   }
 
   function bindEvents(){
@@ -1278,7 +1279,7 @@
     $$('#quickRefinements button').forEach(b=>b.addEventListener("click",()=>{const t=b.textContent.trim();el.refinementInput.value=el.refinementInput.value.trim()?`${el.refinementInput.value.trim()}, ${t}`:t;el.refinementInput.focus()}));el.applyRefinementBtn.addEventListener("click",applyRefinement);el.clearRefinementsBtn.addEventListener("click",()=>{state.refinements=[];renderRefinementHistory();saveState();updateGuide()});
     $$('.next-btn').forEach(b=>b.addEventListener("click",async()=>{const next=Number(b.dataset.next);if(state.currentStep===1&&!state.understanding){const ok=await analyzeProject();if(!ok)return;}if(state.currentStep===3&&next===4&&state.engine!=="local"&&state.settings.aiClarifications){const ok=await runProjectReview(false);if(!ok)return;}goStep(next)}));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
-    el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1300)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`sitebrief-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadBriefBtn.addEventListener("click",()=>downloadText("sitebrief-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
+    el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Kopiert âœ“";setTimeout(()=>el.copyPromptBtn.textContent=old,1300)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`sitebrief-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadBriefBtn.addEventListener("click",()=>downloadText("sitebrief-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
     el.openLibraryBtn.addEventListener("click",()=>openLibrary("templates"));$$('[data-open-library]').forEach(b=>b.addEventListener("click",()=>openLibrary(b.dataset.openLibrary)));$$('[data-library-tab]').forEach(b=>b.addEventListener("click",()=>switchLibraryTab(b.dataset.libraryTab)));
     el.openSettingsBtn.addEventListener("click",()=>{populateSettingsDialog();el.settingsDialog.showModal()});el.saveSettingsBtn.addEventListener("click",saveSettingsFromDialog);
     el.gatewayConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gateway"));el.gatewayTestBtn?.addEventListener("click",()=>testAiProviderConnection("gateway"));el.gatewayDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gateway"));
@@ -1317,3 +1318,4 @@
 
   document.addEventListener("DOMContentLoaded",init);
 })();
+
