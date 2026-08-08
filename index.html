@@ -235,6 +235,20 @@
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="5">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="7" id="toRefineBtn">Auswahl verfeinern <i>→</i></button></div>
       </section>
 
+      <dialog id="previewLightbox" class="preview-lightbox" aria-labelledby="previewLightboxTitle">
+        <div class="preview-lightbox-frame">
+          <div class="preview-lightbox-head">
+            <div><small>VORSCHAU</small><h2 id="previewLightboxTitle">Richtung ansehen</h2></div>
+            <button type="button" class="lightbox-close" id="previewLightboxClose" aria-label="Vollbildansicht schließen">×</button>
+          </div>
+          <div id="previewLightboxMedia" class="preview-lightbox-media"></div>
+          <div class="preview-lightbox-actions">
+            <button type="button" class="outline-btn" id="previewLightboxDownload">Bild herunterladen</button>
+            <button type="button" class="solid-btn" id="previewLightboxSelect">Diese Richtung wählen</button>
+          </div>
+        </div>
+      </dialog>
+
       <section class="step-panel" data-step-panel="7" id="stepRefine">
         <div class="section-kicker">07 — FEINSCHLIFF</div>
         <h1>Eine Richtung. Dann gezielt ändern.</h1>
