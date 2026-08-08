@@ -306,16 +306,12 @@
   <dialog id="settingsDialog" class="library-dialog settings-dialog">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
-        <div><span>GLOBALE REGELN</span><h2>Prüfung & KI-Verhalten</h2></div>
+        <div><span>EINSTELLUNGEN</span><h2>Agent, KI & Standards</h2></div>
         <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
       </header>
       <div class="settings-body">
         <section class="settings-section">
-          <div class="settings-heading"><strong>Cloud & Standardprofil</strong><p>Profile speichern deinen üblichen Agenten, Generator, Workflow und deine Standardregeln. Systemprofile bleiben erhalten; eigene Profile werden mit deinem Konto synchronisiert.</p></div>
-          <div class="profile-picker-row">
-            <label class="field"><span>Aktives Standardprofil</span><select id="setActiveProfile"><option value="">Lokale Standardwerte</option></select></label>
-            <button type="button" class="outline-btn" id="applyProfileBtn">Profil anwenden</button>
-          </div>
+          <div class="settings-heading"><strong>Agent & KI</strong><p>Hier legst du direkt fest, welcher Agent standardmäßig den fertigen Master-Prompt bekommt und welche KI SiteBrief für Analyse und Konzepte verwendet.</p></div>
           <div class="field-grid two">
             <label class="field"><span>Standard-Agent</span><select id="setDefaultAgent"><option value="claude">Claude Code</option><option value="codex">Codex</option><option value="gemini">Gemini</option><option value="chatgpt">ChatGPT</option><option value="cursor">Cursor</option><option value="v0">v0</option><option value="universal">Universal</option></select></label>
             <label class="field"><span>Standard-Generator</span><select id="setDefaultEngine"><option value="local">Lokal / ohne API</option><option value="gateway">Vercel AI Gateway</option><option value="openai">OpenAI direkt</option></select></label>
@@ -324,6 +320,46 @@
             <label class="field"><span>Standard-Modell</span><input id="setDefaultModel" type="text" placeholder="optional" /></label>
             <label class="field"><span>Standard-Modus</span><select id="setDefaultMode"><option value="guided">Geführt</option><option value="auto">Auto</option><option value="expert">Experte</option></select></label>
             <label class="field"><span>Vorschauen</span><select id="setDefaultConceptCount"><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+          </div>
+
+          <div class="settings-heading compact-note"><strong>KI-Verbindungen</strong><p>API-Key einmal eintragen, speichern und testen. Eigene Keys werden nur nach Login gespeichert und verschlüsselt in Supabase Vault abgelegt – nicht im Browser.</p></div>
+          <div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein SiteBrief-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
+          <div class="ai-connection-grid">
+            <article class="ai-connection-card recommended">
+              <div class="ai-connection-head">
+                <div><span>EMPFOHLEN</span><strong>Vercel AI Gateway</strong><p>Ein Key für verschiedene Modellanbieter. Ideal, wenn du OpenAI, Claude oder Gemini flexibel nutzen möchtest.</p></div>
+                <span class="connection-status" id="gatewayConnectionStatus">Nicht verbunden</span>
+              </div>
+              <label class="field"><span>API-Key</span><input id="gatewayApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Key hier einmal eintragen" /></label>
+              <div class="connection-actions">
+                <button type="button" class="solid-btn mini" id="gatewayConnectBtn">Speichern & verbinden</button>
+                <button type="button" class="outline-btn mini" id="gatewayTestBtn">Testen</button>
+                <button type="button" class="text-btn" id="gatewayDisconnectBtn" hidden>Trennen</button>
+              </div>
+              <small class="connection-message" id="gatewayConnectionMessage"></small>
+            </article>
+
+            <article class="ai-connection-card">
+              <div class="ai-connection-head">
+                <div><span>DIREKT</span><strong>OpenAI</strong><p>Nutze deinen eigenen OpenAI API-Key direkt für SiteBrief.</p></div>
+                <span class="connection-status" id="openaiConnectionStatus">Nicht verbunden</span>
+              </div>
+              <label class="field"><span>API-Key</span><input id="openaiApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…" /></label>
+              <div class="connection-actions">
+                <button type="button" class="solid-btn mini" id="openaiConnectBtn">Speichern & verbinden</button>
+                <button type="button" class="outline-btn mini" id="openaiTestBtn">Testen</button>
+                <button type="button" class="text-btn" id="openaiDisconnectBtn" hidden>Trennen</button>
+              </div>
+              <small class="connection-message" id="openaiConnectionMessage"></small>
+            </article>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <div class="settings-heading"><strong>Profile & Standards</strong><p>Profile speichern Agent, Generator, Workflow, Module, Skills und deine globalen Regeln. Systemprofile bleiben erhalten; eigene Profile werden mit deinem Konto synchronisiert.</p></div>
+          <div class="profile-picker-row">
+            <label class="field"><span>Aktives Standardprofil</span><select id="setActiveProfile"><option value="">Lokale Standardwerte</option></select></label>
+            <button type="button" class="outline-btn" id="applyProfileBtn">Profil anwenden</button>
           </div>
           <div class="profile-actions">
             <button type="button" class="outline-btn" id="saveProfileBtn">Aktuelle Einstellungen als eigenes Profil speichern</button>
@@ -345,7 +381,7 @@
             <label class="field"><span>Max. Fragen pro Prüfung</span><select id="setMaxQuestions"><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></label>
             <label class="field"><span>Bei kritischem Problem</span><select id="setCriticalBehavior"><option value="block">Stoppen und Lösung verlangen</option><option value="warn">Warnen, Fortfahren erlauben</option></select></label>
           </div>
-          <label class="toggle-row"><input id="setAskMissing" type="checkbox"><span><strong>Bei fehlenden Angaben fragen</strong><small>Nur Angaben abfragen, die das Ergebnis materially verändern.</small></span></label>
+          <label class="toggle-row"><input id="setAskMissing" type="checkbox"><span><strong>Bei fehlenden Angaben fragen</strong><small>Nur Angaben abfragen, die das Ergebnis wirklich verändern.</small></span></label>
           <label class="toggle-row"><input id="setAskConflict" type="checkbox"><span><strong>Bei Widersprüchen fragen</strong><small>Zum Beispiel „minimal“ und gleichzeitig „sehr informationsdicht“.</small></span></label>
           <label class="toggle-row"><input id="setAskInfeasible" type="checkbox"><span><strong>Bei nicht machbaren Wünschen nachhaken</strong><small>Problem erklären und um eine Entscheidung bitten.</small></span></label>
           <label class="toggle-row"><input id="setSuggestAlternatives" type="checkbox"><span><strong>Sichere / machbare Alternative vorschlagen</strong><small>Nicht einfach ablehnen, wenn ein realistischer Ersatz möglich ist.</small></span></label>
