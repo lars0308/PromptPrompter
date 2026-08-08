@@ -37,7 +37,7 @@ const Cloud = {
 
     const { createClient } = await import(`https://esm.sh/@supabase/supabase-js@${SUPABASE_JS_VERSION}?bundle`);
     this.client = createClient(config.supabaseUrl, config.supabasePublishableKey, {
-      auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+      auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, storageKey: 'sitebrief-auth-session' }
     });
     this.configured = true;
 
@@ -260,3 +260,4 @@ window.SiteBriefCloudReady = Cloud.init().catch(error => {
   Cloud.emit('unavailable', { reason: error?.message || 'Supabase konnte nicht initialisiert werden.' });
   return { configured: false, error };
 });
+
