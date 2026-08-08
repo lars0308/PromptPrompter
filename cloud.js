@@ -6,6 +6,7 @@ const Cloud = {
   configured: false,
   systemProfiles: [],
   aiConnections: [],
+  subscription: { plan: 'free', status: 'active', isAdmin: false },
   listeners: new Set(),
 
   emit(event, payload = {}) {
@@ -131,14 +132,16 @@ const Cloud = {
 
   async loadUserBundle() {
     const userId = this.assertUser();
-    const [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes] = await Promise.all([
+    const [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes, subscriptionRes, adminRes] = await Promise.all([
       this.client.from('sitebrief_user_settings').select('data,active_profile_id').eq('user_id', userId).maybeSingle(),
       this.client.from('sitebrief_profiles').select('id,name,description,config,is_default,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
       this.client.from('sitebrief_templates').select('id,name,tag,summary,prompt,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
       this.client.from('sitebrief_modules').select('id,name,tag,summary,prompt,activation,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
       this.client.from('sitebrief_agent_skills').select('id,name,agent,trigger,prompt,source_file,activation,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
       this.client.from('sitebrief_projects').select('id,title,status,state,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }).limit(50),
-      this.client.from('sitebrief_ai_connections').select('provider,last4,updated_at').eq('user_id', userId).order('provider', { ascending: true })
+      this.client.from('sitebrief_ai_connections').select('provider,last4,updated_at').eq('user_id', userId).order('provider', { ascending: true }),
+      this.client.from('sitebrief_subscriptions').select('plan,status,current_period_end').eq('user_id', userId).maybeSingle(),
+      this.client.from('sitebrief_admins').select('user_id').eq('user_id', userId).maybeSingle()
     ]);
     for (const result of [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes]) {
       if (result.error) throw result.error;
@@ -151,7 +154,8 @@ const Cloud = {
       modules: modulesRes.data || [],
       skills: (skillsRes.data || []).map(x => ({ ...x, sourceFile: x.source_file || null })),
       projects: projectsRes.data || [],
-      aiConnections: connectionsRes.data || []
+      aiConnections: connectionsRes.data || [],
+      subscription: {...(subscriptionRes.data || {plan:'free',status:'active'}),isAdmin:Boolean(adminRes.data)}
     };
   },
 
