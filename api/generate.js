@@ -226,7 +226,7 @@ async function callGemini({key,model,prompt,images}){
     if(!match)continue;
     parts.push({text:`Reference image ${image.name}. Allowed aspects: ${(image.aspects||[]).join(", ")||"general mood"}. Likes: ${image.note||"-"}. Avoid: ${image.dislike||"-"}.`},{inlineData:{mimeType:match[1],data:match[2]}});
   }
-  const selected=safeModel(model,process.env.GEMINI_MODEL||"gemini-2.5-flash").replace(/^models\//,"");
+  const selected=safeModel(model,process.env.GEMINI_MODEL||"gemini-3.6-flash").replace(/^models\//,"");
   const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:"You are a senior web art director and website briefing analyst. Return only valid JSON and avoid generic AI website patterns."}]},contents:[{role:"user",parts}],generationConfig:{responseMimeType:"application/json"}})});
   const data=await response.json();
   if(!response.ok)throw Object.assign(new Error(data.error?.message||"Gemini request failed"),{status:response.status});
