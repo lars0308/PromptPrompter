@@ -154,6 +154,16 @@
         </div>
         <p class="engine-help" id="engineHelp"></p>
 
+        <div class="block-title spaced"><span>C</span><div><strong>Gewünschtes Ergebnis</strong><p>Bestimmt Framework, Übergabe und Bereitstellung im fertigen Master-Prompt.</p></div></div>
+        <div class="output-target-grid" id="outputTargetSelector">
+          <button type="button" data-output="next-vercel" class="active"><strong>Next.js + Vercel</strong><small>TypeScript, GitHub und produktionsreifes Deployment</small></button>
+          <button type="button" data-output="next-only"><strong>Next.js Projekt</strong><small>Vollständiger Quellcode, lokal startbar</small></button>
+          <button type="button" data-output="html"><strong>HTML / CSS / JS</strong><small>Statisch, leicht übertragbar, ohne Framework</small></button>
+          <button type="button" data-output="react"><strong>React + Vite</strong><small>Moderne Single-Page- oder Komponenten-App</small></button>
+          <button type="button" data-output="astro"><strong>Astro</strong><small>Content-orientiert und besonders schlank</small></button>
+          <button type="button" data-output="existing"><strong>Bestehendes Projekt</strong><small>Vorhandenen Stack prüfen und weiterführen</small></button>
+        </div>
+
         <div class="ai-review-card" id="aiReviewCard">
           <div><span>PROJEKTPRÜFUNG</span><strong id="aiReviewTitle">Noch nicht mit der Generator-KI geprüft</strong><p id="aiReviewText">Wenn eine externe KI aktiv ist, kann sie fehlende Angaben, Widersprüche und nicht umsetzbare Wünsche erkennen und gezielt nachfragen.</p><div class="task-progress" id="reviewProgress" hidden><div class="task-progress-label"><b id="reviewProgressPercent">0 %</b><small id="reviewProgressText">Analyse wird vorbereitet…</small></div><div class="task-progress-track"><i id="reviewProgressFill"></i></div></div></div>
           <button type="button" class="outline-btn mini" id="runAiReviewBtn">Jetzt prüfen</button>
