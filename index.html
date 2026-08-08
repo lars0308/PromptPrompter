@@ -177,6 +177,7 @@
         <div class="section-kicker">04 — MODULE & SKILLS</div>
         <h1>Deine Regeln für diesen Durchlauf.</h1>
         <p class="lead">Aktiviere nur das, was du brauchst. SiteBrief kann passende Einträge aus deiner Bibliothek vorschlagen.</p>
+        <div class="workflow-upgrade" data-upgrade-only><span>AB PRO</span><strong>Eigene Regeln gezielt einbinden</strong><p>Mit Modulen und Skills ergänzt du den finalen Code-Prompt um deine Arbeitsweise. Free nutzt weiterhin geprüfte Standards.</p><button type="button" class="outline-btn" data-upgrade-plans>Pro ansehen</button></div>
 
         <div class="selection-head">
           <div><span>PROMPT-VORLAGE</span><p>Optionaler Grundprompt aus deiner eigenen Bibliothek.</p></div>
@@ -279,6 +280,10 @@
           <div class="client-result-actions"><button type="button" class="outline-btn" id="downloadClientBriefBtn">Kundenbriefing</button><button type="button" class="outline-btn" id="downloadHandoverBtn">Übergabe-Dokument</button></div>
           <small id="clientResultHint"></small>
         </section>
+        <section class="export-result-card">
+          <div><span>EXPORT & VERÖFFENTLICHUNG</span><h2>Vom Ergebnis direkt zum Projekt</h2><p id="exportResultHint">Website-Paket und GitHub-Veröffentlichung sind in höheren Tarifen enthalten.</p></div>
+          <div class="client-result-actions"><button type="button" class="solid-btn" id="downloadWebsiteZipBtn">Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn">Auf GitHub veröffentlichen</button></div>
+        </section>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="7">← Zurück</button><button type="button" class="text-btn" id="startNewBtn">Neues Projekt</button></div>
       </section>
@@ -363,6 +368,7 @@
           <div class="settings-heading"><strong>Tarif & Funktionen</strong><p>Die Grundqualität bleibt gut. Pro und Ultimate schalten professionelle Werkzeuge und Kundenunterlagen frei.</p></div>
           <div class="plan-current"><span id="currentPlanBadge">FREE</span><div><strong id="currentPlanTitle">Kostenlos</strong><small id="currentPlanDescription">Geführter Ablauf mit festen Qualitätsstandards.</small></div><button type="button" class="solid-btn mini" id="showPlansBtn">Tarife ansehen</button></div>
         </section>
+        <div class="settings-upgrade-note" id="settingsUpgradeNote"></div>
         <section class="settings-section">
           <div class="settings-heading"><strong>KI-Verbindungen</strong><p>API-Key einmal eintragen, speichern und testen. Agent, Generator und Profile wählst du direkt im Projekt. Eigene Keys werden nur nach Login gespeichert und verschlüsselt in Supabase Vault abgelegt – nicht im Browser.</p></div>
           <div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein SiteBrief-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
@@ -527,9 +533,10 @@
       <header class="dialog-head"><div><span>TARIFE</span><h2>Mehr Werkzeuge, nicht künstlich schlechtere Ergebnisse</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="plans-grid">
         <article><span>FREE</span><h3>Solider Einstieg</h3><strong>0 €</strong><ul><li>Codex-Ziel</li><li>3 Gestaltungsrichtungen</li><li>Geführte Qualitätsstandards</li></ul><button type="button" class="outline-btn" disabled>Aktueller Einstieg</button></article>
-        <article class="recommended"><span>PRO</span><h3>Für Kundenprojekte</h3><strong>Demnächst</strong><ul><li>Claude oder Codex</li><li>4 Richtungen</li><li>Module und Skills</li><li>Kundenbriefing & Übergabe</li></ul><button type="button" class="solid-btn" disabled>Bald buchbar</button></article>
-        <article><span>ULTIMATE</span><h3>Volle Kontrolle</h3><strong>Demnächst</strong><ul><li>Alle Agenten und 5 Richtungen</li><li>Eigene KI-Verbindungen</li><li>Eigene Profile</li><li>Alle Prüf- und Profi-Einstellungen</li></ul><button type="button" class="outline-btn" disabled>Bald buchbar</button></article>
+        <article class="recommended"><span>PRO</span><h3>Für Kundenprojekte</h3><strong>Pro</strong><ul><li>Claude oder Codex</li><li>4 Richtungen</li><li>Module und Skills</li><li>Kundenunterlagen & ZIP-Export</li></ul><button type="button" class="solid-btn" id="startProCheckoutBtn">Pro wählen</button></article>
+        <article><span>ULTIMATE</span><h3>Volle Kontrolle</h3><strong>Ultimate</strong><ul><li>Alle Agenten und 5 Richtungen</li><li>Eigene KI-Verbindungen</li><li>Alle Profi-Einstellungen</li><li>Direkte GitHub-Veröffentlichung</li></ul><button type="button" class="outline-btn" id="startUltimateCheckoutBtn">Ultimate wählen</button></article>
       </div>
+      <div class="plans-footer"><button type="button" class="text-btn" id="manageSubscriptionBtn">Bestehendes Abo verwalten</button><small>Die Zahlung und Aboverwaltung erfolgt sicher über Stripe.</small></div>
     </form>
   </dialog>
 
