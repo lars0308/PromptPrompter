@@ -1,13 +1,16 @@
 -- SiteBrief V6.2: per-user AI connections stored in Supabase Vault
 create table if not exists public.sitebrief_ai_connections (
   user_id uuid not null references auth.users(id) on delete cascade,
-  provider text not null check (provider in ('gateway','openai')),
+  provider text not null check (provider in ('gateway','openai','gemini')),
   vault_secret_id uuid not null,
   last4 text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   primary key (user_id, provider)
 );
+
+alter table public.sitebrief_ai_connections drop constraint if exists sitebrief_ai_connections_provider_check;
+alter table public.sitebrief_ai_connections add constraint sitebrief_ai_connections_provider_check check (provider in ('gateway','openai','gemini'));
 
 alter table public.sitebrief_ai_connections enable row level security;
 revoke all on table public.sitebrief_ai_connections from anon;
@@ -34,7 +37,7 @@ declare
   v_last4 text;
 begin
   if v_user is null then raise exception 'Nicht angemeldet'; end if;
-  if p_provider not in ('gateway','openai') then raise exception 'Unbekannter KI-Anbieter'; end if;
+  if p_provider not in ('gateway','openai','gemini') then raise exception 'Unbekannter KI-Anbieter'; end if;
   if p_secret is null or length(trim(p_secret)) < 8 then raise exception 'API-Key ist zu kurz'; end if;
 
   select vault_secret_id into v_existing
@@ -74,7 +77,7 @@ declare
   v_secret text;
 begin
   if v_user is null then raise exception 'Nicht angemeldet'; end if;
-  if p_provider not in ('gateway','openai') then raise exception 'Unbekannter KI-Anbieter'; end if;
+  if p_provider not in ('gateway','openai','gemini') then raise exception 'Unbekannter KI-Anbieter'; end if;
 
   select vault_secret_id into v_secret_id
   from public.sitebrief_ai_connections
@@ -101,7 +104,7 @@ declare
   v_secret_id uuid;
 begin
   if v_user is null then raise exception 'Nicht angemeldet'; end if;
-  if p_provider not in ('gateway','openai') then raise exception 'Unbekannter KI-Anbieter'; end if;
+  if p_provider not in ('gateway','openai','gemini') then raise exception 'Unbekannter KI-Anbieter'; end if;
 
   select vault_secret_id into v_secret_id
   from public.sitebrief_ai_connections

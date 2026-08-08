@@ -218,12 +218,28 @@ async function callGateway({key,model,prompt,images,schema,name}){
   return cleanJsonText(typeof text==="string"?text:Array.isArray(text)?text.map(x=>x.text||"").join(""):"");
 }
 
+async function callGemini({key,model,prompt,images}){
+  if(!key) throw Object.assign(new Error("Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
+  const parts=[{text:prompt}];
+  for(const image of images.slice(0,3)){
+    const match=typeof image.dataUrl==="string"&&image.dataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,(.+)$/);
+    if(!match)continue;
+    parts.push({text:`Reference image ${image.name}. Allowed aspects: ${(image.aspects||[]).join(", ")||"general mood"}. Likes: ${image.note||"-"}. Avoid: ${image.dislike||"-"}.`},{inlineData:{mimeType:match[1],data:match[2]}});
+  }
+  const selected=safeModel(model,process.env.GEMINI_MODEL||"gemini-2.5-flash").replace(/^models\//,"");
+  const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:"You are a senior web art director and website briefing analyst. Return only valid JSON and avoid generic AI website patterns."}]},contents:[{role:"user",parts}],generationConfig:{responseMimeType:"application/json"}})});
+  const data=await response.json();
+  if(!response.ok)throw Object.assign(new Error(data.error?.message||"Gemini request failed"),{status:response.status});
+  const text=(data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||"").join("");
+  return cleanJsonText(text);
+}
+
 module.exports = async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
   try{
     const body=req.body||{};
     const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},modules=[],settings={},clarifications=[],projectReview={}}=body;
-    if(!["gateway","openai"].includes(engine)) return res.status(400).json({error:"Use the browser's local generator for local mode"});
+    if(!["gateway","openai","gemini"].includes(engine)) return res.status(400).json({error:"Use the browser's local generator for local mode"});
     let prompt,schema,name;
     if(action==="review"){
       const maxQuestions=Math.min(6,Math.max(2,Number(settings?.maxQuestions)||4));
@@ -239,8 +255,8 @@ module.exports = async function handler(req,res){
       schema=conceptsSchema(count);name="sitebrief_concepts";
     }
     const resolved = await resolveProviderKey(req,engine);
-    if(!resolved.key) throw Object.assign(new Error(engine==="openai"?"Kein OpenAI API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":"Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
-    const result=engine==="openai" ? await callOpenAI({key:resolved.key,model,prompt,images,schema,name}) : await callGateway({key:resolved.key,model,prompt,images,schema,name});
+    if(!resolved.key) throw Object.assign(new Error(engine==="openai"?"Kein OpenAI API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":engine==="gemini"?"Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":"Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
+    const result=engine==="openai" ? await callOpenAI({key:resolved.key,model,prompt,images,schema,name}) : engine==="gemini" ? await callGemini({key:resolved.key,model,prompt,images}) : await callGateway({key:resolved.key,model,prompt,images,schema,name});
     res.setHeader('X-SiteBrief-AI-Key-Source', resolved.source);
     return res.status(200).json(result);
   }catch(error){

@@ -4,6 +4,7 @@ const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_h5mVvlW32Hd-9OVLpIODdA_
 function envKey(provider){
   if(provider === 'gateway') return process.env.AI_GATEWAY_API_KEY || '';
   if(provider === 'openai') return process.env.OPENAI_API_KEY || '';
+  if(provider === 'gemini') return process.env.GEMINI_API_KEY || '';
   return '';
 }
 

@@ -65,7 +65,7 @@
     [
       "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
       "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences",
-      "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus",
+      "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
       "conceptCount","generateConceptsBtn","generationStatus","conceptGallery","toRefineBtn",
@@ -74,7 +74,7 @@
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
       "accountBtn","syncState","accountDialog","accountLoggedOut","accountLoggedIn","authEmail","authPassword","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
-      "settingsDialog","setActiveProfile","applyProfileBtn","setDefaultAgent","setDefaultEngine","setDefaultModel","setDefaultMode","setDefaultConceptCount","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","saveProfileBtn","manageProfilesBtn","defaultModuleSettings","defaultSkillSettings","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
+      "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
       "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
@@ -183,11 +183,13 @@
   function aiConnectionEls(provider){
     return provider==='gateway'
       ? {status:el.gatewayConnectionStatus,input:el.gatewayApiKey,connect:el.gatewayConnectBtn,test:el.gatewayTestBtn,disconnect:el.gatewayDisconnectBtn,message:el.gatewayConnectionMessage}
-      : {status:el.openaiConnectionStatus,input:el.openaiApiKey,connect:el.openaiConnectBtn,test:el.openaiTestBtn,disconnect:el.openaiDisconnectBtn,message:el.openaiConnectionMessage};
+      : provider==='openai'
+        ? {status:el.openaiConnectionStatus,input:el.openaiApiKey,connect:el.openaiConnectBtn,test:el.openaiTestBtn,disconnect:el.openaiDisconnectBtn,message:el.openaiConnectionMessage}
+        : {status:el.geminiConnectionStatus,input:el.geminiApiKey,connect:el.geminiConnectBtn,test:el.geminiTestBtn,disconnect:el.geminiDisconnectBtn,message:el.geminiConnectionMessage};
   }
 
   function renderAiConnections(){
-    for(const provider of ['gateway','openai']){
+    for(const provider of ['gateway','openai','gemini']){
       const ui=aiConnectionEls(provider); if(!ui.status) continue;
       const conn=aiConnection(provider), logged=cloudReady();
       ui.status.className='connection-status'+(conn?' connected':'');
@@ -211,7 +213,7 @@
       state.aiConnections=[...(window.SiteBriefCloud.aiConnections||[])];ui.input.value='';renderAiConnections();
       ui.message.textContent='Gespeichert. Verbindung wird geprüft…';ui.message.className='connection-message good';
       await testAiProviderConnection(provider,true);
-      if(provider==='gateway'){state.modelsLoaded=false;if(state.engine==='gateway')loadGatewayModels();}
+      state.modelsLoaded=false;if(state.engine===provider && provider!=='openai')loadProviderModels(provider);
     }catch(err){ui.message.textContent=err?.message||'Verbindung konnte nicht gespeichert werden.';ui.message.className='connection-message error';}
     finally{ui.connect.disabled=!cloudReady();}
   }
@@ -509,11 +511,11 @@
 
   function profileConfigFromCurrent(){
     return {
-      mode:state.settings.defaultMode||state.mode||"guided",
-      targetAgent:state.settings.defaultAgent||state.targetAgent||"codex",
-      engine:state.settings.defaultEngine||state.engine||"local",
-      model:state.settings.defaultModel||state.model||"",
-      conceptCount:Number(state.settings.defaultConceptCount)||5,
+      mode:state.mode||"guided",
+      targetAgent:state.targetAgent||"codex",
+      engine:state.engine||"local",
+      model:el.generatorModel?.value.trim()||state.model||"",
+      conceptCount:Number(el.conceptCount?.value)||5,
       selectedModuleIds:[...state.selectedModuleIds],
       selectedSkillIds:[...state.selectedSkillIds],
       settings:{...state.settings,checks:{...state.settings.checks}}
@@ -534,10 +536,21 @@
       state.profiles.forEach(x=>{const o=document.createElement("option");o.value=x.id;o.textContent=x.name;g.appendChild(o)});el.setActiveProfile.appendChild(g);
     }
     el.setActiveProfile.value=allProfiles().some(x=>x.id===current)?current:"";
-    renderProfileList();renderDefaultActivationSettings();
+    renderProfileList();renderProfileImpact();
+  }
+
+  function renderProfileImpact(){
+    if(!el.profileImpact)return;
+    const profile=allProfiles().find(x=>x.id===el.setActiveProfile?.value),c=profile?.config;
+    if(!c){el.profileImpact.innerHTML='<span class="empty">Wähle ein Profil, um den enthaltenen Projektaufbau zu sehen.</span>';return;}
+    const mods=(c.selectedModuleIds||[]).filter(id=>state.modules.some(x=>x.id===id)).length;
+    const skills=(c.selectedSkillIds||[]).filter(id=>state.skills.some(x=>x.id===id)).length;
+    const values=[AGENT_NAMES[c.targetAgent]||c.targetAgent||'Codex',c.engine==='gemini'?'Gemini direkt':c.engine==='openai'?'OpenAI direkt':c.engine==='gateway'?'AI Gateway':'Lokal',c.model||'Standardmodell',c.mode==='expert'?'Experte':c.mode==='auto'?'Auto':'Geführt',`${Number(c.conceptCount)||5} Vorschauen`,`${mods} Module`,`${skills} Skills`];
+    el.profileImpact.innerHTML=values.map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   }
 
   function renderDefaultActivationSettings(){
+    if(!el.defaultModuleSettings||!el.defaultSkillSettings)return;
     const options='<option value="always">Immer aktiv</option><option value="default">Standard</option><option value="manual">Manuell</option>';
     el.defaultModuleSettings.innerHTML="";
     if(!state.modules.length) el.defaultModuleSettings.innerHTML='<div class="default-rule-row"><div><strong>Noch keine Module</strong><small>Lege deine Module zuerst in den Bibliotheken an.</small></div></div>';
@@ -577,7 +590,9 @@
       if(el.conceptCount)el.conceptCount.value=String(state.settings.defaultConceptCount);if(el.generatorEngine)el.generatorEngine.value=state.engine;if(el.generatorModel)el.generatorModel.value=state.model;
     }
     if(persist){saveSettings();saveProfiles();}
-    populateSettingsDialog();renderLibrary();updateGuide();return true;
+    $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));
+    $$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));
+    updateEngineUi();renderModuleSelection();renderSkillSelection();renderProfileUi();updateGuide();saveState();return true;
   }
 
   function renderProfileList(){
@@ -608,8 +623,6 @@
 
   function populateSettingsDialog(){
     const s=state.settings;renderProfileUi();
-    el.setActiveProfile.value=allProfiles().some(x=>x.id===state.activeProfileId)?state.activeProfileId:"";
-    el.setDefaultAgent.value=s.defaultAgent||"codex";el.setDefaultEngine.value=s.defaultEngine||"local";el.setDefaultModel.value=s.defaultModel||"";el.setDefaultMode.value=s.defaultMode||"guided";el.setDefaultConceptCount.value=String(s.defaultConceptCount||5);
     el.setAiClarifications.checked=Boolean(s.aiClarifications);el.setMaxQuestions.value=String(s.maxQuestions||4);el.setCriticalBehavior.value=s.criticalBehavior||"block";
     el.setAskMissing.checked=Boolean(s.askMissing);el.setAskConflict.checked=Boolean(s.askConflict);el.setAskInfeasible.checked=Boolean(s.askInfeasible);el.setSuggestAlternatives.checked=Boolean(s.suggestAlternatives);
     el.setLegalRegion.value=s.legalRegion||"";el.setCheckPrivacy.checked=Boolean(s.checks?.privacy);el.setCheckImprint.checked=Boolean(s.checks?.imprint);el.setCheckLegal.checked=Boolean(s.checks?.legal);el.setCheckAccessibility.checked=Boolean(s.checks?.accessibility);el.setCheckSecurity.checked=Boolean(s.checks?.security);el.setCheckPerformance.checked=Boolean(s.checks?.performance);el.setCheckSeo.checked=Boolean(s.checks?.seo);
@@ -619,7 +632,7 @@
   function saveSettingsFromDialog(){
     state.settings={
       ...state.settings,
-      defaultAgent:el.setDefaultAgent.value,defaultEngine:el.setDefaultEngine.value,defaultModel:el.setDefaultModel.value.trim(),defaultMode:el.setDefaultMode.value,defaultConceptCount:Number(el.setDefaultConceptCount.value)||5,activeProfileId:state.activeProfileId||"",
+      activeProfileId:state.activeProfileId||"",
       aiClarifications:el.setAiClarifications.checked,maxQuestions:Number(el.setMaxQuestions.value)||4,criticalBehavior:el.setCriticalBehavior.value,
       askMissing:el.setAskMissing.checked,askConflict:el.setAskConflict.checked,askInfeasible:el.setAskInfeasible.checked,suggestAlternatives:el.setSuggestAlternatives.checked,
       legalRegion:el.setLegalRegion.value.trim()||"nicht festgelegt",checks:{privacy:el.setCheckPrivacy.checked,imprint:el.setCheckImprint.checked,legal:el.setCheckLegal.checked,accessibility:el.setCheckAccessibility.checked,security:el.setCheckSecurity.checked,performance:el.setCheckPerformance.checked,seo:el.setCheckSeo.checked},
@@ -799,17 +812,19 @@
     if(state.engine === "local"){
       el.generatorModel.disabled=true; el.engineHelp.textContent="Lokal: kostenlos, kein API-Key. Bilder werden als visuelle Referenz in der Vorschau genutzt, aber nicht semantisch von einem Modell analysiert."; el.engineStatus.textContent="Lokal bereit";
     }else if(state.engine === "gateway"){
-      el.generatorModel.disabled=false; if(el.generatorModel.value && !el.generatorModel.value.includes("/")) el.generatorModel.value=""; state.model=el.generatorModel.value; el.engineHelp.textContent="Vercel AI Gateway: Ein Key für OpenAI-, Claude-, Gemini- und weitere Modelle. Verbinde ihn unter Einstellungen → KI-Verbindungen."; el.engineStatus.textContent=aiConnection("gateway")?"Gateway verbunden":"Gateway gewählt"; loadGatewayModels();
-    }else{
+      el.generatorModel.disabled=false; if(el.generatorModel.value && !el.generatorModel.value.includes("/")) el.generatorModel.value=""; state.model=el.generatorModel.value; el.engineHelp.textContent="Vercel AI Gateway: Ein Key für OpenAI-, Claude-, Gemini- und weitere Modelle. Verbinde ihn unter Einstellungen → KI-Verbindungen."; el.engineStatus.textContent=aiConnection("gateway")?"Gateway verbunden":"Gateway gewählt"; loadProviderModels("gateway");
+    }else if(state.engine === "openai"){
       el.generatorModel.disabled=false; if(!el.generatorModel.value || el.generatorModel.value.includes("/")) el.generatorModel.value="gpt-5"; state.model=el.generatorModel.value; el.engineHelp.textContent="OpenAI direkt: eigenen API-Key unter Einstellungen → KI-Verbindungen hinterlegen. Alternativ kann ein serverweiter Key verwendet werden."; el.engineStatus.textContent=aiConnection("openai")?"OpenAI verbunden":"OpenAI gewählt";
+    }else{
+      el.generatorModel.disabled=false;if(!el.generatorModel.value||el.generatorModel.value.includes("/"))el.generatorModel.value="gemini-2.5-flash";state.model=el.generatorModel.value;el.engineHelp.textContent="Google Gemini direkt: API-Key unter Einstellungen → KI-Verbindungen hinterlegen. Text und Referenzbilder werden gemeinsam analysiert.";el.engineStatus.textContent=aiConnection("gemini")?"Gemini verbunden":"Gemini gewählt";loadProviderModels("gemini");
     }
     saveState(); renderAiReviewCard(); updateGuide();
   }
 
-  async function loadGatewayModels(){
+  async function loadProviderModels(provider="gateway"){
     if(state.modelsLoaded) return;
     try{
-      const res=await sitebriefApiFetch("/api/models",{cache:"no-store"}); if(!res.ok) return; const data=await res.json();
+      const res=await sitebriefApiFetch(`/api/models?provider=${encodeURIComponent(provider)}`,{cache:"no-store"}); if(!res.ok) return; const data=await res.json();
       el.modelOptions.innerHTML=""; (data.models||[]).forEach(id=>{const o=document.createElement("option");o.value=id;el.modelOptions.appendChild(o)}); if(!el.generatorModel.value && data.models?.length){ el.generatorModel.value=data.models[0]; state.model=data.models[0]; } state.modelsLoaded=true;
     }catch{}
   }
@@ -1255,7 +1270,7 @@
     el.uploadZone.addEventListener("click",e=>{if(!e.target.closest("button")||e.target.closest("button"))el.imageInput.click()});el.uploadZone.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();el.imageInput.click()}});el.imageInput.addEventListener("change",e=>addImages(e.target.files));
     ["dragenter","dragover"].forEach(evt=>el.uploadZone.addEventListener(evt,e=>{e.preventDefault();el.uploadZone.classList.add("drag")}));["dragleave","drop"].forEach(evt=>el.uploadZone.addEventListener(evt,e=>{e.preventDefault();el.uploadZone.classList.remove("drag")}));el.uploadZone.addEventListener("drop",e=>addImages(e.dataTransfer.files));
     $$('#agentSelector button').forEach(b=>b.addEventListener("click",()=>{state.targetAgent=b.dataset.agent;$$('#agentSelector button').forEach(x=>x.classList.toggle('active',x===b));state.selectedSkillIds=state.selectedSkillIds.filter(id=>visibleSkills().some(s=>s.id===id));applyAlwaysActiveItems(false);renderSkillSelection();saveState();updateGuide()}));
-    el.generatorEngine.addEventListener("change",updateEngineUi);el.generatorModel.addEventListener("input",()=>{state.model=el.generatorModel.value.trim();saveState();renderAiReviewCard()});
+    el.generatorEngine.addEventListener("change",()=>{state.modelsLoaded=false;updateEngineUi()});el.generatorModel.addEventListener("input",()=>{state.model=el.generatorModel.value.trim();saveState();renderAiReviewCard()});
     el.templateSelect.addEventListener("change",()=>{state.templateId=el.templateSelect.value;saveState();updateGuide()});el.recommendModulesBtn.addEventListener("click",()=>recommendModules(true));
     el.importSkillFileBtn.addEventListener("click",()=>el.skillFileInput.click());el.skillFileInput.addEventListener("change",e=>{importSkillFiles(e.target.files);e.target.value=""});
     [el.originality,el.antiSlop,el.motion,el.density].forEach(r=>r.addEventListener("input",()=>{r.nextElementSibling.value=r.value;saveState();updateGuide()}));
@@ -1268,8 +1283,9 @@
     el.openSettingsBtn.addEventListener("click",()=>{populateSettingsDialog();el.settingsDialog.showModal()});el.saveSettingsBtn.addEventListener("click",saveSettingsFromDialog);
     el.gatewayConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gateway"));el.gatewayTestBtn?.addEventListener("click",()=>testAiProviderConnection("gateway"));el.gatewayDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gateway"));
     el.openaiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("openai"));el.openaiTestBtn?.addEventListener("click",()=>testAiProviderConnection("openai"));el.openaiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("openai"));
+    el.geminiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gemini"));el.geminiTestBtn?.addEventListener("click",()=>testAiProviderConnection("gemini"));el.geminiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gemini"));
     el.settingsLoginBtn?.addEventListener("click",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});
-    el.setActiveProfile.addEventListener("change",()=>{});el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
+    el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
     el.saveProfileBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.manageProfilesBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.createProfileBtn.addEventListener("click",createProfileFromDialog);
     el.accountBtn.addEventListener("click",()=>{updateAccountUi();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",signIn);el.signUpBtn.addEventListener("click",signUp);el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);
     el.runAiReviewBtn.addEventListener("click",()=>{if(state.engine!=="local"&&!state.settings.aiClarifications){populateSettingsDialog();el.settingsDialog.showModal();return;}runProjectReview(true)});
