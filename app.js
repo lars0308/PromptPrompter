@@ -74,7 +74,7 @@
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
-      "previewFormat","conceptCount","generateConceptsBtn","generationStatus","conceptGallery","toRefineBtn",
+      "previewFormat","conceptCount","generateConceptsBtn","generationStatus","conceptGallery","toRefineBtn","previewLightbox","previewLightboxTitle","previewLightboxClose","previewLightboxMedia","previewLightboxDownload","previewLightboxSelect",
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
       "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadBriefBtn",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
@@ -1111,13 +1111,25 @@
     return screen;
   }
 
+  let lightboxConceptId="";
+  function selectConcept(id){state.selectedConceptId=id;renderConcepts();renderSelectedPreview();saveState();updateGuide()}
+  function downloadConceptImage(c){
+    if(!c?.previewImage)return;
+    const link=document.createElement("a");link.href=c.previewImage;link.download=`${String(project().name||"website").replace(/[^a-z0-9äöüß]+/gi,"-").replace(/^-|-$/g,"").toLowerCase()||"website"}-${String(c.name||"richtung").replace(/[^a-z0-9äöüß]+/gi,"-").replace(/^-|-$/g,"").toLowerCase()}.jpg`;document.body.appendChild(link);link.click();link.remove();
+  }
+  function openPreviewLightbox(c){
+    lightboxConceptId=c.id;el.previewLightboxTitle.textContent=c.name;el.previewLightboxMedia.innerHTML="";el.previewLightboxMedia.appendChild(createConceptScreen(c));el.previewLightboxDownload.hidden=!c.previewImage;el.previewLightboxSelect.textContent=state.selectedConceptId===c.id?"Richtung ist ausgewählt":"Diese Richtung wählen";el.previewLightboxSelect.disabled=state.selectedConceptId===c.id;el.previewLightbox.showModal();
+  }
+  function closePreviewLightbox(){if(el.previewLightbox?.open)el.previewLightbox.close()}
+
   function renderConcepts(){
     el.conceptGallery.innerHTML="";
     state.concepts.forEach((c,i)=>{
-      const button=document.createElement("button");button.type="button";button.className=`concept-option ${state.selectedConceptId===c.id?"active":""}`;
-      const head=document.createElement("div");head.className="concept-option-head";head.innerHTML=`<span>RICHTUNG ${String.fromCharCode(65+i)}</span><b>${escapeHtml(c.layoutVariant.toUpperCase())}</b>`;button.appendChild(head);button.appendChild(createConceptScreen(c));
-      const cap=document.createElement("div");cap.className="concept-caption";cap.innerHTML=`<h3>${escapeHtml(c.name)}</h3><p>${escapeHtml(c.mood)}</p><div class="concept-details"><span>${escapeHtml(c.type)}</span><span>${escapeHtml(c.hero)}</span></div>`;button.appendChild(cap);
-      button.addEventListener("click",()=>{state.selectedConceptId=c.id;renderConcepts();renderSelectedPreview();saveState();updateGuide()});el.conceptGallery.appendChild(button);
+      const card=document.createElement("article");card.className=`concept-option ${state.selectedConceptId===c.id?"active":""}`;card.setAttribute("aria-label",`Richtung ${String.fromCharCode(65+i)}: ${c.name}`);
+      const head=document.createElement("div");head.className="concept-option-head";head.innerHTML=`<span>RICHTUNG ${String.fromCharCode(65+i)}</span><b>${state.selectedConceptId===c.id?"AUSGEWÄHLT":escapeHtml(c.layoutVariant.toUpperCase())}</b>`;card.appendChild(head);
+      const media=document.createElement("button");media.type="button";media.className="concept-preview-trigger";media.setAttribute("aria-label",`${c.name} groß ansehen`);media.appendChild(createConceptScreen(c));media.insertAdjacentHTML("beforeend",'<span class="preview-zoom-hint">↗ Groß ansehen</span>');media.addEventListener("click",()=>openPreviewLightbox(c));card.appendChild(media);
+      const cap=document.createElement("div");cap.className="concept-caption";cap.innerHTML=`<h3>${escapeHtml(c.name)}</h3><p>${escapeHtml(c.mood)}</p><div class="concept-details"><span>${escapeHtml(c.type)}</span><span>${escapeHtml(c.hero)}</span></div>`;card.appendChild(cap);
+      const actions=document.createElement("div");actions.className="concept-card-actions";actions.innerHTML=`<button type="button" class="outline-btn concept-view-btn">Groß ansehen</button><button type="button" class="solid-btn concept-select-btn" ${state.selectedConceptId===c.id?"disabled":""}>${state.selectedConceptId===c.id?"Ausgewählt ✓":"Diese Richtung wählen"}</button>`;actions.querySelector(".concept-view-btn").addEventListener("click",()=>openPreviewLightbox(c));actions.querySelector(".concept-select-btn").addEventListener("click",()=>selectConcept(c.id));card.appendChild(actions);el.conceptGallery.appendChild(card);
     });
   }
 
@@ -1397,6 +1409,7 @@
     el.openaiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("openai"));el.openaiTestBtn?.addEventListener("click",()=>testAiProviderConnection("openai"));el.openaiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("openai"));
     el.geminiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gemini"));el.geminiTestBtn?.addEventListener("click",()=>testAiProviderConnection("gemini"));el.geminiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gemini"));
     el.cloudflareConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("cloudflare"));el.cloudflareTestBtn?.addEventListener("click",()=>testAiProviderConnection("cloudflare"));el.cloudflareDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("cloudflare"));
+    el.previewLightboxClose?.addEventListener("click",closePreviewLightbox);el.previewLightbox?.addEventListener("click",e=>{if(e.target===el.previewLightbox)closePreviewLightbox()});el.previewLightboxDownload?.addEventListener("click",()=>downloadConceptImage(state.concepts.find(c=>c.id===lightboxConceptId)));el.previewLightboxSelect?.addEventListener("click",()=>{selectConcept(lightboxConceptId);closePreviewLightbox()});
     el.settingsLoginBtn?.addEventListener("click",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});
     el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
     el.saveProfileBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.manageProfilesBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.createProfileBtn.addEventListener("click",createProfileFromDialog);
