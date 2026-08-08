@@ -221,8 +221,9 @@
       <section class="step-panel preview-step" data-step-panel="6" id="stepPreviews">
         <div class="section-kicker">06 — VORSCHAUEN</div>
         <div class="preview-step-head">
-          <div><h1>3–5 echte Richtungen.</h1><p class="lead">Nicht dieselbe Seite in fünf Farben. Jede Richtung bekommt eine andere Komposition.</p></div>
+          <div><h1>3–5 echte Richtungen.</h1><p class="lead">Echte HTML/CSS-Seiten statt KI-Bilder: direkt vergleichbar, responsiv und näher am späteren Ergebnis.</p></div>
           <div class="preview-generation-controls">
+            <label class="compact-field"><span>Vorschau</span><select id="previewFormat"><option value="html" selected>HTML-Seiten · kostenlos</option><option value="image">KI-Bilder · Gemini</option></select></label>
             <label class="compact-field"><span>Anzahl</span><select id="conceptCount"><option>3</option><option>4</option><option selected>5</option></select></label>
             <button type="button" class="solid-btn" id="generateConceptsBtn">Vorschauen erzeugen</button>
           </div>
@@ -436,6 +437,7 @@
           <div class="guest-limit-box" id="guestLimitBox"><strong id="guestLimitTitle">Ohne Anmeldung testen</strong><p id="guestLimitNote">Du kannst SiteBrief als Gast dreimal vollständig verwenden.</p></div>
           <label class="field"><span>E-Mail</span><input id="authEmail" type="email" autocomplete="email" placeholder="name@beispiel.de" /></label>
           <label class="field"><span>Passwort</span><input id="authPassword" type="password" autocomplete="current-password" minlength="8" /></label>
+          <label class="remember-login"><input id="rememberEmail" type="checkbox" checked /><span>E-Mail auf diesem Gerät merken</span></label>
           <div class="inline-actions"><button type="button" class="solid-btn" id="signInBtn">Anmelden</button><button type="button" class="outline-btn" id="signUpBtn">Konto anlegen</button><button type="button" class="text-btn" id="guestContinueBtn">Ohne Anmeldung fortfahren</button></div>
           <p id="authMessage" class="auth-message"></p>
         </div>
