@@ -17,6 +17,11 @@
   const THEME_KEY = "sitebrief-theme";
   const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
   const GUEST_RUN_LIMIT = 3;
+  const PLAN_RULES = {
+    free:{label:"Free",concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,advanced:false},
+    pro:{label:"Pro",concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,advanced:false},
+    ultimate:{label:"Ultimate",concepts:5,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,advanced:true}
+  };
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
     legalRegion:"Deutschland / EU",checks:{privacy:true,imprint:true,legal:true,accessibility:true,security:true,performance:true,seo:false},
@@ -62,6 +67,8 @@
     currentProjectId: uid("project"),
     cloudProjects: [],
     aiConnections: [],
+    plan: "free",
+    isAdmin: false,
     cloud: {configured:false,user:null,syncing:false,lastSynced:null,error:""},
     editing: {template:"",module:"",skill:""}
   };
@@ -76,7 +83,7 @@
       "blueprintSummary","originality","antiSlop","motion","density",
       "previewFormat","conceptCount","generateConceptsBtn","generationStatus","conceptGallery","toRefineBtn","previewLightbox","previewLightboxTitle","previewLightboxClose","previewLightboxMedia","previewLightboxDownload","previewLightboxSelect",
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
-      "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadBriefBtn",
+      "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadBriefBtn","downloadClientBriefBtn","downloadHandoverBtn","clientResultHint",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
       "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
@@ -85,7 +92,7 @@
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
-      "resetBtn","startNewBtn","brandHome"
+      "resetBtn","startNewBtn","brandHome","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog"
     ].forEach(id => el[id] = document.getElementById(id));
   }
 
@@ -110,9 +117,9 @@
   }
 
   function selectedTemplate(){ return cloudReady()?(state.templates.find(x => x.id === state.templateId) || null):null; }
-  function selectedModules(){ return cloudReady()?state.modules.filter(x => state.selectedModuleIds.includes(x.id)):[]; }
+  function selectedModules(){ return cloudReady()&&planRules().modules?state.modules.filter(x => state.selectedModuleIds.includes(x.id)):[]; }
   function visibleSkills(){ return state.skills.filter(x => x.agent === "all" || x.agent === state.targetAgent); }
-  function selectedSkills(){ return cloudReady()?visibleSkills().filter(x => state.selectedSkillIds.includes(x.id)):[]; }
+  function selectedSkills(){ return cloudReady()&&planRules().modules?visibleSkills().filter(x => state.selectedSkillIds.includes(x.id)):[]; }
   function selectedConcept(){ return state.concepts.find(x => x.id === state.selectedConceptId) || null; }
 
   function loadLibrary(){
@@ -271,12 +278,30 @@
     el.syncState.className=`sync-state ${kind}`.trim();
   }
 
+  function planRules(){return PLAN_RULES[state.isAdmin?"ultimate":state.plan]||PLAN_RULES.free}
+  function applyPlanUi(){
+    const rules=planRules(),name=state.isAdmin?"Admin · Ultimate":rules.label;
+    if(!rules.agents.includes(state.targetAgent))state.targetAgent=rules.agents[0];
+    $$('#agentSelector button').forEach(button=>{const allowed=rules.agents.includes(button.dataset.agent);button.disabled=!allowed;button.title=allowed?"":`${button.textContent.trim()} ist in einem höheren Tarif verfügbar`;button.classList.toggle("active",button.dataset.agent===state.targetAgent)});
+    if(el.conceptCount){el.conceptCount.max=String(rules.concepts);if(Number(el.conceptCount.value)>rules.concepts)el.conceptCount.value=String(rules.concepts)}
+    if(el.currentPlanBadge)el.currentPlanBadge.textContent=name.toUpperCase();
+    if(el.currentPlanTitle)el.currentPlanTitle.textContent=state.isAdmin?"Vollzugriff":`${rules.label}-Tarif`;
+    if(el.currentPlanDescription)el.currentPlanDescription.textContent=rules===PLAN_RULES.free?"Gute Ergebnisse mit geführten Standards und drei Richtungen.":rules===PLAN_RULES.pro?"Claude/Codex, Module, Skills, vier Richtungen und Kundenunterlagen.":"Alle Agenten, Modelle, Profile, Einstellungen und fünf Richtungen.";
+    if(el.clientResultHint)el.clientResultHint.textContent=rules.clientDocs?"Kundenunterlagen sind freigeschaltet.":"Kundenunterlagen sind ab Pro verfügbar.";
+    [el.downloadClientBriefBtn,el.downloadHandoverBtn].forEach(button=>{if(button)button.classList.toggle("locked",!rules.clientDocs)});
+    const advancedSection=el.gatewayApiKey?.closest(".settings-section");
+    if(advancedSection){advancedSection.classList.toggle("plan-locked",!rules.advanced);advancedSection.dataset.lockLabel="Eigene KI-Verbindungen sind in Ultimate verfügbar."}
+    const qualitySection=el.setAiClarifications?.closest(".settings-section");
+    if(qualitySection){qualitySection.classList.toggle("plan-locked",state.plan==="free"&&!state.isAdmin);qualitySection.dataset.lockLabel="Erweiterte Prüfregeln sind ab Pro verfügbar."}
+    renderProfileUi();renderModuleSelection();renderSkillSelection();
+  }
+
   function updateAccountUi(){
     if(!el.accountBtn) return;
     if(!state.cloud.configured){ el.accountBtn.textContent="Cloud nicht verbunden"; setSyncState("Lokal"); return; }
     if(state.cloud.user){
       if(el.openLibraryBtn){el.openLibraryBtn.disabled=false;el.openLibraryBtn.title=""}if(el.generatorEngine)el.generatorEngine.disabled=false;
-      el.accountBtn.textContent="Konto";
+      el.accountBtn.textContent=state.isAdmin?"Admin · Ultimate":planRules().label;
       el.accountLoggedOut.hidden=true;el.accountLoggedIn.hidden=false;
       el.accountEmail.textContent=state.cloud.user.email||"Angemeldet";el.accountUserId.textContent=state.cloud.user.id||"";
       const counts={profiles:state.profiles.length,modules:state.modules.length,skills:state.skills.length,projects:state.cloudProjects.length};
@@ -333,6 +358,9 @@
     try{
       state.cloud.syncing=true;setSyncState("Lädt…","syncing");
       const bundle=await window.SiteBriefCloud.loadUserBundle();
+      const subscription=bundle.subscription||{};
+      state.isAdmin=Boolean(subscription.isAdmin);
+      state.plan=state.isAdmin?"ultimate":(["active","trialing"].includes(subscription.status)&&["pro","ultimate"].includes(subscription.plan)?subscription.plan:"free");
       if(bundle.settings){
         state.settings={...DEFAULT_SETTINGS,...bundle.settings,checks:{...DEFAULT_SETTINGS.checks,...(bundle.settings.checks||{})}};
       }
@@ -352,7 +380,7 @@
       }
       saveLibrary();saveProfiles();try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(state.settings));}catch{}
       state.cloud.syncing=false;state.cloud.error="";state.cloud.lastSynced=new Date();setSyncState("Cloud","synced");
-      renderLibrary();renderProfileUi();populateSettingsDialog();renderAiConnections();updateAccountUi();updateGuide();
+      renderLibrary();renderProfileUi();populateSettingsDialog();renderAiConnections();applyPlanUi();updateAccountUi();updateGuide();
     }catch(err){state.cloud.syncing=false;state.cloud.error=err?.message||"Cloud konnte nicht geladen werden";setSyncState("Sync-Fehler","error");updateAccountUi();throw err;}
   }
 
@@ -564,11 +592,13 @@
       const g=document.createElement("optgroup");g.label="Systemprofile";
       systems.forEach(x=>{const o=document.createElement("option");o.value=x.id;o.textContent=x.name;g.appendChild(o)});el.setActiveProfile.appendChild(g);
     }
-    if(state.profiles.length){
+    if(planRules().customProfiles&&state.profiles.length){
       const g=document.createElement("optgroup");g.label="Eigene Profile";
       state.profiles.forEach(x=>{const o=document.createElement("option");o.value=x.id;o.textContent=x.name;g.appendChild(o)});el.setActiveProfile.appendChild(g);
     }
     el.setActiveProfile.value=allProfiles().some(x=>x.id===current)?current:"";
+    if(el.saveProfileBtn)el.saveProfileBtn.disabled=!planRules().customProfiles;
+    if(el.manageProfilesBtn)el.manageProfilesBtn.disabled=!planRules().customProfiles;
     renderProfileList();renderProfileImpact();
   }
 
@@ -651,6 +681,7 @@
   }
 
   async function createProfileFromDialog(){
+    if(!planRules().customProfiles){el.plansDialog?.showModal();return;}
     const name=el.newProfileName.value.trim();if(!name)return;const item={id:uid("profile"),name,description:el.newProfileDescription.value.trim(),config:profileConfigFromCurrent(),isDefault:false};state.profiles.unshift(item);state.activeProfileId=item.id;saveProfiles();renderProfileUi();el.newProfileName.value="";el.newProfileDescription.value="";if(cloudReady())try{await window.SiteBriefCloud.saveProfile(item);await syncSettings()}catch{};
   }
 
@@ -907,6 +938,7 @@
   }
 
   function recommendModules(apply=false){
+    if(!planRules().modules){el.plansDialog?.showModal();return []}
     const scored=state.modules.map(m=>({id:m.id,score:moduleScore(m)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,4);
     state.recommendedModuleIds=scored.map(x=>x.id);
     if(apply) state.selectedModuleIds=[...new Set([...state.selectedModuleIds,...state.recommendedModuleIds])];
@@ -916,6 +948,7 @@
 
   function renderModuleSelection(){
     el.moduleSelection.innerHTML="";
+    if(!planRules().modules){el.moduleSelection.innerHTML='<div class="feature-lock-note"><strong>Module ab Pro</strong><p>Free nutzt feste, geprüfte Qualitätsstandards. Eigene Code- und Promptbausteine sind ab Pro verfügbar.</p></div>';return;}
     state.modules.forEach(m=>{
       const row=document.createElement("label");row.className="selection-row";const recommended=state.recommendedModuleIds.includes(m.id);
       const always=m.activation==="always";row.innerHTML=`<input type="checkbox" ${state.selectedModuleIds.includes(m.id)||always?"checked":""} ${always?"disabled":""}><div><strong>${escapeHtml(m.name)}</strong>${always?'<span class="recommended-mark"> · IMMER</span>':recommended?'<span class="recommended-mark"> · EMPFOHLEN</span>':""}<p>${escapeHtml(m.summary||"Eigener Prompt-Baustein")}</p></div><code>${escapeHtml(m.tag||"MODUL")}</code>`;
@@ -926,6 +959,7 @@
 
   function renderSkillSelection(){
     el.skillSelection.innerHTML=""; const skills=visibleSkills();
+    if(!planRules().modules){el.skillContextLabel.textContent="Agent-Skills sind ab Pro verfügbar.";el.skillSelection.innerHTML='<div class="feature-lock-note"><strong>Skills ab Pro</strong><p>Binde eigene Claude- oder Codex-Anweisungen gezielt in das Endergebnis ein.</p></div>';updateGuideContext();return;}
     el.skillContextLabel.textContent=`Skills für ${AGENT_NAMES[state.targetAgent]} plus globale Skills.`;
     skills.forEach(s=>{
       const row=document.createElement("label");row.className="selection-row";
@@ -1067,7 +1101,7 @@
       const ready=await runProjectReview(false);
       if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}
     }
-    const count=clamp(el.conceptCount.value,3,5); el.generateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";startTaskProgress("preview",cloudReady()?Math.max(24,count*12):4);
+    const count=clamp(el.conceptCount.value,3,planRules().concepts); el.generateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";startTaskProgress("preview",cloudReady()?Math.max(24,count*12):4);
     let concepts=[];
     try{
       if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
@@ -1379,6 +1413,20 @@
     el.importLibraryInput.value="";
   }
 
+  function buildClientDocument(kind="brief"){
+    const b=buildBlueprint(),concept=b.selectedConcept,p=b.project;
+    const title=kind==="handover"?"Projektübergabe":"Projektbriefing";
+    const rows=[`# ${title}: ${p.name||"Website-Projekt"}`,"",`**Ziel:** ${p.goal}`,`**Zielgruppe:** ${p.audience||"Im Projektgespräch festzulegen"}`,`**Ausgabe:** ${b.output.label}`,"",b.understanding.summary,"","## Inhaltliche Prioritäten",...b.understanding.priorities.map(x=>`- ${x}`),"","## Gewählte Gestaltungsrichtung",concept?`**${concept.name}** — ${concept.mood}`:"Noch keine Richtung ausgewählt.","",`Umsetzung mit ${b.targetAgent.name}. Aktive Module: ${b.modules.map(x=>x.name).join(", ")||"keine"}. Aktive Skills: ${b.skills.map(x=>x.name).join(", ")||"keine"}.`];
+    if(kind==="handover")rows.push("","## Abnahme & Übergabe",`- Zielsystem: ${b.output.label}`,`- Qualitätsprüfungen: ${activeCheckNames().join(", ")||"keine aktiviert"}`,"- Inhalte, Rechtstexte, Tracking-Einwilligungen und Zugangsdaten vor Veröffentlichung kundenseitig bestätigen.","- Responsive Darstellung, Formulare, Links, Metadaten und Performance vor Livegang testen.");
+    else rows.push("","## Nächster Schritt","Diese Richtung wird auf Basis der bestätigten Inhalte umgesetzt. Offene Inhalte und Freigaben werden vor dem Livegang gemeinsam abgeschlossen.");
+    return rows.join("\n");
+  }
+
+  function downloadClientDocument(kind){
+    if(!planRules().clientDocs){el.plansDialog?.showModal();return;}
+    downloadText(`sitebrief-${kind==="handover"?"uebergabe":"kundenbriefing"}.md`,buildClientDocument(kind),"text/markdown");
+  }
+
   function downloadText(filename,text,type="text/plain") { const blob=new Blob([text],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500); }
 
   function resetProject(){
@@ -1403,6 +1451,7 @@
     $$('.next-btn').forEach(b=>b.addEventListener("click",async()=>{const next=Number(b.dataset.next);if(state.currentStep===1&&!state.understanding){const ok=await analyzeProject();if(!ok)return;}if(state.currentStep===3&&next===4&&state.engine!=="local"&&state.settings.aiClarifications){const ok=await runProjectReview(false);if(!ok)return;}goStep(next)}));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
     el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1300)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`sitebrief-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadBriefBtn.addEventListener("click",()=>downloadText("sitebrief-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
+    el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
     el.openLibraryBtn.addEventListener("click",()=>openLibrary("templates"));$$('[data-open-library]').forEach(b=>b.addEventListener("click",()=>openLibrary(b.dataset.openLibrary)));$$('[data-library-tab]').forEach(b=>b.addEventListener("click",()=>switchLibraryTab(b.dataset.libraryTab)));
     el.openSettingsBtn.addEventListener("click",()=>{populateSettingsDialog();el.settingsDialog.showModal()});el.saveSettingsBtn.addEventListener("click",saveSettingsFromDialog);
     el.gatewayConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gateway"));el.gatewayTestBtn?.addEventListener("click",()=>testAiProviderConnection("gateway"));el.gatewayDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gateway"));
@@ -1439,7 +1488,7 @@
     $$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));
     $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));
     if(state.concepts.length){renderConcepts();renderSelectedPreview();el.generationStatus.textContent=`${state.concepts.length} gespeicherte Richtungen geladen.`}
-    bindEvents();renderAiConnections();renderAiReviewCard();goStep(state.currentStep,true);updateGuide();updateAccountUi();
+    bindEvents();renderAiConnections();renderAiReviewCard();applyPlanUi();goStep(state.currentStep,true);updateGuide();updateAccountUi();
     initCloudIntegration();
     setInterval(saveState,2500);
   }
