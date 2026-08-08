@@ -816,7 +816,7 @@
     }else if(state.engine === "openai"){
       el.generatorModel.disabled=false; if(!el.generatorModel.value || el.generatorModel.value.includes("/")) el.generatorModel.value="gpt-5"; state.model=el.generatorModel.value; el.engineHelp.textContent="OpenAI direkt: eigenen API-Key unter Einstellungen → KI-Verbindungen hinterlegen. Alternativ kann ein serverweiter Key verwendet werden."; el.engineStatus.textContent=aiConnection("openai")?"OpenAI verbunden":"OpenAI gewählt";
     }else{
-      el.generatorModel.disabled=false;if(!el.generatorModel.value||el.generatorModel.value.includes("/")||/^gemini-2\\.5(?:-|$)/.test(el.generatorModel.value))el.generatorModel.value="gemini-3.6-flash";state.model=el.generatorModel.value;el.engineHelp.textContent="Google Gemini direkt: Gemini 3.6 Flash ist für neue Zugänge empfohlen. Text und Referenzbilder werden gemeinsam analysiert.";el.engineStatus.textContent=aiConnection("gemini")?"Gemini verbunden":"Gemini gewählt";loadProviderModels("gemini");
+      el.generatorModel.disabled=false;if(!el.generatorModel.value||el.generatorModel.value.includes("/")||/^gemini-2\.5(?:-|$)/.test(el.generatorModel.value))el.generatorModel.value="gemini-3.6-flash";state.model=el.generatorModel.value;el.engineHelp.textContent="Google Gemini direkt: Gemini 3.6 Flash ist für neue Zugänge empfohlen. Text und Referenzbilder werden gemeinsam analysiert.";el.engineStatus.textContent=aiConnection("gemini")?"Gemini verbunden":"Gemini gewählt";loadProviderModels("gemini");
     }
     saveState(); renderAiReviewCard(); updateGuide();
   }
@@ -825,7 +825,8 @@
     if(state.modelsLoaded) return;
     try{
       const res=await sitebriefApiFetch(`/api/models?provider=${encodeURIComponent(provider)}`,{cache:"no-store"}); if(!res.ok) return; const data=await res.json();
-      const models=provider==="gemini"?[...new Set(["gemini-3.6-flash",...(data.models||[])])]:(data.models||[]);\n      el.modelOptions.innerHTML="";models.forEach(id=>{const o=document.createElement("option");o.value=id;el.modelOptions.appendChild(o)});if(!el.generatorModel.value&&models.length){el.generatorModel.value=models[0];state.model=models[0]}state.modelsLoaded=true;
+      const models=provider==="gemini"?[...new Set(["gemini-3.6-flash",...(data.models||[])])]:(data.models||[]);
+      el.modelOptions.innerHTML="";models.forEach(id=>{const o=document.createElement("option");o.value=id;el.modelOptions.appendChild(o)});if(!el.generatorModel.value&&models.length){el.generatorModel.value=models[0];state.model=models[0]}state.modelsLoaded=true;
     }catch{}
   }
 
