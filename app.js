@@ -80,7 +80,7 @@
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
       "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
-      "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
+      "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","cloudflareConnectionStatus","cloudflareAccountId","cloudflareApiToken","cloudflareConnectBtn","cloudflareTestBtn","cloudflareDisconnectBtn","cloudflareConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
       "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
@@ -211,16 +211,18 @@
       ? {status:el.gatewayConnectionStatus,input:el.gatewayApiKey,connect:el.gatewayConnectBtn,test:el.gatewayTestBtn,disconnect:el.gatewayDisconnectBtn,message:el.gatewayConnectionMessage}
       : provider==='openai'
         ? {status:el.openaiConnectionStatus,input:el.openaiApiKey,connect:el.openaiConnectBtn,test:el.openaiTestBtn,disconnect:el.openaiDisconnectBtn,message:el.openaiConnectionMessage}
-        : {status:el.geminiConnectionStatus,input:el.geminiApiKey,connect:el.geminiConnectBtn,test:el.geminiTestBtn,disconnect:el.geminiDisconnectBtn,message:el.geminiConnectionMessage};
+        : provider==='gemini'
+          ? {status:el.geminiConnectionStatus,input:el.geminiApiKey,connect:el.geminiConnectBtn,test:el.geminiTestBtn,disconnect:el.geminiDisconnectBtn,message:el.geminiConnectionMessage}
+          : {status:el.cloudflareConnectionStatus,input:el.cloudflareApiToken,account:el.cloudflareAccountId,connect:el.cloudflareConnectBtn,test:el.cloudflareTestBtn,disconnect:el.cloudflareDisconnectBtn,message:el.cloudflareConnectionMessage};
   }
 
   function renderAiConnections(){
-    for(const provider of ['gateway','openai','gemini']){
+    for(const provider of ['gateway','openai','gemini','cloudflare']){
       const ui=aiConnectionEls(provider); if(!ui.status) continue;
       const conn=aiConnection(provider), logged=cloudReady();
       ui.status.className='connection-status'+(conn?' connected':'');
       ui.status.textContent=conn?`Verbunden · ••••${conn.last4||''}`:(logged?'Nicht verbunden':'Login erforderlich');
-      ui.input.disabled=!logged;ui.connect.disabled=!logged;ui.disconnect.hidden=!conn;ui.test.disabled=false;
+      ui.input.disabled=!logged;if(ui.account)ui.account.disabled=!logged;ui.connect.disabled=!logged;ui.disconnect.hidden=!conn;ui.test.disabled=false;
       if(!logged && !conn) ui.message.textContent='Zum Speichern eines eigenen API-Keys zuerst anmelden.';
       else if(conn && !ui.message.classList.contains('error')) ui.message.textContent='Verschlüsselt in Supabase Vault gespeichert.';
       else if(!conn && !ui.message.classList.contains('error')) ui.message.textContent='';
@@ -231,12 +233,13 @@
   async function saveAiProviderConnection(provider){
     const ui=aiConnectionEls(provider);
     if(!cloudReady()){ui.message.textContent='Bitte zuerst bei SiteBrief anmelden.';ui.message.className='connection-message error';return;}
-    const secret=ui.input.value.trim();
+    let secret=ui.input.value.trim();
+    if(provider==='cloudflare'){const account=ui.account?.value.trim()||'';if(!/^[a-f0-9]{32}$/i.test(account)){ui.message.textContent='Bitte eine gültige 32-stellige Cloudflare Account-ID eingeben.';ui.message.className='connection-message error';return;}secret=`${account}:${secret}`;}
     if(secret.length<8){ui.message.textContent='Bitte einen gültigen API-Key eingeben.';ui.message.className='connection-message error';return;}
     try{
       ui.connect.disabled=true;ui.message.textContent='Wird verschlüsselt gespeichert…';ui.message.className='connection-message';
       await window.SiteBriefCloud.saveAiConnection(provider,secret);
-      state.aiConnections=[...(window.SiteBriefCloud.aiConnections||[])];ui.input.value='';renderAiConnections();
+      state.aiConnections=[...(window.SiteBriefCloud.aiConnections||[])];ui.input.value='';if(ui.account)ui.account.value='';renderAiConnections();
       ui.message.textContent='Gespeichert. Verbindung wird geprüft…';ui.message.className='connection-message good';
       await testAiProviderConnection(provider,true);
       state.modelsLoaded=false;if(state.engine===provider && provider!=='openai')loadProviderModels(provider);
@@ -429,7 +432,7 @@
     el.descriptionCount.textContent = el.projectDescription.value.length;
     const c = saved.controls || {}; ["originality","antiSlop","motion","density"].forEach(id => { if(c[id] != null){ el[id].value = c[id]; el[id].nextElementSibling.value = c[id]; } });
     if(saved.conceptCount) el.conceptCount.value = String(clamp(saved.conceptCount,3,5));
-    if(el.previewFormat)el.previewFormat.value=saved.previewFormat==="image"?"image":"html";
+    if(el.previewFormat)el.previewFormat.value=['image-cloudflare','image-gemini'].includes(saved.previewFormat)?saved.previewFormat:'html';
     applyAlwaysActiveItems(false);
     if(persistLocal) try{localStorage.setItem(STORAGE_KEY,JSON.stringify(serializableProjectState()));}catch{}
   }
@@ -1074,22 +1077,23 @@
         if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
       }
       state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
-      if(el.previewFormat.value==="image"){
-        if(cloudReady()&&aiConnection("gemini")){
-          const imageResult=await generateConceptImages();el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt; verfügbare KI-Bilder wurden eingesetzt.`:imageResult?.kind==="quota"?"Gemini ist verbunden, aber das Bildkontingent reicht nicht. Die HTML-Vorschauen bleiben vollständig nutzbar.":"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
-        }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Für KI-Bilder muss Gemini verbunden sein. Bis dahin werden die kostenlosen HTML-Vorschauen angezeigt.";}
+      if(el.previewFormat.value.startsWith("image-")){
+        const imageProvider=el.previewFormat.value.replace('image-','');const providerLabel=imageProvider==='cloudflare'?'Cloudflare Workers AI':'Gemini';
+        if(cloudReady()&&aiConnection(imageProvider)){
+          const imageResult=await generateConceptImages(imageProvider);el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt; verfügbare ${providerLabel}-Bilder wurden eingesetzt.`:imageResult?.kind==="quota"?`${providerLabel} ist verbunden, aber das Tageskontingent reicht nicht. Die HTML-Vorschauen bleiben vollständig nutzbar.`:"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
+        }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für KI-Bilder muss ${providerLabel} unter Einstellungen → KI-Verbindungen verbunden sein. Bis dahin werden HTML-Vorschauen angezeigt.`;}
       }else{el.generationStatus.className="generation-status";el.generationStatus.textContent=`${state.concepts.length} echte HTML/CSS-Vorschauen erstellt. Wähle die stärkste Richtung – ohne Bildkontingent und ohne zusätzliche Kosten.`;}
     }catch(err){
       state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent=`KI-Verbindung nicht verfügbar (${err.message}). Lokale Vorschauen wurden stattdessen erstellt.`;
     }finally{finishTaskProgress("preview","Vorschauen fertig");consumeGuestRun();el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
   }
 
-  async function generateConceptImages(){
+  async function generateConceptImages(imageProvider="gemini"){
     let quotaError=false,otherError=false;
     for(let i=0;i<state.concepts.length;i++){
       const concept=state.concepts[i];setTaskProgress("preview",Math.round(38+(i/state.concepts.length)*54),`Bildentwurf ${i+1} von ${state.concepts.length} wird gestaltet…`);
       try{
-        const payload={action:"preview-image",engine:"gemini",project:project(),concept:conceptForExport(concept),references:state.urls.slice(0,3),images:state.images.filter(x=>x.dataUrl).slice(0,2)};
+        const payload={action:"preview-image",imageProvider,project:project(),concept:conceptForExport(concept),references:state.urls.slice(0,3),images:state.images.filter(x=>x.dataUrl).slice(0,2)};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Bildvorschau fehlgeschlagen");concept.previewImage=data.imageDataUrl||"";renderConcepts();renderSelectedPreview();
       }catch(err){const message=String(err?.message||"");if(/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(message)){quotaError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Gemini ist verbunden, das Bildkontingent ist momentan erschöpft. Layout-Vorschauen werden weiter angezeigt.";break;}otherError=true;el.generationStatus.className="generation-status error";el.generationStatus.textContent=`Bildentwurf ${i+1} war nicht verfügbar. Die übrigen Vorschauen werden weiter vorbereitet.`;}
     }
@@ -1392,6 +1396,7 @@
     el.gatewayConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gateway"));el.gatewayTestBtn?.addEventListener("click",()=>testAiProviderConnection("gateway"));el.gatewayDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gateway"));
     el.openaiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("openai"));el.openaiTestBtn?.addEventListener("click",()=>testAiProviderConnection("openai"));el.openaiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("openai"));
     el.geminiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gemini"));el.geminiTestBtn?.addEventListener("click",()=>testAiProviderConnection("gemini"));el.geminiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gemini"));
+    el.cloudflareConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("cloudflare"));el.cloudflareTestBtn?.addEventListener("click",()=>testAiProviderConnection("cloudflare"));el.cloudflareDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("cloudflare"));
     el.settingsLoginBtn?.addEventListener("click",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});
     el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
     el.saveProfileBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.manageProfilesBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.createProfileBtn.addEventListener("click",createProfileFromDialog);
