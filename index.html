@@ -274,6 +274,11 @@
         <div class="prompt-meta" id="promptMeta"></div>
         <textarea id="masterPrompt" class="master-prompt" spellcheck="false"></textarea>
         <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn" id="downloadPromptBtn">Als .md speichern</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
+        <section class="client-result-card">
+          <div><span>AB PRO</span><h2>Kundenunterlagen</h2><p>Ein verständliches Briefing und eine Übergabeübersicht, die du deinem Kunden vorlegen kannst.</p></div>
+          <div class="client-result-actions"><button type="button" class="outline-btn" id="downloadClientBriefBtn">Kundenbriefing</button><button type="button" class="outline-btn" id="downloadHandoverBtn">Übergabe-Dokument</button></div>
+          <small id="clientResultHint"></small>
+        </section>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="7">← Zurück</button><button type="button" class="text-btn" id="startNewBtn">Neues Projekt</button></div>
       </section>
@@ -354,6 +359,10 @@
         <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
       </header>
       <div class="settings-body">
+        <section class="settings-section plan-overview">
+          <div class="settings-heading"><strong>Tarif & Funktionen</strong><p>Die Grundqualität bleibt gut. Pro und Ultimate schalten professionelle Werkzeuge und Kundenunterlagen frei.</p></div>
+          <div class="plan-current"><span id="currentPlanBadge">FREE</span><div><strong id="currentPlanTitle">Kostenlos</strong><small id="currentPlanDescription">Geführter Ablauf mit festen Qualitätsstandards.</small></div><button type="button" class="solid-btn mini" id="showPlansBtn">Tarife ansehen</button></div>
+        </section>
         <section class="settings-section">
           <div class="settings-heading"><strong>KI-Verbindungen</strong><p>API-Key einmal eintragen, speichern und testen. Agent, Generator und Profile wählst du direkt im Projekt. Eigene Keys werden nur nach Login gespeichert und verschlüsselt in Supabase Vault abgelegt – nicht im Browser.</p></div>
           <div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein SiteBrief-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
@@ -509,6 +518,17 @@
           <button type="button" class="text-btn" id="deferClarificationsBtn">Später beantworten</button>
           <button type="button" class="solid-btn" id="saveClarificationsBtn">Antworten übernehmen</button>
         </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="plansDialog" class="library-dialog plans-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head"><div><span>TARIFE</span><h2>Mehr Werkzeuge, nicht künstlich schlechtere Ergebnisse</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
+      <div class="plans-grid">
+        <article><span>FREE</span><h3>Solider Einstieg</h3><strong>0 €</strong><ul><li>Codex-Ziel</li><li>3 Gestaltungsrichtungen</li><li>Geführte Qualitätsstandards</li></ul><button type="button" class="outline-btn" disabled>Aktueller Einstieg</button></article>
+        <article class="recommended"><span>PRO</span><h3>Für Kundenprojekte</h3><strong>Demnächst</strong><ul><li>Claude oder Codex</li><li>4 Richtungen</li><li>Module und Skills</li><li>Kundenbriefing & Übergabe</li></ul><button type="button" class="solid-btn" disabled>Bald buchbar</button></article>
+        <article><span>ULTIMATE</span><h3>Volle Kontrolle</h3><strong>Demnächst</strong><ul><li>Alle Agenten und 5 Richtungen</li><li>Eigene KI-Verbindungen</li><li>Eigene Profile</li><li>Alle Prüf- und Profi-Einstellungen</li></ul><button type="button" class="outline-btn" disabled>Bald buchbar</button></article>
       </div>
     </form>
   </dialog>
