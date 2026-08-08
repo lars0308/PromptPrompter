@@ -242,8 +242,38 @@ async function callGeminiPreviewImage({key,project,concept}){
 }
 async function callCloudflarePreviewImage({key,project,concept}){
   const split=key.indexOf(':');if(split<1)throw Object.assign(new Error('Cloudflare-Verbindung ist unvollständig.'),{status:503});const accountId=key.slice(0,split),token=key.slice(split+1);
-  const prompt=`High-fidelity finished desktop website homepage screenshot, no browser frame, no device mockup, credible client-ready web design, accurate short typography. Project: ${project.name||'Website'}. Type: ${project.type||'Website'}. Goal: ${project.goal||''}. Audience: ${project.audience||''}. Description: ${project.description||''}. Direction: ${concept.name||''}. Mood: ${concept.mood||''}. Layout: ${concept.layout||''}. Hero: ${concept.hero||''}. Palette: ${(concept.palette||[]).join(', ')}. Headline: ${concept.headline||''}.`;
-  const response=await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/black-forest-labs/flux-1-schnell`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt.slice(0,2048),steps:6})});const data=await response.json().catch(()=>({}));if(!response.ok||data?.success===false)throw Object.assign(new Error(data?.errors?.[0]?.message||'Cloudflare image request failed'),{status:response.status||500});const image=data?.result?.image;if(!image)throw new Error('Cloudflare hat kein Bild zurückgegeben');return {imageDataUrl:`data:image/jpeg;base64,${image}`};
+  const brand=String(project.name||project.type||'Website').trim().slice(0,36);
+  const headline=String(concept.headline||project.goal||'').trim().slice(0,54);
+  const prompt=`Create a single, screen-filling 16:9 view of a finished professional website homepage. Show ONLY the website canvas edge to edge.
+
+STRICT COMPOSITION RULES:
+- no browser chrome, address bar, tabs, window frame, monitor, laptop, phone, tablet, desk, hands, device or presentation mockup
+- straight-on flat website view, no perspective, no floating screen, no collage, no moodboard
+- intentional editorial grid, strong alignment, generous but purposeful spacing, clear visual hierarchy and credible responsive web-design proportions
+- project-specific art direction derived from the brief and chosen direction; avoid a generic theme or stock SaaS landing page
+- use one dominant, project-relevant visual idea and a restrained supporting interface
+- no generic card grid, dashboard tiles, glassmorphism, translucent panels, gradient blobs, neon glow, excessive rounded rectangles or AI-template decoration
+
+TEXT RULES:
+- visible text is optional
+- if text is shown, use ONLY the exact brand name \"${brand}\" and optionally the exact short headline \"${headline}\"
+- no paragraphs, navigation labels, buttons, statistics, testimonials, filler copy, pseudo-letters, lorem ipsum or invented words
+- do not render any other typography or symbols that resemble text
+
+PROJECT ART DIRECTION:
+Project type: ${project.type||'Website'}
+Purpose: ${project.goal||'clear professional presentation'}
+Audience: ${project.audience||'project audience'}
+Brief: ${project.description||'Create a distinctive, credible visual identity suited to the project.'}
+Direction: ${concept.name||'individual editorial direction'}
+Mood: ${concept.mood||'confident and precise'}
+Layout principle: ${concept.layout||'project-specific asymmetric grid'}
+Hero principle: ${concept.hero||'one clear focal point'}
+Typography character: ${concept.type||'restrained professional typography'}
+Color palette: ${(concept.palette||[]).join(', ')||'restrained project-specific palette'}
+
+The result must read instantly as a bespoke real website design, not as an AI-generated website illustration.`;
+  const response=await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/black-forest-labs/flux-1-schnell`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt.slice(0,2048),steps:8,width:1280,height:720})});const data=await response.json().catch(()=>({}));if(!response.ok||data?.success===false)throw Object.assign(new Error(data?.errors?.[0]?.message||'Cloudflare image request failed'),{status:response.status||500});const image=data?.result?.image;if(!image)throw new Error('Cloudflare hat kein Bild zurückgegeben');return {imageDataUrl:`data:image/jpeg;base64,${image}`};
 }
 
 module.exports = async function handler(req,res){
