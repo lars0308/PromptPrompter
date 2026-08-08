@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ece9e1" />
+  <meta name="description" content="SiteBrief — geführter Website-Konzept- und Master-Prompt-Builder." />
+  <title>SiteBrief V6 — Briefing → Vorschau → Master-Prompt</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" id="brandHome" aria-label="SiteBrief Start">
+      <span class="brand-mark">SB</span>
+      <span class="brand-copy"><strong>SiteBrief</strong><small>BRIEF → PREVIEW → PROMPT</small></span>
+    </a>
+
+    <div class="mode-switch" aria-label="Arbeitsmodus">
+      <button type="button" data-mode="guided" class="active">Geführt</button>
+      <button type="button" data-mode="auto">Auto</button>
+      <button type="button" data-mode="expert">Experte</button>
+    </div>
+
+    <div class="top-actions">
+      <span class="engine-state"><i></i><span id="engineStatus">Lokal bereit</span></span><span class="sync-state" id="syncState">Lokal</span>
+      <button type="button" class="text-btn" id="accountBtn">Anmelden</button><button type="button" class="text-btn" id="openLibraryBtn">Bibliotheken</button>
+      <button type="button" class="text-btn" id="openSettingsBtn">Einstellungen</button>
+      <button type="button" class="text-btn" id="resetBtn">Projekt zurücksetzen</button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <aside class="progress-rail" aria-label="Projektfortschritt">
+      <div class="rail-head">
+        <span>PROJEKTABLAUF</span>
+        <strong id="progressText">1 / 8</strong>
+      </div>
+      <nav id="stepNav">
+        <button type="button" class="step-nav active" data-step="1"><b>01</b><span>Projekt</span><i></i></button>
+        <button type="button" class="step-nav" data-step="2"><b>02</b><span>Referenzen</span><i></i></button>
+        <button type="button" class="step-nav" data-step="3"><b>03</b><span>Agent</span><i></i></button>
+        <button type="button" class="step-nav" data-step="4"><b>04</b><span>Module & Skills</span><i></i></button>
+        <button type="button" class="step-nav" data-step="5"><b>05</b><span>Konzept</span><i></i></button>
+        <button type="button" class="step-nav" data-step="6"><b>06</b><span>Vorschauen</span><i></i></button>
+        <button type="button" class="step-nav" data-step="7"><b>07</b><span>Feinschliff</span><i></i></button>
+        <button type="button" class="step-nav" data-step="8"><b>08</b><span>Master-Prompt</span><i></i></button>
+      </nav>
+      <div class="rail-foot">
+        <span>V6</span>
+        <p>Cloud-Sync, eigene Profile, Vorlagen, Module und Skills.</p>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <section class="step-panel active" data-step-panel="1" id="stepProject">
+        <div class="section-kicker">01 — PROJEKT</div>
+        <h1>Was soll entstehen?</h1>
+        <p class="lead">Beschreibe es so, wie du es jemandem am Tisch erklären würdest. SiteBrief macht daraus ein strukturiertes Briefing.</p>
+
+        <label class="field field-large">
+          <span>Kurzbeschreibung</span>
+          <textarea id="projectDescription" rows="7" placeholder="z. B. Website für meinen Handwerksbetrieb. Hausmeisterservice, Gartenpflege und kleinere Reparaturen. Persönlich, hochwertig, aber nicht wie eine Agentur- oder KI-Seite."></textarea>
+          <small><span id="descriptionCount">0</span> Zeichen</small>
+        </label>
+
+        <div class="field-grid three">
+          <label class="field"><span>Projektname <em>optional</em></span><input id="projectName" type="text" placeholder="z. B. Battermann Service" /></label>
+          <label class="field"><span>Projektart</span><select id="projectType"><option>Website</option><option>Web-App</option><option>Landingpage</option><option>Onlineshop</option><option>Portfolio</option><option>Dokumentation</option></select></label>
+          <label class="field"><span>Hauptziel</span><select id="projectGoal"><option>Anfragen / Leads</option><option>Verkaufen</option><option>Termine / Buchungen</option><option>Informieren</option><option>Community / Nutzung</option><option>Produkt erklären</option></select></label>
+        </div>
+
+        <div class="field-grid two">
+          <label class="field"><span>Zielgruppe <em>optional</em></span><input id="projectAudience" type="text" placeholder="z. B. Privatkunden im Umkreis von 30 km" /></label>
+          <label class="field"><span>Besonderer Wunsch <em>optional</em></span><input id="projectSpecial" type="text" placeholder="z. B. sehr bildstark, keine typischen Karten" /></label>
+        </div>
+
+        <div class="understanding" id="projectUnderstanding" hidden>
+          <div class="understanding-head"><span>SO HABE ICH ES VERSTANDEN</span><button class="text-btn" id="reanalyzeProjectBtn" type="button">neu auswerten</button></div>
+          <p id="understandingSummary"></p>
+          <div id="understandingPoints" class="point-list"></div>
+          <div class="inline-actions"><button type="button" class="solid-btn" id="confirmUnderstandingBtn">Passt so</button><button type="button" class="outline-btn" id="editUnderstandingBtn">Angaben ändern</button></div>
+        </div>
+
+        <div class="step-actions">
+          <span id="projectValidation" class="validation"></span>
+          <button type="button" class="solid-btn next-btn" data-next="2">Referenzen hinzufügen <i>→</i></button>
+        </div>
+      </section>
+
+      <section class="step-panel" data-step-panel="2" id="stepReferences">
+        <div class="section-kicker">02 — REFERENZEN</div>
+        <h1>Zeig, was du meinst.</h1>
+        <p class="lead">Website-Links und Bilder sind Inspiration. Du bestimmst pro Referenz, welche Eigenschaften übernommen werden dürfen.</p>
+
+        <div class="reference-url-add">
+          <label class="field"><span>Website-Referenz</span><input id="referenceUrl" type="url" placeholder="https://beispiel.de" /></label>
+          <button type="button" class="outline-btn" id="addUrlBtn">URL hinzufügen</button>
+        </div>
+        <div id="urlReferences" class="reference-list"></div>
+
+        <div class="dropzone" id="uploadZone" tabindex="0" role="button" aria-label="Referenzbilder auswählen">
+          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden />
+          <span class="drop-icon">↗</span>
+          <div><strong>Screenshots, Fotos, Logos oder Moodboards</strong><small>PNG, JPG, WebP · mehrere Dateien möglich · werden vor KI-Aufrufen verkleinert</small></div>
+          <button type="button" class="outline-btn mini">Bilder wählen</button>
+        </div>
+        <div id="imageReferences" class="image-reference-grid"></div>
+
+        <div class="reference-note-block">
+          <span>HINWEIS</span>
+          <p>Eine URL allein kann nicht immer pixelgenau analysiert werden. Wenn dir Aufbau oder Details wichtig sind, lade zusätzlich einen Screenshot hoch.</p>
+        </div>
+
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="1">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="3">Agent auswählen <i>→</i></button></div>
+      </section>
+
+      <section class="step-panel" data-step-panel="3" id="stepAgent">
+        <div class="section-kicker">03 — AGENT</div>
+        <h1>Wer baut später?</h1>
+        <p class="lead">Generator-KI und Ziel-Agent sind getrennt. Eine KI kann dein Konzept entwickeln, während der finale Master-Prompt für einen anderen Agenten gebaut wird.</p>
+
+        <div class="block-title"><span>A</span><div><strong>Ziel-Agent</strong><p>Für wen soll der fertige Master-Prompt optimiert werden?</p></div></div>
+        <div class="agent-selector" id="agentSelector">
+          <button type="button" data-agent="claude"><b>CL</b><span><strong>Claude Code</strong><small>Agent-Prompt</small></span></button>
+          <button type="button" data-agent="codex" class="active"><b>CD</b><span><strong>Codex</strong><small>Repo / Implementierung</small></span></button>
+          <button type="button" data-agent="gemini"><b>GM</b><span><strong>Gemini</strong><small>Agent-Prompt</small></span></button>
+          <button type="button" data-agent="chatgpt"><b>CG</b><span><strong>ChatGPT</strong><small>Build-Briefing</small></span></button>
+          <button type="button" data-agent="cursor"><b>CU</b><span><strong>Cursor</strong><small>Repo-Regeln</small></span></button>
+          <button type="button" data-agent="v0"><b>V0</b><span><strong>v0</strong><small>UI-Fokus</small></span></button>
+          <button type="button" data-agent="universal"><b>UN</b><span><strong>Universal</strong><small>neutral</small></span></button>
+        </div>
+
+        <div class="block-title spaced"><span>B</span><div><strong>Generator-KI</strong><p>Optional. Ohne API-Key arbeitet SiteBrief mit dem lokalen Konzeptgenerator.</p></div></div>
+        <div class="field-grid two">
+          <label class="field"><span>Engine</span><select id="generatorEngine"><option value="local">Lokal / ohne API</option><option value="gateway">Vercel AI Gateway</option><option value="openai">OpenAI direkt</option></select></label>
+          <label class="field"><span>Modell</span><input id="generatorModel" list="modelOptions" type="text" placeholder="Modell-ID" /><datalist id="modelOptions"></datalist></label>
+        </div>
+        <p class="engine-help" id="engineHelp"></p>
+
+        <div class="ai-review-card" id="aiReviewCard">
+          <div><span>PROJEKTPRÜFUNG</span><strong id="aiReviewTitle">Noch nicht mit der Generator-KI geprüft</strong><p id="aiReviewText">Wenn eine externe KI aktiv ist, kann sie fehlende Angaben, Widersprüche und nicht umsetzbare Wünsche erkennen und gezielt nachfragen.</p></div>
+          <button type="button" class="outline-btn mini" id="runAiReviewBtn">Jetzt prüfen</button>
+        </div>
+
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="2">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="4">Module & Skills <i>→</i></button></div>
+      </section>
+
+      <section class="step-panel" data-step-panel="4" id="stepModules">
+        <div class="section-kicker">04 — MODULE & SKILLS</div>
+        <h1>Deine Regeln für diesen Durchlauf.</h1>
+        <p class="lead">Aktiviere nur das, was du brauchst. SiteBrief kann passende Einträge aus deiner Bibliothek vorschlagen.</p>
+
+        <div class="selection-head">
+          <div><span>PROMPT-VORLAGE</span><p>Optionaler Grundprompt aus deiner eigenen Bibliothek.</p></div>
+          <button type="button" class="text-btn" data-open-library="templates">Vorlagen verwalten</button>
+        </div>
+        <label class="field"><select id="templateSelect"><option value="">Ohne Vorlage</option></select></label>
+
+        <div class="selection-head spaced">
+          <div><span>MODULE</span><p>Mehrere Zusatzmodule können gleichzeitig aktiv sein.</p></div>
+          <div class="selection-actions"><button type="button" class="text-btn" id="recommendModulesBtn">Passende vorschlagen</button><button type="button" class="text-btn" data-open-library="modules">Module verwalten</button></div>
+        </div>
+        <div id="moduleSelection" class="selection-list empty-state"></div>
+
+        <div class="selection-head spaced">
+          <div><span>AGENT-SKILLS</span><p id="skillContextLabel">Skills für Codex und globale Skills.</p></div>
+          <div class="selection-actions"><button type="button" class="text-btn" id="importSkillFileBtn">Skill-Datei lesen</button><button type="button" class="text-btn" data-open-library="skills">Skills verwalten</button></div>
+          <input id="skillFileInput" type="file" accept=".md,.txt,.json,application/json,text/plain,text/markdown" multiple hidden />
+        </div>
+        <div id="skillSelection" class="selection-list empty-state"></div>
+        <div id="skillImportMessage" class="import-message" aria-live="polite"></div>
+
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="3">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="5">Konzept prüfen <i>→</i></button></div>
+      </section>
+
+      <section class="step-panel" data-step-panel="5" id="stepBlueprint">
+        <div class="section-kicker">05 — KONZEPT</div>
+        <h1>Alles in einem Briefing.</h1>
+        <p class="lead">Bevor Bilder entstehen, wird aus deinen Angaben ein strukturiertes Blueprint. So bleibt die Generierung nachvollziehbar.</p>
+
+        <div id="blueprintSummary" class="blueprint"></div>
+
+        <div class="controls-strip">
+          <label><span>Originalität</span><input id="originality" type="range" min="0" max="100" value="78" /><output>78</output></label>
+          <label><span>KI-Look vermeiden</span><input id="antiSlop" type="range" min="0" max="100" value="95" /><output>95</output></label>
+          <label><span>Bewegung</span><input id="motion" type="range" min="0" max="100" value="18" /><output>18</output></label>
+          <label><span>Informationsdichte</span><input id="density" type="range" min="0" max="100" value="55" /><output>55</output></label>
+        </div>
+
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="4">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="6">Vorschauen erzeugen <i>→</i></button></div>
+      </section>
+
+      <section class="step-panel preview-step" data-step-panel="6" id="stepPreviews">
+        <div class="section-kicker">06 — VORSCHAUEN</div>
+        <div class="preview-step-head">
+          <div><h1>3–5 echte Richtungen.</h1><p class="lead">Nicht dieselbe Seite in fünf Farben. Jede Richtung bekommt eine andere Komposition.</p></div>
+          <div class="preview-generation-controls">
+            <label class="compact-field"><span>Anzahl</span><select id="conceptCount"><option>3</option><option>4</option><option selected>5</option></select></label>
+            <button type="button" class="solid-btn" id="generateConceptsBtn">Vorschauen erzeugen</button>
+          </div>
+        </div>
+        <div id="generationStatus" class="generation-status">Noch keine Vorschauen erzeugt.</div>
+        <div id="conceptGallery" class="concept-gallery"></div>
+
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="5">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="7" id="toRefineBtn">Auswahl verfeinern <i>→</i></button></div>
+      </section>
+
+      <section class="step-panel" data-step-panel="7" id="stepRefine">
+        <div class="section-kicker">07 — FEINSCHLIFF</div>
+        <h1>Eine Richtung. Dann gezielt ändern.</h1>
+        <p class="lead">Sag nur, was anders werden soll. Deine Änderungswünsche werden in der Vorschau und später im Master-Prompt festgehalten.</p>
+
+        <div id="selectedPreviewLarge" class="selected-preview-large"></div>
+
+        <div class="quick-refinements" id="quickRefinements">
+          <button type="button">heller</button><button type="button">dunkler</button><button type="button">Bild größer</button><button type="button">ruhiger</button><button type="button">mehr Typografie</button><button type="button">weniger KI-Look</button><button type="button">mehr wie Referenz 1</button>
+        </div>
+        <label class="field field-large"><span>Was möchtest du ändern?</span><textarea id="refinementInput" rows="5" placeholder="z. B. Hero behalten, aber die Informationsstruktur aus Vorschau C übernehmen. Schrift etwas ruhiger und Bild größer."></textarea></label>
+        <div class="inline-actions"><button type="button" class="outline-btn" id="applyRefinementBtn">Änderung anwenden</button><button type="button" class="text-btn" id="clearRefinementsBtn">Änderungen löschen</button></div>
+        <div id="refinementHistory" class="refinement-history"></div>
+
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="6">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="8">Master-Prompt erstellen <i>→</i></button></div>
+      </section>
+
+      <section class="step-panel" data-step-panel="8" id="stepPrompt">
+        <div class="section-kicker">08 — MASTER-PROMPT</div>
+        <h1>Fertig für deinen Agenten.</h1>
+        <p class="lead">SiteBrief verbindet Projekt, Referenzen, Auswahl, Module, Skills und Feinschliff zu einem agentenspezifischen Master-Prompt.</p>
+
+        <div class="prompt-meta" id="promptMeta"></div>
+        <textarea id="masterPrompt" class="master-prompt" spellcheck="false"></textarea>
+        <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn" id="downloadPromptBtn">Als .md speichern</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
+
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="7">← Zurück</button><button type="button" class="text-btn" id="startNewBtn">Neues Projekt</button></div>
+      </section>
+    </main>
+
+    <aside class="guide-panel" id="guidePanel">
+      <div class="guide-label"><span>GUIDE</span><strong id="guideStepLabel">PROJEKT</strong></div>
+      <div class="guide-copy">
+        <h2 id="guideTitle">Beschreibe zuerst nur das Vorhaben.</h2>
+        <p id="guideText">Du musst noch keine perfekte Design-Sprache kennen. Ein klarer Satz über Betrieb, Angebot und Ziel reicht für den Start.</p>
+      </div>
+      <div id="guideSuggestions" class="guide-suggestions"></div>
+      <button type="button" class="guide-action" id="guideActionBtn" hidden></button>
+      <div class="guide-context">
+        <span>AKTUELL</span>
+        <dl>
+          <div><dt>Agent</dt><dd id="guideAgent">Codex</dd></div>
+          <div><dt>Module</dt><dd id="guideModules">0 aktiv</dd></div>
+          <div><dt>Skills</dt><dd id="guideSkills">0 aktiv</dd></div>
+          <div><dt>Referenzen</dt><dd id="guideReferences">0</dd></div>
+        </dl>
+      </div>
+    </aside>
+  </div>
+
+  <dialog id="libraryDialog" class="library-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head">
+        <div><span>DEINE BIBLIOTHEKEN</span><h2>Vorlagen, Module & Skills</h2></div>
+        <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
+      </header>
+      <div class="library-tabs" role="tablist">
+        <button type="button" class="active" data-library-tab="templates">Prompt-Vorlagen</button>
+        <button type="button" data-library-tab="modules">Module</button>
+        <button type="button" data-library-tab="skills">Agent-Skills</button>
+      </div>
+      <div class="library-tools"><button type="button" class="text-btn" id="exportLibraryBtn">Alles als JSON sichern</button><button type="button" class="text-btn" id="importLibraryBtn">JSON importieren</button><input id="importLibraryInput" type="file" accept=".json,application/json" hidden /></div>
+
+      <section class="library-pane active" data-library-pane="templates">
+        <div id="templateLibraryList" class="library-items"></div>
+        <div class="library-editor">
+          <h3 id="templateEditorTitle">Prompt-Vorlage anlegen</h3>
+          <div class="field-grid two"><label class="field"><span>Name</span><input id="libTemplateName" type="text" placeholder="z. B. Website lokal" /></label><label class="field"><span>Kürzel</span><input id="libTemplateTag" type="text" maxlength="18" placeholder="LOCAL" /></label></div>
+          <label class="field"><span>Kurzbeschreibung</span><input id="libTemplateSummary" type="text" placeholder="Wann diese Vorlage genutzt wird" /></label>
+          <label class="field"><span>Master-Prompt / Grundregeln</span><textarea id="libTemplatePrompt" rows="8"></textarea></label>
+          <div class="inline-actions"><button type="button" class="solid-btn" id="saveTemplateBtn">Vorlage speichern</button><button type="button" class="text-btn" id="cancelTemplateEditBtn" hidden>Abbrechen</button></div>
+        </div>
+      </section>
+
+      <section class="library-pane" data-library-pane="modules">
+        <div id="moduleLibraryList" class="library-items"></div>
+        <div class="library-editor">
+          <h3 id="moduleEditorTitle">Modul anlegen</h3>
+          <div class="field-grid two"><label class="field"><span>Name</span><input id="libModuleName" type="text" placeholder="z. B. Anti-KI-Design" /></label><label class="field"><span>Kürzel</span><input id="libModuleTag" type="text" maxlength="18" placeholder="ANTI-SLOP" /></label></div>
+          <label class="field"><span>Wann sinnvoll?</span><input id="libModuleSummary" type="text" placeholder="Kurze Beschreibung / Stichworte" /></label>
+          <label class="field"><span>Prompt-Baustein</span><textarea id="libModulePrompt" rows="7"></textarea></label>
+          <div class="inline-actions"><button type="button" class="solid-btn" id="saveModuleBtn">Modul speichern</button><button type="button" class="text-btn" id="cancelModuleEditBtn" hidden>Abbrechen</button></div>
+        </div>
+      </section>
+
+      <section class="library-pane" data-library-pane="skills">
+        <div id="skillLibraryList" class="library-items"></div>
+        <div class="library-editor">
+          <h3 id="skillEditorTitle">Agent-Skill anlegen</h3>
+          <div class="field-grid two"><label class="field"><span>Name</span><input id="libSkillName" type="text" placeholder="z. B. Abschlussprüfung" /></label><label class="field"><span>Agent</span><select id="libSkillAgent"><option value="all">Alle Agents</option><option value="claude">Claude Code</option><option value="codex">Codex</option><option value="gemini">Gemini</option><option value="chatgpt">ChatGPT</option><option value="cursor">Cursor</option><option value="v0">v0</option><option value="universal">Universal</option></select></label></div>
+          <label class="field"><span>Trigger / Einsatz</span><input id="libSkillTrigger" type="text" placeholder="z. B. Nach jeder größeren UI-Änderung" /></label>
+          <label class="field"><span>Skill-Anweisung</span><textarea id="libSkillPrompt" rows="8"></textarea></label>
+          <div class="inline-actions"><button type="button" class="solid-btn" id="saveSkillBtn">Skill speichern</button><button type="button" class="text-btn" id="cancelSkillEditBtn" hidden>Abbrechen</button></div>
+        </div>
+      </section>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog" class="library-dialog settings-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head">
+        <div><span>GLOBALE REGELN</span><h2>Prüfung & KI-Verhalten</h2></div>
+        <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
+      </header>
+      <div class="settings-body">
+        <section class="settings-section">
+          <div class="settings-heading"><strong>Cloud & Standardprofil</strong><p>Profile speichern deinen üblichen Agenten, Generator, Workflow und deine Standardregeln. Systemprofile bleiben erhalten; eigene Profile werden mit deinem Konto synchronisiert.</p></div>
+          <div class="profile-picker-row">
+            <label class="field"><span>Aktives Standardprofil</span><select id="setActiveProfile"><option value="">Lokale Standardwerte</option></select></label>
+            <button type="button" class="outline-btn" id="applyProfileBtn">Profil anwenden</button>
+          </div>
+          <div class="field-grid two">
+            <label class="field"><span>Standard-Agent</span><select id="setDefaultAgent"><option value="claude">Claude Code</option><option value="codex">Codex</option><option value="gemini">Gemini</option><option value="chatgpt">ChatGPT</option><option value="cursor">Cursor</option><option value="v0">v0</option><option value="universal">Universal</option></select></label>
+            <label class="field"><span>Standard-Generator</span><select id="setDefaultEngine"><option value="local">Lokal / ohne API</option><option value="gateway">Vercel AI Gateway</option><option value="openai">OpenAI direkt</option></select></label>
+          </div>
+          <div class="field-grid three">
+            <label class="field"><span>Standard-Modell</span><input id="setDefaultModel" type="text" placeholder="optional" /></label>
+            <label class="field"><span>Standard-Modus</span><select id="setDefaultMode"><option value="guided">Geführt</option><option value="auto">Auto</option><option value="expert">Experte</option></select></label>
+            <label class="field"><span>Vorschauen</span><select id="setDefaultConceptCount"><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+          </div>
+          <div class="profile-actions">
+            <button type="button" class="outline-btn" id="saveProfileBtn">Aktuelle Einstellungen als eigenes Profil speichern</button>
+            <button type="button" class="text-btn" id="manageProfilesBtn">Eigene Profile verwalten</button>
+          </div>
+          <div class="default-library-block">
+            <div><strong>Standardmäßig aktive Module</strong><p>Module mit „Immer aktiv“ können im Projekt nicht versehentlich abgewählt werden. „Standard“ startet aktiviert, „Manuell“ bleibt aus.</p></div>
+            <div id="defaultModuleSettings" class="default-library-list"></div>
+          </div>
+          <div class="default-library-block">
+            <div><strong>Standardmäßig aktive Agent-Skills</strong><p>Pro Skill kannst du festlegen, ob er immer, standardmäßig oder nur manuell aktiv ist.</p></div>
+            <div id="defaultSkillSettings" class="default-library-list"></div>
+          </div>
+        </section>
+        <section class="settings-section">
+          <div class="settings-heading"><strong>Gegenfragen der KI</strong><p>Gilt für externe Generator-KIs. SiteBrief fragt nur, wenn Angaben wirklich fehlen, sich widersprechen oder nicht sinnvoll umsetzbar erscheinen.</p></div>
+          <label class="toggle-row"><input id="setAiClarifications" type="checkbox"><span><strong>Gegenfragen erlauben</strong><small>Vor Konzepten offene Punkte erkennen und nachfragen.</small></span></label>
+          <div class="field-grid two">
+            <label class="field"><span>Max. Fragen pro Prüfung</span><select id="setMaxQuestions"><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></label>
+            <label class="field"><span>Bei kritischem Problem</span><select id="setCriticalBehavior"><option value="block">Stoppen und Lösung verlangen</option><option value="warn">Warnen, Fortfahren erlauben</option></select></label>
+          </div>
+          <label class="toggle-row"><input id="setAskMissing" type="checkbox"><span><strong>Bei fehlenden Angaben fragen</strong><small>Nur Angaben abfragen, die das Ergebnis materially verändern.</small></span></label>
+          <label class="toggle-row"><input id="setAskConflict" type="checkbox"><span><strong>Bei Widersprüchen fragen</strong><small>Zum Beispiel „minimal“ und gleichzeitig „sehr informationsdicht“.</small></span></label>
+          <label class="toggle-row"><input id="setAskInfeasible" type="checkbox"><span><strong>Bei nicht machbaren Wünschen nachhaken</strong><small>Problem erklären und um eine Entscheidung bitten.</small></span></label>
+          <label class="toggle-row"><input id="setSuggestAlternatives" type="checkbox"><span><strong>Sichere / machbare Alternative vorschlagen</strong><small>Nicht einfach ablehnen, wenn ein realistischer Ersatz möglich ist.</small></span></label>
+        </section>
+
+        <section class="settings-section">
+          <div class="settings-heading"><strong>Immer prüfen</strong><p>Diese Bereiche werden in Blueprint, KI-Konzept und Master-Prompt aufgenommen. SiteBrief behauptet dabei keine rechtliche Konformität.</p></div>
+          <label class="field"><span>Rechtsraum / Markt</span><input id="setLegalRegion" type="text" placeholder="z. B. Deutschland / EU" /></label>
+          <div class="settings-check-grid">
+            <label class="toggle-row compact"><input id="setCheckPrivacy" type="checkbox"><span><strong>Datenschutz</strong><small>Tracking, Formulare, externe Dienste, Cookies.</small></span></label>
+            <label class="toggle-row compact"><input id="setCheckImprint" type="checkbox"><span><strong>Impressum / Anbieterangaben</strong><small>Erforderliche Anbieterinformationen nicht vergessen.</small></span></label>
+            <label class="toggle-row compact"><input id="setCheckLegal" type="checkbox"><span><strong>Rechtliche Plausibilität</strong><small>Keine erfundenen rechtlichen Aussagen oder Pflichttexte.</small></span></label>
+            <label class="toggle-row compact"><input id="setCheckAccessibility" type="checkbox"><span><strong>Barrierefreiheit</strong><small>Semantik, Tastatur, Kontrast, Formulare.</small></span></label>
+            <label class="toggle-row compact"><input id="setCheckSecurity" type="checkbox"><span><strong>Sicherheit</strong><small>Secrets, Eingaben, Auth, externe APIs.</small></span></label>
+            <label class="toggle-row compact"><input id="setCheckPerformance" type="checkbox"><span><strong>Performance</strong><small>Bilder, Abhängigkeiten, Ladeverhalten.</small></span></label>
+            <label class="toggle-row compact"><input id="setCheckSeo" type="checkbox"><span><strong>SEO-Grundlagen</strong><small>Metadaten, Struktur, Indexierbarkeit.</small></span></label>
+          </div>
+          <label class="toggle-row"><input id="setNoInventLegal" type="checkbox"><span><strong>Rechtliche Inhalte niemals erfinden</strong><small>Fehlende Firmendaten, Einwilligungen oder Rechtstexte als offene Punkte markieren statt ausdenken.</small></span></label>
+          <label class="toggle-row"><input id="setFinalChecklist" type="checkbox"><span><strong>Pflicht-Checkliste im Master-Prompt</strong><small>Der Ziel-Agent muss die aktiven Prüffelder vor Abschluss abhaken.</small></span></label>
+        </section>
+
+        <div class="settings-footer">
+          <p>Hinweis: Die Prüfung dient als Entwicklungs-Checkliste und ersetzt keine Rechtsberatung.</p>
+          <button type="button" class="solid-btn" id="saveSettingsBtn">Einstellungen speichern</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+
+  <dialog id="accountDialog" class="library-dialog account-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head">
+        <div><span>SUPABASE CLOUD</span><h2>Konto & Synchronisierung</h2></div>
+        <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
+      </header>
+      <div class="account-body">
+        <div id="accountLoggedOut">
+          <p class="account-intro">Mit einem Konto werden Profile, Einstellungen, Module, Skills und Projekte geräteübergreifend gespeichert. Ohne Login arbeitet SiteBrief weiter lokal.</p>
+          <label class="field"><span>E-Mail</span><input id="authEmail" type="email" autocomplete="email" placeholder="name@beispiel.de" /></label>
+          <label class="field"><span>Passwort</span><input id="authPassword" type="password" autocomplete="current-password" minlength="8" /></label>
+          <div class="inline-actions"><button type="button" class="solid-btn" id="signInBtn">Anmelden</button><button type="button" class="outline-btn" id="signUpBtn">Konto anlegen</button></div>
+          <p id="authMessage" class="auth-message"></p>
+        </div>
+        <div id="accountLoggedIn" hidden>
+          <div class="account-user"><span>ANGEMELDET ALS</span><strong id="accountEmail">–</strong><small id="accountUserId"></small></div>
+          <div class="cloud-stats" id="cloudStats"></div>
+          <div class="cloud-projects"><span>LETZTE PROJEKTE</span><div id="cloudProjectList" class="cloud-project-list"></div></div>
+          <div class="inline-actions"><button type="button" class="solid-btn" id="syncNowBtn">Jetzt synchronisieren</button><button type="button" class="outline-btn" id="signOutBtn">Abmelden</button></div>
+          <p id="syncMessage" class="auth-message"></p>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="profileDialog" class="library-dialog profile-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head"><div><span>ARBEITSPROFILE</span><h2>Eigene Profile</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
+      <div class="profile-dialog-body">
+        <div id="profileList" class="library-items profile-list"></div>
+        <div class="library-editor">
+          <h3>Neues Profil aus aktuellen Einstellungen</h3>
+          <label class="field"><span>Name</span><input id="newProfileName" type="text" placeholder="z. B. Meine Website Standards" /></label>
+          <label class="field"><span>Beschreibung</span><input id="newProfileDescription" type="text" placeholder="optional" /></label>
+          <button type="button" class="solid-btn" id="createProfileBtn">Profil speichern</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="clarificationDialog" class="library-dialog clarification-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head">
+        <div><span>KI-GEGENFRAGEN</span><h2>Noch ein paar Punkte klären</h2></div>
+        <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
+      </header>
+      <div class="clarification-body">
+        <p class="clarification-intro" id="clarificationIntro">Die Generator-KI braucht diese Angaben, damit Konzept und Master-Prompt nicht auf Annahmen beruhen.</p>
+        <div id="clarificationWarnings" class="clarification-warnings"></div>
+        <div id="clarificationQuestions" class="clarification-questions"></div>
+        <div class="settings-footer">
+          <button type="button" class="text-btn" id="deferClarificationsBtn">Später beantworten</button>
+          <button type="button" class="solid-btn" id="saveClarificationsBtn">Antworten übernehmen</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./cloud.js"></script>
+  <script src="./app.js" defer></script>
+</body>
+</html>
