@@ -18,9 +18,9 @@
   const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
   const GUEST_RUN_LIMIT = 3;
   const PLAN_RULES = {
-    free:{label:"Free",concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,advanced:false},
-    pro:{label:"Pro",concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,advanced:false},
-    ultimate:{label:"Ultimate",concepts:5,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,advanced:true}
+    free:{label:"Free",concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false},
+    pro:{label:"Pro",concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false},
+    ultimate:{label:"Ultimate",concepts:5,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true}
   };
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
@@ -83,7 +83,7 @@
       "blueprintSummary","originality","antiSlop","motion","density",
       "previewFormat","conceptCount","generateConceptsBtn","generationStatus","conceptGallery","toRefineBtn","previewLightbox","previewLightboxTitle","previewLightboxClose","previewLightboxMedia","previewLightboxDownload","previewLightboxSelect",
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
-      "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadBriefBtn","downloadClientBriefBtn","downloadHandoverBtn","clientResultHint",
+      "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadBriefBtn","downloadClientBriefBtn","downloadHandoverBtn","downloadWebsiteZipBtn","publishGithubBtn","clientResultHint","exportResultHint",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
       "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
@@ -92,7 +92,7 @@
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
-      "resetBtn","startNewBtn","brandHome","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog"
+      "resetBtn","startNewBtn","brandHome","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn"
     ].forEach(id => el[id] = document.getElementById(id));
   }
 
@@ -282,17 +282,27 @@
   function applyPlanUi(){
     const rules=planRules(),name=state.isAdmin?"Admin · Ultimate":rules.label;
     if(!rules.agents.includes(state.targetAgent))state.targetAgent=rules.agents[0];
-    $$('#agentSelector button').forEach(button=>{const allowed=rules.agents.includes(button.dataset.agent);button.disabled=!allowed;button.title=allowed?"":`${button.textContent.trim()} ist in einem höheren Tarif verfügbar`;button.classList.toggle("active",button.dataset.agent===state.targetAgent)});
+    $$('#agentSelector button').forEach(button=>{const allowed=rules.agents.includes(button.dataset.agent);button.hidden=!allowed;button.disabled=false;button.classList.toggle("active",button.dataset.agent===state.targetAgent)});
     if(el.conceptCount){el.conceptCount.max=String(rules.concepts);if(Number(el.conceptCount.value)>rules.concepts)el.conceptCount.value=String(rules.concepts)}
+    if(el.previewFormat){const current=el.previewFormat.value,options=[['html','HTML-Website']];if(rules.modules)options.push(['image-cloudflare','Cloudflare-Bild']);if(rules.advanced)options.push(['image-gemini','Gemini-Bild']);el.previewFormat.innerHTML=options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('');el.previewFormat.value=options.some(([value])=>value===current)?current:'html'}
     if(el.currentPlanBadge)el.currentPlanBadge.textContent=name.toUpperCase();
     if(el.currentPlanTitle)el.currentPlanTitle.textContent=state.isAdmin?"Vollzugriff":`${rules.label}-Tarif`;
     if(el.currentPlanDescription)el.currentPlanDescription.textContent=rules===PLAN_RULES.free?"Gute Ergebnisse mit geführten Standards und drei Richtungen.":rules===PLAN_RULES.pro?"Claude/Codex, Module, Skills, vier Richtungen und Kundenunterlagen.":"Alle Agenten, Modelle, Profile, Einstellungen und fünf Richtungen.";
-    if(el.clientResultHint)el.clientResultHint.textContent=rules.clientDocs?"Kundenunterlagen sind freigeschaltet.":"Kundenunterlagen sind ab Pro verfügbar.";
-    [el.downloadClientBriefBtn,el.downloadHandoverBtn].forEach(button=>{if(button)button.classList.toggle("locked",!rules.clientDocs)});
+    if(el.clientResultHint)el.clientResultHint.textContent=rules.clientDocs?"Kundenunterlagen sind freigeschaltet.":"Mit Pro erhältst du Kundenbriefing und Übergabe-Dokument.";
+    [el.downloadClientBriefBtn,el.downloadHandoverBtn].forEach(button=>{if(button)button.hidden=!rules.clientDocs});
+    if(el.downloadWebsiteZipBtn)el.downloadWebsiteZipBtn.hidden=!rules.zip;
+    if(el.publishGithubBtn)el.publishGithubBtn.hidden=!rules.github;
+    if(el.exportResultHint)el.exportResultHint.textContent=rules.github?"ZIP herunterladen oder direkt als GitHub-Repository veröffentlichen.":rules.zip?"Komplettes Website-Paket als ZIP exportieren. GitHub-Veröffentlichung ist in Ultimate enthalten.":"Website-Paket und Kundenunterlagen sind ab Pro enthalten.";
     const advancedSection=el.gatewayApiKey?.closest(".settings-section");
-    if(advancedSection){advancedSection.classList.toggle("plan-locked",!rules.advanced);advancedSection.dataset.lockLabel="Eigene KI-Verbindungen sind in Ultimate verfügbar."}
+    if(advancedSection)advancedSection.hidden=!rules.advanced;
     const qualitySection=el.setAiClarifications?.closest(".settings-section");
-    if(qualitySection){qualitySection.classList.toggle("plan-locked",state.plan==="free"&&!state.isAdmin);qualitySection.dataset.lockLabel="Erweiterte Prüfregeln sind ab Pro verfügbar."}
+    const checksSection=el.setLegalRegion?.closest(".settings-section");
+    if(qualitySection)qualitySection.hidden=state.plan==="free"&&!state.isAdmin;
+    if(checksSection)checksSection.hidden=state.plan==="free"&&!state.isAdmin;
+    if(el.settingsUpgradeNote){el.settingsUpgradeNote.hidden=rules.advanced;el.settingsUpgradeNote.innerHTML=state.plan==='free'?'<strong>Mehr Kontrolle mit Pro</strong><p>Claude, Module, Skills, Kundenunterlagen, ZIP-Export und erweiterte Prüfregeln.</p><button type="button" class="outline-btn mini" data-upgrade-plans>Pro ansehen</button>':'<strong>Eigene KI-Verbindungen mit Ultimate</strong><p>Alle Modelle, Gemini-Bilder und direkte GitHub-Veröffentlichung.</p><button type="button" class="outline-btn mini" data-upgrade-plans>Ultimate ansehen</button>'}
+    const moduleStep=document.getElementById('stepModules');if(moduleStep)moduleStep.classList.toggle('tier-unavailable',!rules.modules);
+    const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!rules.generatorChoice});
+    document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
     renderProfileUi();renderModuleSelection();renderSkillSelection();
   }
 
@@ -1427,6 +1437,25 @@
     downloadText(`sitebrief-${kind==="handover"?"uebergabe":"kundenbriefing"}.md`,buildClientDocument(kind),"text/markdown");
   }
 
+  function exportedWebsiteFiles(){
+    const p=project(),c=selectedConcept()||localConcepts(1)[0],brand=escapeHtml(p.name||'Projekt'),headline=escapeHtml(c.headline||p.goal||'Klar gestaltet.'),subline=escapeHtml(c.subline||state.understanding?.summary||p.description||'');
+    const palette=c.palette||['#f3f0e8','#181a17','#e34f2d','#c9cec5'];
+    const html=`<!doctype html>\n<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${subline}"><title>${brand}</title><link rel="stylesheet" href="styles.css"></head><body><header><a href="#" class="brand">${brand}</a><nav><a href="#angebot">Angebot</a><a href="#kontakt">Kontakt</a></nav></header><main><section class="hero"><p class="eyebrow">${escapeHtml(p.type||'Website')}</p><h1>${headline}</h1><p>${subline}</p><a class="cta" href="#kontakt">Projekt ansehen</a></section><section id="angebot" class="grid"><article><span>01</span><h2>${escapeHtml(c.service||'Konzept')}</h2><p>${escapeHtml(c.mood||'Individuell und präzise auf das Projekt ausgerichtet.')}</p></article><article><span>02</span><h2>Umsetzung</h2><p>${escapeHtml(OUTPUT_TARGETS[state.outputTarget]||'Professionelle Website')}</p></article></section></main><footer id="kontakt"><strong>${brand}</strong><span>Inhalte und Kontaktdaten vor Veröffentlichung ergänzen.</span></footer></body></html>`;
+    const css=`:root{--bg:${palette[0]};--ink:${palette[1]};--accent:${palette[2]};--soft:${palette[3]}}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,sans-serif}header,footer{display:flex;justify-content:space-between;align-items:center;padding:24px clamp(20px,5vw,72px);border-bottom:1px solid color-mix(in srgb,var(--ink) 20%,transparent)}a{color:inherit;text-decoration:none}.brand{font-weight:800}nav{display:flex;gap:24px;font-size:14px}.hero{min-height:72vh;display:flex;flex-direction:column;justify-content:center;padding:clamp(48px,9vw,128px) clamp(20px,8vw,120px);max-width:1100px}.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}h1{font-size:clamp(48px,9vw,118px);line-height:.92;letter-spacing:-.06em;margin:18px 0;max-width:10ch}.hero>p:not(.eyebrow){max-width:55ch;line-height:1.65}.cta{align-self:flex-start;margin-top:26px;background:var(--ink);color:var(--bg);padding:15px 20px}.grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--soft)}article{padding:clamp(32px,6vw,80px);border-right:1px solid var(--soft)}article span{color:var(--accent);font-size:12px}article h2{font-size:clamp(26px,4vw,48px)}article p{line-height:1.6}footer{border-top:1px solid var(--soft);border-bottom:0;font-size:13px}@media(max-width:700px){header{align-items:flex-start}nav{gap:12px}.grid{grid-template-columns:1fr}article{border-right:0;border-bottom:1px solid var(--soft)}footer{align-items:flex-start;gap:14px;flex-direction:column}}`;
+    return {'index.html':html,'styles.css':css,'README.md':`# ${p.name||'Website-Projekt'}\n\nExportiert mit SiteBrief.\n\n## Start\nÖffne index.html oder veröffentliche den Ordner über GitHub Pages, Vercel oder Netlify.\n\nVor dem Livegang echte Inhalte, Kontaktangaben, Impressum und Datenschutz ergänzen und prüfen.\n`,'MASTER-PROMPT.md':el.masterPrompt.value||'','KUNDENBRIEFING.md':buildClientDocument('brief'),'UEBERGABE.md':buildClientDocument('handover')};
+  }
+
+  function crc32(bytes){let crc=-1;for(const byte of bytes){crc^=byte;for(let i=0;i<8;i++)crc=(crc>>>1)^((crc&1)?0xedb88320:0)}return (crc^-1)>>>0}
+  function websiteZipBlob(files){
+    const encoder=new TextEncoder(),parts=[],central=[];let offset=0;const u16=n=>new Uint8Array([n&255,(n>>>8)&255]),u32=n=>new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]);
+    for(const [name,text] of Object.entries(files)){const n=encoder.encode(name),data=encoder.encode(text),crc=crc32(data),local=new Blob([u32(0x04034b50),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(n.length),u16(0),n,data]);parts.push(local);central.push(new Blob([u32(0x02014b50),u16(20),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(n.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),n]));offset+=local.size}
+    const centralSize=central.reduce((sum,x)=>sum+x.size,0);return new Blob([...parts,...central,u32(0x06054b50),u16(0),u16(0),u16(central.length),u16(central.length),u32(centralSize),u32(offset),u16(0)],{type:'application/zip'});
+  }
+  function downloadWebsiteZip(){if(!planRules().zip){el.plansDialog?.showModal();return}const blob=websiteZipBlob(exportedWebsiteFiles()),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.zip`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+  async function beginCheckout(plan){try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');location.href=data.url}catch(err){alert(err.message)}}
+  async function openBillingPortal(){try{const response=await sitebriefApiFetch('/api/portal',{method:'POST'}),data=await response.json();if(!response.ok)throw new Error(data.error||'Aboverwaltung nicht verfügbar');location.href=data.url}catch(err){alert(err.message)}}
+  async function publishToGithub(){if(!planRules().github){el.plansDialog?.showModal();return}const repoName=prompt('Name des neuen GitHub-Repositories:',(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9-]+/g,'-'));if(!repoName)return;try{el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='GitHub-Veröffentlichung wird vorbereitet…';const response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repoName,files:exportedWebsiteFiles()})}),data=await response.json();if(!response.ok)throw new Error(data.error||'GitHub-Veröffentlichung nicht möglich');el.exportResultHint.innerHTML=`Veröffentlicht: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>`}catch(err){el.exportResultHint.textContent=err.message}finally{el.publishGithubBtn.disabled=false}}
+
   function downloadText(filename,text,type="text/plain") { const blob=new Blob([text],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500); }
 
   function resetProject(){
@@ -1452,6 +1481,7 @@
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
     el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1300)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`sitebrief-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadBriefBtn.addEventListener("click",()=>downloadText("sitebrief-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
+    el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
     el.openLibraryBtn.addEventListener("click",()=>openLibrary("templates"));$$('[data-open-library]').forEach(b=>b.addEventListener("click",()=>openLibrary(b.dataset.openLibrary)));$$('[data-library-tab]').forEach(b=>b.addEventListener("click",()=>switchLibraryTab(b.dataset.libraryTab)));
     el.openSettingsBtn.addEventListener("click",()=>{populateSettingsDialog();el.settingsDialog.showModal()});el.saveSettingsBtn.addEventListener("click",saveSettingsFromDialog);
     el.gatewayConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gateway"));el.gatewayTestBtn?.addEventListener("click",()=>testAiProviderConnection("gateway"));el.gatewayDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gateway"));
