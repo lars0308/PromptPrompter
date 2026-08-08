@@ -15,6 +15,7 @@
   const PROFILES_KEY = "sitebrief-v6-profiles";
   const GUEST_USAGE_KEY = "sitebrief-v6-guest-runs";
   const THEME_KEY = "sitebrief-theme";
+  const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
   const GUEST_RUN_LIMIT = 3;
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
@@ -73,11 +74,11 @@
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
-      "conceptCount","generateConceptsBtn","generationStatus","conceptGallery","toRefineBtn",
+      "previewFormat","conceptCount","generateConceptsBtn","generationStatus","conceptGallery","toRefineBtn",
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
       "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadBriefBtn",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
-      "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
+      "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
       "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
       "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
@@ -167,7 +168,7 @@
       images:state.images.map(({dataUrl,previewUrl,...rest}) => rest),
       targetAgent:state.targetAgent,engine:state.engine,model:state.model,outputTarget:state.outputTarget,templateId:state.templateId,selectedModuleIds:state.selectedModuleIds,selectedSkillIds:state.selectedSkillIds,
       concepts:state.concepts,selectedConceptId:state.selectedConceptId,refinements:state.refinements,clarifications:state.clarifications,projectReview:state.projectReview,reviewSignature:state.reviewSignature,reviewDeferred:state.reviewDeferred,
-      project:project(),controls:controls(),conceptCount:Number(el.conceptCount?.value || 5)
+      project:project(),controls:controls(),conceptCount:Number(el.conceptCount?.value || 5),previewFormat:el.previewFormat?.value||"html"
     };
   }
 
@@ -388,7 +389,7 @@
   async function signIn(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||!password)return;
-    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await window.SiteBriefCloud.signIn(email,password);state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Angemeldet.";el.authMessage.className="auth-message good";updateAccountUi();closeAccountGate();}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
+    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await window.SiteBriefCloud.signIn(email,password);if(el.rememberEmail?.checked)localStorage.setItem(REMEMBERED_EMAIL_KEY,email);else localStorage.removeItem(REMEMBERED_EMAIL_KEY);state.cloud.user=data.user;el.authPassword.value="";await loadCloudBundle();el.authMessage.textContent="Angemeldet. Die Sitzung bleibt auf diesem Gerät erhalten.";el.authMessage.className="auth-message good";updateAccountUi();closeAccountGate();}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
   }
 
   async function signUp(){
@@ -428,6 +429,7 @@
     el.descriptionCount.textContent = el.projectDescription.value.length;
     const c = saved.controls || {}; ["originality","antiSlop","motion","density"].forEach(id => { if(c[id] != null){ el[id].value = c[id]; el[id].nextElementSibling.value = c[id]; } });
     if(saved.conceptCount) el.conceptCount.value = String(clamp(saved.conceptCount,3,5));
+    if(el.previewFormat)el.previewFormat.value=saved.previewFormat==="image"?"image":"html";
     applyAlwaysActiveItems(false);
     if(persistLocal) try{localStorage.setItem(STORAGE_KEY,JSON.stringify(serializableProjectState()));}catch{}
   }
@@ -946,10 +948,11 @@
       try{
         const text=await file.text();
         if(file.name.toLowerCase().endsWith(".json")){
-          const data=JSON.parse(text); const arr=Array.isArray(data)?data:(Array.isArray(data.skills)?data.skills:[data]);
+          const data=JSON.parse(text); const named=Array.isArray(data?.skillNames)?data.skillNames:[];const arr=[...(Array.isArray(data)?data:(Array.isArray(data?.skills)?data.skills:[data])),...named];
           arr.forEach(raw=>{
-            if(!raw || !raw.prompt && !raw.content && !raw.instructions) return;
-            state.skills.push({id:uid("skill"),name:raw.name||file.name.replace(/\.[^.]+$/,"")||"Importierter Skill",agent:AGENT_NAMES[raw.agent]?raw.agent:(raw.agent==="all"?"all":state.targetAgent),trigger:raw.trigger||raw.when||"Aus importierter Datei",prompt:raw.prompt||raw.content||raw.instructions,sourceFile:file.name,activation:"manual"});added++;
+            if(!raw)return;const item=typeof raw==="string"?{name:raw}:raw;const name=String(item.name||item.title||"").trim();if(!name)return;
+            const generatedPrompt=item.prompt||item.content||item.instructions||`Wende den Agent-Skill „${name}“ an, sobald seine Aufgabe oder sein Themenbereich für das Projekt relevant ist.`;
+            state.skills.push({id:uid("skill"),name,agent:AGENT_NAMES[item.agent]?item.agent:(item.agent==="all"?"all":state.targetAgent),trigger:item.trigger||item.when||"Bei passender Aufgabe anwenden",prompt:generatedPrompt,sourceFile:file.name,activation:"manual"});added++;
           });
         }else{
           const fm=parseFrontmatter(text); const heading=(text.match(/^#\s+(.+)$/m)||[])[1];
@@ -1071,8 +1074,11 @@
         if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
       }
       state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
-      let imageResult=null;if(cloudReady()&&aiConnection("gemini"))imageResult=await generateConceptImages();
-      el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Website-Entwürfe erstellt. Wähle die beste Richtung.`:imageResult?.kind==="quota"?"Gemini ist verbunden. Das Bildkontingent ist momentan aufgebraucht; die Layout-Vorschauen bleiben verwendbar. Bitte später erneut versuchen oder das Gemini-Kontingent erhöhen.":imageResult?.kind==="error"?"Gemini ist verbunden, die Bildausgabe war diesmal nicht verfügbar. Die Layout-Vorschauen bleiben verwendbar.":`${state.concepts.length} Richtungen erstellt. Für fertige Bildentwürfe Gemini unter Einstellungen → KI-Verbindungen verbinden.`;
+      if(el.previewFormat.value==="image"){
+        if(cloudReady()&&aiConnection("gemini")){
+          const imageResult=await generateConceptImages();el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt; verfügbare KI-Bilder wurden eingesetzt.`:imageResult?.kind==="quota"?"Gemini ist verbunden, aber das Bildkontingent reicht nicht. Die HTML-Vorschauen bleiben vollständig nutzbar.":"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
+        }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Für KI-Bilder muss Gemini verbunden sein. Bis dahin werden die kostenlosen HTML-Vorschauen angezeigt.";}
+      }else{el.generationStatus.className="generation-status";el.generationStatus.textContent=`${state.concepts.length} echte HTML/CSS-Vorschauen erstellt. Wähle die stärkste Richtung – ohne Bildkontingent und ohne zusätzliche Kosten.`;}
     }catch(err){
       state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent=`KI-Verbindung nicht verfügbar (${err.message}). Lokale Vorschauen wurden stattdessen erstellt.`;
     }finally{finishTaskProgress("preview","Vorschauen fertig");consumeGuestRun();el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
@@ -1096,7 +1102,7 @@
     const screen=document.createElement("div");screen.className=`concept-screen ${c.layoutVariant}${c.previewImage?" generated-preview":""}`;
     screen.style.setProperty("--c-bg",c.bg);screen.style.setProperty("--c-text",c.text);screen.style.setProperty("--c-accent",c.accent);screen.style.setProperty("--c-soft",c.soft);screen.style.setProperty("--c-display",c.display||"Georgia, serif");
     if(c.previewImage){screen.innerHTML=`<img src="${escapeHtml(c.previewImage)}" alt="Fertiger Website-Entwurf: ${escapeHtml(c.name)}">`;return screen;}
-    screen.innerHTML=`<div class="screen-nav"><strong>${escapeHtml(brandName())}</strong><span>WORK &nbsp; ABOUT &nbsp; CONTACT</span></div><div class="screen-body"><div class="screen-copy"><span class="screen-micro">${escapeHtml(project().type)} / ${escapeHtml(project().goal)}</span><h3>${escapeHtml(c.headline)}</h3><p>${escapeHtml(c.subline)}</p><span class="screen-cta">MEHR ANSEHEN →</span></div><div class="screen-photo"></div><span class="screen-micro">${escapeHtml(c.name)}</span></div>`;
+    screen.innerHTML=`<div class="screen-nav"><strong>${escapeHtml(brandName())}</strong><span>PROJEKTE &nbsp; LEISTUNGEN &nbsp; ÜBER UNS</span><i>KONTAKT</i></div><div class="screen-page"><div class="screen-body"><div class="screen-copy"><span class="screen-micro">${escapeHtml(project().type)} / ${escapeHtml(project().goal)}</span><h3>${escapeHtml(c.headline)}</h3><p>${escapeHtml(c.subline)}</p><span class="screen-cta">PROJEKT ANSEHEN</span></div><div class="screen-photo"></div><span class="screen-micro screen-direction">${escapeHtml(c.name)}</span></div><div class="screen-proof"><span>Ausgewählte Arbeiten</span><b>01</b><b>02</b><b>03</b></div><div class="screen-sections"><article><small>LEISTUNG 01</small><strong>Konzeption und Gestaltung</strong><p>Präzise geplant und passend zum Projekt umgesetzt.</p></article><article><small>LEISTUNG 02</small><strong>Inhalte mit Charakter</strong><p>Klar strukturiert, glaubwürdig und leicht zu bedienen.</p></article><div class="screen-feature"><span>AKTUELLES PROJEKT</span><strong>${escapeHtml(c.service||project().type)}</strong></div></div><div class="screen-footer"><strong>${escapeHtml(brandName())}</strong><span>IMPRESSUM &nbsp; DATENSCHUTZ &nbsp; KONTAKT</span></div></div>`;
     const photo=screen.querySelector(".screen-photo"); const ref=firstReferenceImage(); if(ref) photo.style.backgroundImage=`url(${JSON.stringify(ref).slice(1,-1)})`;
     return screen;
   }
@@ -1376,7 +1382,7 @@
     el.templateSelect.addEventListener("change",()=>{state.templateId=el.templateSelect.value;saveState();updateGuide()});el.recommendModulesBtn.addEventListener("click",()=>recommendModules(true));
     el.importSkillFileBtn.addEventListener("click",()=>el.skillFileInput.click());el.skillFileInput.addEventListener("change",e=>{importSkillFiles(e.target.files);e.target.value=""});
     [el.originality,el.antiSlop,el.motion,el.density].forEach(r=>r.addEventListener("input",()=>{r.nextElementSibling.value=r.value;saveState();updateGuide()}));
-    el.generateConceptsBtn.addEventListener("click",generateConcepts);el.conceptCount.addEventListener("change",()=>{saveState();updateGuide()});
+    el.generateConceptsBtn.addEventListener("click",generateConcepts);[el.conceptCount,el.previewFormat].forEach(control=>control.addEventListener("change",()=>{saveState();updateGuide()}));
     $$('#quickRefinements button').forEach(b=>b.addEventListener("click",()=>{const t=b.textContent.trim();el.refinementInput.value=el.refinementInput.value.trim()?`${el.refinementInput.value.trim()}, ${t}`:t;el.refinementInput.focus()}));el.applyRefinementBtn.addEventListener("click",applyRefinement);el.clearRefinementsBtn.addEventListener("click",()=>{state.refinements=[];renderRefinementHistory();saveState();updateGuide()});
     $$('.next-btn').forEach(b=>b.addEventListener("click",async()=>{const next=Number(b.dataset.next);if(state.currentStep===1&&!state.understanding){const ok=await analyzeProject();if(!ok)return;}if(state.currentStep===3&&next===4&&state.engine!=="local"&&state.settings.aiClarifications){const ok=await runProjectReview(false);if(!ok)return;}goStep(next)}));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
@@ -1401,6 +1407,7 @@
   function init(){
     cacheElements();
     initTheme();
+    const rememberedEmail=localStorage.getItem(REMEMBERED_EMAIL_KEY)||"";if(rememberedEmail){el.authEmail.value=rememberedEmail;el.rememberEmail.checked=true;}
     const hadSavedProject=Boolean(localStorage.getItem(STORAGE_KEY));
     loadLibrary();loadSettings();loadProfiles();restoreState();
     if(!hadSavedProject){
