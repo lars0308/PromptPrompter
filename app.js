@@ -844,6 +844,7 @@
   }
 
   function updateEngineUi(){
+    if(!cloudReady()){el.generatorEngine.value="local";state.engine="local";}
     state.engine = el.generatorEngine.value;
     state.model = el.generatorModel.value.trim();
     if(state.engine === "local"){
