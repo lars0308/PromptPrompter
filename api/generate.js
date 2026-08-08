@@ -1,4 +1,5 @@
 const { resolveProviderKey } = require('../server/provider-key');
+const { getEntitlements } = require('../server/entitlements');
 const VARIANTS = ["split","poster","ledger","stacked","editorial"];
 
 const conceptProperties = {
@@ -280,8 +281,12 @@ module.exports = async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
   try{
     const body=req.body||{};
+    const entitlement=await getEntitlements(req);
     const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},modules=[],settings={},clarifications=[],projectReview={}}=body;
+    if(entitlement.plan==="free") return res.status(403).json({error:"Externe KI-Generierung ist ab Pro verfügbar. Der lokale Qualitätsmodus bleibt kostenlos nutzbar."});
+    if(entitlement.plan==="pro" && !["openai","gateway"].includes(engine) && action!=="preview-image") return res.status(403).json({error:"Dieser KI-Anbieter ist in Ultimate verfügbar."});
     if(action==="preview-image"){
+      if(entitlement.plan==="pro"&&body.imageProvider!=="cloudflare")return res.status(403).json({error:"Gemini-Bildvorschauen sind in Ultimate verfügbar."});
       const imageProvider=body.imageProvider==='cloudflare'?'cloudflare':'gemini';const resolved=await resolveProviderKey(req,imageProvider);if(!resolved.key)throw Object.assign(new Error(`Kein ${imageProvider==='cloudflare'?'Cloudflare':'Gemini'} API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.`),{status:503});const result=imageProvider==='cloudflare'?await callCloudflarePreviewImage({key:resolved.key,project,concept:body.concept||{}}):await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{}});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);return res.status(200).json(result);
     }
     if(!["gateway","openai","gemini"].includes(engine)) return res.status(400).json({error:"Use the browser's local generator for local mode"});
@@ -295,7 +300,7 @@ module.exports = async function handler(req,res){
       prompt=makeRefinePrompt({project,concept:body.concept,refinement:String(body.refinement).slice(0,4000),references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview});
       schema=refineSchema();name="sitebrief_refined_concept";
     }else{
-      const count=Math.min(5,Math.max(3,Number(body.count)||5));
+      const count=Math.min(entitlement.maxConcepts,Math.max(3,Number(body.count)||entitlement.maxConcepts));
       prompt=makeConceptPrompt({count,project,references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview});
       schema=conceptsSchema(count);name="sitebrief_concepts";
     }
