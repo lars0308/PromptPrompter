@@ -17,7 +17,7 @@ function refineSchema(){
 function reviewSchema(maxQuestions=4){
   return {type:"object",additionalProperties:false,properties:{
     ready:{type:"boolean"},
-    questions:{type:"array",maxItems:maxQuestions,items:{type:"object",additionalProperties:false,properties:{id:{type:"string"},question:{type:"string"},reason:{type:"string"},suggestedAnswer:{type:"string"},required:{type:"boolean"}},required:["id","question","reason","suggestedAnswer","required"]}},
+    questions:{type:"array",maxItems:maxQuestions,items:{type:"object",additionalProperties:false,properties:{id:{type:"string"},question:{type:"string"},reason:{type:"string"},suggestedAnswer:{type:"string"},suggestions:{type:"array",maxItems:4,items:{type:"string"}},required:{type:"boolean"}},required:["id","question","reason","suggestedAnswer","suggestions","required"]}},
     warnings:{type:"array",items:{type:"object",additionalProperties:false,properties:{area:{type:"string"},message:{type:"string"},severity:{type:"string",enum:["info","warning"]}},required:["area","message","severity"]}},
     blockers:{type:"array",items:{type:"object",additionalProperties:false,properties:{area:{type:"string"},message:{type:"string"},alternative:{type:"string"}},required:["area","message","alternative"]}},
     assumptions:{type:"array",items:{type:"string"}}
@@ -166,7 +166,8 @@ Rules:
 - For privacy/legal/imprint topics: identify missing factual inputs or implementation concerns, but never claim legal compliance and never invent legal/company data or legal text.
 - Consider the configured legal/market region, but treat laws as potentially changing; flag items that need current professional/legal verification.
 - Consider accessibility, security, performance, SEO, privacy and imprint only when enabled.
-- suggestedAnswer may be empty when no safe default exists.
+- For every question, return 2–4 short, mutually distinct clickable suggestions. Use concrete fitting tools where useful (for example Sanity, WordPress, Webflow or no CMS), not vague filler choices.
+- suggestedAnswer may be empty when no safe default exists; suggestions must still contain useful decision options.
 - ready is true only when there is no required question or blocker preventing useful concept generation.
 Return only the requested JSON.`;
 }
@@ -234,11 +235,20 @@ async function callGemini({key,model,prompt,images}){
   return cleanJsonText(text);
 }
 
+async function callGeminiPreviewImage({key,project,concept}){
+  const prompt=`Create one polished, high-fidelity desktop website homepage screenshot at 16:9. It must look like a finished, credible design ready to present to a client, not a wireframe, moodboard, browser mockup, or collage. Use realistic layout, typography, spacing, imagery and UI details. Do not show a browser frame or device. Keep visible text short and correctly spelled.\n\nProject: ${project.name||"Website"}\nType: ${project.type||"Website"}\nGoal: ${project.goal||""}\nAudience: ${project.audience||""}\nDescription: ${project.description||""}\nDirection: ${concept.name||""}\nMood: ${concept.mood||""}\nLayout: ${concept.layout||""}\nHero: ${concept.hero||""}\nTypography: ${concept.type||""}\nPalette: ${(concept.palette||[]).join(", ")}\nHeadline: ${concept.headline||""}\nSubline: ${concept.subline||""}`;
+  const response=await fetch("https://generativelanguage.googleapis.com/v1beta/interactions",{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({model:"gemini-3.1-flash-image",input:prompt,response_format:{type:"image",mime_type:"image/jpeg",aspect_ratio:"16:9",image_size:"1K"}})});const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.error?.message||"Gemini image request failed"),{status:response.status});
+  let image=data.output_image?.data?data.output_image:null;if(!image)for(const step of data.steps||[])for(const block of step.content||[])if(block.type==="image"&&block.data){image=block;break}if(!image)throw new Error("Gemini hat kein Bild zurückgegeben");return {imageDataUrl:`data:${image.mime_type||image.mimeType||"image/jpeg"};base64,${image.data}`};
+}
+
 module.exports = async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
   try{
     const body=req.body||{};
     const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},modules=[],settings={},clarifications=[],projectReview={}}=body;
+    if(action==="preview-image"){
+      const resolved=await resolveProviderKey(req,"gemini");if(!resolved.key)throw Object.assign(new Error("Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});const result=await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{}});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);return res.status(200).json(result);
+    }
     if(!["gateway","openai","gemini"].includes(engine)) return res.status(400).json({error:"Use the browser's local generator for local mode"});
     let prompt,schema,name;
     if(action==="review"){
@@ -263,3 +273,4 @@ module.exports = async function handler(req,res){
     return res.status(error?.status||500).json({error:error?.message||"Unexpected generation error"});
   }
 };
+
