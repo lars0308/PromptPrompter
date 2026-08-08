@@ -12,6 +12,8 @@
   const LIBRARY_KEY = "sitebrief-v6-library";
   const SETTINGS_KEY = "sitebrief-v6-settings";
   const PROFILES_KEY = "sitebrief-v6-profiles";
+  const GUEST_USAGE_KEY = "sitebrief-v6-guest-runs";
+  const GUEST_RUN_LIMIT = 3;
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
     legalRegion:"Deutschland / EU",checks:{privacy:true,imprint:true,legal:true,accessibility:true,security:true,performance:true,seo:false},
@@ -72,10 +74,10 @@
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
       "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadBriefBtn",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
-      "accountBtn","syncState","accountDialog","accountLoggedOut","accountLoggedIn","authEmail","authPassword","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
+      "accountBtn","syncState","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
       "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
-      "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
+      "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
@@ -103,10 +105,10 @@
     };
   }
 
-  function selectedTemplate(){ return state.templates.find(x => x.id === state.templateId) || null; }
-  function selectedModules(){ return state.modules.filter(x => state.selectedModuleIds.includes(x.id)); }
+  function selectedTemplate(){ return cloudReady()?(state.templates.find(x => x.id === state.templateId) || null):null; }
+  function selectedModules(){ return cloudReady()?state.modules.filter(x => state.selectedModuleIds.includes(x.id)):[]; }
   function visibleSkills(){ return state.skills.filter(x => x.agent === "all" || x.agent === state.targetAgent); }
-  function selectedSkills(){ return visibleSkills().filter(x => state.selectedSkillIds.includes(x.id)); }
+  function selectedSkills(){ return cloudReady()?visibleSkills().filter(x => state.selectedSkillIds.includes(x.id)):[]; }
   function selectedConcept(){ return state.concepts.find(x => x.id === state.selectedConceptId) || null; }
 
   function loadLibrary(){
@@ -173,6 +175,21 @@
   }
 
   function cloudReady(){ return Boolean(state.cloud.configured && state.cloud.user && window.SiteBriefCloud?.client); }
+
+  function guestRunCount(){return clamp(Number(localStorage.getItem(GUEST_USAGE_KEY)||0),0,GUEST_RUN_LIMIT)}
+  function guestRunsRemaining(){return Math.max(0,GUEST_RUN_LIMIT-guestRunCount())}
+  function renderGuestLimit(){
+    if(!el.guestLimitNote)return;const remaining=guestRunsRemaining(),exhausted=remaining===0;
+    el.guestLimitBox.classList.toggle("exhausted",exhausted);el.guestLimitTitle.textContent=exhausted?"Gast-Limit erreicht":"Ohne Anmeldung testen";
+    el.guestLimitNote.textContent=exhausted?"Deine drei kostenlosen Gast-Durchläufe sind verbraucht. Melde dich an oder lege ein Konto an, um weiterzumachen.":`Noch ${remaining} von ${GUEST_RUN_LIMIT} Gast-Durchläufen verfügbar. Gespeicherte Cloud-Daten und Bibliotheken sind erst nach der Anmeldung verfügbar.`;
+    el.guestContinueBtn.hidden=exhausted;
+  }
+  function showAccountGate(){
+    if(cloudReady()||!el.accountDialog)return;updateAccountUi();renderGuestLimit();el.accountDialog.classList.add("guest-gate");el.accountDialogKicker.textContent="WILLKOMMEN BEI SITEBRIEF";el.accountDialogTitle.textContent=guestRunsRemaining()?"Anmelden oder kostenlos testen":"Zum Weitermachen anmelden";
+    el.accountIntro.textContent="Mit deiner Anmeldung werden Projekte, Profile, Bibliotheken, Module und Skills geladen und geräteübergreifend gespeichert.";if(!el.accountDialog.open)el.accountDialog.showModal();
+  }
+  function closeAccountGate(){el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
+  function consumeGuestRun(){if(cloudReady())return;localStorage.setItem(GUEST_USAGE_KEY,String(Math.min(GUEST_RUN_LIMIT,guestRunCount()+1)));renderGuestLimit()}
 
   async function sitebriefApiFetch(url, options={}){
     const auth = await window.SiteBriefCloud?.authHeaders?.().catch?.(()=>({})) || {};
@@ -246,6 +263,7 @@
     if(!el.accountBtn) return;
     if(!state.cloud.configured){ el.accountBtn.textContent="Cloud nicht verbunden"; setSyncState("Lokal"); return; }
     if(state.cloud.user){
+      if(el.openLibraryBtn){el.openLibraryBtn.disabled=false;el.openLibraryBtn.title=""}if(el.generatorEngine)el.generatorEngine.disabled=false;
       el.accountBtn.textContent="Konto";
       el.accountLoggedOut.hidden=true;el.accountLoggedIn.hidden=false;
       el.accountEmail.textContent=state.cloud.user.email||"Angemeldet";el.accountUserId.textContent=state.cloud.user.id||"";
@@ -254,7 +272,7 @@
       renderCloudProjects();
       if(!state.cloud.syncing) setSyncState("Cloud",state.cloud.error?"error":"synced");
     }else{
-      el.accountBtn.textContent="Anmelden";el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;setSyncState("Cloud bereit");
+      el.accountBtn.textContent="Anmelden";el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;setSyncState("Cloud bereit");if(el.openLibraryBtn){el.openLibraryBtn.disabled=true;el.openLibraryBtn.title="Bibliotheken sind nach der Anmeldung verfügbar"}if(el.generatorEngine){el.generatorEngine.value="local";state.engine="local";el.generatorEngine.disabled=true;el.generatorModel.disabled=true;}
     }
   }
 
@@ -342,7 +360,7 @@
   }
 
   async function initCloudIntegration(){
-    if(!window.SiteBriefCloudReady){state.cloud.configured=false;updateAccountUi();return;}
+    if(!window.SiteBriefCloudReady){state.cloud.configured=false;updateAccountUi();showAccountGate();return;}
     try{
       const result=await window.SiteBriefCloudReady;
       state.cloud.configured=Boolean(result?.configured);state.cloud.user=result?.user||null;
@@ -350,25 +368,25 @@
       window.SiteBriefCloud?.subscribe?.(async(event,payload)=>{
         if(event==="auth"){
           state.cloud.user=payload.user||null;if(!state.cloud.user){state.aiConnections=[];window.SiteBriefCloud.aiConnections=[];renderAiConnections();}updateAccountUi();
-          if(state.cloud.user)try{await loadCloudBundle()}catch{}
+          if(state.cloud.user)try{await loadCloudBundle();closeAccountGate()}catch{}
         }
       });
       if(state.cloud.user) await loadCloudBundle();
       if(!state.activeProfileId){const def=state.systemProfiles.find(x=>x.is_default)||state.systemProfiles[0];if(def){state.activeProfileId=def.id;state.settings.activeProfileId=def.id;saveProfiles();}}
-      renderProfileUi();updateAccountUi();
-    }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();}
+      renderProfileUi();updateAccountUi();if(!state.cloud.user)showAccountGate();
+    }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();showAccountGate();}
   }
 
   async function signIn(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||!password)return;
-    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await window.SiteBriefCloud.signIn(email,password);state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Angemeldet.";el.authMessage.className="auth-message good";updateAccountUi();}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
+    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await window.SiteBriefCloud.signIn(email,password);state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Angemeldet.";el.authMessage.className="auth-message good";updateAccountUi();closeAccountGate();}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
   }
 
   async function signUp(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||password.length<8){el.authMessage.textContent="Bitte E-Mail und mindestens 8 Zeichen Passwort eingeben.";el.authMessage.className="auth-message error";return;}
-    try{const data=await window.SiteBriefCloud.signUp(email,password);if(data.session){state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Konto angelegt und angemeldet.";}else el.authMessage.textContent="Konto angelegt. Bitte bestätige die E-Mail und melde dich danach an.";el.authMessage.className="auth-message good";updateAccountUi();}catch(err){el.authMessage.textContent=err?.message||"Konto konnte nicht angelegt werden.";el.authMessage.className="auth-message error";}
+    try{const data=await window.SiteBriefCloud.signUp(email,password);if(data.session){state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Konto angelegt und angemeldet.";closeAccountGate();}else el.authMessage.textContent="Konto angelegt. Bitte bestätige die E-Mail und melde dich danach an.";el.authMessage.className="auth-message good";updateAccountUi();}catch(err){el.authMessage.textContent=err?.message||"Konto konnte nicht angelegt werden.";el.authMessage.className="auth-message error";}
   }
 
   async function signOut(){
@@ -386,7 +404,7 @@
     state.urls = Array.isArray(saved.urls) ? saved.urls : [];
     state.images = Array.isArray(saved.images) ? saved.images.map(x => ({...x,dataUrl:x.dataUrl||"",previewUrl:x.previewUrl||""})) : [];
     state.targetAgent = AGENT_NAMES[saved.targetAgent] ? saved.targetAgent : (state.settings.defaultAgent||"codex");
-    state.engine = ["local","gateway","openai"].includes(saved.engine) ? saved.engine : (state.settings.defaultEngine||"local");
+    state.engine = ["local","gateway","openai","gemini"].includes(saved.engine) ? saved.engine : (state.settings.defaultEngine||"local");
     state.model = saved.model || state.settings.defaultModel || "";
     state.templateId = saved.templateId || "";
     state.selectedModuleIds = Array.isArray(saved.selectedModuleIds) ? saved.selectedModuleIds : [];
@@ -653,6 +671,7 @@
 
   function renderAiReviewCard(){
     if(!el.aiReviewCard) return;
+    if(!cloudReady()){el.aiReviewTitle.textContent="Im Gastmodus nicht verfügbar";el.aiReviewText.textContent="Die ausführliche Projektprüfung und Gegenfragen werden nach der Anmeldung freigeschaltet.";el.runAiReviewBtn.hidden=true;return;}el.runAiReviewBtn.hidden=false;
     if(state.engine==="local"){
       el.aiReviewTitle.textContent="Lokale Grundprüfung aktiv";el.aiReviewText.textContent=`Ohne externe KI werden Grundhinweise geprüft. Aktive Pflichtbereiche: ${activeCheckNames().join(", ")||"keine"}.`;el.runAiReviewBtn.textContent="Grundprüfung anzeigen";return;
     }
@@ -673,14 +692,31 @@
     (review.questions||[]).slice(0,state.settings.maxQuestions).forEach((q,i)=>{
       const existing=state.clarifications.find(a=>a.question===q.question)?.answer||"";
       const row=document.createElement("div");row.className="clarification-question";row.dataset.questionId=q.id||String(i);
-      row.innerHTML=`<span>FRAGE ${String(i+1).padStart(2,"0")}${q.required?" · ERFORDERLICH":""}</span><h3>${escapeHtml(q.question)}</h3><p>${escapeHtml(q.reason||"")}</p><textarea ${q.required?"required":""} placeholder="Deine Antwort…">${escapeHtml(existing)}</textarea>${q.suggestedAnswer?`<div class="suggested-answer"><small>Vorschlag: ${escapeHtml(q.suggestedAnswer)}</small><button type="button">Vorschlag übernehmen</button></div>`:""}`;
-      if(q.suggestedAnswer) row.querySelector(".suggested-answer button").addEventListener("click",()=>{row.querySelector("textarea").value=q.suggestedAnswer});
+      const suggestions=questionSuggestions(q);
+      row.innerHTML=`<span>FRAGE ${String(i+1).padStart(2,"0")}${q.required?" · ERFORDERLICH":""}</span><h3>${escapeHtml(q.question)}</h3><p>${escapeHtml(q.reason||"")}</p><textarea ${q.required?"required":""} placeholder="Deine Antwort…">${escapeHtml(existing)}</textarea>${suggestions.length?`<div class="suggestion-options" aria-label="Antwortvorschläge">${suggestions.map(s=>`<button class="suggestion-chip" type="button">${escapeHtml(s)}</button>`).join("")}</div>`:""}`;
+      $$(".suggestion-chip",row).forEach((button,index)=>button.addEventListener("click",()=>{row.querySelector("textarea").value=suggestions[index];row.querySelector("textarea").focus()}));
       el.clarificationQuestions.appendChild(row);
     });
     el.clarificationIntro.textContent=(review.questions||[]).length?"Die Generator-KI braucht bzw. empfiehlt diese Klärungen, damit Konzept und Master-Prompt nicht auf stillen Annahmen beruhen.":"Keine Gegenfragen nötig. Die Hinweise werden trotzdem in Blueprint und Master-Prompt übernommen.";
     el.deferClarificationsBtn.hidden=state.settings.criticalBehavior==="block" && (review.blockers||[]).length>0;
     el.clarificationDialog.showModal();
   }
+
+  function questionSuggestions(q){
+    const text=`${q.question||""} ${q.reason||""}`.toLowerCase();let suggestions=[...(Array.isArray(q.suggestions)?q.suggestions:[]),q.suggestedAnswer].filter(Boolean);
+    if(/cms|content.management|inhalte|beiträge|tagebuch/.test(text))suggestions.push("Sanity – flexibel und strukturiert","WordPress – vertraut und leicht selbst pflegbar","Kein CMS – Inhalte werden im Code gepflegt");
+    if(/exif|standort|metadaten/.test(text))suggestions.push("Ja – EXIF-Daten automatisch entfernen","Nein – Metadaten bewusst erhalten","Vor jedem Upload manuell entscheiden");
+    if(/animation|effekt|ladezeit|performance/.test(text))suggestions.push("Ausgewogen – dezente Animationen und optimierte Bilder","Performance zuerst – nur minimale Bewegung","Visuell stark – Bewegung gezielt einsetzen");
+    return [...new Set(suggestions.map(x=>String(x).trim()).filter(Boolean))].slice(0,4);
+  }
+
+  const progressTimers={};
+  function startTaskProgress(kind,expectedSeconds){
+    const box=el[`${kind}Progress`],fill=el[`${kind}ProgressFill`],percent=el[`${kind}ProgressPercent`],label=el[`${kind}ProgressText`];if(!box)return;clearInterval(progressTimers[kind]);const started=Date.now();box.hidden=false;fill.style.width="4%";percent.textContent="4 %";label.textContent=`Wird vorbereitet · ca. ${expectedSeconds} s`;
+    progressTimers[kind]=setInterval(()=>{const elapsed=(Date.now()-started)/1000,pct=Math.min(92,Math.round(4+88*(1-Math.exp(-elapsed/(expectedSeconds/2))))),remaining=Math.max(2,Math.ceil(expectedSeconds-elapsed));fill.style.width=`${pct}%`;percent.textContent=`${pct} %`;label.textContent=`${Math.floor(elapsed)} s vergangen · ca. ${remaining} s verbleibend`;},400);
+  }
+  function setTaskProgress(kind,pct,text){const fill=el[`${kind}ProgressFill`],percent=el[`${kind}ProgressPercent`],label=el[`${kind}ProgressText`];if(!fill)return;fill.style.width=`${pct}%`;percent.textContent=`${pct} %`;label.textContent=text;}
+  function finishTaskProgress(kind,text="Abgeschlossen"){clearInterval(progressTimers[kind]);setTaskProgress(kind,100,text);setTimeout(()=>{if(el[`${kind}Progress`])el[`${kind}Progress`].hidden=true},1000);}
 
   function saveClarificationAnswers(){
     const questions=state.projectReview?.questions||[]; const rows=$$(".clarification-question",el.clarificationQuestions); const answers=[];
@@ -689,6 +725,7 @@
   }
 
   async function runProjectReview(force=false){
+    if(!cloudReady())return true;
     if(!state.settings.aiClarifications && state.engine!=="local"){el.settingsDialog.showModal();populateSettingsDialog();return true;}
     const sig=projectSignature();
     if(!force && state.projectReview && state.reviewSignature===sig){
@@ -697,7 +734,7 @@
       if(unanswered.length || hasAnyUnresolved){renderClarificationDialog(state.projectReview);return false;}
       return !(state.settings.criticalBehavior==="block" && (state.projectReview.blockers||[]).length && !state.clarifications.some(a=>a.answer?.trim()));
     }
-    el.aiReviewTitle.textContent="Projekt wird geprüft…";el.runAiReviewBtn.disabled=true;
+    el.aiReviewTitle.textContent="Projekt wird geprüft…";el.runAiReviewBtn.disabled=true;startTaskProgress("review",18);
     let review;
     try{
       if(state.engine==="local") review=localProjectReview();
@@ -710,7 +747,7 @@
       state.projectReview=review;state.reviewSignature=sig;state.reviewDeferred=false;saveState();renderAiReviewCard();renderClarificationDialog(review);return review.questions.length===0 && !(state.settings.criticalBehavior==="block"&&review.blockers.length);
     }catch(err){
       review=localProjectReview();state.projectReview=review;state.reviewSignature=sig;saveState();renderAiReviewCard();renderClarificationDialog(review);el.clarificationIntro.textContent=`Externe KI-Prüfung war nicht verfügbar (${err.message}). SiteBrief zeigt deshalb die lokale Grundprüfung.`;return true;
-    }finally{el.runAiReviewBtn.disabled=false;}
+    }finally{finishTaskProgress("review","Prüfung abgeschlossen");el.runAiReviewBtn.disabled=false;}
   }
 
   function renderUnderstanding(){
@@ -1003,31 +1040,44 @@
   }
 
   async function generateConcepts(){
+    if(!cloudReady()&&guestRunsRemaining()===0){showAccountGate();return;}
     if(state.engine!=="local" && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
       const ready=await runProjectReview(false);
       if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}
     }
-    const count=clamp(el.conceptCount.value,3,5); el.generateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";
+    const count=clamp(el.conceptCount.value,3,5); el.generateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";startTaskProgress("preview",cloudReady()?Math.max(24,count*12):4);
     let concepts=[];
     try{
-      if(state.engine === "local") concepts=localConcepts(count);
+      if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
       else{
         const payload={action:"concepts",count,engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:state.urls.map(x=>({url:x.url,aspects:x.aspects,note:x.like,dislike:x.dislike})),images:state.images.filter(x=>x.dataUrl).slice(0,3).map(x=>({name:x.name,dataUrl:x.dataUrl,aspects:x.aspects,note:x.like,dislike:x.dislike})),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"Generator-Anfrage fehlgeschlagen"); concepts=(data.concepts||[]).slice(0,count).map(normalizedConcept);
         if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
       }
-      state.concepts=concepts.slice(0,count).map(normalizedConcept); state.selectedConceptId=state.concepts[0]?.id||""; state.refinements=[]; renderConcepts(); renderSelectedPreview();
-      el.generationStatus.className="generation-status"; el.generationStatus.textContent=`${state.concepts.length} Richtungen erstellt. Wähle die aus, die als Basis weitergehen soll.`;
+      state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
+      if(cloudReady()&&aiConnection("gemini"))await generateConceptImages();
+      el.generationStatus.className="generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} fertige Website-Entwürfe erstellt. Wähle die beste Richtung.`:`${state.concepts.length} Richtungen erstellt. Für echte Bildentwürfe Gemini unter Einstellungen → KI-Verbindungen verbinden.`;
     }catch(err){
       state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent=`KI-Verbindung nicht verfügbar (${err.message}). Lokale Vorschauen wurden stattdessen erstellt.`;
-    }finally{el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
+    }finally{finishTaskProgress("preview","Vorschauen fertig");consumeGuestRun();el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
+  }
+
+  async function generateConceptImages(){
+    for(let i=0;i<state.concepts.length;i++){
+      const concept=state.concepts[i];setTaskProgress("preview",Math.round(38+(i/state.concepts.length)*54),`Bildentwurf ${i+1} von ${state.concepts.length} wird gestaltet…`);
+      try{
+        const payload={action:"preview-image",engine:"gemini",project:project(),concept:conceptForExport(concept),references:state.urls.slice(0,3),images:state.images.filter(x=>x.dataUrl).slice(0,2)};
+        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Bildvorschau fehlgeschlagen");concept.previewImage=data.imageDataUrl||"";renderConcepts();renderSelectedPreview();
+      }catch(err){el.generationStatus.textContent=`Bild ${i+1} konnte nicht erzeugt werden: ${err.message}`;}
+    }
   }
 
   function firstReferenceImage(){ return state.images.find(x=>x.dataUrl)?.dataUrl || ""; }
 
   function createConceptScreen(c){
-    const screen=document.createElement("div"); screen.className=`concept-screen ${c.layoutVariant}`;
+    const screen=document.createElement("div");screen.className=`concept-screen ${c.layoutVariant}${c.previewImage?" generated-preview":""}`;
     screen.style.setProperty("--c-bg",c.bg);screen.style.setProperty("--c-text",c.text);screen.style.setProperty("--c-accent",c.accent);screen.style.setProperty("--c-soft",c.soft);screen.style.setProperty("--c-display",c.display||"Georgia, serif");
+    if(c.previewImage){screen.innerHTML=`<img src="${escapeHtml(c.previewImage)}" alt="Fertiger Website-Entwurf: ${escapeHtml(c.name)}">`;return screen;}
     screen.innerHTML=`<div class="screen-nav"><strong>${escapeHtml(brandName())}</strong><span>WORK &nbsp; ABOUT &nbsp; CONTACT</span></div><div class="screen-body"><div class="screen-copy"><span class="screen-micro">${escapeHtml(project().type)} / ${escapeHtml(project().goal)}</span><h3>${escapeHtml(c.headline)}</h3><p>${escapeHtml(c.subline)}</p><span class="screen-cta">MEHR ANSEHEN →</span></div><div class="screen-photo"></div><span class="screen-micro">${escapeHtml(c.name)}</span></div>`;
     const photo=screen.querySelector(".screen-photo"); const ref=firstReferenceImage(); if(ref) photo.style.backgroundImage=`url(${JSON.stringify(ref).slice(1,-1)})`;
     return screen;
@@ -1122,6 +1172,7 @@
   }
 
   function buildMasterPrompt(){
+    if(!cloudReady()){const p=project(),c=selectedConcept();return `Erstelle eine einfache responsive ${p.type||"Website"} für „${p.name||"dieses Projekt"}“.\n\nZiel: ${p.goal||"klar und verständlich informieren"}.\nZielgruppe: ${p.audience||"allgemein"}.\nBeschreibung: ${p.description||"nicht angegeben"}.\n\nNutze die gewählte Richtung „${c?.name||"schlicht und übersichtlich"}“ als grobe visuelle Orientierung. Baue eine klare Startseite mit Navigation, Hauptbereich, den wichtigsten Inhalten und Kontaktmöglichkeit. Verwende keine erfundenen Bewertungen oder Zahlen. Achte auf mobile Darstellung und grundlegende Bedienbarkeit.`;}
     const p=project();const c=selectedConcept();const t=selectedTemplate();const mods=selectedModules();const skills=selectedSkills();const u=state.understanding||localAnalyzeProject();const ctrl=controls();
     const templateBlock=t?`\n## EIGENE MASTER-VORLAGE: ${t.name}\n${t.prompt}\n`:"";
     const moduleBlock=mods.length?`\n## AKTIVE PROMPT-MODULE\n${mods.map((m,i)=>`### ${i+1}. ${m.name}${m.tag?` [${m.tag}]`:""}\n${m.prompt}`).join("\n\n")}\n`:"";
@@ -1252,8 +1303,8 @@
   }
 
   async function importLibrary(file){
-    if(!file)return;try{const data=JSON.parse(await file.text());const templates=Array.isArray(data.templates)?data.templates:[];const modules=Array.isArray(data.modules)?data.modules:[];const skills=Array.isArray(data.skills)?data.skills:[];const profiles=Array.isArray(data.profiles)?data.profiles:[];
-      state.templates=mergeById(state.templates,templates.map(x=>({...x,id:x.id||uid("tpl")})));state.modules=mergeById(state.modules,modules.map(x=>({...x,id:x.id||uid("mod"),activation:x.activation||"manual"})));state.skills=mergeById(state.skills,skills.map(x=>({...x,id:x.id||uid("skill"),activation:x.activation||"manual"})));state.profiles=mergeById(state.profiles,profiles.map(x=>({...x,id:x.id||uid("profile")})));if(data.activeProfileId)state.activeProfileId=data.activeProfileId;if(data.settings&&typeof data.settings==="object"){state.settings={...DEFAULT_SETTINGS,...data.settings,checks:{...DEFAULT_SETTINGS.checks,...(data.settings.checks||{})}};saveSettings();}saveLibrary();saveProfiles();renderLibrary();renderProfileUi();renderAiReviewCard();recommendModules(false);updateGuide();if(cloudReady())syncEverything();}catch{alert("Die JSON-Datei konnte nicht als SiteBrief-Bibliothek gelesen werden.")}
+    if(!file)return;if(!cloudReady()){showAccountGate();el.importLibraryInput.value="";return;}try{const data=JSON.parse(await file.text()),root=data.library&&typeof data.library==="object"?{...data,...data.library}:data,items=Array.isArray(data)?data:[];const typed=type=>items.filter(x=>String(x.type||x.kind||"").toLowerCase()===type);const templates=[...(Array.isArray(root.templates)?root.templates:[]),...typed("template")];const modules=[...(Array.isArray(root.modules)?root.modules:[]),...typed("module")];const skills=[...(Array.isArray(root.skills)?root.skills:[]),...(Array.isArray(root.agentSkills)?root.agentSkills:[]),...typed("skill")];const profiles=Array.isArray(root.profiles)?root.profiles:[];const normalize=(x,type)=>({...x,name:x.name||x.title||x.id||`Importierter ${type}`,prompt:x.prompt||x.instructions||x.content||x.body||""});
+      state.templates=mergeById(state.templates,templates.map(x=>({...normalize(x,"Vorlage"),id:x.id||uid("tpl")})).filter(x=>x.prompt));state.modules=mergeById(state.modules,modules.map(x=>({...normalize(x,"Modul"),id:x.id||uid("mod"),activation:x.activation||"manual"})).filter(x=>x.prompt));state.skills=mergeById(state.skills,skills.map(x=>({...normalize(x,"Skill"),id:x.id||uid("skill"),agent:x.agent||"all",activation:x.activation||"manual"})).filter(x=>x.prompt));state.profiles=mergeById(state.profiles,profiles.map(x=>({...x,id:x.id||uid("profile")})));if(root.activeProfileId)state.activeProfileId=root.activeProfileId;if(root.settings&&typeof root.settings==="object"){state.settings={...DEFAULT_SETTINGS,...root.settings,checks:{...DEFAULT_SETTINGS.checks,...(root.settings.checks||{})}};saveSettings();}saveLibrary();saveProfiles();renderLibrary();renderProfileUi();renderAiReviewCard();recommendModules(false);updateGuide();syncEverything();}catch{alert("Die JSON-Datei konnte nicht als SiteBrief-Bibliothek gelesen werden.")}
     el.importLibraryInput.value="";
   }
 
@@ -1288,7 +1339,7 @@
     el.settingsLoginBtn?.addEventListener("click",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});
     el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
     el.saveProfileBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.manageProfilesBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.createProfileBtn.addEventListener("click",createProfileFromDialog);
-    el.accountBtn.addEventListener("click",()=>{updateAccountUi();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",signIn);el.signUpBtn.addEventListener("click",signUp);el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);
+    el.accountBtn.addEventListener("click",()=>{updateAccountUi();renderGuestLimit();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",signIn);el.signUpBtn.addEventListener("click",signUp);el.guestContinueBtn.addEventListener("click",closeAccountGate);el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});
     el.runAiReviewBtn.addEventListener("click",()=>{if(state.engine!=="local"&&!state.settings.aiClarifications){populateSettingsDialog();el.settingsDialog.showModal();return;}runProjectReview(true)});
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
@@ -1318,3 +1369,4 @@
 
   document.addEventListener("DOMContentLoaded",init);
 })();
+

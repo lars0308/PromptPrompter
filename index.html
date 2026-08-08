@@ -155,7 +155,7 @@
         <p class="engine-help" id="engineHelp"></p>
 
         <div class="ai-review-card" id="aiReviewCard">
-          <div><span>PROJEKTPRÜFUNG</span><strong id="aiReviewTitle">Noch nicht mit der Generator-KI geprüft</strong><p id="aiReviewText">Wenn eine externe KI aktiv ist, kann sie fehlende Angaben, Widersprüche und nicht umsetzbare Wünsche erkennen und gezielt nachfragen.</p></div>
+          <div><span>PROJEKTPRÜFUNG</span><strong id="aiReviewTitle">Noch nicht mit der Generator-KI geprüft</strong><p id="aiReviewText">Wenn eine externe KI aktiv ist, kann sie fehlende Angaben, Widersprüche und nicht umsetzbare Wünsche erkennen und gezielt nachfragen.</p><div class="task-progress" id="reviewProgress" hidden><div class="task-progress-label"><b id="reviewProgressPercent">0 %</b><small id="reviewProgressText">Analyse wird vorbereitet…</small></div><div class="task-progress-track"><i id="reviewProgressFill"></i></div></div></div>
           <button type="button" class="outline-btn mini" id="runAiReviewBtn">Jetzt prüfen</button>
         </div>
 
@@ -217,6 +217,7 @@
           </div>
         </div>
         <div id="generationStatus" class="generation-status">Noch keine Vorschauen erzeugt.</div>
+        <div class="task-progress preview-progress" id="previewProgress" hidden><div class="task-progress-label"><b id="previewProgressPercent">0 %</b><small id="previewProgressText">Vorschauen werden vorbereitet…</small></div><div class="task-progress-track"><i id="previewProgressFill"></i></div></div>
         <div id="conceptGallery" class="concept-gallery"></div>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="5">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="7" id="toRefineBtn">Auswahl verfeinern <i>→</i></button></div>
@@ -415,15 +416,16 @@
   <dialog id="accountDialog" class="library-dialog account-dialog">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
-        <div><span>SUPABASE CLOUD</span><h2>Konto & Synchronisierung</h2></div>
+        <div><span id="accountDialogKicker">SUPABASE CLOUD</span><h2 id="accountDialogTitle">Konto & Synchronisierung</h2></div>
         <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
       </header>
       <div class="account-body">
         <div id="accountLoggedOut">
-          <p class="account-intro">Mit einem Konto werden Profile, Einstellungen, Module, Skills und Projekte geräteübergreifend gespeichert. Ohne Login arbeitet SiteBrief weiter lokal.</p>
+          <p class="account-intro" id="accountIntro">Melde dich an, um gespeicherte Projekte, Profile, Bibliotheken, Module und Skills auf allen Geräten zu verwenden.</p>
+          <div class="guest-limit-box" id="guestLimitBox"><strong id="guestLimitTitle">Ohne Anmeldung testen</strong><p id="guestLimitNote">Du kannst SiteBrief als Gast dreimal vollständig verwenden.</p></div>
           <label class="field"><span>E-Mail</span><input id="authEmail" type="email" autocomplete="email" placeholder="name@beispiel.de" /></label>
           <label class="field"><span>Passwort</span><input id="authPassword" type="password" autocomplete="current-password" minlength="8" /></label>
-          <div class="inline-actions"><button type="button" class="solid-btn" id="signInBtn">Anmelden</button><button type="button" class="outline-btn" id="signUpBtn">Konto anlegen</button></div>
+          <div class="inline-actions"><button type="button" class="solid-btn" id="signInBtn">Anmelden</button><button type="button" class="outline-btn" id="signUpBtn">Konto anlegen</button><button type="button" class="text-btn" id="guestContinueBtn">Ohne Anmeldung fortfahren</button></div>
           <p id="authMessage" class="auth-message"></p>
         </div>
         <div id="accountLoggedIn" hidden>
@@ -474,3 +476,4 @@
   <script src="./app.js" defer></script>
 </body>
 </html>
+
