@@ -1,0 +1,75 @@
+name: Finalize SiteBrief settings hotfix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/hotfix-sitebrief-settings.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch settings and login robustness
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          app = Path('app.js')
+          s = app.read_text()
+
+          old = '"settingsDialog","setActiveProfile","applyProfileBtn","setDefaultAgent","setDefaultEngine","setDefaultModel","setDefaultMode","setDefaultConceptCount","gatewayConnectionStatus"'
+          new = '"settingsDialog","setActiveProfile","applyProfileBtn","setDefaultAgent","setDefaultEngine","setDefaultModel","setDefaultMode","setDefaultConceptCount","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus"'
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif new not in s:
+              raise SystemExit('cacheElements patch target not found')
+
+          old = """      if(!logged && !conn) ui.message.textContent='Zum Speichern eines eigenen API-Keys zuerst anmelden.';\n      else if(conn && !ui.message.classList.contains('error')) ui.message.textContent='Verschlüsselt in Supabase Vault gespeichert.';\n      else if(!conn && !ui.message.classList.contains('error')) ui.message.textContent='';\n    }\n  }"""
+          new = """      if(!logged && !conn) ui.message.textContent='Zum Speichern eines eigenen API-Keys zuerst anmelden.';\n      else if(conn && !ui.message.classList.contains('error')) ui.message.textContent='Verschlüsselt in Supabase Vault gespeichert.';\n      else if(!conn && !ui.message.classList.contains('error')) ui.message.textContent='';\n    }\n    if(el.connectionLoginRow) el.connectionLoginRow.hidden=cloudReady();\n  }"""
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif new not in s:
+              raise SystemExit('renderAiConnections patch target not found')
+
+          old = """    el.gatewayConnectBtn.addEventListener(\"click\",()=>saveAiProviderConnection(\"gateway\"));el.gatewayTestBtn.addEventListener(\"click\",()=>testAiProviderConnection(\"gateway\"));el.gatewayDisconnectBtn.addEventListener(\"click\",()=>disconnectAiProvider(\"gateway\"));\n    el.openaiConnectBtn.addEventListener(\"click\",()=>saveAiProviderConnection(\"openai\"));el.openaiTestBtn.addEventListener(\"click\",()=>testAiProviderConnection(\"openai\"));el.openaiDisconnectBtn.addEventListener(\"click\",()=>disconnectAiProvider(\"openai\"));"""
+          new = """    el.gatewayConnectBtn?.addEventListener(\"click\",()=>saveAiProviderConnection(\"gateway\"));el.gatewayTestBtn?.addEventListener(\"click\",()=>testAiProviderConnection(\"gateway\"));el.gatewayDisconnectBtn?.addEventListener(\"click\",()=>disconnectAiProvider(\"gateway\"));\n    el.openaiConnectBtn?.addEventListener(\"click\",()=>saveAiProviderConnection(\"openai\"));el.openaiTestBtn?.addEventListener(\"click\",()=>testAiProviderConnection(\"openai\"));el.openaiDisconnectBtn?.addEventListener(\"click\",()=>disconnectAiProvider(\"openai\"));\n    el.settingsLoginBtn?.addEventListener(\"click\",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});"""
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif new not in s:
+              raise SystemExit('bindEvents patch target not found')
+
+          app.write_text(s)
+
+          css = Path('styles.css')
+          c = css.read_text()
+          marker = '.connection-login-row{'
+          if marker not in c:
+              c += "\n.connection-login-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);padding:10px 12px;margin:0 0 12px;background:rgba(255,255,255,.1)}.connection-login-row span{font-size:8px;line-height:1.45;color:var(--muted)}\n@media(max-width:620px){.connection-login-row{align-items:flex-start;flex-direction:column}}\n"
+              css.write_text(c)
+
+          html = Path('index.html').read_text()
+          required = [
+              'id="accountBtn"','id="accountDialog"','id="signInBtn"',
+              'id="gatewayConnectionStatus"','id="gatewayApiKey"','id="gatewayConnectBtn"',
+              'id="openaiConnectionStatus"','id="openaiApiKey"','id="openaiConnectBtn"',
+              'id="settingsLoginBtn"','id="connectionLoginRow"'
+          ]
+          missing = [x for x in required if x not in html]
+          if missing:
+              raise SystemExit('Missing required HTML IDs: ' + ', '.join(missing))
+          PY
+          node --check app.js
+      - name: Commit hotfix and remove bootstrap workflow
+        shell: bash
+        run: |
+          git config user.name "SiteBrief Hotfix"
+          git config user.email "actions@users.noreply.github.com"
+          rm -f .github/workflows/hotfix-sitebrief-settings.yml
+          git add -A
+          git commit -m "Fix login and expose AI connections in settings"
+          git push origin main
