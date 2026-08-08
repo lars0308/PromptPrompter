@@ -7,6 +7,7 @@
   const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[ch]);
   const clamp = (n, min, max) => Math.min(max, Math.max(min, Number(n) || 0));
   const AGENT_NAMES = {claude:"Claude Code",codex:"Codex",gemini:"Gemini",chatgpt:"ChatGPT",cursor:"Cursor",v0:"v0",universal:"Universal"};
+  const OUTPUT_TARGETS = {"next-vercel":"Next.js + TypeScript + Vercel","next-only":"Next.js + TypeScript","html":"Statisches HTML / CSS / JavaScript","react":"React + Vite","astro":"Astro","existing":"Bestehenden Projekt-Stack weiterführen"};
   const ASPECTS = ["Layout","Farben","Typografie","Bildsprache","Hero","Struktur","Stimmung","Nur Inspiration"];
   const STORAGE_KEY = "sitebrief-v6-state";
   const LIBRARY_KEY = "sitebrief-v6-library";
@@ -36,6 +37,7 @@
     targetAgent: "codex",
     engine: "local",
     model: "",
+    outputTarget: "next-vercel",
     modelsLoaded: false,
     templateId: "",
     selectedModuleIds: [],
@@ -67,7 +69,7 @@
     [
       "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
       "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences",
-      "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact",
+      "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
       "conceptCount","generateConceptsBtn","generationStatus","conceptGallery","toRefineBtn",
@@ -162,7 +164,7 @@
       projectId:state.currentProjectId,mode: state.mode,currentStep:state.currentStep,maxVisited:state.maxVisited,understandingConfirmed:state.understandingConfirmed,understanding:state.understanding,
       urls:state.urls,
       images:state.images.map(({dataUrl,previewUrl,...rest}) => rest),
-      targetAgent:state.targetAgent,engine:state.engine,model:state.model,templateId:state.templateId,selectedModuleIds:state.selectedModuleIds,selectedSkillIds:state.selectedSkillIds,
+      targetAgent:state.targetAgent,engine:state.engine,model:state.model,outputTarget:state.outputTarget,templateId:state.templateId,selectedModuleIds:state.selectedModuleIds,selectedSkillIds:state.selectedSkillIds,
       concepts:state.concepts,selectedConceptId:state.selectedConceptId,refinements:state.refinements,clarifications:state.clarifications,projectReview:state.projectReview,reviewSignature:state.reviewSignature,reviewDeferred:state.reviewDeferred,
       project:project(),controls:controls(),conceptCount:Number(el.conceptCount?.value || 5)
     };
@@ -406,6 +408,7 @@
     state.targetAgent = AGENT_NAMES[saved.targetAgent] ? saved.targetAgent : (state.settings.defaultAgent||"codex");
     state.engine = ["local","gateway","openai","gemini"].includes(saved.engine) ? saved.engine : (state.settings.defaultEngine||"local");
     state.model = saved.model || state.settings.defaultModel || "";
+    state.outputTarget = OUTPUT_TARGETS[saved.outputTarget] ? saved.outputTarget : "next-vercel";
     state.templateId = saved.templateId || "";
     state.selectedModuleIds = Array.isArray(saved.selectedModuleIds) ? saved.selectedModuleIds : [];
     state.selectedSkillIds = Array.isArray(saved.selectedSkillIds) ? saved.selectedSkillIds : [];
@@ -533,6 +536,7 @@
       targetAgent:state.targetAgent||"codex",
       engine:state.engine||"local",
       model:el.generatorModel?.value.trim()||state.model||"",
+      outputTarget:state.outputTarget||"next-vercel",
       conceptCount:Number(el.conceptCount?.value)||5,
       selectedModuleIds:[...state.selectedModuleIds],
       selectedSkillIds:[...state.selectedSkillIds],
@@ -563,7 +567,7 @@
     if(!c){el.profileImpact.innerHTML='<span class="empty">Wähle ein Profil, um den enthaltenen Projektaufbau zu sehen.</span>';return;}
     const mods=(c.selectedModuleIds||[]).filter(id=>state.modules.some(x=>x.id===id)).length;
     const skills=(c.selectedSkillIds||[]).filter(id=>state.skills.some(x=>x.id===id)).length;
-    const values=[AGENT_NAMES[c.targetAgent]||c.targetAgent||'Codex',c.engine==='gemini'?'Gemini direkt':c.engine==='openai'?'OpenAI direkt':c.engine==='gateway'?'AI Gateway':'Lokal',c.model||'Standardmodell',c.mode==='expert'?'Experte':c.mode==='auto'?'Auto':'Geführt',`${Number(c.conceptCount)||5} Vorschauen`,`${mods} Module`,`${skills} Skills`];
+    const values=[AGENT_NAMES[c.targetAgent]||c.targetAgent||'Codex',c.engine==='gemini'?'Gemini direkt':c.engine==='openai'?'OpenAI direkt':c.engine==='gateway'?'AI Gateway':'Lokal',c.model||'Standardmodell',OUTPUT_TARGETS[c.outputTarget]||OUTPUT_TARGETS['next-vercel'],c.mode==='expert'?'Experte':c.mode==='auto'?'Auto':'Geführt',`${Number(c.conceptCount)||5} Vorschauen`,`${mods} Module`,`${skills} Skills`];
     el.profileImpact.innerHTML=values.map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   }
 
@@ -603,14 +607,14 @@
     state.settings.defaultConceptCount=Number(config.conceptCount)||state.settings.defaultConceptCount||5;
     state.activeProfileId=id;state.settings.activeProfileId=id;
     if(forNewProject){
-      state.mode=state.settings.defaultMode;state.targetAgent=state.settings.defaultAgent;state.engine=state.settings.defaultEngine;state.model=state.settings.defaultModel;
+      state.mode=state.settings.defaultMode;state.targetAgent=state.settings.defaultAgent;state.engine=state.settings.defaultEngine;state.model=state.settings.defaultModel;state.outputTarget=OUTPUT_TARGETS[config.outputTarget]?config.outputTarget:"next-vercel";
       state.selectedModuleIds=[...(config.selectedModuleIds||[])];state.selectedSkillIds=[...(config.selectedSkillIds||[])];applyAlwaysActiveItems(true);
       if(el.conceptCount)el.conceptCount.value=String(state.settings.defaultConceptCount);if(el.generatorEngine)el.generatorEngine.value=state.engine;if(el.generatorModel)el.generatorModel.value=state.model;
     }
     if(persist){saveSettings();saveProfiles();}
     $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));
     $$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));
-    updateEngineUi();renderModuleSelection();renderSkillSelection();renderProfileUi();updateGuide();saveState();return true;
+    renderOutputTarget();updateEngineUi();renderModuleSelection();renderSkillSelection();renderProfileUi();updateGuide();saveState();return true;
   }
 
   function renderProfileList(){
@@ -700,6 +704,10 @@
     el.clarificationIntro.textContent=(review.questions||[]).length?"Die Generator-KI braucht bzw. empfiehlt diese Klärungen, damit Konzept und Master-Prompt nicht auf stillen Annahmen beruhen.":"Keine Gegenfragen nötig. Die Hinweise werden trotzdem in Blueprint und Master-Prompt übernommen.";
     el.deferClarificationsBtn.hidden=state.settings.criticalBehavior==="block" && (review.blockers||[]).length>0;
     el.clarificationDialog.showModal();
+  }
+
+  function renderOutputTarget(){
+    if(!el.outputTargetSelector)return;$$('[data-output]',el.outputTargetSelector).forEach(button=>button.classList.toggle('active',button.dataset.output===state.outputTarget));
   }
 
   function questionSuggestions(q){
@@ -959,6 +967,7 @@
       understanding:{summary:u.summary,priorities:u.priorities,domain:u.domain},
       references:{websites:state.urls.map(x=>({url:x.url,aspects:x.aspects,like:x.like,dislike:x.dislike})),images:state.images.map(x=>({name:x.name,aspects:x.aspects,like:x.like,dislike:x.dislike}))},
       targetAgent:{id:state.targetAgent,name:AGENT_NAMES[state.targetAgent]},
+      output:{id:state.outputTarget,label:OUTPUT_TARGETS[state.outputTarget]||OUTPUT_TARGETS["next-vercel"]},
       generator:{engine:state.engine,model:el.generatorModel.value.trim()||null},
       template:selectedTemplate()?{name:selectedTemplate().name,tag:selectedTemplate().tag||"",summary:selectedTemplate().summary||""}:null,
       modules:selectedModules().map(x=>({name:x.name,tag:x.tag||"",summary:x.summary||""})),
@@ -978,7 +987,7 @@
       ["Projekt",`<strong>${escapeHtml(b.project.name||"Ohne Projektnamen")}</strong><br>${escapeHtml(b.project.type)} · ${escapeHtml(b.project.goal)}${b.project.audience?`<br>Zielgruppe: ${escapeHtml(b.project.audience)}`:""}`],
       ["Verständnis",`${escapeHtml(b.understanding.summary)}<ul>${b.understanding.priorities.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul>`],
       ["Referenzen",refs?`${b.references.websites.length} Website${b.references.websites.length===1?"":"s"} · ${b.references.images.length} Bild${b.references.images.length===1?"":"er"}`:"Keine Referenzen — Konzept wird nur aus dem Briefing entwickelt."],
-      ["Agent",`${escapeHtml(b.targetAgent.name)}<br><span class="muted">Generator: ${escapeHtml(b.generator.engine)}${b.generator.model?` · ${escapeHtml(b.generator.model)}`:""}</span>`],
+      ["Agent & Ergebnis",`${escapeHtml(b.targetAgent.name)}<br><span class="muted">Generator: ${escapeHtml(b.generator.engine)}${b.generator.model?` · ${escapeHtml(b.generator.model)}`:""}<br>Ausgabe: ${escapeHtml(b.output.label)}</span>`],
       ["Vorlage",b.template?`${escapeHtml(b.template.name)}${b.template.tag?` · ${escapeHtml(b.template.tag)}`:""}`:"Ohne Master-Vorlage"],
       ["Module",b.modules.length?`<div class="tag-line">${b.modules.map(x=>`<span>${escapeHtml(x.name)}</span>`).join("")}</div>`:"Keine Module aktiv"],
       ["Skills",b.skills.length?`<div class="tag-line">${b.skills.map(x=>`<span>${escapeHtml(x.name)}</span>`).join("")}</div>`:"Keine Agent-Skills aktiv"],
@@ -1172,14 +1181,45 @@
     return `Antworten aus der Projektprüfung:\n${answerText}\n\nHinweise:\n${warnings}\n\nKritische Punkte:\n${blockers}`;
   }
 
+  function outputTargetPromptBlock(){
+    const common="Liefere eine vollständige, lokal startbare Umsetzung. Dokumentiere Befehle, Umgebungsvariablen und Einrichtung knapp im README. Keine Secrets oder API-Keys im Frontend oder Repository.";
+    const targets={
+      "next-vercel":"Ergebnis: produktionsreifes Next.js-Projekt mit TypeScript, sauber für GitHub vorbereitet und auf Vercel deploybar. Nutze App Router, sofern kein bestehendes Projekt dagegen spricht. Prüfe den Production Build, konfiguriere benötigte Environment Variables und liefere bzw. prüfe eine öffentlich erreichbare Vercel-URL.",
+      "next-only":"Ergebnis: vollständiges Next.js-Projekt mit TypeScript. Es muss mit npm install und npm run dev lokal starten und einen fehlerfreien Production Build erzeugen. Kein Deployment ohne ausdrücklichen Auftrag.",
+      html:"Ergebnis: statische Website aus semantischem HTML, modernem CSS und sparsamem Vanilla JavaScript. Keine Build-Pipeline und kein Framework, sofern nicht zwingend nötig. Alle Dateien müssen direkt auf einem statischen Webspace funktionieren.",
+      react:"Ergebnis: React-Projekt mit Vite und TypeScript. Komponenten nur dort aufteilen, wo echte Wiederverwendung oder Zuständigkeit besteht. Projekt lokal startbar und als statischer Build auslieferbar.",
+      astro:"Ergebnis: schlankes Astro-Projekt. Bevorzuge statisches Rendering und kleine interaktive Islands; sende JavaScript nur für tatsächlich interaktive Funktionen an den Browser.",
+      existing:"Ergebnis: Arbeite im vorhandenen Repository und führe dessen Framework, Paketmanager, Architektur und Konventionen weiter. Prüfe zuerst Projekt- und Regeldateien. Migriere oder ersetze den Stack nur nach begründeter Rückfrage."
+    };return `${targets[state.outputTarget]||targets["next-vercel"]}\n${common}`;
+  }
+
+  function humanDesignPromptBlock(){
+    return `- Verwende konkrete, projektspezifische Sprache. Vermeide austauschbare Formulierungen wie „Willkommen bei“, „maßgeschneiderte Lösungen“, „mit Leidenschaft“, „höchste Qualität“, „Entdecken Sie“ oder „einzigartiges Erlebnis“.
+- Variiere Satzlängen natürlich. Keine dauernden Dreier-Aufzählungen, Gedankenstriche, künstlichen Übergänge oder Schlagzeilen im Muster „Echt. Lokal. Gut.“
+- Erzeuge keine Standardsektionen wie Vorteile, Prozess, Werte, FAQ, Testimonials, Newsletter oder CTA, wenn sie keine belegbare Funktion für dieses Projekt haben.
+- Erfinde keine Zahlen, Bewertungen, Preise, Öffnungszeiten, Kunden, Referenzen, Auszeichnungen oder Unternehmensfakten. Fehlende Inhalte als offene Punkte kennzeichnen.
+- Echte vorhandene Fotos haben Vorrang vor Stock- oder KI-Bildern. Bildzuschnitt und Optimierung professionell behandeln, den glaubwürdigen Charakter aber erhalten.
+- Icons sparsam und nur mit Informationswert verwenden. Buttons konkret nach ihrer Handlung benennen.
+- Jede prägende Designentscheidung muss sich aus Inhalt, Marke, Zielgruppe, Ort, Material, Fotografie oder Funktion begründen lassen. Anti-KI bedeutet bewusst gestaltet, nicht absichtlich chaotisch oder künstlich unperfekt.`;
+  }
+
+  function cmsPromptBlock(){
+    const answers=state.clarifications.map(x=>x.answer||"").join(" ").toLowerCase();
+    if(/sanity/.test(answers))return `CMS: Sanity ist entschieden. Leite die Schemas aus den tatsächlich benötigten Inhalten ab, statt eine Universalstruktur zu kopieren. Trenne globale Einstellungen, Navigation, Seiten und wiederholbare Inhaltstypen sinnvoll. Verwende für Betreiber verständliche Feldtitel und Beschreibungen, eine logische Feldreihenfolge, Validierungen und hilfreiche Vorschauen. Konfiguriere Project ID, Dataset, API-Version, CORS, Draft/Preview-Verhalten und Environment Variables ohne Secrets im Client. Für dieses Projekt besonders prüfen: Beiträge/Fototagebuch, Bildmetadaten, Alt-Texte, Veröffentlichungsdatum, Kategorien und SEO-Felder.`;
+    if(/wordpress/.test(answers))return `CMS: WordPress ist entschieden. Modellierung, Editor-Felder und Templates müssen für den Betreiber verständlich bleiben. Nutze Plugins nur mit konkretem Nutzen und dokumentiere Aktualisierung, Sicherheit, Medienoptimierung und Deployment.`;
+    if(/webflow/.test(answers))return `CMS: Webflow ist entschieden. Lege Collections und Felder aus dem realen Content-Modell ab, halte die Editor-Bedienung verständlich und dokumentiere Hosting, Formulare und externe Integrationen.`;
+    return "CMS: Kein CMS pauschal voraussetzen. Wenn regelmäßige Pflege aus dem Briefing hervorgeht, nutze die beantwortete CMS-Entscheidung; andernfalls bleibe beim gewählten technischen Ziel.";
+  }
+
   function buildMasterPrompt(){
-    if(!cloudReady()){const p=project(),c=selectedConcept();return `Erstelle eine einfache responsive ${p.type||"Website"} für „${p.name||"dieses Projekt"}“.\n\nZiel: ${p.goal||"klar und verständlich informieren"}.\nZielgruppe: ${p.audience||"allgemein"}.\nBeschreibung: ${p.description||"nicht angegeben"}.\n\nNutze die gewählte Richtung „${c?.name||"schlicht und übersichtlich"}“ als grobe visuelle Orientierung. Baue eine klare Startseite mit Navigation, Hauptbereich, den wichtigsten Inhalten und Kontaktmöglichkeit. Verwende keine erfundenen Bewertungen oder Zahlen. Achte auf mobile Darstellung und grundlegende Bedienbarkeit.`;}
+    if(!cloudReady()){const p=project(),c=selectedConcept();return `Erstelle eine einfache responsive ${p.type||"Website"} für „${p.name||"dieses Projekt"}“.\n\nZiel: ${p.goal||"klar und verständlich informieren"}.\nZielgruppe: ${p.audience||"allgemein"}.\nBeschreibung: ${p.description||"nicht angegeben"}.\nAusgabe: ${OUTPUT_TARGETS[state.outputTarget]||OUTPUT_TARGETS["next-vercel"]}.\n\nNutze die gewählte Richtung „${c?.name||"schlicht und übersichtlich"}“ als grobe visuelle Orientierung. Baue eine klare Startseite mit Navigation, Hauptbereich, den wichtigsten Inhalten und Kontaktmöglichkeit. Verwende keine erfundenen Bewertungen oder Zahlen. Achte auf mobile Darstellung und grundlegende Bedienbarkeit.`;}
     const p=project();const c=selectedConcept();const t=selectedTemplate();const mods=selectedModules();const skills=selectedSkills();const u=state.understanding||localAnalyzeProject();const ctrl=controls();
-    const templateBlock=t?`\n## EIGENE MASTER-VORLAGE: ${t.name}\n${t.prompt}\n`:"";
+    const customTemplateBlock=t?`\n## EIGENE MASTER-VORLAGE: ${t.name}\n${t.prompt}\n`:"";
+    const templateBlock=`${customTemplateBlock}\n## TECHNISCHES ZIEL & ÜBERGABE\n${outputTargetPromptBlock()}\n\n## CONTENT-MANAGEMENT\n${cmsPromptBlock()}\n\n## MENSCHLICHE INHALTE & GESTALTUNG\n${humanDesignPromptBlock()}\n`;
     const moduleBlock=mods.length?`\n## AKTIVE PROMPT-MODULE\n${mods.map((m,i)=>`### ${i+1}. ${m.name}${m.tag?` [${m.tag}]`:""}\n${m.prompt}`).join("\n\n")}\n`:"";
     const skillBlock=skills.length?`\n## AKTIVE AGENT-SKILLS\nDiese Regeln sind zusätzlich verbindlich, wenn ihr Trigger zur Aufgabe passt. Wenn ein Skill aus einer Datei importiert wurde, behandle den eingebetteten Inhalt wie die gelesene Skill-/Agent-Datei.\n\n${skills.map((s,i)=>`### ${i+1}. ${s.name}\nAgent: ${s.agent==="all"?"Alle Agents":AGENT_NAMES[s.agent]||s.agent}\nTrigger: ${s.trigger||"bei passender Aufgabe"}${s.sourceFile?`\nQuelle: ${s.sourceFile}`:""}\n\n${s.prompt}`).join("\n\n")}\n`:"";
     const refinementBlock=state.refinements.length?state.refinements.map((r,i)=>`${i+1}. ${r.text}`).join("\n"):"Keine zusätzlichen Änderungen nach der Vorschau.";
-    const finalCompliance=state.settings.finalChecklist?`\n8. alle unter „Pflichtprüfungen & rechtlicher Rahmen“ aktivierten Bereiche geprüft und offene Punkte transparent benannt wurden,\n9. keine rechtliche Konformität, Einwilligung oder Pflichtinformation erfunden wurde.`:"";
+    const finalCompliance=state.settings.finalChecklist?`\n8. alle unter „Pflichtprüfungen & rechtlicher Rahmen“ aktivierten Bereiche geprüft und offene Punkte transparent benannt wurden,\n9. keine rechtliche Konformität, Einwilligung oder Pflichtinformation erfunden wurde,\n10. generische KI-Texte, künstliche Dreiermuster und unnötige Standardsektionen entfernt wurden,\n11. alle Buttons, Links, Formulare, Navigationen und CMS-Inhalte im echten Ablauf funktionieren,\n12. Mobile, Tastaturbedienung, reduzierte Bewegung, Build, Console und 404-Pfade geprüft wurden.`:"";
     const agentQuestionRule=state.settings.aiClarifications?"Wenn während der Umsetzung ein fehlender, widersprüchlicher oder nicht machbarer Punkt auftaucht, stelle eine kurze konkrete Gegenfrage, sofern die Antwort das Ergebnis wesentlich verändert. Bei einem Blocker erkläre das Problem knapp und nenne eine machbare Alternative, wenn eine existiert.":"Stelle keine zusätzlichen Präferenzfragen. Wenn ein echter Blocker auftritt, benenne ihn knapp und markiere die nötige Entscheidung; erfinde keine fehlenden Fakten.";
     return `# SITEBRIEF MASTER-PROMPT — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhältst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fünf neue Richtungen. Setze die ausgewählte Richtung konsequent um und nutze Referenzen nur für die ausdrücklich freigegebenen Eigenschaften.\n${templateBlock}\n## 1. PROJEKT\nName: ${p.name||"nicht festgelegt"}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${p.audience||"nicht ausdrücklich angegeben"}\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusätzlicher Wunsch."}\n\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritäten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}\n\n## 3. PROJEKTPRÜFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÜFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese Entwicklungsprüfung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen Prüfpunkt statt Sicherheit vorzutäuschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Übernimm nur die jeweils ausgewählten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÄHLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nKomposition: ${c.layoutVariant}\nLayoutprinzip: ${c.layout}\nHero: ${c.hero}\nTypografie: ${c.type}\nPalette: ${c.palette.join(" / ")}\nPreview-Headline: ${c.headline}\nPreview-Subline: ${c.subline}`:"Es wurde noch keine Designrichtung ausgewählt."}\n\n## 7. FEINSCHLIFF NACH DER VORSCHAU\n${refinementBlock}\n\n## 8. DESIGNREGLER\n- Originalität: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und anschließend drei Karten.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-Flächen, Glow-Effekte oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als Standardlösung für beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Kundenlogos, Zertifikate, Projekte oder Behauptungen.\n- Keine generischen Marketingfloskeln oder künstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewählten Richtung gehören.\n- Bildsprache und Typografie müssen den Charakter tragen; Container dürfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenständig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÜR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n## 11. UMSETZUNGSANFORDERUNGEN\n- Responsive ab kleinen Mobilgeräten bis große Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und Bildgrößen bewusst behandeln; unnötige Abhängigkeiten vermeiden.\n- Zentrale Design-Tokens für Farben, Typografie, Abstände, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. die gewählte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist,\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berücksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster übrig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsächlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen.${finalCompliance}\n\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`;
   }
@@ -1324,6 +1364,7 @@
     ["dragenter","dragover"].forEach(evt=>el.uploadZone.addEventListener(evt,e=>{e.preventDefault();el.uploadZone.classList.add("drag")}));["dragleave","drop"].forEach(evt=>el.uploadZone.addEventListener(evt,e=>{e.preventDefault();el.uploadZone.classList.remove("drag")}));el.uploadZone.addEventListener("drop",e=>addImages(e.dataTransfer.files));
     $$('#agentSelector button').forEach(b=>b.addEventListener("click",()=>{state.targetAgent=b.dataset.agent;$$('#agentSelector button').forEach(x=>x.classList.toggle('active',x===b));state.selectedSkillIds=state.selectedSkillIds.filter(id=>visibleSkills().some(s=>s.id===id));applyAlwaysActiveItems(false);renderSkillSelection();saveState();updateGuide()}));
     el.generatorEngine.addEventListener("change",()=>{state.modelsLoaded=false;updateEngineUi()});el.generatorModel.addEventListener("input",()=>{state.model=el.generatorModel.value.trim();saveState();renderAiReviewCard()});
+    $$('[data-output]',el.outputTargetSelector).forEach(button=>button.addEventListener('click',()=>{state.outputTarget=button.dataset.output;renderOutputTarget();renderProfileImpact();saveState();updateGuide()}));
     el.templateSelect.addEventListener("change",()=>{state.templateId=el.templateSelect.value;saveState();updateGuide()});el.recommendModulesBtn.addEventListener("click",()=>recommendModules(true));
     el.importSkillFileBtn.addEventListener("click",()=>el.skillFileInput.click());el.skillFileInput.addEventListener("change",e=>{importSkillFiles(e.target.files);e.target.value=""});
     [el.originality,el.antiSlop,el.motion,el.density].forEach(r=>r.addEventListener("input",()=>{r.nextElementSibling.value=r.value;saveState();updateGuide()}));
@@ -1358,7 +1399,7 @@
         state.mode=state.settings.defaultMode||"guided";state.targetAgent=state.settings.defaultAgent||"codex";state.engine=state.settings.defaultEngine||"local";state.model=state.settings.defaultModel||"";el.conceptCount.value=String(state.settings.defaultConceptCount||5);applyAlwaysActiveItems(true);
       }
     }else applyAlwaysActiveItems(false);
-    renderLibrary();renderReferences();renderUnderstanding();renderProfileUi();
+    renderLibrary();renderReferences();renderUnderstanding();renderProfileUi();renderOutputTarget();
     el.generatorEngine.value=state.engine;el.generatorModel.value=state.model||"";updateEngineUi();
     $$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));
     $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));
