@@ -33,9 +33,17 @@ function extractOpenAIText(data){
 function cleanJsonText(text){
   if(!text) throw new Error("No text returned by model");
   const cleaned=String(text).trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");
-  const start=cleaned.indexOf("{"); const end=cleaned.lastIndexOf("}");
-  if(start<0 || end<start) throw new Error("Model did not return JSON");
-  return JSON.parse(cleaned.slice(start,end+1));
+  const start=cleaned.indexOf("{");
+  if(start<0) throw new Error("Model did not return JSON");
+  let depth=0,inString=false,escaped=false;
+  for(let i=start;i<cleaned.length;i++){
+    const ch=cleaned[i];
+    if(inString){if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch==='"')inString=false;continue;}
+    if(ch==='"'){inString=true;continue;}
+    if(ch==='{')depth++;
+    else if(ch==='}'&&--depth===0)return JSON.parse(cleaned.slice(start,i+1));
+  }
+  throw new Error("Model returned incomplete JSON");
 }
 function safeModel(value,fallback){
   const model=String(value||fallback||"").trim();
