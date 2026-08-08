@@ -14,6 +14,7 @@
   const SETTINGS_KEY = "sitebrief-v6-settings";
   const PROFILES_KEY = "sitebrief-v6-profiles";
   const GUEST_USAGE_KEY = "sitebrief-v6-guest-runs";
+  const THEME_KEY = "sitebrief-theme";
   const GUEST_RUN_LIMIT = 3;
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
@@ -76,7 +77,7 @@
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
       "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadBriefBtn",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
-      "accountBtn","syncState","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
+      "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
       "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
       "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
@@ -177,6 +178,11 @@
   }
 
   function cloudReady(){ return Boolean(state.cloud.configured && state.cloud.user && window.SiteBriefCloud?.client); }
+
+  function applyTheme(theme){
+    const resolved=theme==="dark"?"dark":"light";document.documentElement.dataset.theme=resolved;localStorage.setItem(THEME_KEY,resolved);if(el.themeToggleBtn){const dark=resolved==="dark";el.themeToggleBtn.querySelector("b").textContent=dark?"Hell":"Dunkel";el.themeToggleBtn.setAttribute("aria-label",dark?"Hellmodus aktivieren":"Dunkelmodus aktivieren");}
+  }
+  function initTheme(){applyTheme(localStorage.getItem(THEME_KEY)==="dark"?"dark":"light")}
 
   function guestRunCount(){return clamp(Number(localStorage.getItem(GUEST_USAGE_KEY)||0),0,GUEST_RUN_LIMIT)}
   function guestRunsRemaining(){return Math.max(0,GUEST_RUN_LIMIT-guestRunCount())}
@@ -1065,21 +1071,23 @@
         if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
       }
       state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
-      if(cloudReady()&&aiConnection("gemini"))await generateConceptImages();
-      el.generationStatus.className="generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} fertige Website-Entwürfe erstellt. Wähle die beste Richtung.`:`${state.concepts.length} Richtungen erstellt. Für echte Bildentwürfe Gemini unter Einstellungen → KI-Verbindungen verbinden.`;
+      let imageResult=null;if(cloudReady()&&aiConnection("gemini"))imageResult=await generateConceptImages();
+      el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Website-Entwürfe erstellt. Wähle die beste Richtung.`:imageResult?.kind==="quota"?"Gemini ist verbunden. Das Bildkontingent ist momentan aufgebraucht; die Layout-Vorschauen bleiben verwendbar. Bitte später erneut versuchen oder das Gemini-Kontingent erhöhen.":imageResult?.kind==="error"?"Gemini ist verbunden, die Bildausgabe war diesmal nicht verfügbar. Die Layout-Vorschauen bleiben verwendbar.":`${state.concepts.length} Richtungen erstellt. Für fertige Bildentwürfe Gemini unter Einstellungen → KI-Verbindungen verbinden.`;
     }catch(err){
       state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent=`KI-Verbindung nicht verfügbar (${err.message}). Lokale Vorschauen wurden stattdessen erstellt.`;
     }finally{finishTaskProgress("preview","Vorschauen fertig");consumeGuestRun();el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
   }
 
   async function generateConceptImages(){
+    let quotaError=false,otherError=false;
     for(let i=0;i<state.concepts.length;i++){
       const concept=state.concepts[i];setTaskProgress("preview",Math.round(38+(i/state.concepts.length)*54),`Bildentwurf ${i+1} von ${state.concepts.length} wird gestaltet…`);
       try{
         const payload={action:"preview-image",engine:"gemini",project:project(),concept:conceptForExport(concept),references:state.urls.slice(0,3),images:state.images.filter(x=>x.dataUrl).slice(0,2)};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Bildvorschau fehlgeschlagen");concept.previewImage=data.imageDataUrl||"";renderConcepts();renderSelectedPreview();
-      }catch(err){el.generationStatus.textContent=`Bild ${i+1} konnte nicht erzeugt werden: ${err.message}`;}
+      }catch(err){const message=String(err?.message||"");if(/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(message)){quotaError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Gemini ist verbunden, das Bildkontingent ist momentan erschöpft. Layout-Vorschauen werden weiter angezeigt.";break;}otherError=true;el.generationStatus.className="generation-status error";el.generationStatus.textContent=`Bildentwurf ${i+1} war nicht verfügbar. Die übrigen Vorschauen werden weiter vorbereitet.`;}
     }
+    return {kind:quotaError?"quota":otherError?"error":"success"};
   }
 
   function firstReferenceImage(){ return state.images.find(x=>x.dataUrl)?.dataUrl || ""; }
@@ -1382,6 +1390,7 @@
     el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
     el.saveProfileBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.manageProfilesBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.createProfileBtn.addEventListener("click",createProfileFromDialog);
     el.accountBtn.addEventListener("click",()=>{updateAccountUi();renderGuestLimit();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",signIn);el.signUpBtn.addEventListener("click",signUp);el.guestContinueBtn.addEventListener("click",closeAccountGate);el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});
+    el.themeToggleBtn.addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
     el.runAiReviewBtn.addEventListener("click",()=>{if(state.engine!=="local"&&!state.settings.aiClarifications){populateSettingsDialog();el.settingsDialog.showModal();return;}runProjectReview(true)});
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
@@ -1391,6 +1400,7 @@
 
   function init(){
     cacheElements();
+    initTheme();
     const hadSavedProject=Boolean(localStorage.getItem(STORAGE_KEY));
     loadLibrary();loadSettings();loadProfiles();restoreState();
     if(!hadSavedProject){
