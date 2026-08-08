@@ -5,6 +5,7 @@ function envKey(provider){
   if(provider === 'gateway') return process.env.AI_GATEWAY_API_KEY || '';
   if(provider === 'openai') return process.env.OPENAI_API_KEY || '';
   if(provider === 'gemini') return process.env.GEMINI_API_KEY || '';
+  if(provider === 'cloudflare' && process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN) return `${process.env.CLOUDFLARE_ACCOUNT_ID}:${process.env.CLOUDFLARE_API_TOKEN}`;
   return '';
 }
 
@@ -38,3 +39,4 @@ async function resolveProviderKey(req, provider){
 }
 
 module.exports = { resolveProviderKey };
+
