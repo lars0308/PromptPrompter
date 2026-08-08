@@ -183,7 +183,7 @@ function imageContent(images=[],mode="openai"){
 }
 
 async function callOpenAI({key,model,prompt,images,schema,name}){
-  if(!key) throw Object.assign(new Error("Kein OpenAI API-Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
+  if(!key) throw Object.assign(new Error("Kein OpenAI API-Key verbunden. Ã–ffne Einstellungen â†’ KI-Verbindungen."),{status:503});
   const content=[{type:"input_text",text:prompt},...imageContent(images,"openai")];
   const body={
     model:safeModel(model,process.env.OPENAI_MODEL||"gpt-5"),
@@ -205,7 +205,7 @@ async function gatewayRequest(body,key){
 }
 
 async function callGateway({key,model,prompt,images,schema,name}){
-  if(!key) throw Object.assign(new Error("Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
+  if(!key) throw Object.assign(new Error("Kein Vercel AI Gateway Key verbunden. Ã–ffne Einstellungen â†’ KI-Verbindungen."),{status:503});
   const content=[{type:"text",text:prompt},...imageContent(images,"gateway")];
   const base={model:safeModel(model,process.env.AI_GATEWAY_MODEL||"openai/gpt-5.4"),messages:[{role:"system",content:"You are a senior web art director. Return only valid JSON and avoid generic AI website patterns."},{role:"user",content}],stream:false};
   let data;
@@ -219,14 +219,14 @@ async function callGateway({key,model,prompt,images,schema,name}){
 }
 
 async function callGemini({key,model,prompt,images}){
-  if(!key) throw Object.assign(new Error("Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
+  if(!key) throw Object.assign(new Error("Kein Gemini API-Key verbunden. Ã–ffne Einstellungen â†’ KI-Verbindungen."),{status:503});
   const parts=[{text:prompt}];
   for(const image of images.slice(0,3)){
     const match=typeof image.dataUrl==="string"&&image.dataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,(.+)$/);
     if(!match)continue;
     parts.push({text:`Reference image ${image.name}. Allowed aspects: ${(image.aspects||[]).join(", ")||"general mood"}. Likes: ${image.note||"-"}. Avoid: ${image.dislike||"-"}.`},{inlineData:{mimeType:match[1],data:match[2]}});
   }
-  const selected=safeModel(model,process.env.GEMINI_MODEL||"gemini-2.5-flash").replace(/^models\//,"");
+  const selected=safeModel(model,process.env.GEMINI_MODEL||"gemini-3.6-flash").replace(/^models\//,"");
   const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:"You are a senior web art director and website briefing analyst. Return only valid JSON and avoid generic AI website patterns."}]},contents:[{role:"user",parts}],generationConfig:{responseMimeType:"application/json"}})});
   const data=await response.json();
   if(!response.ok)throw Object.assign(new Error(data.error?.message||"Gemini request failed"),{status:response.status});
@@ -255,7 +255,7 @@ module.exports = async function handler(req,res){
       schema=conceptsSchema(count);name="sitebrief_concepts";
     }
     const resolved = await resolveProviderKey(req,engine);
-    if(!resolved.key) throw Object.assign(new Error(engine==="openai"?"Kein OpenAI API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":engine==="gemini"?"Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":"Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
+    if(!resolved.key) throw Object.assign(new Error(engine==="openai"?"Kein OpenAI API-Key verbunden. Ã–ffne Einstellungen â†’ KI-Verbindungen.":engine==="gemini"?"Kein Gemini API-Key verbunden. Ã–ffne Einstellungen â†’ KI-Verbindungen.":"Kein Vercel AI Gateway Key verbunden. Ã–ffne Einstellungen â†’ KI-Verbindungen."),{status:503});
     const result=engine==="openai" ? await callOpenAI({key:resolved.key,model,prompt,images,schema,name}) : engine==="gemini" ? await callGemini({key:resolved.key,model,prompt,images}) : await callGateway({key:resolved.key,model,prompt,images,schema,name});
     res.setHeader('X-SiteBrief-AI-Key-Source', resolved.source);
     return res.status(200).json(result);
@@ -263,3 +263,4 @@ module.exports = async function handler(req,res){
     return res.status(error?.status||500).json({error:error?.message||"Unexpected generation error"});
   }
 };
+
