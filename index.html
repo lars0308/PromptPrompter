@@ -119,6 +119,23 @@
         <h1>Wer baut später?</h1>
         <p class="lead">Generator-KI und Ziel-Agent sind getrennt. Eine KI kann dein Konzept entwickeln, während der finale Master-Prompt für einen anderen Agenten gebaut wird.</p>
 
+        <section class="project-profile-card" aria-labelledby="projectProfileTitle">
+          <div class="project-profile-copy">
+            <span>PROJEKTPROFIL</span>
+            <strong id="projectProfileTitle">Arbeitsweise mit einem Klick anwenden</strong>
+            <p>Ein Profil setzt Agent, Generator, Modell, Modus, Vorschauanzahl, Module und Skills direkt für dieses Projekt.</p>
+          </div>
+          <div class="project-profile-controls">
+            <label class="field"><span>Profil für dieses Projekt</span><select id="setActiveProfile"><option value="">Aktuelle Projektauswahl</option></select></label>
+            <button type="button" class="solid-btn" id="applyProfileBtn">Profil anwenden</button>
+          </div>
+          <div class="profile-impact" id="profileImpact" aria-live="polite"></div>
+          <div class="project-profile-actions">
+            <button type="button" class="text-btn" id="saveProfileBtn">Aktuelle Projektauswahl als Profil speichern</button>
+            <button type="button" class="text-btn" id="manageProfilesBtn">Profile verwalten</button>
+          </div>
+        </section>
+
         <div class="block-title"><span>A</span><div><strong>Ziel-Agent</strong><p>Für wen soll der fertige Master-Prompt optimiert werden?</p></div></div>
         <div class="agent-selector" id="agentSelector">
           <button type="button" data-agent="claude"><b>CL</b><span><strong>Claude Code</strong><small>Agent-Prompt</small></span></button>
@@ -132,7 +149,7 @@
 
         <div class="block-title spaced"><span>B</span><div><strong>Generator-KI</strong><p>Optional. Ohne API-Key arbeitet SiteBrief mit dem lokalen Konzeptgenerator.</p></div></div>
         <div class="field-grid two">
-          <label class="field"><span>Engine</span><select id="generatorEngine"><option value="local">Lokal / ohne API</option><option value="gateway">Vercel AI Gateway</option><option value="openai">OpenAI direkt</option></select></label>
+          <label class="field"><span>Engine</span><select id="generatorEngine"><option value="local">Lokal / ohne API</option><option value="gateway">Vercel AI Gateway</option><option value="openai">OpenAI direkt</option><option value="gemini">Google Gemini direkt</option></select></label>
           <label class="field"><span>Modell</span><input id="generatorModel" list="modelOptions" type="text" placeholder="Modell-ID" /><datalist id="modelOptions"></datalist></label>
         </div>
         <p class="engine-help" id="engineHelp"></p>
@@ -306,23 +323,12 @@
   <dialog id="settingsDialog" class="library-dialog settings-dialog">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
-        <div><span>EINSTELLUNGEN</span><h2>Agent, KI & Standards</h2></div>
+        <div><span>EINSTELLUNGEN</span><h2>KI-Verbindungen & Prüfregeln</h2></div>
         <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
       </header>
       <div class="settings-body">
         <section class="settings-section">
-          <div class="settings-heading"><strong>Agent & KI</strong><p>Hier legst du direkt fest, welcher Agent standardmäßig den fertigen Master-Prompt bekommt und welche KI SiteBrief für Analyse und Konzepte verwendet.</p></div>
-          <div class="field-grid two">
-            <label class="field"><span>Standard-Agent</span><select id="setDefaultAgent"><option value="claude">Claude Code</option><option value="codex">Codex</option><option value="gemini">Gemini</option><option value="chatgpt">ChatGPT</option><option value="cursor">Cursor</option><option value="v0">v0</option><option value="universal">Universal</option></select></label>
-            <label class="field"><span>Standard-Generator</span><select id="setDefaultEngine"><option value="local">Lokal / ohne API</option><option value="gateway">Vercel AI Gateway</option><option value="openai">OpenAI direkt</option></select></label>
-          </div>
-          <div class="field-grid three">
-            <label class="field"><span>Standard-Modell</span><input id="setDefaultModel" type="text" placeholder="optional" /></label>
-            <label class="field"><span>Standard-Modus</span><select id="setDefaultMode"><option value="guided">Geführt</option><option value="auto">Auto</option><option value="expert">Experte</option></select></label>
-            <label class="field"><span>Vorschauen</span><select id="setDefaultConceptCount"><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-          </div>
-
-          <div class="settings-heading compact-note"><strong>KI-Verbindungen</strong><p>API-Key einmal eintragen, speichern und testen. Eigene Keys werden nur nach Login gespeichert und verschlüsselt in Supabase Vault abgelegt – nicht im Browser.</p></div>
+          <div class="settings-heading"><strong>KI-Verbindungen</strong><p>API-Key einmal eintragen, speichern und testen. Agent, Generator und Profile wählst du direkt im Projekt. Eigene Keys werden nur nach Login gespeichert und verschlüsselt in Supabase Vault abgelegt – nicht im Browser.</p></div>
           <div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein SiteBrief-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
           <div class="ai-connection-grid">
             <article class="ai-connection-card recommended">
@@ -352,28 +358,22 @@
               </div>
               <small class="connection-message" id="openaiConnectionMessage"></small>
             </article>
+            <article class="ai-connection-card">
+              <div class="ai-connection-head">
+                <div><span>GOOGLE AI STUDIO</span><strong>Google Gemini</strong><p>Verbinde einen Gemini API-Key direkt und nutze Gemini-Modelle inklusive Bildanalyse.</p></div>
+                <span class="connection-status" id="geminiConnectionStatus">Nicht verbunden</span>
+              </div>
+              <label class="field"><span>API-Key</span><input id="geminiApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Gemini API-Key" /></label>
+              <div class="connection-actions">
+                <button type="button" class="solid-btn mini" id="geminiConnectBtn">Speichern & verbinden</button>
+                <button type="button" class="outline-btn mini" id="geminiTestBtn">Testen</button>
+                <button type="button" class="text-btn" id="geminiDisconnectBtn" hidden>Trennen</button>
+              </div>
+              <small class="connection-message" id="geminiConnectionMessage"></small>
+            </article>
           </div>
         </section>
 
-        <section class="settings-section">
-          <div class="settings-heading"><strong>Profile & Standards</strong><p>Profile speichern Agent, Generator, Workflow, Module, Skills und deine globalen Regeln. Systemprofile bleiben erhalten; eigene Profile werden mit deinem Konto synchronisiert.</p></div>
-          <div class="profile-picker-row">
-            <label class="field"><span>Aktives Standardprofil</span><select id="setActiveProfile"><option value="">Lokale Standardwerte</option></select></label>
-            <button type="button" class="outline-btn" id="applyProfileBtn">Profil anwenden</button>
-          </div>
-          <div class="profile-actions">
-            <button type="button" class="outline-btn" id="saveProfileBtn">Aktuelle Einstellungen als eigenes Profil speichern</button>
-            <button type="button" class="text-btn" id="manageProfilesBtn">Eigene Profile verwalten</button>
-          </div>
-          <div class="default-library-block">
-            <div><strong>Standardmäßig aktive Module</strong><p>Module mit „Immer aktiv“ können im Projekt nicht versehentlich abgewählt werden. „Standard“ startet aktiviert, „Manuell“ bleibt aus.</p></div>
-            <div id="defaultModuleSettings" class="default-library-list"></div>
-          </div>
-          <div class="default-library-block">
-            <div><strong>Standardmäßig aktive Agent-Skills</strong><p>Pro Skill kannst du festlegen, ob er immer, standardmäßig oder nur manuell aktiv ist.</p></div>
-            <div id="defaultSkillSettings" class="default-library-list"></div>
-          </div>
-        </section>
         <section class="settings-section">
           <div class="settings-heading"><strong>Gegenfragen der KI</strong><p>Gilt für externe Generator-KIs. SiteBrief fragt nur, wenn Angaben wirklich fehlen, sich widersprechen oder nicht sinnvoll umsetzbar erscheinen.</p></div>
           <label class="toggle-row"><input id="setAiClarifications" type="checkbox"><span><strong>Gegenfragen erlauben</strong><small>Vor Konzepten offene Punkte erkennen und nachfragen.</small></span></label>
