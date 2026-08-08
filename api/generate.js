@@ -240,6 +240,11 @@ async function callGeminiPreviewImage({key,project,concept}){
   const response=await fetch("https://generativelanguage.googleapis.com/v1beta/interactions",{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({model:"gemini-3.1-flash-image",input:prompt,response_format:{type:"image",mime_type:"image/jpeg",aspect_ratio:"16:9",image_size:"1K"}})});const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.error?.message||"Gemini image request failed"),{status:response.status});
   let image=data.output_image?.data?data.output_image:null;if(!image)for(const step of data.steps||[])for(const block of step.content||[])if(block.type==="image"&&block.data){image=block;break}if(!image)throw new Error("Gemini hat kein Bild zurückgegeben");return {imageDataUrl:`data:${image.mime_type||image.mimeType||"image/jpeg"};base64,${image.data}`};
 }
+async function callCloudflarePreviewImage({key,project,concept}){
+  const split=key.indexOf(':');if(split<1)throw Object.assign(new Error('Cloudflare-Verbindung ist unvollständig.'),{status:503});const accountId=key.slice(0,split),token=key.slice(split+1);
+  const prompt=`High-fidelity finished desktop website homepage screenshot, no browser frame, no device mockup, credible client-ready web design, accurate short typography. Project: ${project.name||'Website'}. Type: ${project.type||'Website'}. Goal: ${project.goal||''}. Audience: ${project.audience||''}. Description: ${project.description||''}. Direction: ${concept.name||''}. Mood: ${concept.mood||''}. Layout: ${concept.layout||''}. Hero: ${concept.hero||''}. Palette: ${(concept.palette||[]).join(', ')}. Headline: ${concept.headline||''}.`;
+  const response=await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/black-forest-labs/flux-1-schnell`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt.slice(0,2048),steps:6})});const data=await response.json().catch(()=>({}));if(!response.ok||data?.success===false)throw Object.assign(new Error(data?.errors?.[0]?.message||'Cloudflare image request failed'),{status:response.status||500});const image=data?.result?.image;if(!image)throw new Error('Cloudflare hat kein Bild zurückgegeben');return {imageDataUrl:`data:image/jpeg;base64,${image}`};
+}
 
 module.exports = async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
@@ -247,7 +252,7 @@ module.exports = async function handler(req,res){
     const body=req.body||{};
     const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},modules=[],settings={},clarifications=[],projectReview={}}=body;
     if(action==="preview-image"){
-      const resolved=await resolveProviderKey(req,"gemini");if(!resolved.key)throw Object.assign(new Error("Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});const result=await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{}});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);return res.status(200).json(result);
+      const imageProvider=body.imageProvider==='cloudflare'?'cloudflare':'gemini';const resolved=await resolveProviderKey(req,imageProvider);if(!resolved.key)throw Object.assign(new Error(`Kein ${imageProvider==='cloudflare'?'Cloudflare':'Gemini'} API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.`),{status:503});const result=imageProvider==='cloudflare'?await callCloudflarePreviewImage({key:resolved.key,project,concept:body.concept||{}}):await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{}});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);return res.status(200).json(result);
     }
     if(!["gateway","openai","gemini"].includes(engine)) return res.status(400).json({error:"Use the browser's local generator for local mode"});
     let prompt,schema,name;
@@ -273,4 +278,5 @@ module.exports = async function handler(req,res){
     return res.status(error?.status||500).json({error:error?.message||"Unexpected generation error"});
   }
 };
+
 
