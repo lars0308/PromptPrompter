@@ -1,6 +1,7 @@
 (()=>{
   'use strict';
   const STATE_KEY='sitebrief-v6-state';
+  const ADMIN_EMAIL='service.battermann@gmx.de';
   let shieldShown=false;
 
   function injectStyles(){
@@ -13,6 +14,16 @@
       .auth-subscribe-compact span,.auth-subscribe-compact strong,.auth-subscribe-compact small{display:block}.auth-subscribe-compact span{font-size:8px;font-weight:800;letter-spacing:.12em;color:var(--accent)}.auth-subscribe-compact strong{margin:4px 0 3px;font-size:15px}.auth-subscribe-compact small{color:var(--muted);font-size:9px;line-height:1.45}.auth-subscribe-compact button{min-width:118px}
       .account-dialog.auth-transitioning #accountLoggedIn{display:none!important}.account-dialog.auth-transitioning #accountLoggedOut{display:block!important}
       .prompt-reload-shield{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;background:var(--paper,#090c0a);color:var(--ink,#fff);pointer-events:none}.prompt-reload-shield img{width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 14px 34px rgba(0,0,0,.28))}
+      @media(max-width:820px){
+        #plansDialog{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:5px!important;overflow:hidden!important;background:transparent!important}
+        #plansDialog .dialog-frame{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;border-radius:18px!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important}
+        #plansDialog .dialog-head{flex:0 0 auto!important;padding:16px 17px!important}
+        #plansDialog .plans-grid{display:block!important;flex:0 0 auto!important;width:100%!important;max-height:none!important;overflow:visible!important;padding:14px 12px 24px!important}
+        #plansDialog .plan-card{width:100%!important;max-height:none!important;overflow:visible!important;margin:0 0 12px!important}
+        #plansDialog .plan-card-detail{max-height:none!important;overflow:visible!important;padding-bottom:18px!important}
+        #plansDialog .plan-card-detail button{position:relative!important;z-index:1!important}
+        #plansDialog .dialog-frame>:last-child{margin-bottom:max(28px,env(safe-area-inset-bottom))!important}
+      }
       @media(max-width:520px){.auth-subscribe-compact{grid-template-columns:1fr}.auth-subscribe-compact button{width:100%}}
     `;
     document.head.appendChild(style);
@@ -60,6 +71,19 @@
     ['plansDialog','settingsDialog','accountDialog'].forEach(id=>{const dialog=document.getElementById(id);if(!dialog)return;new MutationObserver(()=>{if(dialog.open)refreshPricing()}).observe(dialog,{attributes:true,attributeFilter:['open']})});
   }
 
-  function init(){injectStyles();compactAccountPlans();protectLoginTransition();protectReloads();watchPricing()}
+  function isOwnerAccount(){return String(window.SiteBriefCloud?.user?.email||'').trim().toLowerCase()===ADMIN_EMAIL}
+  function enforceAdminOwner(){
+    const button=document.getElementById('adminBtn'),dialog=document.getElementById('adminDialog');if(!button)return;
+    if(!isOwnerAccount()){button.hidden=true;if(dialog?.open)dialog.close()}
+  }
+  function protectAdminUi(){
+    const button=document.getElementById('adminBtn');if(!button)return;
+    enforceAdminOwner();
+    window.addEventListener('sitebrief:admin',()=>queueMicrotask(enforceAdminOwner));
+    const observer=new MutationObserver(enforceAdminOwner);observer.observe(button,{attributes:true,attributeFilter:['hidden','style','class']});
+    window.SiteBriefCloud?.subscribe?.(()=>queueMicrotask(enforceAdminOwner));
+  }
+
+  function init(){injectStyles();compactAccountPlans();protectLoginTransition();protectReloads();watchPricing();protectAdminUi()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
