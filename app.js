@@ -103,7 +103,7 @@
   const el = {};
   function cacheElements(){
     [
-      "topbarMenuToggle","topbarMenu","topbarMenuBackdrop","upgradeMenuBtn","modeSwitch",
+      "topbarMenuToggle","topbarMenu","topbarMenuBackdrop","upgradeMenuBtn","modeSwitch","modeDescription",
       "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","clientName","clientType","clientWebsite","clientContact","importClientWebsiteBtn","clientImportStatus","clientSources","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
       "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences",
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
@@ -143,7 +143,7 @@
   const customAlert=(message,options={})=>showAppAction({...options,message,cancelLabel:'',confirmLabel:'Verstanden'});
 
   function closeWelcomeIntro(){localStorage.setItem(ONBOARDING_KEY,'1');if(el.welcomeIntroDialog.open)el.welcomeIntroDialog.close();if(!cloudReady())showAccountGate()}
-  function showWelcomeIntroOnce(){if(document.querySelector('dialog[open]'))return;el.welcomeIntroDialog.showModal()}
+  function showWelcomeIntroOnce(){el.welcomeIntroDialog.showModal()}
 
   function initPasswordToggles(){
     $$('input[type="password"]').forEach(input=>{
@@ -427,7 +427,7 @@
   function applyPlanUi(){
     const rules=planRules(),name=state.isAdmin?"Admin · Ultimate":rules.label;
     if(!rules.modes.includes(state.mode))state.mode=rules.modes[0];
-    $$('.mode-switch button').forEach(button=>{const allowed=rules.modes.includes(button.dataset.mode);button.hidden=!allowed;button.classList.toggle('active',button.dataset.mode===state.mode)});
+    $$('.mode-switch button').forEach(button=>{const allowed=rules.modes.includes(button.dataset.mode);button.classList.toggle('locked',!allowed);button.title=allowed?'':'Ab Pro verfügbar';button.classList.toggle('active',button.dataset.mode===state.mode)});
     if(!rules.agents.includes(state.targetAgent))state.targetAgent=rules.agents[0];
     if(el.openAgentBtn)el.openAgentBtn.textContent=`${AGENT_NAMES[state.targetAgent]} öffnen`;
     $$('#agentSelector button').forEach(button=>{const allowed=rules.agents.includes(button.dataset.agent);button.hidden=!allowed;button.disabled=false;button.classList.toggle("active",button.dataset.agent===state.targetAgent)});
@@ -605,11 +605,10 @@
           const previousUserId=state.cloud.user?.id||null;
           state.cloud.user=payload.user||null;const nextUserId=state.cloud.user?.id||null;
           if(!state.cloud.user){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}updateAccountUi();
+          const realTransition=previousUserId!==nextUserId;
+          if(realTransition&&payload.authEvent==='SIGNED_IN'&&nextUserId){closeAccountGate();showWelcome();continuePendingAuthPlan();maybePromptBiometric();}
+          else if(realTransition&&payload.authEvent==='SIGNED_OUT'&&!nextUserId){showWelcome();}
           if(state.cloud.user){try{await loadCloudBundle()}catch{}closeAccountGate();}
-          if(previousUserId!==nextUserId){
-            if(payload.authEvent==='SIGNED_IN'&&nextUserId){await continuePendingAuthPlan();showWelcome();maybePromptBiometric();}
-            else if(payload.authEvent==='SIGNED_OUT'&&!nextUserId){showWelcome();}
-          }
         }
       });
       if(state.cloud.user){await loadCloudBundle();await handleCheckoutReturn();maybePromptBiometric();}
@@ -705,7 +704,7 @@
   }
 
   async function loadCloudProject(row){
-    if(!row?.state)return;applySavedState(row.state,{persistLocal:true});state.currentProjectId=row.id;await hydrateCloudReferenceImages();renderReferences();renderClientSources();renderUnderstanding();renderLibrary();renderConcepts();renderSelectedPreview();updateEngineUi();$$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));goStep(state.currentStep,true);if(el.accountDialog.open)el.accountDialog.close();if(el.libraryDialog.open)el.libraryDialog.close();renderCloudProjects();
+    if(!row?.state)return;applySavedState(row.state,{persistLocal:true});state.currentProjectId=row.id;await hydrateCloudReferenceImages();renderReferences();renderClientSources();renderUnderstanding();renderLibrary();renderConcepts();renderSelectedPreview();updateEngineUi();$$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));renderModeDescription();goStep(state.currentStep,true);if(el.accountDialog.open)el.accountDialog.close();if(el.libraryDialog.open)el.libraryDialog.close();renderCloudProjects();
   }
 
   async function openLastProject(){
@@ -937,7 +936,7 @@
       if(el.conceptCount)el.conceptCount.value=String(state.settings.defaultConceptCount);if(el.generatorEngine)el.generatorEngine.value=state.engine;if(el.generatorModel)el.generatorModel.value=state.model;
     }
     if(persist){saveSettings();saveProfiles();}
-    $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));
+    $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));renderModeDescription();
     $$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));
     renderOutputTarget();updateEngineUi();renderModuleSelection();renderSkillSelection();renderProfileUi();updateGuide();saveState();return true;
   }
@@ -1676,11 +1675,13 @@
     updateGuide();saveState();window.scrollTo({top:0,behavior:"smooth"});
   }
 
+  const MODE_DESCRIPTIONS={guided:"Schritt für Schritt mit klaren Vorgaben – bei jeder wichtigen Entscheidung wird nachgefragt.",auto:"Sinnvolle Standardwerte werden automatisch gewählt, Module empfohlen und Vorschauen direkt erzeugt.",expert:"Freie Navigation zwischen allen Schritten, volle manuelle Kontrolle über jede Einstellung."};
+  function renderModeDescription(){if(el.modeDescription)el.modeDescription.textContent=MODE_DESCRIPTIONS[state.mode]||''}
   function setMode(mode){
     if(!planRules().modes.includes(mode)){el.plansDialog?.showModal();return;}
     state.mode=mode;$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
     if(mode==="expert") state.maxVisited=8;
-    updateGuide();saveState();
+    renderModeDescription();updateGuide();saveState();
   }
 
   function renderLibrary(){
@@ -1932,7 +1933,7 @@
     renderLibrary();renderReferences();renderClientSources();renderUnderstanding();renderProfileUi();renderOutputTarget();
     el.generatorEngine.value=state.engine;el.generatorModel.value=state.model||"";updateEngineUi();
     $$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));
-    $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));
+    $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));renderModeDescription();
     if(state.concepts.length){renderConcepts();renderSelectedPreview();el.generationStatus.textContent=`${state.concepts.length} gespeicherte Richtungen geladen.`}
     bindEvents();renderAiConnections();renderAiReviewCard();applyPlanUi();goStep(state.currentStep,true);updateGuide();updateAccountUi();
     initCloudIntegration();
