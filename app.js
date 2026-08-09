@@ -214,6 +214,8 @@
     const button=document.createElement('button');button.type='button';button.className='workflow-menu-toggle';button.innerHTML='<i aria-hidden="true"><b></b><b></b><b></b></i><span>Projektbereiche</span><small>öffnen</small>';button.setAttribute('aria-expanded','false');rail.insertBefore(button,nav);
     button.addEventListener('click',()=>{const open=rail.classList.toggle('menu-open');button.setAttribute('aria-expanded',String(open));button.querySelector('small').textContent=open?'schließen':'öffnen'});
     nav.addEventListener('click',event=>{if(event.target.closest('.step-nav')){rail.classList.remove('menu-open');button.setAttribute('aria-expanded','false');button.querySelector('small').textContent='öffnen'}});
+    document.addEventListener('click',event=>{if(rail.classList.contains('menu-open')&&!rail.contains(event.target)){rail.classList.remove('menu-open');button.setAttribute('aria-expanded','false');button.querySelector('small').textContent='öffnen'}});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&rail.classList.contains('menu-open')){rail.classList.remove('menu-open');button.setAttribute('aria-expanded','false');button.querySelector('small').textContent='öffnen';button.focus()}});
   }
 
   function cloudReady(){ return Boolean(state.cloud.configured && state.cloud.user && window.SiteBriefCloud?.client); }
