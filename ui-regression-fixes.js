@@ -2,7 +2,7 @@
   'use strict';
   const STATE_KEY='sitebrief-v6-state';
   const ADMIN_EMAIL='service.battermann@gmx.de';
-  let shieldShown=false;
+  let shieldShown=false,cloudBundleWrapped=false;
 
   function injectStyles(){
     if(document.getElementById('promptRegressionStyles'))return;
@@ -65,7 +65,7 @@
     const addon=document.getElementById('apiAddonCard')?.querySelector('b');if(addon&&pricing.apiKeys)addon.textContent=pricing.apiKeys;
     if(pricing.singleReview){const inline=document.getElementById('buyReviewInlineBtn'),buy=document.getElementById('buySingleReviewBtn'),note=document.querySelector('.single-check-note>strong');if(inline)inline.textContent=`Erweitert für ${pricing.singleReview}`;if(buy)buy.textContent=`Einmalig für ${pricing.singleReview} prüfen`;if(note)note.textContent=`Erweiterte Prüfung für ein Projekt – ${pricing.singleReview}`}
   }
-  async function refreshPricing(){try{const response=await fetch('/api/config',{cache:'no-store'}),data=await response.json();applyPricing(data.pricing)}catch{}}
+  async function refreshPricing(){try{const response=await fetch('/api/config',{cache:'no-store'}),data=await response.json();if(window.SiteBriefCloud?.config)Object.assign(window.SiteBriefCloud.config,{previewRoutes:data.previewRoutes||[],previewProviders:data.previewProviders||[]});applyPricing(data.pricing)}catch{}}
   function watchPricing(){
     refreshPricing();
     ['plansDialog','settingsDialog','accountDialog'].forEach(id=>{const dialog=document.getElementById(id);if(!dialog)return;new MutationObserver(()=>{if(dialog.open)refreshPricing()}).observe(dialog,{attributes:true,attributeFilter:['open']})});
@@ -84,6 +84,14 @@
     window.SiteBriefCloud?.subscribe?.(()=>queueMicrotask(enforceAdminOwner));
   }
 
-  function init(){injectStyles();compactAccountPlans();protectLoginTransition();protectReloads();watchPricing();protectAdminUi()}
+  async function enableCentralPreviewProviders(){
+    if(cloudBundleWrapped||!window.SiteBriefCloud?.loadUserBundle)return;cloudBundleWrapped=true;
+    try{const response=await fetch('/api/config',{cache:'no-store'}),data=await response.json();Object.assign(window.SiteBriefCloud.config,{previewRoutes:data.previewRoutes||[],previewProviders:data.previewProviders||[]})}catch{}
+    const cloud=window.SiteBriefCloud,native=cloud.loadUserBundle.bind(cloud);
+    cloud.loadUserBundle=async(...args)=>{const bundle=await native(...args),providers=Array.isArray(cloud.config?.previewProviders)?cloud.config.previewProviders:[],personal=Array.isArray(bundle.aiConnections)?bundle.aiConnections:[],merged=[...personal];for(const provider of providers)if(!merged.some(x=>x.provider===provider))merged.push({provider,last4:'zentral',updated_at:null,system:true});bundle.aiConnections=merged;return bundle};
+    if(cloud.user)queueMicrotask(()=>cloud.emit?.('auth',{user:cloud.user,authEvent:'TOKEN_REFRESHED'}));
+  }
+
+  function init(){injectStyles();compactAccountPlans();protectLoginTransition();protectReloads();watchPricing();protectAdminUi();enableCentralPreviewProviders()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
