@@ -132,7 +132,7 @@ const Cloud = {
 
   async loadUserBundle() {
     const userId = this.assertUser();
-    const [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes, subscriptionRes, adminRes] = await Promise.all([
+    const [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes, subscriptionRes, adminRes, addonRes, userProfileRes] = await Promise.all([
       this.client.from('sitebrief_user_settings').select('data,active_profile_id').eq('user_id', userId).maybeSingle(),
       this.client.from('sitebrief_profiles').select('id,name,description,config,is_default,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
       this.client.from('sitebrief_templates').select('id,name,tag,summary,prompt,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
@@ -141,9 +141,11 @@ const Cloud = {
       this.client.from('sitebrief_projects').select('id,title,status,state,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }).limit(50),
       this.client.from('sitebrief_ai_connections').select('provider,last4,updated_at').eq('user_id', userId).order('provider', { ascending: true }),
       this.client.from('sitebrief_subscriptions').select('plan,status,current_period_end').eq('user_id', userId).maybeSingle(),
-      this.client.from('sitebrief_admins').select('user_id').eq('user_id', userId).maybeSingle()
+      this.client.from('sitebrief_admins').select('user_id').eq('user_id', userId).maybeSingle(),
+      this.client.from('sitebrief_addons').select('addon,status,current_period_end').eq('user_id',userId).eq('addon','own_api_keys').maybeSingle(),
+      this.client.from('sitebrief_user_profiles').select('display_name,company_name,website,default_client_type').eq('user_id',userId).maybeSingle()
     ]);
-    for (const result of [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes]) {
+    for (const result of [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes, subscriptionRes, adminRes, addonRes, userProfileRes]) {
       if (result.error) throw result.error;
     }
     return {
@@ -155,8 +157,13 @@ const Cloud = {
       skills: (skillsRes.data || []).map(x => ({ ...x, sourceFile: x.source_file || null })),
       projects: projectsRes.data || [],
       aiConnections: connectionsRes.data || [],
-      subscription: {...(subscriptionRes.data || {plan:'free',status:'active'}),isAdmin:Boolean(adminRes.data)}
+      subscription: {...(subscriptionRes.data || {plan:'free',status:'active'}),isAdmin:Boolean(adminRes.data),ownApiKeys:Boolean(adminRes.data)||subscriptionRes.data?.plan==='ultimate'||(['active','trialing'].includes(addonRes.data?.status))},
+      userProfile:userProfileRes.data?{displayName:userProfileRes.data.display_name||'',companyName:userProfileRes.data.company_name||'',website:userProfileRes.data.website||'',defaultClientType:userProfileRes.data.default_client_type||''}:null
     };
+  },
+
+  async saveUserProfile(profile){
+    const userId=this.assertUser();const {error}=await this.client.from('sitebrief_user_profiles').upsert({user_id:userId,display_name:profile.displayName||'',company_name:profile.companyName||'',website:profile.website||'',default_client_type:profile.defaultClientType||'',updated_at:new Date().toISOString()});if(error)throw error;
   },
 
   async saveUserSettings(data, activeProfileId = null) {
