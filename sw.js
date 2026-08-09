@@ -1,4 +1,4 @@
-const CACHE='prompt-ai-shell-v11';
+const CACHE='prompt-ai-shell-v12';
 const SHELL=['/','/index.html','/styles.css','/app.js','/cloud.js','/manifest.webmanifest','/sitebrief-logo.svg','/intro.mp4','/intro.webm'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
