@@ -46,12 +46,20 @@
     window.addEventListener('pageshow',()=>{document.querySelector('.prompt-reload-shield')?.remove();shieldShown=false});
   }
 
-  function applySingleReviewPrice(){
-    const apply=pricing=>{const price=pricing?.singleReview;if(!price)return;const inline=document.getElementById('buyReviewInlineBtn'),buy=document.getElementById('buySingleReviewBtn'),note=document.querySelector('.single-check-note>strong');if(inline)inline.textContent=`Erweitert für ${price}`;if(buy)buy.textContent=`Einmalig für ${price} prüfen`;if(note)note.textContent=`Erweiterte Prüfung für ein Projekt – ${price}`};
-    if(window.SiteBriefCloudReady)window.SiteBriefCloudReady.then(()=>apply(window.SiteBriefCloud?.config?.pricing)).catch(()=>{});
-    else fetch('/api/config',{cache:'no-store'}).then(r=>r.json()).then(x=>apply(x.pricing)).catch(()=>{});
+  function applyPricing(pricing){
+    if(!pricing)return;
+    const set=(selector,value)=>document.querySelectorAll(selector).forEach(node=>{if(value)node.textContent=value});
+    set('#proPriceLabel,[data-public-price="pro"]',pricing.pro);
+    set('#ultimatePriceLabel,[data-public-price="ultimate"]',pricing.ultimate);
+    const addon=document.getElementById('apiAddonCard')?.querySelector('b');if(addon&&pricing.apiKeys)addon.textContent=pricing.apiKeys;
+    if(pricing.singleReview){const inline=document.getElementById('buyReviewInlineBtn'),buy=document.getElementById('buySingleReviewBtn'),note=document.querySelector('.single-check-note>strong');if(inline)inline.textContent=`Erweitert für ${pricing.singleReview}`;if(buy)buy.textContent=`Einmalig für ${pricing.singleReview} prüfen`;if(note)note.textContent=`Erweiterte Prüfung für ein Projekt – ${pricing.singleReview}`}
+  }
+  async function refreshPricing(){try{const response=await fetch('/api/config',{cache:'no-store'}),data=await response.json();applyPricing(data.pricing)}catch{}}
+  function watchPricing(){
+    refreshPricing();
+    ['plansDialog','settingsDialog','accountDialog'].forEach(id=>{const dialog=document.getElementById(id);if(!dialog)return;new MutationObserver(()=>{if(dialog.open)refreshPricing()}).observe(dialog,{attributes:true,attributeFilter:['open']})});
   }
 
-  function init(){injectStyles();compactAccountPlans();protectLoginTransition();protectReloads();applySingleReviewPrice()}
+  function init(){injectStyles();compactAccountPlans();protectLoginTransition();protectReloads();watchPricing()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
