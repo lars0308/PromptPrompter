@@ -370,8 +370,53 @@ async function callGemini({key,model,prompt,images}){
   return cleanJsonText(text);
 }
 
+const DOMAIN_VISUAL_HINTS = [
+  [/handwerk|elektr|hausmeister|garten|reparatur|maler|sanitär|tischler|bau\b|montage|servicebetrieb/,
+    "a hands-on trade/service business (for example gardening, landscaping, electrical work, repair, maintenance or construction): show real outdoor or workshop subject matter — tools, materials, hedges, greenery or work in progress, not an office or software scene"],
+  [/fitness|gym|training|sport|crossfit|boxstudio|boxing/,
+    "a fitness/training business: show gym space, training equipment or athletic energy, not an office or software scene"],
+  [/restaurant|café|cafe|döner|doener|pizza|bistro|küche|food|imbiss|bar\b|bäck/,
+    "a restaurant/food business: show dishes, ingredients or a dining atmosphere, not an office or software scene"],
+  [/friseur|beauty|kosmetik|nagel|nail|barber|salon|spa\b/,
+    "a beauty/salon business: show a calm treatment space or personal-care atmosphere, not an office or software scene"],
+  [/shop|produkt|e-?commerce|warenkorb|verkauf|store\b/,
+    "a retail/shop business: show product presentation or merchandise, not an office or software scene"],
+  [/web-?app|software|saas|dashboard|tool\b|plattform|portal|login|community/,
+    "a digital software product: abstract interface elements and product UI are appropriate here"]
+];
+function domainVisualHint(project){
+  const text=`${project.description||""} ${project.type||""} ${project.goal||""}`.toLowerCase();
+  for(const [pattern,hint] of DOMAIN_VISUAL_HINTS) if(pattern.test(text)) return hint;
+  return "the exact subject matter described in the brief below — never a generic office, SaaS dashboard or stock-photo desk scene";
+}
+const LAYOUT_VARIANT_HINTS = {
+  split:"Two-zone split composition, roughly 55/45: one side a bold type block, the other side one strong image area. No centered symmetric hero.",
+  poster:"Full-bleed single dominant visual filling almost the entire frame, with minimal type overlaid directly on the image. Poster-like, not a boxed card.",
+  ledger:"Grid-based, document/ledger-like composition with numbered micro-labels and clear rectangular information zones instead of decorative cards.",
+  stacked:"Calm composition of a wide image band paired with a compact type band beneath or above it — an editorial rhythm, not generic stacked sections.",
+  editorial:"Offset, overlapping composition: large editorial type overlapping a graphic/photographic area at a deliberate offset — not centered, not symmetric."
+};
 async function callGeminiPreviewImage({key,project,concept,tier='pro'}){
-  const prompt=`Create one polished, high-fidelity desktop website homepage screenshot at 16:9. It must look like a finished, credible design ready to present to a client, not a wireframe, moodboard, browser mockup, or collage. Use realistic layout, typography, spacing, imagery and UI details. Do not show a browser frame or device. Keep visible text short and correctly spelled.\n\nProject: ${project.name||"Website"}\nType: ${project.type||"Website"}\nGoal: ${project.goal||""}\nAudience: ${project.audience||""}\nDescription: ${project.description||""}\nDirection: ${concept.name||""}\nMood: ${concept.mood||""}\nLayout: ${concept.layout||""}\nHero: ${concept.hero||""}\nTypography: ${concept.type||""}\nPalette: ${(concept.palette||[]).join(", ")}\nHeadline: ${concept.headline||""}\nSubline: ${concept.subline||""}`;
+  const prompt=`Generate a flat, digitally rendered 2D screenshot of a finished website homepage design at 16:9 — this is a UI/graphic-design screenshot, NOT a photograph. Do not depict any physical object: no monitor, laptop, phone, tablet, desk, wall, plant, hand or room. No browser frame, no perspective, no device mockup. It must look like a finished, credible design ready to present to a client, not a wireframe or moodboard.
+
+Subject matter: this website is for ${domainVisualHint(project)}.
+${LAYOUT_VARIANT_HINTS[concept.layoutVariant]||''}
+
+If you cannot render text 100% legibly and correctly spelled, render no text at all rather than garbled or fake letters. Any visible text must be real, correctly spelled German and limited to the exact brand name and headline given below — no invented words, no filler paragraphs.
+
+Project: ${project.name||"Website"}
+Type: ${project.type||"Website"}
+Goal: ${project.goal||""}
+Audience: ${project.audience||""}
+Description: ${project.description||""}
+Direction: ${concept.name||""}
+Mood: ${concept.mood||""}
+Layout: ${concept.layout||""}
+Hero: ${concept.hero||""}
+Typography: ${concept.type||""}
+Palette: ${(concept.palette||[]).join(", ")}
+Brand name (use verbatim if any text is shown): ${project.name||concept.name||"Website"}
+Headline (use verbatim if any text is shown): ${concept.headline||""}`;
   const response=await fetch("https://generativelanguage.googleapis.com/v1beta/interactions",{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({model:"gemini-3.1-flash-image",input:prompt,response_format:{type:"image",mime_type:"image/jpeg",aspect_ratio:"16:9",image_size:"1K"}})});const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.error?.message||"Gemini image request failed"),{status:response.status});
   let image=data.output_image?.data?data.output_image:null;if(!image)for(const step of data.steps||[])for(const block of step.content||[])if(block.type==="image"&&block.data){image=block;break}if(!image)throw new Error("Gemini hat kein Bild zurückgegeben");return {imageDataUrl:`data:${image.mime_type||image.mimeType||"image/jpeg"};base64,${image.data}`};
 }
@@ -379,19 +424,21 @@ async function callCloudflarePreviewImage({key,project,concept,tier='pro'}){
   const split=key.indexOf(':');if(split<1)throw Object.assign(new Error('Cloudflare-Verbindung ist unvollständig.'),{status:503});const accountId=key.slice(0,split),token=key.slice(split+1);
   const brand=String(project.name||project.type||'Website').trim().slice(0,36);
   const headline=String(concept.headline||project.goal||'').trim().slice(0,54);
-  const prompt=`Create a single, screen-filling 16:9 view of a finished professional website homepage. Show ONLY the website canvas edge to edge.
+  const prompt=`Flat, digitally rendered 2D screenshot of a website homepage design, edge to edge, 16:9. This is a UI/graphic-design screenshot — absolutely NOT a photograph of a physical object.
 
 STRICT COMPOSITION RULES:
-- no browser chrome, address bar, tabs, window frame, monitor, laptop, phone, tablet, desk, hands, device or presentation mockup
-- straight-on flat website view, no perspective, no floating screen, no collage, no moodboard
-- intentional editorial grid, strong alignment, generous but purposeful spacing, clear visual hierarchy and credible responsive web-design proportions
+- never depict a monitor, laptop, phone, tablet, desk, keyboard, mouse, plant, wall, hand, room or any physical object or presentation mockup
+- no browser chrome, address bar, tabs or window frame
+- straight-on flat website view, no perspective, no floating screen, no collage, no moodboard, no photography, no depth of field
+- ${LAYOUT_VARIANT_HINTS[concept.layoutVariant]||'intentional editorial grid, strong alignment, generous but purposeful spacing, clear visual hierarchy and credible responsive web-design proportions'}
+- subject matter: this website is for ${domainVisualHint(project)}
 - project-specific art direction derived from the brief and chosen direction; avoid a generic theme or stock SaaS landing page
 - use one dominant, project-relevant visual idea and a restrained supporting interface
 - no generic card grid, dashboard tiles, glassmorphism, translucent panels, gradient blobs, neon glow, excessive rounded rectangles or AI-template decoration
 
 TEXT RULES:
-- visible text is optional
-- if text is shown, use ONLY the exact brand name \"${brand}\" and optionally the exact short headline \"${headline}\"
+- if you cannot render text 100% legibly and correctly spelled, render NO text at all instead of garbled or fake letters
+- visible text is optional; if shown, use ONLY the exact real German brand name \"${brand}\" and optionally the exact short real German headline \"${headline}\"
 - no paragraphs, navigation labels, buttons, statistics, testimonials, filler copy, pseudo-letters, lorem ipsum or invented words
 - do not render any other typography or symbols that resemble text
 
@@ -402,13 +449,13 @@ Audience: ${project.audience||'project audience'}
 Brief: ${project.description||'Create a distinctive, credible visual identity suited to the project.'}
 Direction: ${concept.name||'individual editorial direction'}
 Mood: ${concept.mood||'confident and precise'}
-Layout principle: ${concept.layout||'project-specific asymmetric grid'}
 Hero principle: ${concept.hero||'one clear focal point'}
 Typography character: ${concept.type||'restrained professional typography'}
 Color palette: ${(concept.palette||[]).join(', ')||'restrained project-specific palette'}
 
-The result must read instantly as a bespoke real website design, not as an AI-generated website illustration.`;
-  const response=await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/black-forest-labs/flux-1-schnell`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt.slice(0,2048),steps:8,width:1280,height:720})});const data=await response.json().catch(()=>({}));if(!response.ok||data?.success===false)throw Object.assign(new Error(data?.errors?.[0]?.message||'Cloudflare image request failed'),{status:response.status||500});const image=data?.result?.image;if(!image)throw new Error('Cloudflare hat kein Bild zurückgegeben');return {imageDataUrl:`data:image/jpeg;base64,${image}`};
+The result must read instantly as a bespoke real website design, not as an AI-generated website illustration and not as a photograph of a screen.`;
+  const seed=Math.floor(Math.random()*2147483647);
+  const response=await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/black-forest-labs/flux-1-schnell`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt.slice(0,2048),steps:8,width:1280,height:720,seed})});const data=await response.json().catch(()=>({}));if(!response.ok||data?.success===false)throw Object.assign(new Error(data?.errors?.[0]?.message||'Cloudflare image request failed'),{status:response.status||500});const image=data?.result?.image;if(!image)throw new Error('Cloudflare hat kein Bild zurückgegeben');return {imageDataUrl:`data:image/jpeg;base64,${image}`};
 }
 
 const {logUsage}=require('../server/usage');
