@@ -14,20 +14,30 @@ function formatStripePrice(price,fallback){
 }
 
 async function livePrice(loader,fallback){try{return formatStripePrice(await loader(),fallback)}catch{return fallback}}
+async function previewRoutes(){
+  try{
+    const url=process.env.SUPABASE_URL||'https://wihdoacgqbyxxeejoxsg.supabase.co',key=process.env.SUPABASE_SERVICE_ROLE_KEY||'';if(!key)return [];
+    const response=await fetch(`${url}/rest/v1/sitebrief_preview_ai_routes?select=id,label,provider,model,priority,enabled&enabled=eq.true&order=priority.asc`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});if(!response.ok)return [];
+    return (await response.json()).map(x=>({id:x.id,label:x.label,provider:x.provider,model:x.model,priority:x.priority}));
+  }catch{return []}
+}
 
 module.exports=async function handler(_req,res){
   res.setHeader('Cache-Control','no-store, max-age=0');
   const fallback={pro:process.env.PUBLIC_PRO_PRICE||'15,99 € / Monat',ultimate:process.env.PUBLIC_ULTIMATE_PRICE||'25,99 € / Monat',apiKeys:process.env.PUBLIC_API_KEYS_PRICE||'5,99 € / Monat',singleReview:process.env.PUBLIC_SINGLE_REVIEW_PRICE||'3,99 €'};
-  const [pro,ultimate,apiKeys,singleReview]=await Promise.all([
+  const [pro,ultimate,apiKeys,singleReview,routes]=await Promise.all([
     livePrice(()=>resolveRecurringPriceObject('pro'),fallback.pro),
     livePrice(()=>resolveRecurringPriceObject('ultimate'),fallback.ultimate),
     livePrice(()=>resolveRecurringPriceObject('own_api_keys'),fallback.apiKeys),
-    livePrice(()=>resolveOneTimePriceObject('single_review'),fallback.singleReview)
+    livePrice(()=>resolveOneTimePriceObject('single_review'),fallback.singleReview),
+    previewRoutes()
   ]);
   res.status(200).json({
     supabaseUrl:process.env.SUPABASE_URL||'https://wihdoacgqbyxxeejoxsg.supabase.co',
     supabasePublishableKey:process.env.SUPABASE_PUBLISHABLE_KEY||'sb_publishable_h5mVvlW32Hd-9OVLpIODdA_ymCaNzPz',
     enabled:true,
-    pricing:{pro,ultimate,apiKeys,singleReview,source:'stripe'}
+    pricing:{pro,ultimate,apiKeys,singleReview,source:'stripe'},
+    previewRoutes:routes,
+    previewProviders:[...new Set(routes.map(x=>x.provider))]
   });
 };
