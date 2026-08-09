@@ -224,7 +224,7 @@ Rules:
 Return only the requested JSON.`;
 }
 
-function makeWebsitePrompt({masterPrompt,project,concept,outputTarget}){
+function makeWebsitePrompt({masterPrompt,sourceDocument,project,concept,outputTarget}){
   return `Build the complete website described below and return it as a self-contained file package. The supplied Prompt.ai master prompt is the controlling product specification.
 
 SECURITY AND INPUT TRUST
@@ -250,6 +250,9 @@ ${JSON.stringify({name:project?.name,type:project?.type,goal:project?.goal,audie
 
 PROMPT.AI MASTER PROMPT
 ${String(masterPrompt||'').slice(0,60000)}
+
+--- PROJECT SOURCES FILE ---
+${String(sourceDocument||'No separate project sources supplied.').slice(0,50000)}
 
 Return only the requested JSON.`;
 }
@@ -381,7 +384,7 @@ module.exports = async function handler(req,res){
     if(action==="website"){
       if(entitlement.plan==='free'&&!entitlement.isAdmin)return res.status(403).json({error:'Die direkte Website-Erstellung ist ab Pro verfügbar.'});
       if(!body.masterPrompt||String(body.masterPrompt).length<500)return res.status(400).json({error:'Der vollständige Master-Prompt fehlt.'});
-      prompt=makeWebsitePrompt({masterPrompt:body.masterPrompt,project,concept:body.concept||{},outputTarget:body.outputTarget});schema=websiteSchema();name="sitebrief_website_package";
+      prompt=makeWebsitePrompt({masterPrompt:body.masterPrompt,sourceDocument:body.sourceDocument,project,concept:body.concept||{},outputTarget:body.outputTarget});schema=websiteSchema();name="sitebrief_website_package";
     }else if(action==="review"){
       const maxQuestions=Math.min(6,Math.max(2,Number(settings?.maxQuestions)||4));
       prompt=makeReviewPrompt({project,references:Array.isArray(references)?references.slice(0,12):[],settings,template,modules:Array.isArray(modules)?modules.slice(0,24):[],clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[]});

@@ -298,7 +298,7 @@
 
         <div class="prompt-meta" id="promptMeta"></div>
         <textarea id="masterPrompt" class="master-prompt" spellcheck="false"></textarea>
-        <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn" id="downloadPromptBtn">Als .md speichern</button><button type="button" class="outline-btn" id="downloadHandoffPackageBtn">Prompt + Anhänge als ZIP</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
+        <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn" id="downloadPromptBtn">Master-Prompt speichern</button><button type="button" class="outline-btn" id="downloadProjectSourcesBtn">Projekt-Quellen speichern</button><button type="button" class="outline-btn" id="downloadHandoffPackageBtn">Komplettes Übergabe-ZIP</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
         <section class="prompt-handoff" id="promptHandoff"><div><span>MIT DER KI ÜBERGEBEN</span><h2>Vorschau und Referenzen gehören zum Prompt.</h2><p id="promptHandoffText">Prompt.ai stellt die ausgewählte Vorschau, Bildreferenzen, Unterlagen und eine Linkliste als gemeinsames Übergabepaket zusammen.</p></div><div class="prompt-handoff-preview" id="promptHandoffPreview"></div></section>
         <section class="client-result-card">
           <div><span>PROJEKTBERICHT · KUNDENUNTERLAGEN AB PRO</span><h2>Dokumentation zum Ergebnis</h2><p>Ein vollständiger Projektbericht für jeden Durchlauf; Kundenbriefing und Übergabeübersicht ab Pro.</p></div>
@@ -324,10 +324,13 @@
 
         <section class="revision-studio" id="revisionStudio">
           <div class="revision-intro"><span>BESTEHENDE WEBSITE WEITERENTWICKELN</span><h2>Aus dem fertigen Stand einen Überarbeitungsauftrag machen</h2><p>Lade den aktuellen Projektstand oder Screenshots hoch, beschreibe die gewünschten Änderungen und ergänze bei Bedarf neue Referenzen. Prompt.ai erstellt daraus einen zweiten, auf Verbesserung ausgerichteten Arbeitsauftrag.</p></div>
+          <div class="workflow-upgrade" id="revisionProGate" hidden><span>AB PRO</span><strong>Bestehende Websites gezielt weiterentwickeln</strong><p>Projektdateien prüfen, erhaltene Bereiche festlegen und einen vollständigen Überarbeitungsauftrag erstellen.</p><button type="button" class="outline-btn" data-upgrade-plans>Pro ansehen</button></div>
+          <div id="revisionEditor">
           <div class="field-grid two"><label class="field"><span>Projektdateien oder Screenshots</span><input id="revisionFiles" type="file" multiple accept=".zip,.html,.css,.js,.jsx,.ts,.tsx,.json,.md,image/png,image/jpeg,image/webp" /></label><label class="field"><span>Neue Referenz <em>optional</em></span><input id="revisionReference" type="url" placeholder="https://…" /></label></div>
           <label class="field field-large"><span>Was soll verbessert werden?</span><textarea id="revisionDescription" rows="6" placeholder="Beschreibe konkret, was heute nicht funktioniert, was erhalten bleiben soll und woran man die Verbesserung erkennen kann."></textarea></label>
           <div class="inline-actions"><button type="button" class="solid-btn" id="createRevisionPromptBtn">Überarbeitungsauftrag erstellen</button><small id="revisionStatus"></small></div>
           <div id="revisionPromptResult" hidden><textarea id="revisionPrompt" class="master-prompt" spellcheck="false"></textarea><div class="prompt-actions"><button type="button" class="solid-btn" id="copyRevisionPromptBtn">Auftrag kopieren</button><button type="button" class="outline-btn" id="downloadRevisionPromptBtn">Als .md speichern</button></div></div>
+          </div>
         </section>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="7">← Zurück</button><button type="button" class="text-btn" id="startNewBtn">Neues Projekt</button></div>
