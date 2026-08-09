@@ -219,7 +219,7 @@ ${clarificationText(clarifications)}
 Rules:
 - Ask only questions whose answer materially changes architecture, content, design, legal/privacy handling, or feasibility.
 - If requirements conflict, explain the conflict in the reason and ask for a choice when settings allow conflict questions.
-- If something is not realistically achievable, add a blocker and, when possible, a concrete alternative. Pair a serious blocker with a required question.
+- If something is not realistically achievable, add a blocker and, when possible, a concrete alternative. Pair a serious blocker with a required question whose "question" and "reason" both name the specific blocked item in plain language (never a placeholder like "the critical point" or "an issue was found") so the user immediately understands what is blocked and why. A blocker's "message" must never be empty or generic.
 - For privacy/legal/imprint topics: identify missing factual inputs or implementation concerns, but never claim legal compliance and never invent legal/company data or legal text.
 - Consider the configured legal/market region, but treat laws as potentially changing; flag items that need current professional/legal verification.
 - Consider accessibility, security, performance, SEO, privacy and imprint only when enabled.

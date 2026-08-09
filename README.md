@@ -1,18 +1,21 @@
-# SiteBrief V6
+# Prompt.ai
 
-Geführter Website-Konzept- und Master-Prompt-Builder mit optionaler Supabase-Cloud. V6 führt von einer kurzen Projektbeschreibung über Referenzen, Agent, eigene Module/Skills und 3–5 Vorschauen bis zum finalen agentenspezifischen Master-Prompt.
+Aus Ideen wird ein klares Projekt: Prompt.ai ist ein geführter Website-Konzept- und Master-Prompt-Builder mit optionaler Supabase-Cloud. Aus einer kurzen Projektbeschreibung, Referenzen, gewähltem Ziel-Agent sowie eigenen Modulen/Skills entstehen mehrere Gestaltungsrichtungen und daraus ein fertiger, agentenspezifischer Master-Prompt für Claude Code, Codex, Gemini, ChatGPT, Cursor, v0 oder als universeller Prompt.
 
-## V6 neu
+Drei Arbeitsmodi stehen zur Wahl: **Geführt** (Schritt für Schritt), **Auto** (schnellstmöglich mit sinnvollen Standardwerten) und **Experte** (volle manuelle Kontrolle).
 
-- Supabase Auth für geräteübergreifende Nutzung
-- Cloud-Sync für Einstellungen, eigene Profile, Prompt-Vorlagen, Module, Agent-Skills und Projekte
-- Systemprofile bleiben zentral erhalten und können nur gelesen/dupliziert werden
-- eigene Profile können gespeichert, angewendet und gelöscht werden
+## Funktionsüberblick
+
+- Kostenlos, Pro und Ultimate als Tarife — vom einmaligen Projekt bis zur vollen Agentur-Ausstattung mit eigenen KI-Verbindungen, Prompt-Werkstatt und GitHub-Veröffentlichung
+- Website-Überarbeitung: bestehende Seiten einlesen und gezielt weiterentwickeln, nicht nur neu bauen
+- Supabase Auth für geräteübergreifende Nutzung, Cloud-Sync für Einstellungen, eigene Profile, Prompt-Vorlagen, Module, Agent-Skills und Projekte
+- Systemprofile bleiben zentral erhalten und können nur gelesen/dupliziert werden; eigene Profile können gespeichert, angewendet und gelöscht werden
 - Standard-Generator-KI, Standardmodell, Standard-Agent, Modus und Anzahl der Vorschauen in Einstellungen
 - Module und Skills mit drei Zuständen: `Immer aktiv`, `Standard`, `Manuell`
-- automatisches Speichern des aktuellen Wizard-Stands
-- private Supabase-Storage-Ablage für Referenzbilder
-- lokale Nutzung bleibt vollständig als Fallback erhalten
+- KI-gestützte Projektprüfung mit Gegenfragen, Warnungen und Blockern vor der Konzepterstellung
+- automatisches Speichern des aktuellen Wizard-Stands, private Supabase-Storage-Ablage für Referenzbilder
+- eigene Admin-Verwaltung für Nutzer, Tarife, Support-Anfragen und Aktionen
+- lokale Nutzung ohne Konto bleibt als Gast-Fallback erhalten (mit begrenzter Anzahl kostenloser Durchläufe)
 
 ## Ablauf
 
@@ -71,7 +74,7 @@ SEO-Grundlagen sind optional. Der Rechtsraum ist einstellbar (Standard: Deutschl
 
 ## Supabase einrichten
 
-V6 sollte ein eigenes Supabase-Projekt verwenden und nicht mit einer anderen App-Datenbank vermischt werden.
+Prompt.ai sollte ein eigenes Supabase-Projekt verwenden und nicht mit einer anderen App-Datenbank vermischt werden.
 
 1. Neues Supabase-Projekt erstellen.
 2. `supabase-schema.sql` als Migration anwenden.
@@ -104,7 +107,7 @@ Alle nutzerbezogenen Tabellen haben RLS. Der Browser bekommt ausschließlich Zug
 
 ## Auth
 
-V6 nutzt E-Mail + Passwort. Je nach Supabase-Auth-Einstellung muss eine neue E-Mail-Adresse zuerst bestätigt werden. Supabase verwaltet die Session im Browser; SiteBrief speichert keine Passwörter selbst.
+Prompt.ai nutzt E-Mail + Passwort. Je nach Supabase-Auth-Einstellung muss eine neue E-Mail-Adresse zuerst bestätigt werden. Supabase verwaltet die Session im Browser; Prompt.ai speichert keine Passwörter selbst.
 
 ## Generator-KI
 
@@ -126,7 +129,7 @@ OPENAI_API_KEY=...
 OPENAI_MODEL=...
 ```
 
-Die geheimen KI-Schlüssel bleiben ausschließlich serverseitig. In den SiteBrief-Einstellungen werden nur Provider/Modell als Standard gespeichert.
+Die geheimen KI-Schlüssel bleiben ausschließlich serverseitig. In den Prompt.ai-Einstellungen werden nur Provider/Modell als Standard gespeichert.
 
 ## Stripe-Abonnements
 
@@ -158,7 +161,7 @@ on conflict do nothing;
 
 Testtage werden direkt in neue Stripe-Checkout-Abos übernommen. Für einen automatisch angewendeten Rabatt muss in der Verwaltung zusätzlich eine gültige Stripe-Coupon-ID hinterlegt werden. Ohne Coupon-ID wird der Prozentwert nur als Information zur Aktion gespeichert.
 
-Alternativ kann die Aktion direkt am Stripe-Preis aus `STRIPE_PRO_PRICE_ID` über Metadaten gepflegt werden. SiteBrief übernimmt sie automatisch in Banner und Checkout, solange keine aktive Aktion in der Adminverwaltung Vorrang hat:
+Alternativ kann die Aktion direkt am Stripe-Preis aus `STRIPE_PRO_PRICE_ID` über Metadaten gepflegt werden. Prompt.ai übernimmt sie automatisch in Banner und Checkout, solange keine aktive Aktion in der Adminverwaltung Vorrang hat:
 
 ```text
 trial_days=14
@@ -180,7 +183,7 @@ Die Adminverwaltung kann Stripe-Abos zum Laufzeitende kündigen und die letzte b
 python -m http.server 8080
 ```
 
-Ohne Vercel-API-Routen läuft SiteBrief lokal und zeigt die Cloud als nicht verbunden. Der lokale Generator und alle lokalen Bibliotheken funktionieren weiterhin.
+Ohne Vercel-API-Routen läuft Prompt.ai lokal und zeigt die Cloud als nicht verbunden. Der lokale Generator und alle lokalen Bibliotheken funktionieren weiterhin.
 
 ## Dateien
 
@@ -201,7 +204,7 @@ KI-SETUP.md           KI-Einrichtung
 ## Sicherheit
 
 - kein Supabase `service_role`/Secret Key im Browser
-- RLS auf allen exponierten SiteBrief-Tabellen
+- RLS auf allen exponierten Prompt.ai-Tabellen (Präfix `sitebrief_`)
 - User-Zeilen über `auth.uid()` getrennt
 - privater Referenz-Bucket
 - Systemprofile im Client nur lesbar
@@ -210,4 +213,4 @@ KI-SETUP.md           KI-Einrichtung
 
 
 ## Shared Supabase project
-This build is linked to the existing `Stundennachweis app` Supabase project. SiteBrief uses only `sitebrief_*` tables plus the private `sitebrief-references` storage bucket. A migration-created allowlist protects the pre-existing Stundennachweis tables so future SiteBrief users do not automatically gain access to business data.
+This build is linked to the existing `Stundennachweis app` Supabase project. Prompt.ai uses only `sitebrief_*` tables plus the private `sitebrief-references` storage bucket (legacy `sitebrief` prefix kept for schema stability). A migration-created allowlist protects the pre-existing Stundennachweis tables so future Prompt.ai users do not automatically gain access to business data.

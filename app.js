@@ -12,11 +12,12 @@
   if(typeof HTMLDialogElement!=="undefined"){
     const nativeShowModal=HTMLDialogElement.prototype.showModal;
     HTMLDialogElement.prototype.showModal=function(){
-      if(this.classList.contains("library-dialog"))document.querySelectorAll("dialog.library-dialog[open]").forEach(dialog=>{if(dialog!==this)dialog.close()});
+      if(this.id!=="appActionDialog")document.querySelectorAll("dialog[open]").forEach(dialog=>{if(dialog!==this&&dialog.id!=="appActionDialog")dialog.close()});
       return nativeShowModal.call(this);
     };
   }
   const STORAGE_KEY = "sitebrief-v6-state";
+  const CONTINUE_WORKFLOW_KEY = "sitebrief-v6-continue-workflow";
   const LIBRARY_KEY = "sitebrief-v6-library";
   const SETTINGS_KEY = "sitebrief-v6-settings";
   const PROFILES_KEY = "sitebrief-v6-profiles";
@@ -587,10 +588,14 @@
       window.SiteBriefCloud?.subscribe?.(async(event,payload)=>{
         if(event==='password-recovery'){state.cloud.user=payload.user||null;el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;el.passwordRecoveryPanel.hidden=false;el.accountDialogKicker.textContent='PASSWORT ZURÜCKSETZEN';el.accountDialogTitle.textContent='Neues Passwort festlegen';if(!el.accountDialog.open)el.accountDialog.showModal();return}
         if(event==="auth"){
-          state.cloud.user=payload.user||null;if(!state.cloud.user){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}updateAccountUi();
+          const previousUserId=state.cloud.user?.id||null;
+          state.cloud.user=payload.user||null;const nextUserId=state.cloud.user?.id||null;
+          if(!state.cloud.user){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}updateAccountUi();
           if(state.cloud.user){try{await loadCloudBundle()}catch{}closeAccountGate();}
-          if(payload.authEvent==='SIGNED_IN'){await continuePendingAuthPlan();showWelcome();}
-          else if(payload.authEvent==='SIGNED_OUT'){showWelcome();}
+          if(previousUserId!==nextUserId){
+            if(payload.authEvent==='SIGNED_IN'&&nextUserId){await continuePendingAuthPlan();showWelcome();}
+            else if(payload.authEvent==='SIGNED_OUT'&&!nextUserId){showWelcome();}
+          }
         }
       });
       if(state.cloud.user){await loadCloudBundle();await handleCheckoutReturn();}
@@ -1007,7 +1012,7 @@
 
   function renderClarificationDialog(review){
     const warnings=[...(review.blockers||[]).map(x=>({...x,severity:"critical",area:x.area||"Blocker"})),...(review.warnings||[])];
-    el.clarificationWarnings.innerHTML=warnings.map(w=>`<div class="clarification-warning ${w.severity==="critical"?"critical":""}"><strong>${escapeHtml(w.area||"Hinweis")}</strong> — ${escapeHtml(w.message||w.alternative||"")}${w.alternative?`<br><span>Alternative: ${escapeHtml(w.alternative)}</span>`:""}</div>`).join("");
+    el.clarificationWarnings.innerHTML=warnings.map(w=>`<div class="clarification-warning ${w.severity==="critical"?"critical":""}"><strong>${escapeHtml(w.area||"Hinweis")}</strong> — ${escapeHtml(w.message||w.alternative||"Keine nähere Begründung angegeben.")}${w.alternative?`<br><span>Alternative: ${escapeHtml(w.alternative)}</span>`:""}</div>`).join("");
     el.clarificationQuestions.innerHTML="";
     (review.questions||[]).slice(0,state.settings.maxQuestions).forEach((q,i)=>{
       const existing=state.clarifications.find(a=>a.question===q.question)?.answer||"";
@@ -1070,7 +1075,10 @@
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Projektprüfung fehlgeschlagen");review=data;
       }
       review.questions=Array.isArray(review.questions)?review.questions.slice(0,state.settings.maxQuestions):[];review.warnings=Array.isArray(review.warnings)?review.warnings:[];review.blockers=Array.isArray(review.blockers)?review.blockers:[];review.assumptions=Array.isArray(review.assumptions)?review.assumptions:[];
-      if(state.settings.criticalBehavior==="block" && review.blockers.length && !review.questions.some(q=>q.required)) review.questions.unshift({id:uid("q"),question:"Wie soll mit dem kritischen Punkt umgegangen werden?",reason:review.blockers[0].message||"Vor der Umsetzung ist eine Entscheidung nötig.",suggestedAnswer:state.settings.suggestAlternatives?(review.blockers[0].alternative||""):"",required:true});
+      if(state.settings.criticalBehavior==="block" && review.blockers.length && !review.questions.some(q=>q.required)){
+        const blocker=review.blockers[0],blockerArea=(blocker.area||"").trim(),blockerMessage=(blocker.message||"").trim();
+        review.questions.unshift({id:uid("q"),question:blockerArea?`Wie soll mit dem Punkt „${blockerArea}" umgegangen werden?`:"Wie soll mit dem offenen kritischen Punkt umgegangen werden?",reason:blockerMessage||(blockerArea?`Der Bereich „${blockerArea}" wurde als nicht umsetzbar markiert, ohne nähere Begründung. Bitte im Prüfergebnis oben nachsehen oder die Beschreibung ergänzen.`:"Ein kritischer Punkt wurde ohne nähere Begründung markiert. Bitte die Projektbeschreibung ergänzen und erneut prüfen."),suggestedAnswer:state.settings.suggestAlternatives?(blocker.alternative||""):"",required:true});
+      }
       state.projectReview=review;state.reviewSignature=sig;state.reviewDeferred=false;saveState();renderAiReviewCard();renderClarificationDialog(review);return review.questions.length===0 && !(state.settings.criticalBehavior==="block"&&review.blockers.length);
     }catch(err){
       review=localProjectReview();state.projectReview=review;state.reviewSignature=sig;saveState();renderAiReviewCard();renderClarificationDialog(review);el.clarificationIntro.textContent=`Externe KI-Prüfung war nicht verfügbar (${err.message}). Prompt.ai zeigt deshalb die lokale Grundprüfung.`;return true;
@@ -1818,6 +1826,11 @@
 
   function downloadText(filename,text,type="text/plain") { const blob=new Blob([text],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500); }
 
+  async function startFreshProject(){
+    const p=project(),hasContent=Boolean((p.name||"").trim()||(p.description||"").trim());
+    if(hasContent&&!await customConfirm("Das aktuelle Projekt wird durch ein leeres neues Projekt ersetzt. Bereits gespeicherte Bibliotheken bleiben erhalten.",{title:'Neues Projekt',confirmLabel:'Neu beginnen',danger:true}))return;
+    localStorage.removeItem(STORAGE_KEY);sessionStorage.setItem(CONTINUE_WORKFLOW_KEY,'1');location.reload();
+  }
   async function resetProject(){
     if(!await customConfirm("Das aktuelle Projekt wird zurückgesetzt. Deine Bibliotheken bleiben erhalten.",{title:'Projekt zurücksetzen',confirmLabel:'Zurücksetzen',danger:true}))return;localStorage.removeItem(STORAGE_KEY);location.reload();
   }
@@ -1861,11 +1874,11 @@
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
-    document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>{el.plansDialog?.close();showWorkflow(1)});el.workspaceNewProjectBtn?.addEventListener('click',()=>showWorkflow(1));el.workspaceLastProjectBtn?.addEventListener('click',openLastProject);el.upgradeBtn?.addEventListener('click',()=>el.plansDialog?.showModal());document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
+    document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>{el.plansDialog?.close();showWorkflow(1)});el.workspaceNewProjectBtn?.addEventListener('click',startFreshProject);el.workspaceLastProjectBtn?.addEventListener('click',openLastProject);el.upgradeBtn?.addEventListener('click',()=>el.plansDialog?.showModal());document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
     [el.quickRevisionBtn,el.workspaceRevisionBtn].forEach(button=>button?.addEventListener('click',openQuickRevision));el.workspaceLibraryBtn?.addEventListener('click',()=>openLibrary('projects'));[el.quickRevisionProBlock,el.quickRevisionUltimateBlock].forEach(block=>block?.addEventListener('toggle',()=>{if(block.open&&block.classList.contains('locked')){block.open=false;el.quickRevisionDialog.close();el.plansDialog?.showModal()}}));
     el.closeWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.confirmWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.welcomeIntroDialog?.addEventListener('cancel',event=>{event.preventDefault();closeWelcomeIntro()});el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBtn?.addEventListener('click',()=>el.agentLaunchDialog.close());el.agentLaunchDialog?.addEventListener('cancel',event=>{event.preventDefault();el.agentLaunchDialog.close()});
     el.scanQuickRevisionBtn?.addEventListener('click',scanAndBuildQuickRevision);el.copyQuickRevisionBtn?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(el.quickRevisionPrompt.value);el.quickRevisionStatus.textContent='Auftrag kopiert.'}catch{el.quickRevisionStatus.textContent='Kopieren war nicht möglich.'}});el.downloadQuickRevisionBtn?.addEventListener('click',()=>downloadText('prompt-ai-website-ueberarbeiten.md',el.quickRevisionPrompt.value,'text/markdown'));el.saveQuickRevisionVariantBtn?.addEventListener('click',saveQuickRevisionVariant);el.quickRevisionVariantSelect?.addEventListener('change',()=>loadQuickRevisionVariant(el.quickRevisionVariantSelect.value));el.deleteQuickRevisionVariantBtn?.addEventListener('click',deleteQuickRevisionVariant);
-    el.resetBtn.addEventListener("click",resetProject);el.startNewBtn.addEventListener("click",resetProject);el.brandHome.addEventListener("click",e=>{e.preventDefault();showWelcome()});
+    el.resetBtn.addEventListener("click",resetProject);el.startNewBtn.addEventListener("click",startFreshProject);el.brandHome.addEventListener("click",e=>{e.preventDefault();showWelcome()});
     el.installAppBtn?.addEventListener('click',installApp);el.buildWebsiteBtn?.addEventListener('click',buildWebsiteWithAi);el.downloadGeneratedWebsiteBtn?.addEventListener('click',downloadGeneratedWebsite);el.createRevisionPromptBtn?.addEventListener('click',createRevisionPrompt);el.copyRevisionPromptBtn?.addEventListener('click',async()=>{await navigator.clipboard.writeText(el.revisionPrompt.value);el.revisionStatus.textContent='Auftrag kopiert.'});el.downloadRevisionPromptBtn?.addEventListener('click',()=>downloadText('sitebrief-ueberarbeitungsauftrag.md',el.revisionPrompt.value,'text/markdown'));
   }
 
@@ -1895,7 +1908,8 @@
     if(state.concepts.length){renderConcepts();renderSelectedPreview();el.generationStatus.textContent=`${state.concepts.length} gespeicherte Richtungen geladen.`}
     bindEvents();renderAiConnections();renderAiReviewCard();applyPlanUi();goStep(state.currentStep,true);updateGuide();updateAccountUi();
     initCloudIntegration();
-    setTimeout(showWelcomeIntroOnce,350);
+    if(sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)){sessionStorage.removeItem(CONTINUE_WORKFLOW_KEY);showWorkflow(1);}
+    else setTimeout(showWelcomeIntroOnce,350);
     window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.installPrompt=event;if(el.installAppBtn)el.installAppBtn.hidden=false});window.addEventListener('appinstalled',()=>{state.installPrompt=null;if(el.installAppBtn)el.installAppBtn.hidden=true});
     if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
     setInterval(()=>saveState({cloud:false}),15000);
