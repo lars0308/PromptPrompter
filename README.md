@@ -144,6 +144,36 @@ APP_URL=https://prompt-prompter.vercel.app
 
 Das Produkt hinter `STRIPE_API_KEYS_PRICE_ID` kostet 5,99 € monatlich. Der Stripe-Webhook zeigt auf `/api/stripe-webhook` und benötigt die Ereignisse `checkout.session.completed`, `customer.subscription.updated` und `customer.subscription.deleted`.
 
+## Admin-Verwaltung
+
+Nach Anwendung der Migration `supabase/migrations/202608091500_admin_console.sql` erhalten eingetragene Administratoren einen zusätzlichen Menüpunkt **Verwaltung**. Dort stehen Kennzahlen, Benutzer- und Tarifverwaltung, Sperren, Passwort-Reset-Mails, öffentliche Mitteilungen sowie Testphasen- und Rabattaktionen zur Verfügung.
+
+Den ersten Administrator legst du einmalig im Supabase SQL Editor an:
+
+```sql
+insert into public.sitebrief_admins (user_id)
+select id from auth.users where email = 'DEINE-ADMIN-EMAIL'
+on conflict do nothing;
+```
+
+Testtage werden direkt in neue Stripe-Checkout-Abos übernommen. Für einen automatisch angewendeten Rabatt muss in der Verwaltung zusätzlich eine gültige Stripe-Coupon-ID hinterlegt werden. Ohne Coupon-ID wird der Prozentwert nur als Information zur Aktion gespeichert.
+
+Alternativ kann die Aktion direkt am Stripe-Preis aus `STRIPE_PRO_PRICE_ID` über Metadaten gepflegt werden. SiteBrief übernimmt sie automatisch in Banner und Checkout, solange keine aktive Aktion in der Adminverwaltung Vorrang hat:
+
+```text
+trial_days=14
+discount_percent=20
+coupon_id=coupon_...
+offer_enabled=true
+offer_title=Pro 14 Tage kostenlos testen
+offer_description=Danach monatlich kündbar.
+offer_eyebrow=KOSTENLOS TESTEN
+offer_cta=Kostenlos testen
+offer_ends_at=2026-09-30T21:59:59Z
+```
+
+Die Adminverwaltung kann Stripe-Abos zum Laufzeitende kündigen und die letzte bezahlte Rechnung nach einer Sicherheitsabfrage vollständig erstatten. Nutzungsdaten enthalten Projektname, Art, Ziel, Anbieter, Modell, Laufzeit und Fehlerstatus; vollständige vertrauliche Prompttexte werden bewusst nicht gespeichert.
+
 ## Lokal starten
 
 ```bash
@@ -162,6 +192,7 @@ cloud.js              Supabase Auth/Data/Storage Client
 supabase-schema.sql   Tabellen, RLS, Storage-Policies, Systemprofile
 api/config.js         liefert URL + Publishable Key an den Browser
 api/generate.js       KI-Prüfung, Gegenfragen, Konzepte, Refinement
+admin-console.js      geschützte Admin-Oberfläche und öffentliche Aktionsbanner
 api/models.js         Vercel AI Gateway Modellliste
 vercel.json           Deployment-Konfiguration
 KI-SETUP.md           KI-Einrichtung

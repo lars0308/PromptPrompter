@@ -18,14 +18,14 @@
   const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
   const GUEST_RUN_LIMIT = 3;
   const PROJECT_OPTIONS = {
-    free:{types:["Website","Web-App","Landingpage","Onlineshop","Portfolio","Dokumentation"],goals:["Anfragen gewinnen","Verkaufen","Termine oder Buchungen","Informieren","Produkt erklären","Nutzung ermöglichen"]},
+    free:{types:["Website","Landingpage"],goals:["Anfragen gewinnen","Informieren"]},
     pro:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Kundenportal","Buchungsplattform","Mitgliederbereich","Portfolio","Magazin oder Blog","Dokumentation"],goals:["Anfragen gewinnen","Direkt verkaufen","Termine oder Buchungen","Marke positionieren","Leistungen verständlich erklären","Registrierungen gewinnen","Kunden binden","Inhalte veröffentlichen","Interne Abläufe vereinfachen"]},
     ultimate:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Marktplatz","SaaS-Anwendung","Kundenportal","Buchungsplattform","Mitgliederbereich","Community","Magazin oder Blog","Dokumentation","Dashboard","Interne Fachanwendung","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Direkt verkaufen","Abonnements verkaufen","Termine oder Buchungen","Marke positionieren","Registrierungen gewinnen","Aktive Nutzung steigern","Kunden binden","Community aufbauen","Inhalte veröffentlichen","Interne Abläufe automatisieren","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]}
   };
   const PLAN_RULES = {
-    free:{label:"Free",concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false},
-    pro:{label:"Pro",concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false},
-    ultimate:{label:"Ultimate",concepts:5,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true}
+    free:{label:"Free",modes:["guided"],concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false},
+    pro:{label:"Pro",modes:["guided","auto"],concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false},
+    ultimate:{label:"Ultimate",modes:["guided","auto","expert"],concepts:5,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true}
   };
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
@@ -46,6 +46,8 @@
     understanding: null,
     urls: [],
     images: [],
+    documents: [],
+    sourceUrls: [],
     targetAgent: "codex",
     engine: "local",
     model: "",
@@ -73,6 +75,8 @@
     cloudProjects: [],
     aiConnections: [],
     plan: "free",
+    subscriptionStatus: "active",
+    subscriptionPeriodEnd: null,
     isAdmin: false,
     ownApiKeys: false,
     clientContext:"",
@@ -86,8 +90,8 @@
   const el = {};
   function cacheElements(){
     [
-      "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","clientName","clientType","clientWebsite","clientContact","importClientWebsiteBtn","clientImportStatus","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
-      "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences",
+      "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","clientName","clientType","clientWebsite","clientContact","importClientWebsiteBtn","clientImportStatus","clientSources","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
+      "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences",
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
@@ -114,7 +118,7 @@
       goal: el.projectGoal?.value || "Anfragen gewinnen",
       audience: el.projectAudience?.value.trim() || "",
       special: el.projectSpecial?.value.trim() || "",
-      client:{name:el.clientName?.value.trim()||"",type:el.clientType?.value||"kunde",website:el.clientWebsite?.value.trim()||"",contact:el.clientContact?.value.trim()||"",context:state.clientContext||""}
+      client:{name:el.clientName?.value.trim()||"",type:el.clientType?.value||"kunde",website:state.sourceUrls[0]?.url||el.clientWebsite?.value.trim()||"",sources:state.sourceUrls.map(x=>({url:x.url,title:x.title||"",summary:x.summary||""})),contact:el.clientContact?.value.trim()||"",context:state.clientContext||""}
     };
   }
 
@@ -176,14 +180,15 @@
   }
 
   function projectSignature(){
-    return JSON.stringify({project:project(),urls:state.urls.map(x=>({url:x.url,aspects:x.aspects,like:x.like,dislike:x.dislike})),images:state.images.map(x=>({name:x.name,aspects:x.aspects,like:x.like,dislike:x.dislike})),engine:state.engine,model:el.generatorModel?.value||"",settings:state.settings});
+    return JSON.stringify({project:project(),urls:state.urls.map(x=>({url:x.url,aspects:x.aspects,like:x.like,dislike:x.dislike,summary:x.summary||""})),images:state.images.map(x=>({name:x.name,aspects:x.aspects,like:x.like,dislike:x.dislike})),documents:state.documents.map(x=>({name:x.name,type:x.type,text:x.text,aspects:x.aspects,like:x.like,dislike:x.dislike})),engine:state.engine,model:el.generatorModel?.value||"",settings:state.settings});
   }
 
   function serializableProjectState(){
     return {
       projectId:state.currentProjectId,mode: state.mode,currentStep:state.currentStep,maxVisited:state.maxVisited,understandingConfirmed:state.understandingConfirmed,understanding:state.understanding,clientContext:state.clientContext,
-      urls:state.urls,
+      urls:state.urls,sourceUrls:state.sourceUrls,
       images:state.images.map(({dataUrl,previewUrl,...rest}) => rest),
+      documents:state.documents.map(({pageImages,previewUrl,...rest})=>rest),
       targetAgent:state.targetAgent,engine:state.engine,model:state.model,outputTarget:state.outputTarget,templateId:state.templateId,selectedModuleIds:state.selectedModuleIds,selectedSkillIds:state.selectedSkillIds,
       concepts:state.concepts,selectedConceptId:state.selectedConceptId,refinements:state.refinements,clarifications:state.clarifications,projectReview:state.projectReview,reviewSignature:state.reviewSignature,reviewDeferred:state.reviewDeferred,
       project:project(),controls:controls(),conceptCount:Number(el.conceptCount?.value || 5),previewFormat:el.previewFormat?.value||"html"
@@ -325,13 +330,15 @@
   }
   function applyPlanUi(){
     const rules=planRules(),name=state.isAdmin?"Admin · Ultimate":rules.label;
+    if(!rules.modes.includes(state.mode))state.mode=rules.modes[0];
+    $$('.mode-switch button').forEach(button=>{const allowed=rules.modes.includes(button.dataset.mode);button.hidden=!allowed;button.classList.toggle('active',button.dataset.mode===state.mode)});
     if(!rules.agents.includes(state.targetAgent))state.targetAgent=rules.agents[0];
     $$('#agentSelector button').forEach(button=>{const allowed=rules.agents.includes(button.dataset.agent);button.hidden=!allowed;button.disabled=false;button.classList.toggle("active",button.dataset.agent===state.targetAgent)});
     if(el.conceptCount){el.conceptCount.max=String(rules.concepts);if(Number(el.conceptCount.value)>rules.concepts)el.conceptCount.value=String(rules.concepts)}
     if(el.previewFormat){const current=el.previewFormat.value,options=[['html','HTML-Website']];if(rules.modules||state.ownApiKeys)options.push(['image-cloudflare','Cloudflare-Bild']);if(rules.advanced||state.ownApiKeys)options.push(['image-gemini','Gemini-Bild']);el.previewFormat.innerHTML=options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('');el.previewFormat.value=options.some(([value])=>value===current)?current:'html'}
     if(el.currentPlanBadge)el.currentPlanBadge.textContent=name.toUpperCase();
     if(el.currentPlanTitle)el.currentPlanTitle.textContent=state.isAdmin?"Vollzugriff":`${rules.label}-Tarif`;
-    if(el.currentPlanDescription)el.currentPlanDescription.textContent=rules===PLAN_RULES.free?"Gute Ergebnisse mit geführten Standards und drei Richtungen.":rules===PLAN_RULES.pro?"Claude/Codex, Module, Skills, vier Richtungen und Kundenunterlagen.":"Alle Agenten, Modelle, Profile, Einstellungen und fünf Richtungen.";
+    if(el.currentPlanDescription){const trialEnd=state.subscriptionPeriodEnd?new Intl.DateTimeFormat('de-DE').format(new Date(state.subscriptionPeriodEnd)):'';el.currentPlanDescription.textContent=state.subscriptionStatus==='trialing'?`Kostenlose Testphase aktiv${trialEnd?` bis ${trialEnd}`:''}.`:rules===PLAN_RULES.free?"Gute Ergebnisse mit geführten Standards und drei Richtungen.":rules===PLAN_RULES.pro?"Claude/Codex, Module, Skills, vier Richtungen und Kundenunterlagen.":"Alle Agenten, Modelle, Profile, Einstellungen und fünf Richtungen."}
     if(el.clientResultHint)el.clientResultHint.textContent=rules.clientDocs?"Kundenunterlagen sind freigeschaltet.":"Mit Pro erhältst du Kundenbriefing und Übergabe-Dokument.";
     [el.downloadClientBriefBtn,el.downloadHandoverBtn].forEach(button=>{if(button)button.hidden=!rules.clientDocs});
     if(el.downloadWebsiteZipBtn)el.downloadWebsiteZipBtn.hidden=!rules.zip;
@@ -346,6 +353,8 @@
     if(checksSection)checksSection.hidden=state.plan==="free"&&!state.isAdmin;
     if(el.settingsUpgradeNote){el.settingsUpgradeNote.hidden=state.ownApiKeys;el.settingsUpgradeNote.innerHTML=state.plan==='free'?'<strong>Mehr Kontrolle mit Pro</strong><p>Claude, Module, Skills, Kundenunterlagen, ZIP-Export und erweiterte Prüfregeln.</p><button type="button" class="outline-btn mini" data-upgrade-plans>Pro ansehen</button>':'<strong>Eigene API-Keys für 5,99 €</strong><p>Eigene KI-Verbindungen werden erst nach Buchung des Add-ons angezeigt. In Ultimate ist es enthalten.</p><button type="button" class="outline-btn mini" data-api-addon>API-Key-Add-on buchen</button>'}
     const moduleStep=document.getElementById('stepModules');if(moduleStep)moduleStep.classList.toggle('tier-unavailable',!rules.modules);
+    if(el.openLibraryBtn)el.openLibraryBtn.hidden=!rules.modules;
+    document.querySelectorAll('[data-open-library],[data-mobile-library]').forEach(button=>button.hidden=!rules.modules);
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
     renderProjectOptions();
@@ -418,7 +427,9 @@
       const bundle=await window.SiteBriefCloud.loadUserBundle();
       const subscription=bundle.subscription||{};
       state.isAdmin=Boolean(subscription.isAdmin);
+      window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:state.isAdmin}}));
       state.ownApiKeys=Boolean(subscription.ownApiKeys);
+      state.subscriptionStatus=subscription.status||'active';state.subscriptionPeriodEnd=subscription.current_period_end||null;
       state.userProfile={...state.userProfile,...(bundle.userProfile||{})};
       state.plan=state.isAdmin?"ultimate":(["active","trialing"].includes(subscription.status)&&["pro","ultimate"].includes(subscription.plan)?subscription.plan:"free");
       if(bundle.settings){
@@ -475,12 +486,12 @@
     try{
       const result=await window.SiteBriefCloudReady;
       state.cloud.configured=Boolean(result?.configured);state.cloud.user=result?.user||null;
-      const pricing=window.SiteBriefCloud?.config?.pricing||{};if(el.proPriceLabel)el.proPriceLabel.textContent=pricing.pro||'15,99 € / Monat';if(el.ultimatePriceLabel)el.ultimatePriceLabel.textContent=pricing.ultimate||'25,99 € / Monat';const addonPrice=el.apiAddonCard?.querySelector('b');if(addonPrice)addonPrice.textContent=pricing.apiKeys||'5,99 € / Monat';
+      const pricing=window.SiteBriefCloud?.config?.pricing||{};if(el.proPriceLabel)el.proPriceLabel.textContent=pricing.pro||'15,99 € / Monat';if(el.ultimatePriceLabel)el.ultimatePriceLabel.textContent=pricing.ultimate||'25,99 € / Monat';document.querySelectorAll('[data-public-price="pro"]').forEach(x=>x.textContent=pricing.pro||'15,99 € / Monat');document.querySelectorAll('[data-public-price="ultimate"]').forEach(x=>x.textContent=pricing.ultimate||'25,99 € / Monat');const addonPrice=el.apiAddonCard?.querySelector('b');if(addonPrice)addonPrice.textContent=pricing.apiKeys||'5,99 € / Monat';
       state.systemProfiles=(result?.systemProfiles?.length?result.systemProfiles:LOCAL_SYSTEM_PROFILES).map(x=>({...x,config:x.config||{}}));
       window.SiteBriefCloud?.subscribe?.(async(event,payload)=>{
         if(event==='password-recovery'){state.cloud.user=payload.user||null;el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;el.passwordRecoveryPanel.hidden=false;el.accountDialogKicker.textContent='PASSWORT ZURÜCKSETZEN';el.accountDialogTitle.textContent='Neues Passwort festlegen';if(!el.accountDialog.open)el.accountDialog.showModal();return}
         if(event==="auth"){
-          state.cloud.user=payload.user||null;if(!state.cloud.user){state.aiConnections=[];window.SiteBriefCloud.aiConnections=[];renderAiConnections();}updateAccountUi();
+          state.cloud.user=payload.user||null;if(!state.cloud.user){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}updateAccountUi();
           if(state.cloud.user)try{await loadCloudBundle();closeAccountGate()}catch{}
         }
       });
@@ -503,7 +514,7 @@
   }
 
   async function signOut(){
-    try{await window.SiteBriefCloud.signOut();state.cloud.user=null;state.cloudProjects=[];state.aiConnections=[];window.SiteBriefCloud.aiConnections=[];renderAiConnections();setSyncState("Cloud bereit");updateAccountUi();el.accountDialog.close();}catch(err){el.syncMessage.textContent=err?.message||"Abmelden fehlgeschlagen.";el.syncMessage.className="auth-message error";}
+    try{await window.SiteBriefCloud.signOut();state.cloud.user=null;state.cloudProjects=[];state.aiConnections=[];state.plan='free';state.isAdmin=false;state.ownApiKeys=false;window.SiteBriefCloud.aiConnections=[];renderAiConnections();applyPlanUi();setSyncState("Cloud bereit");updateAccountUi();el.accountDialog.close();}catch(err){el.syncMessage.textContent=err?.message||"Abmelden fehlgeschlagen.";el.syncMessage.className="auth-message error";}
   }
 
   function applySavedState(saved,{persistLocal=false}={}){
@@ -516,6 +527,8 @@
     state.understanding = saved.understanding || null;
     state.urls = Array.isArray(saved.urls) ? saved.urls : [];
     state.images = Array.isArray(saved.images) ? saved.images.map(x => ({...x,dataUrl:x.dataUrl||"",previewUrl:x.previewUrl||""})) : [];
+    state.documents=Array.isArray(saved.documents)?saved.documents.map(x=>({...x,pageImages:Array.isArray(x.pageImages)?x.pageImages:[],previewUrl:x.previewUrl||""})):[];
+    state.sourceUrls=Array.isArray(saved.sourceUrls)?saved.sourceUrls:(Array.isArray(saved.project?.client?.sources)?saved.project.client.sources:[]);
     state.targetAgent = AGENT_NAMES[saved.targetAgent] ? saved.targetAgent : (state.settings.defaultAgent||"codex");
     state.engine = ["local","gateway","openai","gemini"].includes(saved.engine) ? saved.engine : (state.settings.defaultEngine||"local");
     state.model = saved.model || state.settings.defaultModel || "";
@@ -530,7 +543,7 @@
     state.clarifications = Array.isArray(saved.clarifications) ? saved.clarifications : [];
     state.projectReview = saved.projectReview || null; state.reviewSignature=saved.reviewSignature||""; state.reviewDeferred=Boolean(saved.reviewDeferred);
     const p = saved.project || {};
-    el.projectName.value = p.name || ""; el.projectDescription.value = p.description || "";if(p.type&&![...el.projectType.options].some(x=>x.value===p.type))el.projectType.add(new Option(p.type,p.type));el.projectType.value = p.type || "Website";if(p.goal&&![...el.projectGoal.options].some(x=>x.value===p.goal))el.projectGoal.add(new Option(p.goal,p.goal));el.projectGoal.value = p.goal || "Anfragen gewinnen"; el.projectAudience.value = p.audience || ""; el.projectSpecial.value = p.special || "";el.clientName.value=p.client?.name||"";el.clientType.value=p.client?.type||state.userProfile.defaultClientType||"kunde";el.clientWebsite.value=p.client?.website||"";el.clientContact.value=p.client?.contact||"";
+    el.projectName.value = p.name || ""; el.projectDescription.value = p.description || "";if(p.type&&![...el.projectType.options].some(x=>x.value===p.type))el.projectType.add(new Option(p.type,p.type));el.projectType.value = p.type || "Website";if(p.goal&&![...el.projectGoal.options].some(x=>x.value===p.goal))el.projectGoal.add(new Option(p.goal,p.goal));el.projectGoal.value = p.goal || "Anfragen gewinnen"; el.projectAudience.value = p.audience || ""; el.projectSpecial.value = p.special || "";el.clientName.value=p.client?.name||"";el.clientType.value=p.client?.type||state.userProfile.defaultClientType||"kunde";el.clientWebsite.value="";el.clientContact.value=p.client?.contact||"";
     el.descriptionCount.textContent = el.projectDescription.value.length;
     const c = saved.controls || {}; ["originality","antiSlop","motion","density"].forEach(id => { if(c[id] != null){ el[id].value = c[id]; el[id].nextElementSibling.value = c[id]; } });
     if(saved.conceptCount) el.conceptCount.value = String(clamp(saved.conceptCount,3,5));
@@ -570,7 +583,7 @@
   }
 
   async function loadCloudProject(row){
-    if(!row?.state)return;applySavedState(row.state,{persistLocal:true});state.currentProjectId=row.id;await hydrateCloudReferenceImages();renderReferences();renderUnderstanding();renderLibrary();renderConcepts();renderSelectedPreview();updateEngineUi();$$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));goStep(state.currentStep,true);el.accountDialog.close();
+    if(!row?.state)return;applySavedState(row.state,{persistLocal:true});state.currentProjectId=row.id;await hydrateCloudReferenceImages();renderReferences();renderClientSources();renderUnderstanding();renderLibrary();renderConcepts();renderSelectedPreview();updateEngineUi();$$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));goStep(state.currentStep,true);el.accountDialog.close();
   }
 
   async function deleteCloudProject(id){
@@ -636,6 +649,10 @@
   function settingsForApi(){
     return {aiClarifications:state.settings.aiClarifications,maxQuestions:Number(state.settings.maxQuestions)||4,criticalBehavior:state.settings.criticalBehavior,askMissing:state.settings.askMissing,askConflict:state.settings.askConflict,askInfeasible:state.settings.askInfeasible,suggestAlternatives:state.settings.suggestAlternatives,legalRegion:state.settings.legalRegion,checks:{...state.settings.checks},noInventLegal:state.settings.noInventLegal,finalChecklist:state.settings.finalChecklist};
   }
+
+  function referencePayload(){const map=new Map();for(const item of [...state.sourceUrls,...state.urls]){if(!item?.url)continue;const old=map.get(item.url)||{};map.set(item.url,{url:item.url,kind:state.sourceUrls.includes(item)?'project-source':'design-reference',title:item.title||old.title||'',summary:item.summary||old.summary||'',aspects:item.aspects||old.aspects||['Inhalte','Struktur'],note:item.like||'',dislike:item.dislike||''})}return [...map.values()].slice(0,16)}
+  function documentPayload(){return state.documents.map(item=>({name:item.name,type:item.type,text:String(item.text||'').slice(0,50000),pages:item.pages||0,aspects:item.aspects||[],note:item.like||'',dislike:item.dislike||''})).slice(0,8)}
+  function aiReferenceImages(limit=5){const out=state.images.filter(x=>x.dataUrl).map(x=>({name:x.name,dataUrl:x.dataUrl,aspects:x.aspects,note:x.like,dislike:x.dislike}));for(const doc of state.documents)for(let i=0;i<(doc.pageImages||[]).length;i++)out.push({name:`${doc.name} – Seite ${i+1}`,dataUrl:doc.pageImages[i],aspects:doc.aspects,note:doc.like||'Unterlageninhalt und visuelle Struktur berücksichtigen',dislike:doc.dislike||''});return out.slice(0,limit)}
 
   function allProfiles(){
     const system=(state.systemProfiles||[]).map(x=>({...x,_kind:"system"}));
@@ -863,7 +880,7 @@
     try{
       if(state.engine==="local") review=localProjectReview();
       else{
-        const payload={action:"review",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:state.urls.map(x=>({url:x.url,aspects:x.aspects,note:x.like,dislike:x.dislike})),images:state.images.filter(x=>x.dataUrl).slice(0,3).map(x=>({name:x.name,dataUrl:x.dataUrl,aspects:x.aspects,note:x.like,dislike:x.dislike})),settings:settingsForApi(),template:selectedTemplate()||{},modules:selectedModules(),clarifications:state.clarifications};
+        const payload={action:"review",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),settings:settingsForApi(),template:selectedTemplate()||{},modules:selectedModules(),clarifications:state.clarifications};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Projektprüfung fehlgeschlagen");review=data;
       }
       review.questions=Array.isArray(review.questions)?review.questions.slice(0,state.settings.maxQuestions):[];review.warnings=Array.isArray(review.warnings)?review.warnings:[];review.blockers=Array.isArray(review.blockers)?review.blockers:[];review.assumptions=Array.isArray(review.assumptions)?review.assumptions:[];
@@ -882,7 +899,7 @@
     state.understanding.priorities.forEach(point => { const d=document.createElement("div"); d.textContent=point; el.understandingPoints.appendChild(d); });
   }
 
-  function referenceCount(){ return state.urls.length + state.images.length; }
+  function referenceCount(){ return state.urls.length + state.images.length + state.documents.length + state.sourceUrls.length; }
 
   function addUrl(){
     let value = el.referenceUrl.value.trim();
@@ -937,6 +954,16 @@
       notes.querySelector(".dislike-note").addEventListener("input",e=>{item.dislike=e.target.value;saveState()});
       el.imageReferences.appendChild(card);
     });
+    el.documentReferences.innerHTML="";
+    state.documents.forEach(item=>{
+      const card=document.createElement("div");card.className="document-reference";
+      const detail=item.type==='application/pdf'?`${item.pages||'?'} Seiten · ${item.text?.trim()?`${item.text.length} Zeichen erkannt`:'als visuelle Unterlage'}`:`${item.text?.length||0} Zeichen`;
+      card.innerHTML=`<span class="document-icon">${item.type==='application/pdf'?'PDF':'DOC'}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(detail)}</small></div><button type="button" class="remove-btn" aria-label="Unterlage entfernen">×</button><div class="aspect-row"></div><div class="ref-notes"><input type="text" class="like-note" placeholder="Was daraus verwenden?" value="${escapeHtml(item.like||"")}"><input type="text" class="dislike-note" placeholder="Nicht übernehmen..." value="${escapeHtml(item.dislike||"")}"></div>`;
+      card.querySelector('.remove-btn').addEventListener('click',async()=>{state.documents=state.documents.filter(x=>x.id!==item.id);renderReferences();saveState();updateGuide();if(cloudReady()&&item.storagePath)try{await window.SiteBriefCloud.removeReference(item.storagePath)}catch{}});
+      renderAspectChips(card.querySelector('.aspect-row'),item);
+      card.querySelector('.like-note').addEventListener('input',e=>{item.like=e.target.value;saveState()});card.querySelector('.dislike-note').addEventListener('input',e=>{item.dislike=e.target.value;saveState()});
+      el.documentReferences.appendChild(card);
+    });
     updateGuideContext();renderAiReviewCard();
   }
 
@@ -957,12 +984,26 @@
   }
 
   async function addImages(files){
-    const valid=[...files].filter(f=>/^image\/(png|jpeg|webp)$/i.test(f.type)).slice(0,Math.max(0,8-state.images.length));
+    const incoming=[...files].slice(0,Math.max(0,12-state.images.length-state.documents.length));
+    const valid=incoming.filter(f=>/^image\/(png|jpeg|webp)$/i.test(f.type)).slice(0,Math.max(0,8-state.images.length));
     for(const file of valid){
       try{
         const dataUrl=await compressImage(file);const item={id:uid("img"),name:file.name,dataUrl,aspects:["Bildsprache","Stimmung"],like:"",dislike:"",storagePath:""};state.images.push(item);
         if(cloudReady())try{item.storagePath=await window.SiteBriefCloud.uploadReference(state.currentProjectId,item.id,dataUrl,file.name)}catch(err){state.cloud.error=err?.message||"Bild-Upload fehlgeschlagen";setSyncState("Bild lokal","error")}
       }catch{}
+    }
+    for(const file of incoming.filter(f=>f.type==='application/pdf'||/\.(pdf|txt|md|csv|json)$/i.test(f.name))){
+      if(file.size>12*1024*1024)continue;
+      try{
+        const item={id:uid('doc'),name:file.name,type:file.type||(/\.pdf$/i.test(file.name)?'application/pdf':'text/plain'),text:'',pages:0,pageImages:[],aspects:['Struktur','Nur Inspiration'],like:'',dislike:'',storagePath:''};
+        if(item.type==='application/pdf'){
+          const pdfjs=await import('https://esm.sh/pdfjs-dist@4.10.38/build/pdf.mjs');pdfjs.GlobalWorkerOptions.workerSrc='https://esm.sh/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
+          const pdf=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;item.pages=pdf.numPages;const text=[];
+          for(let pageNo=1;pageNo<=Math.min(pdf.numPages,30);pageNo++){const page=await pdf.getPage(pageNo),content=await page.getTextContent();text.push(content.items.map(x=>x.str||'').join(' '));if(pageNo<=3){const base=page.getViewport({scale:1}),scale=Math.min(1.6,1200/Math.max(base.width,base.height)),viewport=page.getViewport({scale});const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;item.pageImages.push(canvas.toDataURL('image/jpeg',.74));}}
+          item.text=text.join('\n').replace(/\s+/g,' ').trim().slice(0,50000);
+        }else item.text=(await file.text()).slice(0,50000);
+        state.documents.push(item);if(cloudReady())try{item.storagePath=await window.SiteBriefCloud.uploadReferenceFile(state.currentProjectId,item.id,file)}catch(err){state.cloud.error=err?.message||'Unterlagen-Upload fehlgeschlagen';setSyncState('Datei lokal','error')}
+      }catch(err){state.cloud.error=`${file.name}: ${err?.message||'Datei konnte nicht gelesen werden'}`;setSyncState('Dateifehler','error')}
     }
     el.imageInput.value=""; renderReferences(); saveState(); updateGuide();
   }
@@ -1085,7 +1126,7 @@
       profile:{activeId:state.activeProfileId||null,name:allProfiles().find(x=>x.id===state.activeProfileId)?.name||null},
       project:p,
       understanding:{summary:u.summary,priorities:u.priorities,domain:u.domain},
-      references:{websites:state.urls.map(x=>({url:x.url,aspects:x.aspects,like:x.like,dislike:x.dislike})),images:state.images.map(x=>({name:x.name,aspects:x.aspects,like:x.like,dislike:x.dislike}))},
+      references:{websites:referencePayload(),images:state.images.map(x=>({name:x.name,aspects:x.aspects,like:x.like,dislike:x.dislike})),documents:documentPayload()},
       targetAgent:{id:state.targetAgent,name:AGENT_NAMES[state.targetAgent]},
       output:{id:state.outputTarget,label:OUTPUT_TARGETS[state.outputTarget]||OUTPUT_TARGETS["next-vercel"]},
       generator:{engine:state.engine,model:el.generatorModel.value.trim()||null},
@@ -1102,11 +1143,11 @@
   }
 
   function renderBlueprint(){
-    const b=buildBlueprint(); const refs=b.references.websites.length+b.references.images.length;
+    const b=buildBlueprint(); const refs=b.references.websites.length+b.references.images.length+b.references.documents.length;
     const sections=[
       ["Projekt",`<strong>${escapeHtml(b.project.name||"Ohne Projektnamen")}</strong><br>${escapeHtml(b.project.type)} · ${escapeHtml(b.project.goal)}${b.project.audience?`<br>Zielgruppe: ${escapeHtml(b.project.audience)}`:""}`],
       ["Verständnis",`${escapeHtml(b.understanding.summary)}<ul>${b.understanding.priorities.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul>`],
-      ["Referenzen",refs?`${b.references.websites.length} Website${b.references.websites.length===1?"":"s"} · ${b.references.images.length} Bild${b.references.images.length===1?"":"er"}`:"Keine Referenzen — Konzept wird nur aus dem Briefing entwickelt."],
+      ["Referenzen",refs?`${b.references.websites.length} Online-Quelle${b.references.websites.length===1?"":"n"} · ${b.references.images.length} Bild${b.references.images.length===1?"":"er"} · ${b.references.documents.length} Unterlage${b.references.documents.length===1?"":"n"}`:"Keine Referenzen — Konzept wird nur aus dem Briefing entwickelt."],
       ["Agent & Ergebnis",`${escapeHtml(b.targetAgent.name)}<br><span class="muted">Generator: ${escapeHtml(b.generator.engine)}${b.generator.model?` · ${escapeHtml(b.generator.model)}`:""}<br>Ausgabe: ${escapeHtml(b.output.label)}</span>`],
       ["Vorlage",b.template?`${escapeHtml(b.template.name)}${b.template.tag?` · ${escapeHtml(b.template.tag)}`:""}`:"Ohne Master-Vorlage"],
       ["Module",b.modules.length?`<div class="tag-line">${b.modules.map(x=>`<span>${escapeHtml(x.name)}</span>`).join("")}</div>`:"Keine Module aktiv"],
@@ -1180,7 +1221,7 @@
     try{
       if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
       else{
-        const payload={action:"concepts",count,engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:state.urls.map(x=>({url:x.url,aspects:x.aspects,note:x.like,dislike:x.dislike})),images:state.images.filter(x=>x.dataUrl).slice(0,3).map(x=>({name:x.name,dataUrl:x.dataUrl,aspects:x.aspects,note:x.like,dislike:x.dislike})),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
+        const payload={action:"concepts",count,engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"Generator-Anfrage fehlgeschlagen"); concepts=(data.concepts||[]).slice(0,count).map(normalizedConcept);
         if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
       }
@@ -1201,7 +1242,7 @@
     for(let i=0;i<state.concepts.length;i++){
       const concept=state.concepts[i];setTaskProgress("preview",Math.round(38+(i/state.concepts.length)*54),`Bildentwurf ${i+1} von ${state.concepts.length} wird gestaltet…`);
       try{
-        const payload={action:"preview-image",imageProvider,project:project(),concept:conceptForExport(concept),references:state.urls.slice(0,3),images:state.images.filter(x=>x.dataUrl).slice(0,2)};
+        const payload={action:"preview-image",imageProvider,project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Bildvorschau fehlgeschlagen");concept.previewImage=data.imageDataUrl||"";renderConcepts();renderSelectedPreview();
       }catch(err){const message=String(err?.message||"");if(/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(message)){quotaError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Gemini ist verbunden, das Bildkontingent ist momentan erschöpft. Layout-Vorschauen werden weiter angezeigt.";break;}otherError=true;el.generationStatus.className="generation-status error";el.generationStatus.textContent=`Bildentwurf ${i+1} war nicht verfügbar. Die übrigen Vorschauen werden weiter vorbereitet.`;}
     }
@@ -1269,7 +1310,7 @@
     let refined;
     try{
       if(state.engine!=="local"){
-        const payload={action:"refine",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),concept:conceptForExport(c),refinement:instruction,references:state.urls.map(x=>({url:x.url,aspects:x.aspects,note:x.like,dislike:x.dislike})),images:state.images.filter(x=>x.dataUrl).slice(0,3).map(x=>({name:x.name,dataUrl:x.dataUrl,aspects:x.aspects,note:x.like,dislike:x.dislike})),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
+        const payload={action:"refine",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),concept:conceptForExport(c),refinement:instruction,references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Refinement failed");refined=normalizedConcept(data.concept||data.concepts?.[0],0);refined.id=c.id;
       }else refined=localRefine(c,instruction);
     }catch{refined=localRefine(c,instruction)}
@@ -1418,6 +1459,7 @@
   }
 
   function setMode(mode){
+    if(!planRules().modes.includes(mode)){el.plansDialog?.showModal();return;}
     state.mode=mode;$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
     if(mode==="expert") state.maxVisited=8;
     updateGuide();saveState();
@@ -1477,6 +1519,7 @@
   }
 
   function openLibrary(tab="templates"){
+    if(!planRules().modules){el.plansDialog?.showModal();return;}
     el.libraryDialog.showModal();switchLibraryTab(tab);
   }
   function switchLibraryTab(tab){
@@ -1529,11 +1572,13 @@
   function websiteBuildImages(){const concept=selectedConcept(),images=[];if(concept?.previewImage?.startsWith('data:image/'))images.push({name:'Ausgewählte SiteBrief-Vorschau',dataUrl:concept.previewImage,aspects:['Layout','Farben','Typografie','Bildsprache','Hero','Struktur'],note:'Verbindliches visuelles Ziel. Komposition und Hierarchie im echten responsiven Layout wiedererkennbar umsetzen.',dislike:'Keine Geräte- oder Browserrahmen und keinen Text aus dem Bild blind übernehmen.'});for(const image of state.images.filter(x=>x.dataUrl).slice(0,Math.max(0,3-images.length)))images.push({name:image.name,dataUrl:image.dataUrl,aspects:image.aspects,note:image.like,dislike:image.dislike});return images}
   function downloadGeneratedWebsite(){if(!state.generatedWebsite?.files)return;const blob=websiteZipBlob(state.generatedWebsite.files),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9]+/g,'-')}-komplett.zip`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
   async function buildWebsiteWithAi(){if(!planRules().zip){el.plansDialog?.showModal();return}if(state.engine==='local'){el.websiteBuildStatus.textContent='Wähle im Projekt zuerst eine verbundene KI als Generator.';return}updateMasterPrompt();try{el.buildWebsiteBtn.disabled=true;el.downloadGeneratedWebsiteBtn.hidden=true;el.websiteRequirements.hidden=true;el.websiteBuildStatus.textContent='Die Website wird als vollständiges Dateipaket erstellt. Das kann einige Minuten dauern…';const payload={action:'website',engine:state.engine,model:el.generatorModel.value.trim(),project:project(),concept:conceptForExport(selectedConcept()),outputTarget:OUTPUT_TARGETS[state.outputTarget]||state.outputTarget,masterPrompt:el.masterPrompt.value,images:websiteBuildImages()};const response=await sitebriefApiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await response.json();if(!response.ok)throw new Error(data.error||'Website konnte nicht erstellt werden');const files=safeGeneratedFiles(data.files);validateGeneratedPackage(files);const modelRequirements=Array.isArray(data.requiredInputs)?data.requiredInputs:[],requirements=[...modelRequirements];for(const item of deterministicRequiredInputs())if(!requirements.some(existing=>String(existing.area).toLowerCase()===item.area.toLowerCase()))requirements.push(item);state.generatedWebsite={files,requirements,setup:data.setup||[],verification:data.verification||[],summary:data.summary||''};el.downloadGeneratedWebsiteBtn.hidden=false;el.websiteBuildStatus.textContent=`${Object.keys(files).length} Dateien erstellt. ${data.summary||'Das Paket ist bereit.'}`;el.websiteRequirements.hidden=false;el.websiteRequirements.innerHTML=`<strong>Was vor dem Livegang noch gebraucht wird</strong>${requirements.length?`<ul>${requirements.map(item=>`<li><b>${escapeHtml(item.area||'Projekt')}:</b> ${escapeHtml(item.item||'Angabe fehlt')}<small>${escapeHtml(item.reason||'')}</small></li>`).join('')}</ul>`:'<p>Keine zusätzlichen Zugänge erkannt. Inhalte und Funktionen trotzdem vor Veröffentlichung prüfen.</p>'}${(data.setup||[]).length?`<strong>Einrichtung</strong><ol>${data.setup.map(item=>`<li>${escapeHtml(item)}</li>`).join('')}</ol>`:''}`;}catch(err){el.websiteBuildStatus.textContent=err.message||'Website konnte nicht erstellt werden.'}finally{el.buildWebsiteBtn.disabled=false}}
-  async function beginCheckout(plan){try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');location.href=data.url}catch(err){alert(err.message)}}
+  async function beginCheckout(plan){if(!cloudReady()){showAccountGate();return}try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');location.href=data.url}catch(err){alert(err.message)}}
   async function openBillingPortal(){try{const response=await sitebriefApiFetch('/api/portal',{method:'POST'}),data=await response.json();if(!response.ok)throw new Error(data.error||'Aboverwaltung nicht verfügbar');location.href=data.url}catch(err){alert(err.message)}}
   async function publishToGithub(){if(!planRules().github){el.plansDialog?.showModal();return}const repoName=prompt('Name des neuen GitHub-Repositories:',(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9-]+/g,'-'));if(!repoName)return;try{el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='GitHub-Veröffentlichung wird vorbereitet…';const files=state.generatedWebsite?.files||exportedWebsiteFiles(),response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repoName,files})}),data=await response.json();if(!response.ok)throw new Error(data.error||'GitHub-Veröffentlichung nicht möglich');el.exportResultHint.innerHTML=`Veröffentlicht: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>`}catch(err){el.exportResultHint.textContent=err.message}finally{el.publishGithubBtn.disabled=false}}
   async function saveUserProfile(){if(!cloudReady())return;const profile={displayName:el.userDisplayName.value.trim(),companyName:el.userCompanyName.value.trim(),website:el.userWebsite.value.trim(),defaultClientType:el.userDefaultClientType.value};try{el.saveUserProfileBtn.disabled=true;await window.SiteBriefCloud.saveUserProfile(profile);state.userProfile=profile;el.userProfileMessage.textContent='Profil gespeichert ✓'}catch(err){el.userProfileMessage.textContent=err.message||'Profil konnte nicht gespeichert werden'}finally{el.saveUserProfileBtn.disabled=false}}
-  async function importClientWebsite(){const url=el.clientWebsite.value.trim();if(!url){el.clientImportStatus.textContent='Bitte zuerst eine Website-Adresse eingeben.';return}try{el.importClientWebsiteBtn.disabled=true;el.clientImportStatus.textContent='Website wird gelesen…';const response=await sitebriefApiFetch('/api/site-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Website konnte nicht gelesen werden');if(!el.clientName.value.trim())el.clientName.value=data.siteName||data.title||'';if(!el.projectName.value.trim())el.projectName.value=data.siteName||data.title||'';const imported=[data.description,data.summary].filter(Boolean).join('\n').slice(0,1800);state.clientContext=imported;if(imported&&!el.projectDescription.value.trim())el.projectDescription.value=imported;el.descriptionCount.textContent=el.projectDescription.value.length;el.clientImportStatus.textContent='Website-Daten für Briefing und Prompt übernommen ✓';state.understandingConfirmed=false;saveState()}catch(err){el.clientImportStatus.textContent=err.message}finally{el.importClientWebsiteBtn.disabled=false}}
+  function renderClientSources(){if(!el.clientSources)return;el.clientSources.innerHTML=state.sourceUrls.map(item=>`<div class="source-item" data-source-id="${escapeHtml(item.id)}"><div><strong>${escapeHtml(item.title||(()=>{try{return new URL(item.url).hostname}catch{return 'Datenquelle'}})())}</strong><small>${escapeHtml(item.url)}</small></div><span>${item.summary?'INHALT ÜBERNOMMEN':'LINK GESPEICHERT'}</span><button type="button" class="remove-btn" aria-label="Quelle entfernen">×</button></div>`).join('');$$('.source-item',el.clientSources).forEach(row=>row.querySelector('button').addEventListener('click',()=>{state.sourceUrls=state.sourceUrls.filter(x=>x.id!==row.dataset.sourceId);state.clientContext=state.sourceUrls.map(x=>x.summary||'').filter(Boolean).join('\n\n').slice(0,8000);renderClientSources();saveState();renderAiReviewCard()}))}
+
+  async function importClientWebsite(){let url=el.clientWebsite.value.trim();if(!url){el.clientImportStatus.textContent='Bitte zuerst eine Website-, Google- oder Datenquellen-Adresse eingeben.';return}if(!/^https?:\/\//i.test(url))url=`https://${url}`;try{new URL(url)}catch{el.clientImportStatus.textContent='Die Adresse ist ungültig.';return}if(state.sourceUrls.some(x=>x.url===url)){el.clientWebsite.value='';el.clientImportStatus.textContent='Diese Quelle ist bereits eingetragen.';return}const source={id:uid('source'),url,title:'',summary:''};state.sourceUrls.push(source);renderClientSources();try{el.importClientWebsiteBtn.disabled=true;el.clientImportStatus.textContent='Öffentliche Quelle wird gelesen…';const response=await sitebriefApiFetch('/api/site-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Quelle konnte nicht direkt gelesen werden');source.url=data.url||url;source.title=data.siteName||data.title||'';source.summary=[data.description,data.summary].filter(Boolean).join('\n').slice(0,3500);if(!el.clientName.value.trim())el.clientName.value=source.title;if(!el.projectName.value.trim())el.projectName.value=source.title;state.clientContext=state.sourceUrls.map(x=>x.summary||'').filter(Boolean).join('\n\n').slice(0,8000);if(source.summary&&!el.projectDescription.value.trim())el.projectDescription.value=source.summary.slice(0,1800);el.descriptionCount.textContent=el.projectDescription.value.length;el.clientImportStatus.textContent='Quelle ausgelesen. Du kannst direkt weitere hinzufügen ✓'}catch(err){el.clientImportStatus.textContent=`Link gespeichert, aber nicht automatisch auslesbar: ${err.message}. Ergänze bei Bedarf Screenshot oder PDF.`}finally{el.clientWebsite.value='';el.importClientWebsiteBtn.disabled=false;renderClientSources();state.understandingConfirmed=false;saveState()}}
 
   async function resetPassword(){const email=el.authEmail.value.trim();if(!email){el.authMessage.textContent='Trage zuerst deine E-Mail-Adresse ein.';el.authMessage.className='auth-message error';return}try{el.forgotPasswordBtn.disabled=true;await window.SiteBriefCloud.resetPassword(email);el.authMessage.textContent='Wenn die Adresse registriert ist, wurde eine E-Mail zum Zurücksetzen gesendet.';el.authMessage.className='auth-message good'}catch(err){el.authMessage.textContent=err.message||'Die E-Mail konnte nicht gesendet werden.';el.authMessage.className='auth-message error'}finally{el.forgotPasswordBtn.disabled=false}}
 
@@ -1590,7 +1635,9 @@
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
-    el.resetBtn.addEventListener("click",resetProject);el.startNewBtn.addEventListener("click",resetProject);el.brandHome.addEventListener("click",e=>{e.preventDefault();goStep(1,true)});
+    const showWorkflow=()=>{document.getElementById('welcomePage').hidden=true;document.getElementById('workflowApp').hidden=false;goStep(1,true)};
+    document.getElementById('startWorkflowBtn')?.addEventListener('click',showWorkflow);document.getElementById('startFreeBtn')?.addEventListener('click',showWorkflow);document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
+    el.resetBtn.addEventListener("click",resetProject);el.startNewBtn.addEventListener("click",resetProject);el.brandHome.addEventListener("click",e=>{e.preventDefault();document.getElementById('welcomePage').hidden=false;document.getElementById('workflowApp').hidden=true;window.scrollTo({top:0,behavior:'smooth'})});
     el.installAppBtn?.addEventListener('click',installApp);el.buildWebsiteBtn?.addEventListener('click',buildWebsiteWithAi);el.downloadGeneratedWebsiteBtn?.addEventListener('click',downloadGeneratedWebsite);el.createRevisionPromptBtn?.addEventListener('click',createRevisionPrompt);el.copyRevisionPromptBtn?.addEventListener('click',async()=>{await navigator.clipboard.writeText(el.revisionPrompt.value);el.revisionStatus.textContent='Auftrag kopiert.'});el.downloadRevisionPromptBtn?.addEventListener('click',()=>downloadText('sitebrief-ueberarbeitungsauftrag.md',el.revisionPrompt.value,'text/markdown'));
   }
 
@@ -1609,7 +1656,7 @@
         state.mode=state.settings.defaultMode||"guided";state.targetAgent=state.settings.defaultAgent||"codex";state.engine=state.settings.defaultEngine||"local";state.model=state.settings.defaultModel||"";el.conceptCount.value=String(state.settings.defaultConceptCount||5);applyAlwaysActiveItems(true);
       }
     }else applyAlwaysActiveItems(false);
-    renderLibrary();renderReferences();renderUnderstanding();renderProfileUi();renderOutputTarget();
+    renderLibrary();renderReferences();renderClientSources();renderUnderstanding();renderProfileUi();renderOutputTarget();
     el.generatorEngine.value=state.engine;el.generatorModel.value=state.model||"";updateEngineUi();
     $$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));
     $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));

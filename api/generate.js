@@ -61,8 +61,9 @@ function safeModel(value,fallback){
   return model;
 }
 function refText(references=[]){
-  return references.length ? references.map((r,i)=>`${i+1}. ${r.url}\n   allowed aspects: ${(r.aspects||[]).join(", ")||"general inspiration"}\n   likes: ${r.note||"-"}\n   avoid: ${r.dislike||"-"}`).join("\n") : "none";
+  return references.length ? references.map((r,i)=>`${i+1}. ${r.title||r.url} [${r.kind||'reference'}]\n   URL: ${r.url}\n   retrieved content: ${String(r.summary||'').slice(0,1800)||"not retrieved – use only as a supplied link"}\n   allowed aspects: ${(r.aspects||[]).join(", ")||"general inspiration"}\n   likes: ${r.note||"-"}\n   avoid: ${r.dislike||"-"}`).join("\n") : "none";
 }
+function documentText(documents=[]){return documents.length?documents.map((d,i)=>`${i+1}. ${d.name} (${d.type||'document'}${d.pages?`, ${d.pages} pages`:''})\n   allowed aspects: ${(d.aspects||[]).join(', ')||'content and structure'}\n   user note: ${d.note||'-'}\n   avoid: ${d.dislike||'-'}\n   extracted content:\n${String(d.text||'').slice(0,16000)||'[No machine-readable text; use supplied page images if present.]'}`).join('\n\n'):'none'}
 function moduleText(modules=[]){
   return modules.length ? modules.map((m,i)=>`${i+1}. ${m.name}${m.tag?` [${m.tag}]`:""}:\n${m.prompt}`).join("\n\n") : "none";
 }
@@ -80,7 +81,7 @@ function reviewText(projectReview={}){
   return `Previous review warnings:\n${warnings}\nPrevious blockers:\n${blockers}`;
 }
 
-function makeConceptPrompt({count,project,references,controls,template,modules,settings,clarifications,projectReview,tier='free'}){
+function makeConceptPrompt({count,project,references,documents,controls,template,modules,settings,clarifications,projectReview,tier='free'}){
   const variants=VARIANTS.slice(0,count);
   return `You are a senior web art director designing a real project, not a generic AI landing page. Create exactly ${count} visual directions. They must be structurally different, not color variations of one layout. Use these layoutVariant values exactly once and in this order: ${variants.join(", ")}.
 
@@ -112,13 +113,16 @@ Special wish: ${project.special||"none"}
 REFERENCE URLS
 ${refText(references)}
 
+PROJECT DOCUMENTS
+${documentText(documents)}
+
 CONTROLS
 Originality ${controls.originality}/100; avoid AI/template look ${controls.antiSlop}/100; motion ${controls.motion}/100; information density ${controls.density}/100.
 
 For every direction return a memorable project-specific name, a short mood, exactly four valid hex colors, typography concept, layout principle, hero principle, one of the required composition variants, and concrete preview copy. No fake statistics, reviews, logos or awards. Avoid default AI/SaaS conventions: badge + centered giant headline + two buttons, gradient orbs, glass cards, repetitive three-card grids, excessive rounded rectangles. Use reference inputs only for user-approved aspects and never copy a reference one-to-one. The concept must leave room for all enabled compliance/quality checks, but do not invent legal copy, company facts or claims of compliance. Output only the requested JSON.`;
 }
 
-function makeRefinePrompt({project,concept,refinement,references,controls,template,modules,settings,clarifications,projectReview}){
+function makeRefinePrompt({project,concept,refinement,references,documents,controls,template,modules,settings,clarifications,projectReview}){
   return `Refine ONE already selected website direction. Preserve its identity unless the user's refinement explicitly asks for a structural change. Return exactly one concept object.
 
 PROJECT
@@ -148,13 +152,16 @@ ${reviewText(projectReview)}
 REFERENCE URLS
 ${refText(references)}
 
+PROJECT DOCUMENTS
+${documentText(documents)}
+
 CONTROLS
 Originality ${controls.originality}/100; avoid AI/template look ${controls.antiSlop}/100; motion ${controls.motion}/100; information density ${controls.density}/100.
 
 Keep the result buildable as a real responsive website. Never add fake statistics, fake reviews, fake logos or generic AI/SaaS decoration. Output only the requested JSON.`;
 }
 
-function makeReviewPrompt({project,references,settings,template,modules,clarifications}){
+function makeReviewPrompt({project,references,documents,settings,template,modules,clarifications}){
   const max=Math.min(6,Math.max(2,Number(settings?.maxQuestions)||4));
   return `Review this website/web-app project BEFORE visual concepts are generated. Decide whether materially important information is missing, contradictory, infeasible, risky, or likely to cause a bad implementation. Ask at most ${max} concise questions. Do not ask preference questions that can be reasonably inferred without changing the outcome.
 
@@ -168,6 +175,9 @@ Special wish: ${project.special||"none"}
 
 REFERENCE URLS
 ${refText(references)}
+
+PROJECT DOCUMENTS
+${documentText(documents)}
 
 CUSTOM TEMPLATE
 ${templateText(template)}
@@ -328,20 +338,23 @@ The result must read instantly as a bespoke real website design, not as an AI-ge
   const response=await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/black-forest-labs/flux-1-schnell`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt.slice(0,2048),steps:8,width:1280,height:720})});const data=await response.json().catch(()=>({}));if(!response.ok||data?.success===false)throw Object.assign(new Error(data?.errors?.[0]?.message||'Cloudflare image request failed'),{status:response.status||500});const image=data?.result?.image;if(!image)throw new Error('Cloudflare hat kein Bild zurückgegeben');return {imageDataUrl:`data:image/jpeg;base64,${image}`};
 }
 
+const {logUsage}=require('../server/usage');
+
 module.exports = async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
   res.setHeader('Cache-Control','no-store, private');
   if(!rateLimit(req,res,{key:'generate',limit:12,windowMs:60000}))return;
+  const startedAt=Date.now();let usageEvent={action:'generate',provider:'',model:'',project:null};
   try{
     const body=req.body||{};
     if(JSON.stringify(body).length>4500000)return res.status(413).json({error:'Die Anfrage ist zu groß. Bitte weniger oder kleinere Referenzen verwenden.'});
     const entitlement=await getEntitlements(req);
-    const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},clarifications=[],projectReview={}}=body,modules=entitlement.plan==='free'?[]:(Array.isArray(body.modules)?body.modules:[]),settings=entitlement.plan==='free'?{legalRegion:'Deutschland / EU',checks:{privacy:true,imprint:true,accessibility:true,security:true,performance:true},noInventLegal:true,finalChecklist:true}:body.settings||{};
+    const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},clarifications=[],projectReview={}}=body,modules=entitlement.plan==='free'?[]:(Array.isArray(body.modules)?body.modules:[]),settings=entitlement.plan==='free'?{legalRegion:'Deutschland / EU',checks:{privacy:true,imprint:true,accessibility:true,security:true,performance:true},noInventLegal:true,finalChecklist:true}:body.settings||{};usageEvent={action,provider:engine,model:model||'',project};
     if(entitlement.plan==="free"&&!entitlement.ownApiKeys) return res.status(403).json({error:"Externe KI-Generierung ist ab Pro oder mit dem eigenen API-Key-Add-on verfügbar."});
     if(entitlement.plan==="pro" && !entitlement.ownApiKeys && !["openai","gateway"].includes(engine) && action!=="preview-image") return res.status(403).json({error:"Dieser KI-Anbieter ist in Ultimate oder mit dem API-Key-Add-on verfügbar."});
     if(action==="preview-image"){
       if(entitlement.plan==="pro"&&!entitlement.ownApiKeys&&body.imageProvider!=="cloudflare")return res.status(403).json({error:"Gemini-Bildvorschauen sind in Ultimate oder mit dem API-Key-Add-on verfügbar."});
-      const imageProvider=body.imageProvider==='cloudflare'?'cloudflare':'gemini';const resolved=await resolveProviderKey(req,imageProvider);if(entitlement.plan==='free'&&entitlement.ownApiKeys&&resolved.source!=='account')throw Object.assign(new Error('Für dieses Add-on muss ein eigener API-Key verbunden sein.'),{status:403});if(!resolved.key)throw Object.assign(new Error(`Kein ${imageProvider==='cloudflare'?'Cloudflare':'Gemini'} API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.`),{status:503});const result=imageProvider==='cloudflare'?await callCloudflarePreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan}):await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);return res.status(200).json(result);
+      const imageProvider=body.imageProvider==='cloudflare'?'cloudflare':'gemini';usageEvent={action:'preview-image',provider:imageProvider,model:imageProvider==='cloudflare'?'flux-1-schnell':model||'',project};const resolved=await resolveProviderKey(req,imageProvider);if(entitlement.plan==='free'&&entitlement.ownApiKeys&&resolved.source!=='account')throw Object.assign(new Error('Für dieses Add-on muss ein eigener API-Key verbunden sein.'),{status:403});if(!resolved.key)throw Object.assign(new Error(`Kein ${imageProvider==='cloudflare'?'Cloudflare':'Gemini'} API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.`),{status:503});const result=imageProvider==='cloudflare'?await callCloudflarePreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan}):await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);await logUsage(req,{...usageEvent,durationMs:Date.now()-startedAt});return res.status(200).json(result);
     }
     if(!["gateway","openai","gemini"].includes(engine)) return res.status(400).json({error:"Use the browser's local generator for local mode"});
     let prompt,schema,name;
@@ -367,8 +380,10 @@ module.exports = async function handler(req,res){
     if(!resolved.key) throw Object.assign(new Error(engine==="openai"?"Kein OpenAI API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":engine==="gemini"?"Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":"Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
     const result=engine==="openai" ? await callOpenAI({key:resolved.key,model,prompt,images,schema,name}) : engine==="gemini" ? await callGemini({key:resolved.key,model,prompt,images}) : await callGateway({key:resolved.key,model,prompt,images,schema,name});
     res.setHeader('X-SiteBrief-AI-Key-Source', resolved.source);
+    await logUsage(req,{...usageEvent,durationMs:Date.now()-startedAt});
     return res.status(200).json(result);
   }catch(error){
+    await logUsage(req,{...usageEvent,success:false,durationMs:Date.now()-startedAt,error:error?.message||'Unexpected generation error'});
     return res.status(error?.status||500).json({error:error?.message||"Unexpected generation error"});
   }
 };

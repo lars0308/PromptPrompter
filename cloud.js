@@ -265,6 +265,18 @@ const Cloud = {
     return path;
   },
 
+  async uploadReferenceFile(projectId, fileId, file) {
+    const userId=this.assertUser();
+    const allowed=['application/pdf','text/plain','text/markdown','text/csv','application/json'];
+    const type=file?.type||(/\.pdf$/i.test(file?.name||'')?'application/pdf':'text/plain');
+    if(!allowed.includes(type))throw new Error('Dieses Dokumentformat wird nicht unterstützt.');
+    if(!file?.size||file.size>12*1024*1024)throw new Error('Die Datei darf höchstens 12 MB groß sein.');
+    const safe=String(file.name||'unterlage').replace(/[^a-zA-Z0-9._-]+/g,'-').slice(-100)||'unterlage';
+    const path=`${userId}/${projectId}/${fileId}-${safe}`;
+    const {error}=await this.client.storage.from('sitebrief-references').upload(path,file,{contentType:type,upsert:true});
+    if(error)throw error;return path;
+  },
+
   async signedReferenceUrl(path, expiresIn = 3600) {
     if (!path) return '';
     const { data, error } = await this.client.storage.from('sitebrief-references').createSignedUrl(path, expiresIn);
