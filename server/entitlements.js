@@ -1,5 +1,7 @@
 const DEFAULT_SUPABASE_URL = 'https://wihdoacgqbyxxeejoxsg.supabase.co';
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_h5mVvlW32Hd-9OVLpIODdA_ymCaNzPz';
+const ADMIN_EMAIL=String(process.env.PROMPT_AI_ADMIN_EMAIL||'service.battermann@gmx.de').trim().toLowerCase();
+const {authenticatedUser}=require('./supabase-user');
 
 async function ownRow(req, table, select){
   const authorization=req?.headers?.authorization||req?.headers?.Authorization||'';
@@ -17,10 +19,14 @@ async function getEntitlements(req){
     ownRow(req,'sitebrief_admins','user_id'),
     ownRow(req,'sitebrief_addons','addon,status')
   ]);
-  const isAdmin=Boolean(admin?.user_id);
+  let isAdmin=false;
+  if(admin?.user_id){
+    try{const user=await authenticatedUser(req);isAdmin=String(user?.email||'').trim().toLowerCase()===ADMIN_EMAIL&&String(user?.id||'')===String(admin.user_id)}catch{isAdmin=false}
+  }
   const active=['active','trialing'].includes(subscription?.status);
-  const plan=isAdmin?'ultimate':(active&&['pro','ultimate'].includes(subscription?.plan)?subscription.plan:'free');
-  const ownApiKeys=isAdmin||plan==='ultimate'||(apiAddon?.addon==='own_api_keys'&&['active','trialing'].includes(apiAddon.status));
+  const paidPlan=active&&['pro','ultimate'].includes(subscription?.plan)?subscription.plan:'free';
+  const plan=isAdmin?'ultimate':paidPlan;
+  const ownApiKeys=isAdmin||paidPlan==='ultimate'||(apiAddon?.addon==='own_api_keys'&&['active','trialing'].includes(apiAddon.status));
   return {plan,isAdmin,ownApiKeys,maxConcepts:plan==='ultimate'?5:plan==='pro'?4:3};
 }
 
