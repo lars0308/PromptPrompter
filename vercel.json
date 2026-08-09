@@ -2,6 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/portal", "destination": "/api/checkout?action=portal" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
