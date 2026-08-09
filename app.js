@@ -111,8 +111,8 @@
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
-      "resetBtn","startNewBtn","brandHome","installAppBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","buySingleReviewBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
-      "workspaceNewProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionUpgradeNote","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn","welcomeIntroDialog","closeWelcomeIntroBtn","confirmWelcomeIntroBtn","appActionDialog","appActionKicker","appActionTitle","appActionMessage","appActionInputWrap","appActionInputLabel","appActionInput","appActionCancelBtn","appActionConfirmBtn","openAgentBtn","agentLaunchDialog","closeAgentLaunchBtn","agentLaunchTitle","agentLaunchText","openAgentWebBtn","openAgentDesktopBtn","agentLaunchHint"
+      "resetBtn","startNewBtn","brandHome","installAppBtn","upgradeBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","buySingleReviewBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
+      "workspaceNewProjectBtn","workspaceLastProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionUpgradeNote","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn","welcomeIntroDialog","closeWelcomeIntroBtn","confirmWelcomeIntroBtn","appActionDialog","appActionKicker","appActionTitle","appActionMessage","appActionInputWrap","appActionInputLabel","appActionInput","appActionCancelBtn","appActionConfirmBtn","openAgentBtn","agentLaunchDialog","closeAgentLaunchBtn","agentLaunchTitle","agentLaunchText","openAgentWebBtn","openAgentDesktopBtn","agentLaunchHint"
     ].forEach(id => el[id] = document.getElementById(id));
   }
 
@@ -135,6 +135,17 @@
 
   function closeWelcomeIntro(){localStorage.setItem(ONBOARDING_KEY,'1');if(el.welcomeIntroDialog.open)el.welcomeIntroDialog.close()}
   function showWelcomeIntroOnce(){if(localStorage.getItem(ONBOARDING_KEY)||document.querySelector('dialog[open]'))return;el.welcomeIntroDialog.showModal()}
+
+  function enhanceDialogBackButtons(){
+    $$('.library-dialog .dialog-head').forEach(header=>{
+      if(header.querySelector('.dialog-back'))return;const close=header.querySelector('.close-dialog');if(!close)return;
+      const back=document.createElement('button');back.type='submit';back.className='dialog-back';back.setAttribute('aria-label','Zurück');back.textContent='← Zurück';header.insertBefore(back,close);
+    });
+  }
+
+  function initPlanCards(){
+    $$('[data-plan-card]').forEach(card=>card.addEventListener('toggle',()=>{if(!card.open)return;$$('[data-plan-card]').forEach(other=>{if(other!==card)other.open=false})}));
+  }
 
   const AGENT_LAUNCH={claude:{web:'https://claude.ai/new',desktop:prompt=>`claude://code/new?q=${encodeURIComponent(prompt.slice(0,14000))}`},codex:{web:'https://chatgpt.com/codex'},chatgpt:{web:'https://chatgpt.com/'},gemini:{web:'https://gemini.google.com/app'},cursor:{web:'https://cursor.com/agents'},v0:{web:'https://v0.dev/chat'},universal:{web:'https://chatgpt.com/'}};
   async function showAgentLaunch(){
@@ -394,6 +405,7 @@
     if(el.openLibraryBtn)el.openLibraryBtn.hidden=!rules.modules;
     document.querySelectorAll('[data-open-library],[data-mobile-library]').forEach(button=>button.hidden=!rules.modules);
     if(el.workspaceLibraryBtn){el.workspaceLibraryBtn.disabled=!rules.modules;el.workspaceLibraryBtn.textContent=rules.modules?'Bibliothek öffnen':'Pro Variante benötigt';el.workspaceLibraryBtn.title=rules.modules?'':'Die Bibliothek ist ab Pro verfügbar.';el.workspaceLibraryBtn.classList.toggle('plan-disabled',!rules.modules)}
+    if(el.upgradeBtn){el.upgradeBtn.hidden=state.plan!=='free'&& !state.isAdmin;el.upgradeBtn.textContent='Upgraden'}
     if(el.buySingleReviewBtn)el.buySingleReviewBtn.hidden=state.plan!=="free"||state.isAdmin;
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
@@ -624,6 +636,7 @@
     const rows=[],localProject=project();
     if(localProject.name||localProject.description)rows.push({id:state.currentProjectId,title:localProject.name||localProject.client?.name||localProject.description.slice(0,54)||'Aktueller Entwurf',status:state.currentStep>=8?'complete':'draft',local:true});
     state.cloudProjects.filter(row=>row.id!==state.currentProjectId).forEach(row=>rows.push(row));
+    if(el.workspaceLastProjectBtn){el.workspaceLastProjectBtn.disabled=!rows.length;el.workspaceLastProjectBtn.classList.toggle('plan-disabled',!rows.length);el.workspaceLastProjectBtn.title=rows.length?'':'Noch kein Projekt vorhanden.'}
     if(!rows.length){el.libraryProjectList.innerHTML='<div class="welcome-project-empty"><strong>Noch kein Projekt angelegt</strong><p>Neue und synchronisierte Projekte erscheinen hier.</p></div>';return;}
     rows.forEach(row=>{
       const card=document.createElement('article');card.className='welcome-project-card';const date=row.updated_at?new Date(row.updated_at).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}):'auf diesem Gerät';
@@ -634,6 +647,14 @@
 
   async function loadCloudProject(row){
     if(!row?.state)return;applySavedState(row.state,{persistLocal:true});state.currentProjectId=row.id;await hydrateCloudReferenceImages();renderReferences();renderClientSources();renderUnderstanding();renderLibrary();renderConcepts();renderSelectedPreview();updateEngineUi();$$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));goStep(state.currentStep,true);if(el.accountDialog.open)el.accountDialog.close();if(el.libraryDialog.open)el.libraryDialog.close();renderCloudProjects();
+  }
+
+  async function openLastProject(){
+    const localProject=project();
+    if(localProject.name||localProject.description){showWorkflow(Math.max(1,state.currentStep||1));return;}
+    const latest=[...state.cloudProjects].sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
+    if(!latest){if(el.workspaceLastProjectBtn){el.workspaceLastProjectBtn.disabled=true;el.workspaceLastProjectBtn.title='Noch kein Projekt vorhanden.'}return;}
+    await loadCloudProject(latest);showWorkflow(Math.max(1,state.currentStep||1));
   }
 
   async function deleteCloudProject(id){
@@ -914,13 +935,17 @@
     if(extended){
       if(state.settings.askMissing && !p.audience) questions.push({id:uid("q"),question:"Für wen soll die Seite hauptsächlich funktionieren?",reason:"Zielgruppe beeinflusst Ton, Informationsdichte und wichtigste Handlungen.",suggestedAnswer:"",required:false});
       if(state.settings.askMissing && /shop|onlineshop/i.test(p.type) && !/produkt|sortiment|verkauf/i.test(p.description)) questions.push({id:uid("q"),question:"Was wird im Shop verkauft und gibt es besondere Varianten, Versand- oder Zahlungsanforderungen?",reason:"Ohne diese Angaben bleibt die Shop-Struktur zu allgemein.",suggestedAnswer:"",required:false});
+      if(state.settings.askMissing && p.description.trim().length<80) questions.push({id:uid("q"),question:"Was muss die neue Seite am Ende konkret leisten oder verbessern?",reason:"Die bisherige Kurzbeschreibung reicht noch nicht für klare Prioritäten und eine nachvollziehbare Abnahme.",suggestedAnswer:"",required:false});
+      if(state.settings.askConflict && /minimal|ruhig|reduziert/i.test(p.description) && /viele|umfangreich|alles|sehr viel/i.test(p.description)) questions.push({id:uid("q"),question:"Was ist wichtiger: eine sehr reduzierte Darstellung oder möglichst viel Inhalt direkt sichtbar?",reason:"Die Beschreibung enthält möglicherweise widersprüchliche Anforderungen an Ruhe und Informationsmenge.",suggestedAnswer:"Ausgewogen – klare Hierarchie, Details erst bei Bedarf",required:false});
     }
     if(state.settings.checks?.privacy) warnings.push({area:"Datenschutz",severity:"info",message:"Externe Dienste und Formulare vor dem Livegang prüfen."});
     if(state.settings.checks?.imprint) warnings.push({area:"Impressum",severity:"info",message:"Echte Anbieterangaben ergänzen; fehlende Firmendaten nicht erfinden."});
     if(extended&&state.settings.noInventLegal) warnings.push({area:"Recht",severity:"info",message:"Rechtliche Pflichttexte und Unternehmensdaten nur aus bestätigten Angaben übernehmen."});
+    if(extended&&state.settings.checks?.legal)warnings.push({area:"Rechtliche Plausibilität",severity:"info",message:"Pflichtangaben, Einwilligungen und rechtliche Aussagen müssen vor Veröffentlichung fachlich bestätigt werden."});
     if(extended&&state.settings.checks?.accessibility)warnings.push({area:"Barrierefreiheit",severity:"info",message:"Semantik, Tastaturbedienung, Kontraste und verständliche Formularmeldungen praktisch prüfen."});
     if(extended&&state.settings.checks?.security)warnings.push({area:"Sicherheit",severity:"info",message:"Eingaben, Berechtigungen, Secrets und externe Schnittstellen vor der Übergabe kontrollieren."});
     if(extended&&state.settings.checks?.performance)warnings.push({area:"Performance",severity:"info",message:"Bildgrößen, Abhängigkeiten und Ladeverhalten auf Mobilgeräten prüfen."});
+    if(extended&&state.settings.checks?.seo)warnings.push({area:"SEO",severity:"info",message:"Seitentitel, Beschreibungen, Überschriftenstruktur, interne Links und Indexierbarkeit kontrollieren."});
     return {ready:questions.length===0,questions:questions.slice(0,state.settings.maxQuestions),warnings,blockers,assumptions:[]};
   }
 
@@ -1797,7 +1822,7 @@
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
-    document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>showWorkflow(1));el.workspaceNewProjectBtn?.addEventListener('click',()=>showWorkflow(1));document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
+    document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>{el.plansDialog?.close();showWorkflow(1)});el.workspaceNewProjectBtn?.addEventListener('click',()=>showWorkflow(1));el.workspaceLastProjectBtn?.addEventListener('click',openLastProject);el.upgradeBtn?.addEventListener('click',()=>el.plansDialog?.showModal());document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
     [el.quickRevisionBtn,el.workspaceRevisionBtn].forEach(button=>button?.addEventListener('click',openQuickRevision));el.workspaceLibraryBtn?.addEventListener('click',()=>openLibrary('projects'));[el.quickRevisionProBlock,el.quickRevisionUltimateBlock].forEach(block=>block?.addEventListener('toggle',()=>{if(block.open&&block.classList.contains('locked')){block.open=false;el.quickRevisionDialog.close();el.plansDialog?.showModal()}}));
     el.closeWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.confirmWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.welcomeIntroDialog?.addEventListener('cancel',event=>{event.preventDefault();closeWelcomeIntro()});el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBtn?.addEventListener('click',()=>el.agentLaunchDialog.close());el.agentLaunchDialog?.addEventListener('cancel',event=>{event.preventDefault();el.agentLaunchDialog.close()});
     el.scanQuickRevisionBtn?.addEventListener('click',scanAndBuildQuickRevision);el.copyQuickRevisionBtn?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(el.quickRevisionPrompt.value);el.quickRevisionStatus.textContent='Auftrag kopiert.'}catch{el.quickRevisionStatus.textContent='Kopieren war nicht möglich.'}});el.downloadQuickRevisionBtn?.addEventListener('click',()=>downloadText('prompt-ai-website-ueberarbeiten.md',el.quickRevisionPrompt.value,'text/markdown'));el.saveQuickRevisionVariantBtn?.addEventListener('click',saveQuickRevisionVariant);el.quickRevisionVariantSelect?.addEventListener('change',()=>loadQuickRevisionVariant(el.quickRevisionVariantSelect.value));el.deleteQuickRevisionVariantBtn?.addEventListener('click',deleteQuickRevisionVariant);
@@ -1808,6 +1833,8 @@
   function init(){
     cacheElements();
     initDialogSystem();
+    enhanceDialogBackButtons();
+    initPlanCards();
     initTheme();
     enhanceSettingsAccordion();
     initMobileWorkflowMenu();
