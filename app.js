@@ -9,6 +9,13 @@
   const AGENT_NAMES = {claude:"Claude Code",codex:"Codex",gemini:"Gemini",chatgpt:"ChatGPT",cursor:"Cursor",v0:"v0",universal:"Universal"};
   const OUTPUT_TARGETS = {"next-vercel":"Next.js + TypeScript + Vercel","next-only":"Next.js + TypeScript","html":"Statisches HTML / CSS / JavaScript","react":"React + Vite","astro":"Astro","existing":"Bestehenden Projekt-Stack weiterführen"};
   const ASPECTS = ["Layout","Farben","Typografie","Bildsprache","Hero","Struktur","Stimmung","Nur Inspiration"];
+  if(typeof HTMLDialogElement!=="undefined"){
+    const nativeShowModal=HTMLDialogElement.prototype.showModal;
+    HTMLDialogElement.prototype.showModal=function(){
+      if(this.classList.contains("library-dialog"))document.querySelectorAll("dialog.library-dialog[open]").forEach(dialog=>{if(dialog!==this)dialog.close()});
+      return nativeShowModal.call(this);
+    };
+  }
   const STORAGE_KEY = "sitebrief-v6-state";
   const LIBRARY_KEY = "sitebrief-v6-library";
   const SETTINGS_KEY = "sitebrief-v6-settings";
@@ -292,6 +299,19 @@
     el.accountIntro.textContent="Melde dich an und arbeite auf jedem Gerät an deinen Projekten weiter.";if(!el.accountDialog.open)el.accountDialog.showModal();
   }
   function closeAccountGate(){el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
+  let pendingAuthPlan=null;
+  function pickAuthPlan(plan){
+    if(plan==="free"){pendingAuthPlan=null;closeAccountGate();return;}
+    pendingAuthPlan=plan;
+    el.authEmail?.focus();
+    el.authMessage.textContent=`Lege zuerst ein Konto an oder melde dich an, dann geht es direkt weiter zu ${plan==="ultimate"?"Ultimate":"Pro"}.`;
+    el.authMessage.className="auth-message";
+  }
+  async function continuePendingAuthPlan(){
+    if(!pendingAuthPlan)return;
+    const plan=pendingAuthPlan;pendingAuthPlan=null;
+    await beginCheckout(plan);
+  }
   function consumeGuestRun(){if(cloudReady())return;localStorage.setItem(GUEST_USAGE_KEY,String(Math.min(GUEST_RUN_LIMIT,guestRunCount()+1)));renderGuestLimit()}
 
   async function sitebriefApiFetch(url, options={}){
@@ -551,7 +571,9 @@
         if(event==='password-recovery'){state.cloud.user=payload.user||null;el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;el.passwordRecoveryPanel.hidden=false;el.accountDialogKicker.textContent='PASSWORT ZURÜCKSETZEN';el.accountDialogTitle.textContent='Neues Passwort festlegen';if(!el.accountDialog.open)el.accountDialog.showModal();return}
         if(event==="auth"){
           state.cloud.user=payload.user||null;if(!state.cloud.user){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}updateAccountUi();
-          if(state.cloud.user)try{await loadCloudBundle();closeAccountGate()}catch{}
+          if(state.cloud.user){try{await loadCloudBundle()}catch{}closeAccountGate();}
+          if(payload.authEvent==='SIGNED_IN'){await continuePendingAuthPlan();showWelcome();}
+          else if(payload.authEvent==='SIGNED_OUT'){showWelcome();}
         }
       });
       if(state.cloud.user){await loadCloudBundle();await handleCheckoutReturn();}
@@ -563,13 +585,13 @@
   async function signIn(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||!password)return;
-    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await window.SiteBriefCloud.signIn(email,password);if(el.rememberEmail?.checked)localStorage.setItem(REMEMBERED_EMAIL_KEY,email);else localStorage.removeItem(REMEMBERED_EMAIL_KEY);state.cloud.user=data.user;el.authPassword.value="";await loadCloudBundle();el.authMessage.textContent="Angemeldet. Die Sitzung bleibt auf diesem Gerät erhalten.";el.authMessage.className="auth-message good";updateAccountUi();closeAccountGate();}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
+    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await window.SiteBriefCloud.signIn(email,password);if(el.rememberEmail?.checked)localStorage.setItem(REMEMBERED_EMAIL_KEY,email);else localStorage.removeItem(REMEMBERED_EMAIL_KEY);state.cloud.user=data.user;el.authPassword.value="";el.authMessage.textContent="Angemeldet. Die Sitzung bleibt auf diesem Gerät erhalten.";el.authMessage.className="auth-message good";}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
   }
 
   async function signUp(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||password.length<8){el.authMessage.textContent="Bitte E-Mail und mindestens 8 Zeichen Passwort eingeben.";el.authMessage.className="auth-message error";return;}
-    try{const data=await window.SiteBriefCloud.signUp(email,password);if(data.session){state.cloud.user=data.user;await loadCloudBundle();el.authMessage.textContent="Konto angelegt und angemeldet.";closeAccountGate();}else el.authMessage.textContent="Konto angelegt. Bitte bestätige die E-Mail und melde dich danach an.";el.authMessage.className="auth-message good";updateAccountUi();}catch(err){el.authMessage.textContent=err?.message||"Konto konnte nicht angelegt werden.";el.authMessage.className="auth-message error";}
+    try{const data=await window.SiteBriefCloud.signUp(email,password);if(data.session){state.cloud.user=data.user;el.authMessage.textContent="Konto angelegt und angemeldet.";}else el.authMessage.textContent="Konto angelegt. Bitte bestätige die E-Mail und melde dich danach an.";el.authMessage.className="auth-message good";}catch(err){el.authMessage.textContent=err?.message||"Konto konnte nicht angelegt werden.";el.authMessage.className="auth-message error";}
   }
 
   async function signOut(){
@@ -666,7 +688,7 @@
   }
 
   function showWelcome(){
-    document.getElementById('welcomePage').hidden=false;document.getElementById('workflowApp').hidden=true;window.scrollTo({top:0,behavior:'smooth'});
+    document.getElementById('welcomePage').hidden=false;document.getElementById('workflowApp').hidden=true;window.scrollTo({top:0,behavior:'smooth'});renderCloudProjects();
   }
 
   function quickRevisionVariants(){
@@ -1816,7 +1838,7 @@
     el.settingsLoginBtn?.addEventListener("click",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});
     el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
     el.saveProfileBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.manageProfilesBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.createProfileBtn.addEventListener("click",createProfileFromDialog);
-    el.accountBtn.addEventListener("click",()=>{updateAccountUi();renderGuestLimit();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",signIn);el.signUpBtn.addEventListener("click",signUp);el.forgotPasswordBtn?.addEventListener('click',resetPassword);el.saveNewPasswordBtn?.addEventListener('click',saveNewPassword);el.guestContinueBtn.addEventListener("click",closeAccountGate);el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});
+    el.accountBtn.addEventListener("click",()=>{updateAccountUi();renderGuestLimit();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",signIn);el.signUpBtn.addEventListener("click",signUp);el.forgotPasswordBtn?.addEventListener('click',resetPassword);el.saveNewPasswordBtn?.addEventListener('click',saveNewPassword);el.guestContinueBtn.addEventListener("click",closeAccountGate);$$('.auth-plan-pick').forEach(button=>button.addEventListener('click',()=>pickAuthPlan(button.dataset.authPlanPick)));el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});
     el.themeToggleBtn.addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
     el.runAiReviewBtn.addEventListener("click",()=>{if(state.engine!=="local"&&!state.settings.aiClarifications){populateSettingsDialog();el.settingsDialog.showModal();return;}runProjectReview(true)});
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
