@@ -189,9 +189,31 @@
   }
 
   let cloudProjectTimer=null, cloudSettingsTimer=null;
-  function saveState(){
+  function saveState({cloud=true}={}){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableProjectState())); }catch{}
-    scheduleCloudProjectSave();
+    if(cloud) scheduleCloudProjectSave();
+  }
+
+  function enhanceSettingsAccordion(){
+    if(!el.settingsDialog)return;
+    $$('.settings-section',el.settingsDialog).forEach((section,index)=>{
+      const heading=section.querySelector(':scope > .settings-heading');
+      if(!heading||section.classList.contains('is-collapsible'))return;
+      section.classList.add('is-collapsible');
+      const open=index===0;
+      section.classList.toggle('is-open',open);
+      heading.tabIndex=0;heading.setAttribute('role','button');heading.setAttribute('aria-expanded',String(open));
+      const marker=document.createElement('i');marker.className='settings-chevron';marker.setAttribute('aria-hidden','true');heading.append(marker);
+      const toggle=()=>{const next=!section.classList.contains('is-open');section.classList.toggle('is-open',next);heading.setAttribute('aria-expanded',String(next))};
+      heading.addEventListener('click',toggle);heading.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();toggle()}});
+    });
+  }
+
+  function initMobileWorkflowMenu(){
+    const rail=document.querySelector('.progress-rail'),nav=rail?.querySelector('nav');if(!rail||!nav||rail.querySelector('.workflow-menu-toggle'))return;
+    const button=document.createElement('button');button.type='button';button.className='workflow-menu-toggle';button.innerHTML='<i aria-hidden="true"><b></b><b></b><b></b></i><span>Projektbereiche</span><small>öffnen</small>';button.setAttribute('aria-expanded','false');rail.insertBefore(button,nav);
+    button.addEventListener('click',()=>{const open=rail.classList.toggle('menu-open');button.setAttribute('aria-expanded',String(open));button.querySelector('small').textContent=open?'schließen':'öffnen'});
+    nav.addEventListener('click',event=>{if(event.target.closest('.step-nav')){rail.classList.remove('menu-open');button.setAttribute('aria-expanded','false');button.querySelector('small').textContent='öffnen'}});
   }
 
   function cloudReady(){ return Boolean(state.cloud.configured && state.cloud.user && window.SiteBriefCloud?.client); }
@@ -1549,6 +1571,8 @@
   function init(){
     cacheElements();
     initTheme();
+    enhanceSettingsAccordion();
+    initMobileWorkflowMenu();
     renderProjectOptions();
     const rememberedEmail=localStorage.getItem(REMEMBERED_EMAIL_KEY)||"";if(rememberedEmail){el.authEmail.value=rememberedEmail;el.rememberEmail.checked=true;}
     const hadSavedProject=Boolean(localStorage.getItem(STORAGE_KEY));
@@ -1568,7 +1592,7 @@
     initCloudIntegration();
     window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.installPrompt=event;if(el.installAppBtn)el.installAppBtn.hidden=false});window.addEventListener('appinstalled',()=>{state.installPrompt=null;if(el.installAppBtn)el.installAppBtn.hidden=true});
     if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
-    setInterval(saveState,2500);
+    setInterval(()=>saveState({cloud:false}),15000);
   }
 
   document.addEventListener("DOMContentLoaded",init);

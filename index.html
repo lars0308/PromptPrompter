@@ -377,17 +377,17 @@
   <dialog id="settingsDialog" class="library-dialog settings-dialog">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
-        <div><span>EINSTELLUNGEN</span><h2>KI-Verbindungen & Prüfregeln</h2></div>
+        <div><span>EINSTELLUNGEN</span><h2>Verbindungen & Projektregeln</h2></div>
         <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
       </header>
       <div class="settings-body">
         <section class="settings-section plan-overview">
-          <div class="settings-heading"><strong>Tarif & Funktionen</strong><p>Die Grundqualität bleibt gut. Pro und Ultimate schalten professionelle Werkzeuge und Kundenunterlagen frei.</p></div>
+          <div class="settings-heading"><strong>Tarif & Funktionen</strong><p>Dein aktueller Umfang und verfügbare Werkzeuge.</p></div>
           <div class="plan-current"><span id="currentPlanBadge">FREE</span><div><strong id="currentPlanTitle">Kostenlos</strong><small id="currentPlanDescription">Geführter Ablauf mit festen Qualitätsstandards.</small></div><button type="button" class="solid-btn mini" id="showPlansBtn">Tarife ansehen</button></div>
         </section>
         <div class="settings-upgrade-note" id="settingsUpgradeNote"></div>
         <section class="settings-section">
-          <div class="settings-heading"><strong>KI-Verbindungen</strong><p>API-Key einmal eintragen, speichern und testen. Agent, Generator und Profile wählst du direkt im Projekt. Eigene Keys werden nur nach Login gespeichert und verschlüsselt in Supabase Vault abgelegt – nicht im Browser.</p></div>
+          <div class="settings-heading"><strong>Eigene Verbindungen</strong><p>Schlüssel sicher hinterlegen und einmal testen. Die Auswahl triffst du später im Projekt.</p></div>
           <div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein SiteBrief-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
           <div class="ai-connection-grid">
             <article class="ai-connection-card recommended">
@@ -454,7 +454,7 @@
         </section>
 
         <section class="settings-section">
-          <div class="settings-heading"><strong>Gegenfragen der KI</strong><p>Gilt für externe Generator-KIs. SiteBrief fragt nur, wenn Angaben wirklich fehlen, sich widersprechen oder nicht sinnvoll umsetzbar erscheinen.</p></div>
+          <div class="settings-heading"><strong>Rückfragen</strong><p>SiteBrief fragt nach, wenn eine wichtige Entscheidung fehlt oder sich Angaben widersprechen.</p></div>
           <label class="toggle-row"><input id="setAiClarifications" type="checkbox"><span><strong>Gegenfragen erlauben</strong><small>Vor Konzepten offene Punkte erkennen und nachfragen.</small></span></label>
           <div class="field-grid two">
             <label class="field"><span>Max. Fragen pro Prüfung</span><select id="setMaxQuestions"><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></label>
@@ -467,7 +467,7 @@
         </section>
 
         <section class="settings-section">
-          <div class="settings-heading"><strong>Immer prüfen</strong><p>Diese Bereiche werden in Blueprint, KI-Konzept und Master-Prompt aufgenommen. SiteBrief behauptet dabei keine rechtliche Konformität.</p></div>
+          <div class="settings-heading"><strong>Projektprüfung</strong><p>Diese Punkte werden in jedem Ergebnis berücksichtigt und am Ende geprüft.</p></div>
           <label class="field"><span>Rechtsraum / Markt</span><input id="setLegalRegion" type="text" placeholder="z. B. Deutschland / EU" /></label>
           <div class="settings-check-grid">
             <label class="toggle-row compact"><input id="setCheckPrivacy" type="checkbox"><span><strong>Datenschutz</strong><small>Tracking, Formulare, externe Dienste, Cookies.</small></span></label>
