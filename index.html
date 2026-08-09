@@ -43,11 +43,19 @@
 
   <main id="welcomePage" class="welcome-page">
     <section class="welcome-hero">
-      <div><span class="section-kicker">PROJEKTE KLAR STARTEN</span><h1>Aus einer Idee wird ein Briefing, mit dem wirklich gebaut werden kann.</h1><p>Prompt.ai ordnet Anforderungen, prüft offene Punkte und erstellt konkrete Richtungen sowie einen belastbaren Umsetzungsauftrag.</p><div class="welcome-actions"><button type="button" class="solid-btn" id="startWorkflowBtn">Neues Projekt starten</button><button type="button" class="outline-btn" id="welcomeAccountBtn">Anmelden</button></div></div>
-      <aside><span>SO FUNKTIONIERT ES</span><ol><li><b>01</b> Projekt verständlich beschreiben</li><li><b>02</b> Rückfragen und Richtung klären</li><li><b>03</b> Prompt oder Website-Paket erstellen</li></ol></aside>
+      <div><span class="section-kicker">DEIN PROJEKT, KLAR VORBEREITET</span><h1>Aus deiner Idee wird ein Auftrag, mit dem die KI direkt arbeiten kann.</h1><p>Du beschreibst dein Vorhaben in deinen eigenen Worten. Prompt.ai ordnet die Angaben, liest vorhandene Seiten ein, fragt nur bei wichtigen Lücken nach und erstellt daraus Vorschauen, Unterlagen und den fertigen Prompt.</p><div class="welcome-actions"><button type="button" class="solid-btn" id="startWorkflowBtn">Neues Projekt starten</button><button type="button" class="outline-btn" id="quickRevisionBtn">Webseite überarbeiten</button></div></div>
     </section>
-    <section class="welcome-features"><article><span>EINFACH</span><h2>Verständlich starten</h2><p>Das Projekt wird Schritt für Schritt geordnet. Du brauchst weder Prompt-Wissen noch technische Vorkenntnisse.</p></article><article><span>AUTOMATISCH</span><h2>Weniger Handarbeit</h2><p>Prompt.ai prüft fehlende Angaben, schlägt passende Bausteine vor und hält Entscheidungen über den ganzen Ablauf zusammen.</p></article><article><span>FLEXIBEL</span><h2>Vom Briefing bis zum Projekt</h2><p>Ergebnis als Master-Prompt, Kundenunterlagen, Dateipaket oder direkt ausführbare Website-Vorschau – passend zum gewählten Umfang.</p></article></section>
-    <section class="welcome-pricing" id="pricing"><div class="welcome-section-head"><span>TARIFE</span><h2>Ein guter Entwurf ist in jedem Tarif Pflicht.</h2></div><div class="plans-grid"><article><h3>Kostenlos</h3><strong>0 €</strong><p class="plan-summary">Für eigene Ideen und einen vollständigen ersten Projektentwurf.</p><ul><li>Geführter Projektablauf mit Codex als Ziel-Agent</li><li>Drei unterschiedliche responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Abgespeckte lokale Grundprüfung</li></ul><button type="button" class="outline-btn" id="startFreeBtn">Kostenlos starten</button></article><article class="recommended"><h3>Pro</h3><strong data-public-price="pro">15,99 € / Monat</strong><p class="plan-summary">Für echte Kundenprojekte, vollständige Übergaben und direkte Website-Erstellung.</p><ul><li>Claude Code oder Codex, geführt oder automatisch</li><li>Vier individuelle Richtungen und erweiterte Projektprüfung</li><li>Eigene Module, Skills und Projektprofile</li><li>Ausgearbeitetes Kundenbriefing und Übergabe-Dokument</li><li>Website-Dateipaket mit direkter HTML-Vorschau</li></ul><button type="button" class="solid-btn" data-start-plan="pro">Pro wählen</button></article><article><h3>Ultimate</h3><strong data-public-price="ultimate">25,99 € / Monat</strong><p class="plan-summary">Für Agenturen und volle Kontrolle über Generator, Modelle und Veröffentlichung.</p><ul><li>Alle Ziel-Agenten, Auto- und Expertenmodus</li><li>Fünf Richtungen und sämtliche Profi-Einstellungen</li><li>Eigene KI-Verbindungen ohne zusätzliches Add-on</li><li>GitHub-Veröffentlichung und bestehende Projekte</li><li>Alle Funktionen aus Pro</li></ul><button type="button" class="outline-btn" data-start-plan="ultimate">Ultimate wählen</button></article></div></section>
+    <section class="welcome-workspace" aria-labelledby="workspaceTitle">
+      <div class="welcome-section-head workspace-heading"><span>DEIN ARBEITSBEREICH</span><h2 id="workspaceTitle">Weiterarbeiten statt neu suchen.</h2><p>Öffne ein bestehendes Projekt oder starte direkt mit der Aufgabe, die du gerade erledigen willst.</p></div>
+      <div class="welcome-tools">
+        <article class="welcome-tool-card primary"><span>NEU</span><h3>Projekt erstellen</h3><p>Vom ersten Briefing über Richtungen und Rückfragen bis zum fertigen Umsetzungsauftrag.</p><button type="button" class="solid-btn" id="workspaceNewProjectBtn">Projekt starten</button></article>
+        <article class="welcome-tool-card"><span>DIREKTZUGRIFF</span><h3>Webseite überarbeiten</h3><p>Website einlesen, Änderungswünsche beschreiben und einen vollständigen Überarbeitungsauftrag erzeugen.</p><button type="button" class="outline-btn" id="workspaceRevisionBtn">Website prüfen</button></article>
+        <article class="welcome-tool-card"><span>DEINE BAUSTEINE</span><h3>Bibliothek</h3><p>Prompt-Vorlagen, Module und Agent-Skills verwalten und für neue Projekte wiederverwenden.</p><button type="button" class="outline-btn" id="workspaceLibraryBtn">Bibliothek öffnen</button><small id="workspaceLibraryHint">Eigene Bausteine sind ab Pro verfügbar.</small></article>
+      </div>
+      <div class="welcome-projects-head"><div><span>AKTUELLE PROJEKTE</span><h3>Zuletzt bearbeitet</h3></div><button type="button" class="text-btn" id="welcomeAccountBtn">Anmelden & synchronisieren</button></div>
+      <div class="welcome-project-list" id="welcomeProjectList" aria-live="polite"></div>
+    </section>
+    <section class="welcome-pricing" id="pricing"><div class="welcome-section-head"><span>TARIFE</span><h2>Ein guter Entwurf ist in jedem Tarif Pflicht.</h2></div><div class="plans-grid"><article><h3>Kostenlos</h3><strong>0 €</strong><p class="plan-summary">Für eigene Ideen und einen vollständigen ersten Projektentwurf.</p><ul><li>Geführter Projektablauf mit Codex als Ziel-Agent</li><li>Drei unterschiedliche responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Website-Grundscan mit einfachem Überarbeitungsauftrag</li><li>Abgespeckte lokale Grundprüfung</li></ul><button type="button" class="outline-btn" id="startFreeBtn">Kostenlos starten</button></article><article class="recommended"><h3>Pro</h3><strong data-public-price="pro">15,99 € / Monat</strong><p class="plan-summary">Für echte Kundenprojekte, vollständige Übergaben und direkte Website-Erstellung.</p><ul><li>Claude Code oder Codex, geführt oder automatisch</li><li>Vier individuelle Richtungen und erweiterte Projektprüfung</li><li>Website-Überarbeitung mit Seitenumfang, Referenzen und Dateien</li><li>Eigene Module, Skills und Projektprofile</li><li>Ausgearbeitetes Kundenbriefing und Übergabe-Dokument</li><li>Website-Dateipaket mit direkter HTML-Vorschau</li></ul><button type="button" class="solid-btn" data-start-plan="pro">Pro wählen</button></article><article><h3>Ultimate</h3><strong data-public-price="ultimate">25,99 € / Monat</strong><p class="plan-summary">Für Agenturen und volle Kontrolle über Generator, Modelle und Veröffentlichung.</p><ul><li>Alle Ziel-Agenten, Auto- und Expertenmodus</li><li>Prompt-Werkstatt mit Technik-, Design- und Abnahmeregeln</li><li>Mehrere Prompts als benannte Schnellvarianten speichern</li><li>Fünf Richtungen und sämtliche Profi-Einstellungen</li><li>Eigene KI-Verbindungen und GitHub-Veröffentlichung</li><li>Alle Funktionen aus Pro</li></ul><button type="button" class="outline-btn" data-start-plan="ultimate">Ultimate wählen</button></article></div></section>
   </main>
 
   <div class="app-shell" id="workflowApp" hidden>
@@ -298,7 +306,7 @@
 
         <div class="prompt-meta" id="promptMeta"></div>
         <textarea id="masterPrompt" class="master-prompt" spellcheck="false"></textarea>
-        <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn" id="downloadPromptBtn">Master-Prompt speichern</button><button type="button" class="outline-btn" id="downloadProjectSourcesBtn">Projekt-Quellen speichern</button><button type="button" class="outline-btn" id="downloadHandoffPackageBtn">Komplettes Übergabe-ZIP</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
+        <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn agent-open-btn" id="openAgentBtn">Agent öffnen</button><button type="button" class="outline-btn" id="downloadPromptBtn">Master-Prompt speichern</button><button type="button" class="outline-btn" id="downloadProjectSourcesBtn">Projekt-Quellen speichern</button><button type="button" class="outline-btn" id="downloadHandoffPackageBtn">Komplettes Übergabe-ZIP</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
         <section class="prompt-handoff" id="promptHandoff"><div><span>MIT DER KI ÜBERGEBEN</span><h2>Vorschau und Referenzen gehören zum Prompt.</h2><p id="promptHandoffText">Prompt.ai stellt die ausgewählte Vorschau, Bildreferenzen, Unterlagen und eine Linkliste als gemeinsames Übergabepaket zusammen.</p></div><div class="prompt-handoff-preview" id="promptHandoffPreview"></div></section>
         <section class="client-result-card">
           <div><span>PROJEKTUNTERLAGEN</span><h2>Mehr als eine kurze Zusammenfassung</h2><p>Projektbericht, echtes Kundenbriefing und technische Übergabe werden mit Ziel, Seitenumfang, Inhalten, Freigaben, Zuständigkeiten und Abnahmekriterien aufgebaut.</p></div>
@@ -356,6 +364,65 @@
       </div>
     </aside>
   </div>
+
+  <dialog id="welcomeIntroDialog" class="library-dialog welcome-intro-dialog">
+    <div class="dialog-frame">
+      <button type="button" class="close-dialog intro-close" id="closeWelcomeIntroBtn" aria-label="Einführung schließen">×</button>
+      <div class="welcome-intro-body"><span>WILLKOMMEN BEI PROMPT.AI</span><h2>Du erklärst das Projekt. Prompt.ai macht es für die KI eindeutig.</h2><p>Starte ein neues Projekt, wenn eine Website oder Anwendung von Grund auf entstehen soll. Nutze „Webseite überarbeiten“, wenn bereits etwas vorhanden ist und du gezielte Änderungen möchtest.</p><ol><li><b>1</b><div><strong>In normalen Worten beschreiben</strong><small>Es muss kein perfekter Prompt sein. Ziel, Inhalte und Wünsche reichen.</small></div></li><li><b>2</b><div><strong>Nur wichtige Fragen klären</strong><small>Hinweise werden automatisch geprüft. Antworten brauchst du nur bei echten Rückfragen.</small></div></li><li><b>3</b><div><strong>Ergebnis direkt weitergeben</strong><small>Prompt kopieren oder den gewählten Agenten gleich öffnen.</small></div></li></ol><button type="button" class="solid-btn" id="confirmWelcomeIntroBtn">Verstanden – los geht’s</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="appActionDialog" class="library-dialog app-action-dialog">
+    <div class="dialog-frame"><div class="app-action-body"><span id="appActionKicker">PROMPT.AI</span><h2 id="appActionTitle">Bestätigen</h2><p id="appActionMessage"></p><label class="field" id="appActionInputWrap" hidden><span id="appActionInputLabel">Eingabe</span><input id="appActionInput" type="text" /></label><div class="app-action-buttons"><button type="button" class="text-btn" id="appActionCancelBtn">Abbrechen</button><button type="button" class="solid-btn" id="appActionConfirmBtn">Bestätigen</button></div></div></div>
+  </dialog>
+
+  <dialog id="agentLaunchDialog" class="library-dialog agent-launch-dialog">
+    <div class="dialog-frame"><button type="button" class="close-dialog agent-launch-close" id="closeAgentLaunchBtn" aria-label="Schließen">×</button><div class="agent-launch-body"><span>PROMPT IST KOPIERT</span><h2 id="agentLaunchTitle">Agent öffnen</h2><p id="agentLaunchText">Der fertige Prompt liegt in deiner Zwischenablage. Öffne jetzt den ausgewählten Agenten und füge ihn dort ein.</p><div class="agent-launch-options"><button type="button" class="solid-btn" id="openAgentWebBtn">Im Browser öffnen</button><button type="button" class="outline-btn" id="openAgentDesktopBtn" hidden>Desktop-App öffnen</button></div><small id="agentLaunchHint"></small></div></div>
+  </dialog>
+
+  <dialog id="quickRevisionDialog" class="library-dialog quick-revision-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head">
+        <div><span>WEBSITE ÜBERARBEITEN</span><h2>Vom Ist-Zustand zum klaren Änderungsauftrag</h2></div>
+        <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
+      </header>
+      <div class="quick-revision-body">
+        <section class="quick-revision-intro"><p>Prompt.ai liest die erreichbaren Seiten, sammelt Struktur und Inhalte und verbindet sie mit deinen Änderungswünschen. Du erhältst einen Auftrag, den du direkt in Codex oder Claude einfügen kannst.</p><div class="tier-path"><span><b>Free</b> Grundscan und Auftrag</span><span><b>Pro</b> Seitenumfang, Referenzen und Dateianalyse</span><span><b>Ultimate</b> technische Detailregeln und Prompt-Schnellvarianten</span></div></section>
+        <div class="field-grid two">
+          <label class="field"><span>Bestehende Website</span><input id="quickRevisionUrl" type="url" placeholder="https://deine-website.de" /></label>
+          <label class="field"><span>Ziel-Agent</span><select id="quickRevisionAgent"><option value="codex">Codex</option><option value="claude">Claude Code</option></select></label>
+        </div>
+        <label class="field field-large"><span>Was soll geändert werden?</span><textarea id="quickRevisionDescription" rows="6" placeholder="Beschreibe, was nicht passt, was erhalten bleiben soll und wie das Ergebnis aussehen oder funktionieren soll."></textarea></label>
+        <section class="quick-tier-block" id="quickRevisionProBlock">
+          <div class="quick-tier-head"><div><span>PRO-WERKZEUGE</span><strong>Den Auftrag genauer eingrenzen</strong></div><small id="quickRevisionProNote"></small></div>
+          <div class="field-grid two">
+            <label class="field"><span>Was muss erhalten bleiben?</span><textarea id="quickRevisionPreserve" rows="3" placeholder="z. B. Texte, Bilder, Seitenstruktur, Buchungsfunktion"></textarea></label>
+            <label class="field"><span>Betroffene Seiten / Bereiche</span><textarea id="quickRevisionScope" rows="3" placeholder="z. B. Startseite, mobile Navigation und Leistungen"></textarea></label>
+            <label class="field"><span>Neue Referenz <em>optional</em></span><input id="quickRevisionReference" type="url" placeholder="https://…" /></label>
+            <label class="field"><span>Projektdateien oder Screenshots</span><input id="quickRevisionFiles" type="file" multiple accept=".zip,.html,.css,.js,.jsx,.ts,.tsx,.json,.md,image/png,image/jpeg,image/webp" /></label>
+          </div>
+        </section>
+        <section class="quick-tier-block ultimate" id="quickRevisionUltimateBlock">
+          <div class="quick-tier-head"><div><span>ULTIMATE PROMPT-WERKSTATT</span><strong>Technik, Grenzen und Abnahme exakt festlegen</strong></div><small id="quickRevisionUltimateNote"></small></div>
+          <div class="field-grid two">
+            <label class="field"><span>Technische Vorgaben</span><textarea id="quickRevisionTechnical" rows="4" placeholder="Framework, Komponenten, Datenbank, Hosting, erlaubte Abhängigkeiten …"></textarea></label>
+            <label class="field"><span>Design- und Inhaltsregeln</span><textarea id="quickRevisionDesignRules" rows="4" placeholder="Typografie, Raster, Bildregeln, verbotene Muster, Tonfall …"></textarea></label>
+            <label class="field"><span>Abnahmekriterien</span><textarea id="quickRevisionAcceptance" rows="4" placeholder="Woran muss eindeutig erkennbar sein, dass die Überarbeitung fertig ist?"></textarea></label>
+            <label class="field"><span>Prüfungen und Befehle</span><textarea id="quickRevisionChecks" rows="4" placeholder="Build, Tests, Browsergrößen, Lighthouse, konkrete Nutzerwege …"></textarea></label>
+          </div>
+        </section>
+        <div class="quick-revision-actions"><button type="button" class="solid-btn" id="scanQuickRevisionBtn">Website scannen & Auftrag erstellen</button><small id="quickRevisionStatus"></small></div>
+        <section class="quick-revision-result" id="quickRevisionResult" hidden>
+          <div class="quick-result-head"><div><span>FERTIGER AUFTRAG</span><strong id="quickRevisionScanResult">Website ausgewertet</strong></div><div><button type="button" class="solid-btn mini" id="copyQuickRevisionBtn">Kopieren</button><button type="button" class="outline-btn mini" id="downloadQuickRevisionBtn">Speichern</button></div></div>
+          <textarea id="quickRevisionPrompt" class="master-prompt" rows="18" spellcheck="false"></textarea>
+          <div class="quick-variant-tools" id="quickRevisionVariantTools" hidden>
+            <div><span>ULTIMATE SCHNELLAUSWAHL</span><strong>Mehrere Prompt-Varianten speichern</strong></div>
+            <div class="quick-variant-controls"><input id="quickRevisionVariantName" type="text" placeholder="z. B. Mobile Fix August" /><button type="button" class="outline-btn" id="saveQuickRevisionVariantBtn">Variante speichern</button><select id="quickRevisionVariantSelect"><option value="">Gespeicherte Variante wählen</option></select><button type="button" class="text-btn danger" id="deleteQuickRevisionVariantBtn">löschen</button></div>
+          </div>
+        </section>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="libraryDialog" class="library-dialog">
     <form method="dialog" class="dialog-frame">
@@ -604,8 +671,8 @@
       <header class="dialog-head"><div><span>TARIFE</span><h2>Passender Umfang für dein Projekt</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="plans-grid">
         <article><h3>Kostenlos</h3><strong>0 €</strong><p class="plan-summary">Ein vollständiger Einstieg mit drei brauchbaren Entwurfsrichtungen.</p><ul><li>Geführter Ablauf und Codex-Ziel</li><li>Drei responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Lokale Grundprüfung in reduziertem Umfang</li></ul><div class="single-check-note"><strong>Mehr Prüfung für ein Projekt?</strong><small>Erweiterte Einzelprüfung für 3,99 € oder ohne Einzelkauf in Pro.</small></div><button type="button" class="outline-btn" disabled>Aktueller Einstieg</button></article>
-        <article class="recommended"><h3>Pro</h3><strong id="proPriceLabel">15,99 € / Monat</strong><p class="plan-summary">Für Kundenprojekte von der Prüfung bis zur direkt sichtbaren Website.</p><ul><li>Claude Code oder Codex, geführt oder automatisch</li><li>Vier individuelle Richtungen</li><li>Erweiterte Projektprüfung</li><li>Module, Skills und eigene Projektprofile</li><li>Kundenbriefing, Übergabe und ZIP</li><li>Website erstellen und statische Ergebnisse direkt ansehen</li></ul><button type="button" class="solid-btn" id="startProCheckoutBtn">Pro wählen</button></article>
-        <article><h3>Ultimate</h3><strong id="ultimatePriceLabel">25,99 € / Monat</strong><p class="plan-summary">Alle Werkzeuge für Agenturen, verschiedene Modelle und Veröffentlichung.</p><ul><li>Alle Funktionen aus Pro</li><li>Alle Agenten und fünf Richtungen</li><li>Eigene KI-Verbindungen inklusive</li><li>Expertenmodus und sämtliche Prüfregeln</li><li>Bestehende Projekte und GitHub-Veröffentlichung</li></ul><button type="button" class="outline-btn" id="startUltimateCheckoutBtn">Ultimate wählen</button></article>
+        <article class="recommended"><h3>Pro</h3><strong id="proPriceLabel">15,99 € / Monat</strong><p class="plan-summary">Für Kundenprojekte von der Prüfung bis zur direkt sichtbaren Website.</p><ul><li>Claude Code oder Codex, geführt oder automatisch</li><li>Vier individuelle Richtungen</li><li>Erweiterte Projektprüfung</li><li>Website-Überarbeitung mit Referenzen, Seitenauswahl und Dateien</li><li>Module, Skills und eigene Projektprofile</li><li>Kundenbriefing, Übergabe und ZIP</li></ul><button type="button" class="solid-btn" id="startProCheckoutBtn">Pro wählen</button></article>
+        <article><h3>Ultimate</h3><strong id="ultimatePriceLabel">25,99 € / Monat</strong><p class="plan-summary">Alle Werkzeuge für Agenturen, verschiedene Modelle und Veröffentlichung.</p><ul><li>Alle Funktionen aus Pro</li><li>Alle Agenten und fünf Richtungen</li><li>Prompt-Werkstatt mit detaillierten Technik-, Design- und Prüffeldern</li><li>Mehrere Prompts als Schnellvarianten speichern</li><li>Eigene KI-Verbindungen inklusive</li><li>Expertenmodus, bestehende Projekte und GitHub-Veröffentlichung</li></ul><button type="button" class="outline-btn" id="startUltimateCheckoutBtn">Ultimate wählen</button></article>
       </div>
       <div class="plans-footer"><button type="button" class="text-btn" id="manageSubscriptionBtn">Bestehendes Abo verwalten</button><small>Die Zahlung und Aboverwaltung erfolgt sicher über Stripe.</small></div>
     </form>
