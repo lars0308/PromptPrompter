@@ -14,23 +14,36 @@ function formatStripePrice(price,fallback){
 }
 
 async function livePrice(loader,fallback){try{return formatStripePrice(await loader(),fallback)}catch{return fallback}}
-async function previewRoutes(){
+async function serviceRows(path){
   try{
     const url=process.env.SUPABASE_URL||'https://wihdoacgqbyxxeejoxsg.supabase.co',key=process.env.SUPABASE_SERVICE_ROLE_KEY||'';if(!key)return [];
-    const response=await fetch(`${url}/rest/v1/sitebrief_preview_ai_routes?select=id,label,provider,model,priority,enabled&enabled=eq.true&order=priority.asc`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});if(!response.ok)return [];
-    return (await response.json()).map(x=>({id:x.id,label:x.label,provider:x.provider,model:x.model,priority:x.priority}));
+    const response=await fetch(`${url}${path}`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});if(!response.ok)return [];
+    return await response.json();
   }catch{return []}
+}
+async function previewRoutes(){
+  const rows=await serviceRows('/rest/v1/sitebrief_preview_ai_routes?select=id,label,provider,model,priority,enabled&enabled=eq.true&order=priority.asc');
+  return rows.map(x=>({id:x.id,label:x.label,provider:x.provider,model:x.model,priority:x.priority}));
+}
+async function systemAiRoutes(){
+  const rows=await serviceRows('/rest/v1/sitebrief_system_ai_connections?select=provider,default_model,route_role,enabled,updated_at&enabled=eq.true');
+  const rank={primary:0,fallback1:1,fallback2:2,manual:3};
+  return rows.map(x=>({provider:String(x.provider||''),defaultModel:String(x.default_model||''),routeRole:String(x.route_role||'manual'),updatedAt:x.updated_at||null})).filter(x=>x.provider).sort((a,b)=>(rank[a.routeRole]??9)-(rank[b.routeRole]??9));
+}
+async function learningHints(){
+  const rows=await serviceRows('/rest/v1/sitebrief_learning_examples?select=project_type,project_goal,lesson_summary,positive_signals,caution_signals,rating&allow_global=eq.true&rating=gte.4&order=created_at.desc&limit=18');
+  return rows.map(row=>({projectType:String(row.project_type||'').slice(0,120),projectGoal:String(row.project_goal||'').slice(0,160),summary:String(row.lesson_summary||'').slice(0,700),positive:Array.isArray(row.positive_signals)?row.positive_signals.map(String).slice(0,6):[],cautions:Array.isArray(row.caution_signals)?row.caution_signals.map(String).slice(0,6):[],rating:Number(row.rating)||0})).filter(x=>x.summary);
 }
 
 module.exports=async function handler(_req,res){
   res.setHeader('Cache-Control','no-store, max-age=0');
   const fallback={pro:process.env.PUBLIC_PRO_PRICE||'15,99 € / Monat',ultimate:process.env.PUBLIC_ULTIMATE_PRICE||'25,99 € / Monat',apiKeys:process.env.PUBLIC_API_KEYS_PRICE||'5,99 € / Monat',singleReview:process.env.PUBLIC_SINGLE_REVIEW_PRICE||'3,99 €'};
-  const [pro,ultimate,apiKeys,singleReview,routes]=await Promise.all([
+  const [pro,ultimate,apiKeys,singleReview,routes,systemRoutes,hints]=await Promise.all([
     livePrice(()=>resolveRecurringPriceObject('pro'),fallback.pro),
     livePrice(()=>resolveRecurringPriceObject('ultimate'),fallback.ultimate),
     livePrice(()=>resolveRecurringPriceObject('own_api_keys'),fallback.apiKeys),
     livePrice(()=>resolveOneTimePriceObject('single_review'),fallback.singleReview),
-    previewRoutes()
+    previewRoutes(),systemAiRoutes(),learningHints()
   ]);
   res.status(200).json({
     supabaseUrl:process.env.SUPABASE_URL||'https://wihdoacgqbyxxeejoxsg.supabase.co',
@@ -38,6 +51,9 @@ module.exports=async function handler(_req,res){
     enabled:true,
     pricing:{pro,ultimate,apiKeys,singleReview,source:'stripe'},
     previewRoutes:routes,
-    previewProviders:[...new Set(routes.map(x=>x.provider))]
+    previewProviders:[...new Set(routes.map(x=>x.provider))],
+    systemAiRoutes:systemRoutes,
+    systemAiProviders:[...new Set(systemRoutes.map(x=>x.provider))],
+    learningHints:hints
   });
 };
