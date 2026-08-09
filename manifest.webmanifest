@@ -1,0 +1,13 @@
+{
+  "name": "SiteBrief",
+  "short_name": "SiteBrief",
+  "description": "Aus Ideen wird ein klares Projekt.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ece9e1",
+  "theme_color": "#151914",
+  "icons": [
+    {"src":"/sitebrief-logo.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

@@ -1,5 +1,6 @@
 const { resolveProviderKey } = require('../server/provider-key');
 const { getEntitlements } = require('../server/entitlements');
+const { rateLimit } = require('../server/rate-limit');
 const VARIANTS = ["split","poster","ledger","stacked","editorial"];
 
 const conceptProperties = {
@@ -290,8 +291,11 @@ The result must read instantly as a bespoke real website design, not as an AI-ge
 
 module.exports = async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
+  res.setHeader('Cache-Control','no-store, private');
+  if(!rateLimit(req,res,{key:'generate',limit:12,windowMs:60000}))return;
   try{
     const body=req.body||{};
+    if(JSON.stringify(body).length>4500000)return res.status(413).json({error:'Die Anfrage ist zu groß. Bitte weniger oder kleinere Referenzen verwenden.'});
     const entitlement=await getEntitlements(req);
     const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},clarifications=[],projectReview={}}=body,modules=entitlement.plan==='free'?[]:(Array.isArray(body.modules)?body.modules:[]),settings=entitlement.plan==='free'?{legalRegion:'Deutschland / EU',checks:{privacy:true,imprint:true,accessibility:true,security:true,performance:true},noInventLegal:true,finalChecklist:true}:body.settings||{};
     if(entitlement.plan==="free"&&!entitlement.ownApiKeys) return res.status(403).json({error:"Externe KI-Generierung ist ab Pro oder mit dem eigenen API-Key-Add-on verfügbar."});

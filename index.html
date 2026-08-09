@@ -4,15 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#ece9e1" />
-  <meta name="description" content="SiteBrief — geführter Website-Konzept- und Master-Prompt-Builder." />
-  <title>SiteBrief V6 — Briefing → Vorschau → Master-Prompt</title>
+  <meta name="description" content="SiteBrief entwickelt aus einem echten Projektbriefing eine klare Gestaltungsrichtung und einen umsetzbaren Code-Auftrag." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./sitebrief-logo.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./sitebrief-logo.svg" />
+  <title>SiteBrief — Aus Ideen wird ein klares Projekt</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#" id="brandHome" aria-label="SiteBrief Start">
-      <span class="brand-mark">SB</span>
-      <span class="brand-copy"><strong>SiteBrief</strong><small>BRIEF → PREVIEW → PROMPT</small></span>
+      <span class="brand-mark"><img src="./sitebrief-logo.svg" alt="" /></span>
+      <span class="brand-copy"><strong>SiteBrief</strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT</small></span>
     </a>
 
     <div class="mode-switch" aria-label="Arbeitsmodus">
@@ -23,6 +28,7 @@
 
     <div class="top-actions">
       <span class="engine-state"><i></i><span id="engineStatus">Lokal bereit</span></span><span class="sync-state" id="syncState">Lokal</span>
+      <button type="button" class="text-btn" id="installAppBtn" hidden>App installieren</button>
       <button type="button" class="theme-toggle" id="themeToggleBtn" aria-label="Dunkelmodus aktivieren"><span aria-hidden="true"></span><b>Dunkel</b></button>
       <button type="button" class="text-btn" id="accountBtn">Anmelden</button><button type="button" class="text-btn" id="openLibraryBtn">Bibliotheken</button>
       <button type="button" class="text-btn" id="openSettingsBtn">Einstellungen</button>
@@ -57,23 +63,23 @@
         <div class="section-kicker">01 — PROJEKT</div>
         <h1>Was soll entstehen?</h1>
         <p class="lead">Beschreibe es so, wie du es jemandem am Tisch erklären würdest. SiteBrief macht daraus ein strukturiertes Briefing.</p>
-        <section class="client-context-card"><div class="selection-head"><div><span>FÜR WEN ENTSTEHT DAS PROJEKT?</span><p>Eigener Betrieb, Kunde oder internes Projekt. Vorhandene Website-Daten können direkt übernommen werden.</p></div></div><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" type="text" placeholder="z. B. Musterbetrieb GmbH" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Vorhandene Website oder Datenquelle</span><input id="clientWebsite" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Website-Daten übernehmen</button><small id="clientImportStatus"></small></div></section>
+        <section class="client-context-card"><div class="selection-head"><div><span>FÜR WEN ENTSTEHT DAS PROJEKT?</span><p>Eigener Betrieb, Kunde oder internes Projekt. Vorhandene Website-Daten können direkt übernommen werden.</p></div></div><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" type="text" placeholder="z. B. SiteBrief Studio" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Vorhandene Website oder Datenquelle</span><input id="clientWebsite" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Website-Daten übernehmen</button><small id="clientImportStatus"></small></div></section>
 
         <label class="field field-large">
           <span>Kurzbeschreibung</span>
-          <textarea id="projectDescription" rows="7" placeholder="z. B. Website für meinen Handwerksbetrieb. Hausmeisterservice, Gartenpflege und kleinere Reparaturen. Persönlich, hochwertig, aber nicht wie eine Agentur- oder KI-Seite."></textarea>
+          <textarea id="projectDescription" rows="7" placeholder="z. B. SiteBrief soll Agenturen und Selbstständigen helfen, aus einem Kundenbriefing eine eigenständige Website-Richtung und einen präzisen Umsetzungsauftrag zu entwickeln."></textarea>
           <small><span id="descriptionCount">0</span> Zeichen</small>
         </label>
 
         <div class="field-grid three">
-          <label class="field"><span>Projektname <em>optional</em></span><input id="projectName" type="text" placeholder="z. B. Battermann Service" /></label>
-          <label class="field"><span>Projektart</span><select id="projectType"><option>Website</option><option>Web-App</option><option>Landingpage</option><option>Onlineshop</option><option>Portfolio</option><option>Dokumentation</option></select></label>
-          <label class="field"><span>Hauptziel</span><select id="projectGoal"><option>Anfragen / Leads</option><option>Verkaufen</option><option>Termine / Buchungen</option><option>Informieren</option><option>Community / Nutzung</option><option>Produkt erklären</option></select></label>
+          <label class="field"><span>Projektname <em>optional</em></span><input id="projectName" type="text" placeholder="z. B. SiteBrief Kundenportal" /></label>
+          <label class="field"><span>Projektart</span><select id="projectType"></select></label>
+          <label class="field"><span>Hauptziel</span><select id="projectGoal"></select></label>
         </div>
 
         <div class="field-grid two">
-          <label class="field"><span>Zielgruppe <em>optional</em></span><input id="projectAudience" type="text" placeholder="z. B. Privatkunden im Umkreis von 30 km" /></label>
-          <label class="field"><span>Besonderer Wunsch <em>optional</em></span><input id="projectSpecial" type="text" placeholder="z. B. sehr bildstark, keine typischen Karten" /></label>
+          <label class="field"><span>Zielgruppe <em>optional</em></span><input id="projectAudience" type="text" placeholder="z. B. kleine Agenturen, Webdesigner und Selbstständige mit Kundenprojekten" /></label>
+          <label class="field"><span>Besonderer Wunsch <em>optional</em></span><input id="projectSpecial" type="text" placeholder="z. B. redaktionelle Wirkung, keine typischen Software-Karten" /></label>
         </div>
 
         <div class="understanding" id="projectUnderstanding" hidden>
@@ -270,8 +276,10 @@
 
       <section class="step-panel" data-step-panel="8" id="stepPrompt">
         <div class="section-kicker">08 — MASTER-PROMPT</div>
-        <h1>Fertig für deinen Agenten.</h1>
-        <p class="lead">SiteBrief verbindet Projekt, Referenzen, Auswahl, Module, Skills und Feinschliff zu einem agentenspezifischen Master-Prompt.</p>
+        <h1>Dein Projekt ist vorbereitet.</h1>
+        <p class="lead">Alle Entscheidungen sind zusammengeführt. Prüfe die Zusammenfassung und übergib danach den Arbeitsauftrag an deinen gewählten Agenten.</p>
+
+        <section class="completion-summary" id="completionSummary"></section>
 
         <div class="prompt-meta" id="promptMeta"></div>
         <textarea id="masterPrompt" class="master-prompt" spellcheck="false"></textarea>
@@ -284,6 +292,14 @@
         <section class="export-result-card">
           <div><span>EXPORT & VERÖFFENTLICHUNG</span><h2>Vom Ergebnis direkt zum Projekt</h2><p id="exportResultHint">Website-Paket und GitHub-Veröffentlichung sind in höheren Tarifen enthalten.</p></div>
           <div class="client-result-actions"><button type="button" class="solid-btn" id="downloadWebsiteZipBtn">Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn">Auf GitHub veröffentlichen</button></div>
+        </section>
+
+        <section class="revision-studio" id="revisionStudio">
+          <div class="revision-intro"><span>BESTEHENDE WEBSITE WEITERENTWICKELN</span><h2>Aus dem fertigen Stand einen Überarbeitungsauftrag machen</h2><p>Lade den aktuellen Projektstand oder Screenshots hoch, beschreibe die gewünschten Änderungen und ergänze bei Bedarf neue Referenzen. SiteBrief erstellt daraus einen zweiten, auf Verbesserung ausgerichteten Arbeitsauftrag.</p></div>
+          <div class="field-grid two"><label class="field"><span>Projektdateien oder Screenshots</span><input id="revisionFiles" type="file" multiple accept=".zip,.html,.css,.js,.jsx,.ts,.tsx,.json,.md,image/png,image/jpeg,image/webp" /></label><label class="field"><span>Neue Referenz <em>optional</em></span><input id="revisionReference" type="url" placeholder="https://…" /></label></div>
+          <label class="field field-large"><span>Was soll verbessert werden?</span><textarea id="revisionDescription" rows="6" placeholder="Beschreibe konkret, was heute nicht funktioniert, was erhalten bleiben soll und woran man die Verbesserung erkennen kann."></textarea></label>
+          <div class="inline-actions"><button type="button" class="solid-btn" id="createRevisionPromptBtn">Überarbeitungsauftrag erstellen</button><small id="revisionStatus"></small></div>
+          <div id="revisionPromptResult" hidden><textarea id="revisionPrompt" class="master-prompt" spellcheck="false"></textarea><div class="prompt-actions"><button type="button" class="solid-btn" id="copyRevisionPromptBtn">Auftrag kopieren</button><button type="button" class="outline-btn" id="downloadRevisionPromptBtn">Als .md speichern</button></div></div>
         </section>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="7">← Zurück</button><button type="button" class="text-btn" id="startNewBtn">Neues Projekt</button></div>
@@ -489,7 +505,9 @@
           <label class="field"><span>E-Mail</span><input id="authEmail" type="email" autocomplete="email" placeholder="name@beispiel.de" /></label>
           <label class="field"><span>Passwort</span><input id="authPassword" type="password" autocomplete="current-password" minlength="8" /></label>
           <label class="remember-login"><input id="rememberEmail" type="checkbox" checked /><span>E-Mail auf diesem Gerät merken</span></label>
-          <div class="inline-actions"><button type="button" class="solid-btn" id="signInBtn">Anmelden</button><button type="button" class="outline-btn" id="signUpBtn">Konto anlegen</button><button type="button" class="text-btn" id="guestContinueBtn">Ohne Anmeldung fortfahren</button></div>
+          <div class="inline-actions"><button type="button" class="solid-btn" id="signInBtn">Anmelden</button><button type="button" class="outline-btn" id="signUpBtn">Konto anlegen</button><button type="button" class="text-btn" id="forgotPasswordBtn">Passwort vergessen</button><button type="button" class="text-btn" id="guestContinueBtn">Ohne Anmeldung fortfahren</button></div>
+          <section class="password-recovery-panel" id="passwordRecoveryPanel" hidden><strong>Neues Passwort festlegen</strong><label class="field"><span>Neues Passwort</span><input id="newAccountPassword" type="password" autocomplete="new-password" minlength="10" /></label><button type="button" class="solid-btn" id="saveNewPasswordBtn">Passwort speichern</button></section>
+          <p class="privacy-login-note">Die Sitzung bleibt auf Wunsch auf diesem Gerät erhalten. SiteBrief setzt keine Werbe- oder Analyse-Cookies ein.</p>
           <p id="authMessage" class="auth-message"></p>
         </div>
         <div id="accountLoggedIn" hidden>
@@ -543,8 +561,8 @@
       <header class="dialog-head"><div><span>TARIFE</span><h2>Mehr Werkzeuge, nicht künstlich schlechtere Ergebnisse</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="plans-grid">
         <article><span>FREE</span><h3>Solider Einstieg</h3><strong>0 €</strong><ul><li>Codex-Ziel</li><li>3 Gestaltungsrichtungen</li><li>Geführte Qualitätsstandards</li></ul><button type="button" class="outline-btn" disabled>Aktueller Einstieg</button></article>
-        <article class="recommended"><span>PRO</span><h3>Für Kundenprojekte</h3><strong>Pro</strong><ul><li>Claude oder Codex</li><li>4 Richtungen</li><li>Module und Skills</li><li>Kundenunterlagen & ZIP-Export</li></ul><button type="button" class="solid-btn" id="startProCheckoutBtn">Pro wählen</button></article>
-        <article><span>ULTIMATE</span><h3>Volle Kontrolle</h3><strong>Ultimate</strong><ul><li>Alle Agenten und 5 Richtungen</li><li>Eigene KI-Verbindungen</li><li>Alle Profi-Einstellungen</li><li>Direkte GitHub-Veröffentlichung</li></ul><button type="button" class="outline-btn" id="startUltimateCheckoutBtn">Ultimate wählen</button></article>
+        <article class="recommended"><span>PRO</span><h3>Für Kundenprojekte</h3><strong id="proPriceLabel">15,99 € / Monat</strong><ul><li>Claude oder Codex</li><li>4 Richtungen</li><li>Module und Skills</li><li>Kundenunterlagen & ZIP-Export</li></ul><button type="button" class="solid-btn" id="startProCheckoutBtn">Pro wählen</button></article>
+        <article><span>ULTIMATE</span><h3>Volle Kontrolle</h3><strong id="ultimatePriceLabel">25,99 € / Monat</strong><ul><li>Alle Agenten und 5 Richtungen</li><li>Eigene KI-Verbindungen</li><li>Alle Profi-Einstellungen</li><li>Direkte GitHub-Veröffentlichung</li></ul><button type="button" class="outline-btn" id="startUltimateCheckoutBtn">Ultimate wählen</button></article>
       </div>
       <div class="plans-footer"><button type="button" class="text-btn" id="manageSubscriptionBtn">Bestehendes Abo verwalten</button><small>Die Zahlung und Aboverwaltung erfolgt sicher über Stripe.</small></div>
     </form>

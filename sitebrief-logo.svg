@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">SiteBrief</title>
+  <rect width="512" height="512" rx="104" fill="#151914"/>
+  <path d="M118 127h276v54H181v50h168v53H181v48h213v54H118z" fill="#f3f1e9"/>
+  <path d="M342 111h52v290h-52z" fill="#ff6b4a"/>
+</svg>

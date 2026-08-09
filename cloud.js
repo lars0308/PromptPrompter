@@ -4,6 +4,7 @@ const Cloud = {
   client: null,
   user: null,
   configured: false,
+  config: {},
   systemProfiles: [],
   aiConnections: [],
   subscription: { plan: 'free', status: 'active', isAdmin: false },
@@ -35,6 +36,7 @@ const Cloud = {
       this.emit('unavailable', { reason: 'Supabase-Variablen fehlen.' });
       return { configured: false };
     }
+    this.config = config;
 
     const { createClient } = await import(`https://esm.sh/@supabase/supabase-js@${SUPABASE_JS_VERSION}?bundle`);
     this.client = createClient(config.supabaseUrl, config.supabasePublishableKey, {
@@ -46,7 +48,7 @@ const Cloud = {
     this.user = data?.session?.user || null;
     this.client.auth.onAuthStateChange((_event, session) => {
       this.user = session?.user || null;
-      this.emit('auth', { user: this.user });
+      this.emit(_event === 'PASSWORD_RECOVERY' ? 'password-recovery' : 'auth', { user: this.user });
     });
 
     try { this.systemProfiles = await this.loadSystemProfiles(); } catch { this.systemProfiles = []; }
@@ -70,6 +72,17 @@ const Cloud = {
     });
     if (error) throw error;
     return data;
+  },
+
+  async resetPassword(email) {
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    const { error } = await this.client.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined);
+    if (error) throw error;
+  },
+
+  async updatePassword(password) {
+    const { error } = await this.client.auth.updateUser({ password });
+    if (error) throw error;
   },
 
   async signOut() {

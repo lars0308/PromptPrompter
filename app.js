@@ -17,6 +17,11 @@
   const THEME_KEY = "sitebrief-theme";
   const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
   const GUEST_RUN_LIMIT = 3;
+  const PROJECT_OPTIONS = {
+    free:{types:["Website","Web-App","Landingpage","Onlineshop","Portfolio","Dokumentation"],goals:["Anfragen gewinnen","Verkaufen","Termine oder Buchungen","Informieren","Produkt erklären","Nutzung ermöglichen"]},
+    pro:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Kundenportal","Buchungsplattform","Mitgliederbereich","Portfolio","Magazin oder Blog","Dokumentation"],goals:["Anfragen gewinnen","Direkt verkaufen","Termine oder Buchungen","Marke positionieren","Leistungen verständlich erklären","Registrierungen gewinnen","Kunden binden","Inhalte veröffentlichen","Interne Abläufe vereinfachen"]},
+    ultimate:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Marktplatz","SaaS-Anwendung","Kundenportal","Buchungsplattform","Mitgliederbereich","Community","Magazin oder Blog","Dokumentation","Dashboard","Interne Fachanwendung","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Direkt verkaufen","Abonnements verkaufen","Termine oder Buchungen","Marke positionieren","Registrierungen gewinnen","Aktive Nutzung steigern","Kunden binden","Community aufbauen","Inhalte veröffentlichen","Interne Abläufe automatisieren","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]}
+  };
   const PLAN_RULES = {
     free:{label:"Free",concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false},
     pro:{label:"Pro",concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false},
@@ -72,7 +77,8 @@
     ownApiKeys: false,
     userProfile: {displayName:"",companyName:"",website:"",defaultClientType:""},
     cloud: {configured:false,user:null,syncing:false,lastSynced:null,error:""},
-    editing: {template:"",module:"",skill:""}
+    editing: {template:"",module:"",skill:""},
+    installPrompt:null
   };
 
   const el = {};
@@ -94,7 +100,7 @@
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
-      "resetBtn","startNewBtn","brandHome","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage"
+      "resetBtn","startNewBtn","brandHome","installAppBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel"
     ].forEach(id => el[id] = document.getElementById(id));
   }
 
@@ -103,7 +109,7 @@
       name: el.projectName?.value.trim() || "",
       description: el.projectDescription?.value.trim() || "",
       type: el.projectType?.value || "Website",
-      goal: el.projectGoal?.value || "Anfragen / Leads",
+      goal: el.projectGoal?.value || "Anfragen gewinnen",
       audience: el.projectAudience?.value.trim() || "",
       special: el.projectSpecial?.value.trim() || "",
       client:{name:el.clientName?.value.trim()||"",type:el.clientType?.value||"kunde",website:el.clientWebsite?.value.trim()||"",contact:el.clientContact?.value.trim()||""}
@@ -190,10 +196,10 @@
 
   function cloudReady(){ return Boolean(state.cloud.configured && state.cloud.user && window.SiteBriefCloud?.client); }
 
-  function applyTheme(theme){
-    const resolved=theme==="dark"?"dark":"light";document.documentElement.dataset.theme=resolved;localStorage.setItem(THEME_KEY,resolved);if(el.themeToggleBtn){const dark=resolved==="dark";el.themeToggleBtn.querySelector("b").textContent=dark?"Hell":"Dunkel";el.themeToggleBtn.setAttribute("aria-label",dark?"Hellmodus aktivieren":"Dunkelmodus aktivieren");}
+  function applyTheme(theme,{remember=true}={}){
+    const resolved=theme==="dark"?"dark":"light";document.documentElement.dataset.theme=resolved;if(remember)localStorage.setItem(THEME_KEY,resolved);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',resolved==='dark'?'#111410':'#ece9e1');if(el.themeToggleBtn){const dark=resolved==="dark";el.themeToggleBtn.querySelector("b").textContent=dark?"Hell":"Dunkel";el.themeToggleBtn.setAttribute("aria-label",dark?"Hellmodus aktivieren":"Dunkelmodus aktivieren");}
   }
-  function initTheme(){applyTheme(localStorage.getItem(THEME_KEY)==="dark"?"dark":"light")}
+  function initTheme(){const saved=localStorage.getItem(THEME_KEY),media=matchMedia('(prefers-color-scheme: dark)');applyTheme(saved||(media.matches?'dark':'light'),{remember:Boolean(saved)});media.addEventListener?.('change',event=>{if(!localStorage.getItem(THEME_KEY))applyTheme(event.matches?'dark':'light',{remember:false})})}
 
   function guestRunCount(){return clamp(Number(localStorage.getItem(GUEST_USAGE_KEY)||0),0,GUEST_RUN_LIMIT)}
   function guestRunsRemaining(){return Math.max(0,GUEST_RUN_LIMIT-guestRunCount())}
@@ -284,6 +290,11 @@
   }
 
   function planRules(){return PLAN_RULES[state.isAdmin?"ultimate":state.plan]||PLAN_RULES.free}
+  function renderProjectOptions(){
+    const tier=state.isAdmin?'ultimate':state.plan,options=PROJECT_OPTIONS[tier]||PROJECT_OPTIONS.free;
+    const fill=(select,values,fallback)=>{if(!select)return;const current=select.value||fallback;select.innerHTML=values.map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');select.value=values.includes(current)?current:values[0]};
+    fill(el.projectType,options.types,'Website');fill(el.projectGoal,options.goals,'Anfragen gewinnen');
+  }
   function applyPlanUi(){
     const rules=planRules(),name=state.isAdmin?"Admin · Ultimate":rules.label;
     if(!rules.agents.includes(state.targetAgent))state.targetAgent=rules.agents[0];
@@ -308,6 +319,7 @@
     const moduleStep=document.getElementById('stepModules');if(moduleStep)moduleStep.classList.toggle('tier-unavailable',!rules.modules);
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
+    renderProjectOptions();
     renderProfileUi();renderModuleSelection();renderSkillSelection();
   }
 
@@ -423,8 +435,10 @@
     try{
       const result=await window.SiteBriefCloudReady;
       state.cloud.configured=Boolean(result?.configured);state.cloud.user=result?.user||null;
+      const pricing=window.SiteBriefCloud?.config?.pricing||{};if(el.proPriceLabel)el.proPriceLabel.textContent=pricing.pro||'15,99 € / Monat';if(el.ultimatePriceLabel)el.ultimatePriceLabel.textContent=pricing.ultimate||'25,99 € / Monat';const addonPrice=el.apiAddonCard?.querySelector('b');if(addonPrice)addonPrice.textContent=pricing.apiKeys||'5,99 € / Monat';
       state.systemProfiles=(result?.systemProfiles?.length?result.systemProfiles:LOCAL_SYSTEM_PROFILES).map(x=>({...x,config:x.config||{}}));
       window.SiteBriefCloud?.subscribe?.(async(event,payload)=>{
+        if(event==='password-recovery'){state.cloud.user=payload.user||null;el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;el.passwordRecoveryPanel.hidden=false;el.accountDialogKicker.textContent='PASSWORT ZURÜCKSETZEN';el.accountDialogTitle.textContent='Neues Passwort festlegen';if(!el.accountDialog.open)el.accountDialog.showModal();return}
         if(event==="auth"){
           state.cloud.user=payload.user||null;if(!state.cloud.user){state.aiConnections=[];window.SiteBriefCloud.aiConnections=[];renderAiConnections();}updateAccountUi();
           if(state.cloud.user)try{await loadCloudBundle();closeAccountGate()}catch{}
@@ -475,7 +489,7 @@
     state.clarifications = Array.isArray(saved.clarifications) ? saved.clarifications : [];
     state.projectReview = saved.projectReview || null; state.reviewSignature=saved.reviewSignature||""; state.reviewDeferred=Boolean(saved.reviewDeferred);
     const p = saved.project || {};
-    el.projectName.value = p.name || ""; el.projectDescription.value = p.description || ""; el.projectType.value = p.type || "Website"; el.projectGoal.value = p.goal || "Anfragen / Leads"; el.projectAudience.value = p.audience || ""; el.projectSpecial.value = p.special || "";el.clientName.value=p.client?.name||"";el.clientType.value=p.client?.type||state.userProfile.defaultClientType||"kunde";el.clientWebsite.value=p.client?.website||"";el.clientContact.value=p.client?.contact||"";
+    el.projectName.value = p.name || ""; el.projectDescription.value = p.description || "";if(p.type&&![...el.projectType.options].some(x=>x.value===p.type))el.projectType.add(new Option(p.type,p.type));el.projectType.value = p.type || "Website";if(p.goal&&![...el.projectGoal.options].some(x=>x.value===p.goal))el.projectGoal.add(new Option(p.goal,p.goal));el.projectGoal.value = p.goal || "Anfragen gewinnen"; el.projectAudience.value = p.audience || ""; el.projectSpecial.value = p.special || "";el.clientName.value=p.client?.name||"";el.clientType.value=p.client?.type||state.userProfile.defaultClientType||"kunde";el.clientWebsite.value=p.client?.website||"";el.clientContact.value=p.client?.contact||"";
     el.descriptionCount.textContent = el.projectDescription.value.length;
     const c = saved.controls || {}; ["originality","antiSlop","motion","density"].forEach(id => { if(c[id] != null){ el[id].value = c[id]; el[id].nextElementSibling.value = c[id]; } });
     if(saved.conceptCount) el.conceptCount.value = String(clamp(saved.conceptCount,3,5));
@@ -1280,6 +1294,9 @@
     return `- Verwende konkrete, projektspezifische Sprache. Vermeide austauschbare Formulierungen wie „Willkommen bei“, „maßgeschneiderte Lösungen“, „mit Leidenschaft“, „höchste Qualität“, „Entdecken Sie“ oder „einzigartiges Erlebnis“.
 - Variiere Satzlängen natürlich. Keine dauernden Dreier-Aufzählungen, Gedankenstriche, künstlichen Übergänge oder Schlagzeilen im Muster „Echt. Lokal. Gut.“
 - Erzeuge keine Standardsektionen wie Vorteile, Prozess, Werte, FAQ, Testimonials, Newsletter oder CTA, wenn sie keine belegbare Funktion für dieses Projekt haben.
+- Erzwinge keinen Onepager. Leite aus Inhalt, Aufgaben und Nutzerwegen eine sinnvolle Seitenstruktur ab; ein Einseiter ist nur erlaubt, wenn Umfang und Ziel ihn tatsächlich rechtfertigen.
+- Keine Farbverläufe, Glasflächen, leuchtenden Farbwolken, pillenförmigen Dauer-Buttons, symmetrischen Standardkarten oder starren Text-Bild-Zickzackfolgen als bequeme Gestaltungslösung.
+- Keine austauschbare Navigationsfolge, keine künstlichen Kennzahlenzeile und keine gleichförmige Anordnung aus Überschrift, Unterzeile, zwei Buttons und drei Vorteilen.
 - Erfinde keine Zahlen, Bewertungen, Preise, Öffnungszeiten, Kunden, Referenzen, Auszeichnungen oder Unternehmensfakten. Fehlende Inhalte als offene Punkte kennzeichnen.
 - Echte vorhandene Fotos haben Vorrang vor Stock- oder KI-Bildern. Bildzuschnitt und Optimierung professionell behandeln, den glaubwürdigen Charakter aber erhalten.
 - Icons sparsam und nur mit Informationswert verwenden. Buttons konkret nach ihrer Handlung benennen.
@@ -1295,11 +1312,12 @@
   }
 
   function buildMasterPrompt(){
-    if(!cloudReady()){const p=project(),c=selectedConcept();return `Erstelle eine einfache responsive ${p.type||"Website"} für „${p.name||"dieses Projekt"}“.\n\nZiel: ${p.goal||"klar und verständlich informieren"}.\nZielgruppe: ${p.audience||"allgemein"}.\nAuftraggeber: ${p.client?.name||"nicht angegeben"} (${p.client?.type||"Kunde"}).\nBestehende Website/Datenquelle: ${p.client?.website||"keine"}.\nBeschreibung: ${p.description||"nicht angegeben"}.\nAusgabe: ${OUTPUT_TARGETS[state.outputTarget]||OUTPUT_TARGETS["next-vercel"]}.\n\nNutze die gewählte Richtung „${c?.name||"schlicht und übersichtlich"}“ als grobe visuelle Orientierung. Baue eine klare Startseite mit Navigation, Hauptbereich, den wichtigsten Inhalten und Kontaktmöglichkeit. Verwende keine erfundenen Bewertungen oder Zahlen. Achte auf mobile Darstellung und grundlegende Bedienbarkeit.`;}
+    if(!cloudReady()){const p=project(),c=selectedConcept();return `Erstelle eine responsive ${p.type||"Website"} für „${p.name||"dieses Projekt"}“.\n\nZiel: ${p.goal||"klar und verständlich informieren"}.\nZielgruppe: ${p.audience||"allgemein"}.\nAuftraggeber: ${p.client?.name||"nicht angegeben"} (${p.client?.type||"Kunde"}).\nBestehende Website/Datenquelle: ${p.client?.website||"keine"}.\nBeschreibung: ${p.description||"nicht angegeben"}.\nBesonderer Wunsch: ${p.special||"keiner"}.\nAusgabe: ${OUTPUT_TARGETS[state.outputTarget]||OUTPUT_TARGETS["next-vercel"]}.\n\nNutze die gewählte Richtung „${c?.name||"schlicht und übersichtlich"}“ als verbindliche visuelle Grundlage. Leite eine sinnvolle Seitenstruktur aus Inhalt und Nutzerwegen ab; baue keinen Onepager, wenn mehrere Seiten fachlich sinnvoll sind. Verwende keine Farbverläufe, Glasflächen, schwebenden Farbwolken, Standardkarten, künstlichen Kennzahlen oder den üblichen Aufbau aus großer Mittelüberschrift, zwei Buttons und drei Vorteilen. Schreibe konkret und projektspezifisch. Erfinde keine Bewertungen, Zahlen, Kunden, Auszeichnungen oder rechtlichen Inhalte. Mobile ist eine eigene Anordnung und muss praktisch getestet werden.`;}
     const p=project();const c=selectedConcept();const t=selectedTemplate();const mods=selectedModules();const skills=selectedSkills();const u=state.understanding||localAnalyzeProject();const ctrl=controls();
     const customTemplateBlock=t?`\n## EIGENE MASTER-VORLAGE: ${t.name}\n${t.prompt}\n`:"";
     const clientBlock=`\n## AUFTRAGGEBER & QUELLDATEN\nFirma/Name: ${p.client?.name||"nicht angegeben"}\nProjektbeziehung: ${p.client?.type||"Kunde"}\nBestehende Website/Datenquelle: ${p.client?.website||"keine"}\nAnsprechpartner: ${p.client?.contact||"nicht angegeben"}\n`;
-    const templateBlock=`${customTemplateBlock}${clientBlock}\n## TECHNISCHES ZIEL & ÜBERGABE\n${outputTargetPromptBlock()}\n\n## CONTENT-MANAGEMENT\n${cmsPromptBlock()}\n\n## MENSCHLICHE INHALTE & GESTALTUNG\n${humanDesignPromptBlock()}\n`;
+    const selectionBlock=`\n## GEWÄHLTER PRODUKTKONTEXT\nTarif: ${state.isAdmin?'Admin · Ultimate':planRules().label}\nArbeitsmodus: ${state.mode}\nGenerator: ${state.engine}\nVorschauformat: ${el.previewFormat?.value||'html'}\nAnzahl geprüfter Richtungen: ${state.concepts.length||Number(el.conceptCount?.value)||planRules().concepts}\n`;
+    const templateBlock=`${customTemplateBlock}${clientBlock}${selectionBlock}\n## TECHNISCHES ZIEL & ÜBERGABE\n${outputTargetPromptBlock()}\n\n## CONTENT-MANAGEMENT\n${cmsPromptBlock()}\n\n## MENSCHLICHE INHALTE & GESTALTUNG\n${humanDesignPromptBlock()}\n`;
     const moduleBlock=mods.length?`\n## AKTIVE PROMPT-MODULE\n${mods.map((m,i)=>`### ${i+1}. ${m.name}${m.tag?` [${m.tag}]`:""}\n${m.prompt}`).join("\n\n")}\n`:"";
     const skillBlock=skills.length?`\n## AKTIVE AGENT-SKILLS\nDiese Regeln sind zusätzlich verbindlich, wenn ihr Trigger zur Aufgabe passt. Wenn ein Skill aus einer Datei importiert wurde, behandle den eingebetteten Inhalt wie die gelesene Skill-/Agent-Datei.\n\n${skills.map((s,i)=>`### ${i+1}. ${s.name}\nAgent: ${s.agent==="all"?"Alle Agents":AGENT_NAMES[s.agent]||s.agent}\nTrigger: ${s.trigger||"bei passender Aufgabe"}${s.sourceFile?`\nQuelle: ${s.sourceFile}`:""}\n\n${s.prompt}`).join("\n\n")}\n`:"";
     const refinementBlock=state.refinements.length?state.refinements.map((r,i)=>`${i+1}. ${r.text}`).join("\n"):"Keine zusätzlichen Änderungen nach der Vorschau.";
@@ -1353,7 +1371,7 @@
     if(step===5) renderBlueprint();
     if(step===6 && state.mode==="auto" && !state.concepts.length) setTimeout(generateConcepts,100);
     if(step===7) renderSelectedPreview();
-    if(step===8) updateMasterPrompt();
+    if(step===8){updateMasterPrompt();renderCompletionSummary()}
     updateGuide();saveState();window.scrollTo({top:0,behavior:"smooth"});
   }
 
@@ -1469,6 +1487,16 @@
   async function saveUserProfile(){if(!cloudReady())return;const profile={displayName:el.userDisplayName.value.trim(),companyName:el.userCompanyName.value.trim(),website:el.userWebsite.value.trim(),defaultClientType:el.userDefaultClientType.value};try{el.saveUserProfileBtn.disabled=true;await window.SiteBriefCloud.saveUserProfile(profile);state.userProfile=profile;el.userProfileMessage.textContent='Profil gespeichert ✓'}catch(err){el.userProfileMessage.textContent=err.message||'Profil konnte nicht gespeichert werden'}finally{el.saveUserProfileBtn.disabled=false}}
   async function importClientWebsite(){const url=el.clientWebsite.value.trim();if(!url){el.clientImportStatus.textContent='Bitte zuerst eine Website-Adresse eingeben.';return}try{el.importClientWebsiteBtn.disabled=true;el.clientImportStatus.textContent='Website wird gelesen…';const response=await sitebriefApiFetch('/api/site-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Website konnte nicht gelesen werden');if(!el.clientName.value.trim())el.clientName.value=data.siteName||data.title||'';if(!el.projectName.value.trim())el.projectName.value=data.siteName||data.title||'';const imported=[data.description,data.summary].filter(Boolean).join('\n');if(imported&&!el.projectDescription.value.trim())el.projectDescription.value=imported.slice(0,1800);el.descriptionCount.textContent=el.projectDescription.value.length;el.clientImportStatus.textContent='Website-Daten übernommen ✓';state.understandingConfirmed=false;saveState()}catch(err){el.clientImportStatus.textContent=err.message}finally{el.importClientWebsiteBtn.disabled=false}}
 
+  async function resetPassword(){const email=el.authEmail.value.trim();if(!email){el.authMessage.textContent='Trage zuerst deine E-Mail-Adresse ein.';el.authMessage.className='auth-message error';return}try{el.forgotPasswordBtn.disabled=true;await window.SiteBriefCloud.resetPassword(email);el.authMessage.textContent='Wenn die Adresse registriert ist, wurde eine E-Mail zum Zurücksetzen gesendet.';el.authMessage.className='auth-message good'}catch(err){el.authMessage.textContent=err.message||'Die E-Mail konnte nicht gesendet werden.';el.authMessage.className='auth-message error'}finally{el.forgotPasswordBtn.disabled=false}}
+
+  async function saveNewPassword(){const password=el.newAccountPassword.value;if(password.length<10){el.authMessage.textContent='Das neue Passwort muss mindestens 10 Zeichen haben.';el.authMessage.className='auth-message error';return}try{el.saveNewPasswordBtn.disabled=true;await window.SiteBriefCloud.updatePassword(password);el.newAccountPassword.value='';el.passwordRecoveryPanel.hidden=true;el.authMessage.textContent='Passwort gespeichert. Du bist jetzt angemeldet.';el.authMessage.className='auth-message good';await loadCloudBundle();updateAccountUi()}catch(err){el.authMessage.textContent=err.message||'Passwort konnte nicht gespeichert werden.';el.authMessage.className='auth-message error'}finally{el.saveNewPasswordBtn.disabled=false}}
+
+  function renderCompletionSummary(){if(!el.completionSummary)return;const p=project(),c=selectedConcept(),rules=planRules();el.completionSummary.innerHTML=`<div><span>PROJEKT</span><strong>${escapeHtml(p.name||p.client?.name||'Unbenanntes Projekt')}</strong><small>${escapeHtml(p.type)} · ${escapeHtml(p.goal)}</small></div><div><span>RICHTUNG</span><strong>${escapeHtml(c?.name||'Noch nicht gewählt')}</strong><small>${escapeHtml(c?.mood||'')}</small></div><div><span>ÜBERGABE</span><strong>${escapeHtml(AGENT_NAMES[state.targetAgent])}</strong><small>${escapeHtml(OUTPUT_TARGETS[state.outputTarget]||state.outputTarget)}</small></div><div><span>UMFANG</span><strong>${selectedModules().length} Module · ${selectedSkills().length} Skills</strong><small>${escapeHtml(state.isAdmin?'Admin · Ultimate':rules.label)}</small></div>`}
+
+  async function createRevisionPrompt(){const description=el.revisionDescription.value.trim(),files=[...(el.revisionFiles.files||[])];if(description.length<20){el.revisionStatus.textContent='Beschreibe die gewünschte Verbesserung etwas genauer.';return}try{el.createRevisionPromptBtn.disabled=true;el.revisionStatus.textContent='Überarbeitungsauftrag wird vorbereitet…';const readable=[];for(const file of files.slice(0,12)){if(/\.(html|css|js|jsx|ts|tsx|json|md)$/i.test(file.name)&&file.size<=250000){readable.push(`\n### DATEI: ${file.name}\n${(await file.text()).slice(0,24000)}`)}else readable.push(`\n### BEIGEFÜGTE DATEI: ${file.name}\nDiese Datei liegt dem Auftrag separat bei und muss zuerst vollständig geprüft werden.`)}const p=project(),c=selectedConcept(),reference=el.revisionReference.value.trim();el.revisionPrompt.value=`# SITEBRIEF ÜBERARBEITUNGSAUFTRAG — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nArbeite am bestehenden Projekt. Beginne nicht mit einem neuen Entwurf und ersetze keine funktionierenden Bereiche ohne Grund. Prüfe zuerst Struktur, Inhalte, Komponenten, Abhängigkeiten und vorhandene Gestaltung.\n\n## BESTEHENDER STAND\nProjekt: ${p.name||'nicht benannt'}\nArt: ${p.type}\nZiel: ${p.goal}\nZielgruppe: ${p.audience||'nicht festgelegt'}\nTechnisches Ziel: ${OUTPUT_TARGETS[state.outputTarget]||state.outputTarget}\nBestehende Website: ${p.client?.website||'nicht angegeben'}\nBisherige Richtung: ${c?.name||'nicht festgelegt'} — ${c?.mood||''}\n\n## GEWÜNSCHTE VERBESSERUNG\n${description}\n\n## NEUE REFERENZ\n${reference||'Keine zusätzliche URL. Beigefügte Bilder nur für ausdrücklich erkennbare Gestaltungsprinzipien verwenden.'}\n\n## VERBINDLICHES VORGEHEN\n- Bestehendes Projekt zuerst ausführen, lesen und auf Fehler prüfen.\n- Erhaltenswerte Bereiche benennen und gezielt weiterentwickeln.\n- Keine pauschale Neuentwicklung und kein Einseiter, sofern das vorhandene Inhaltsmodell mehrere Seiten verlangt.\n- Keine Farbverläufe, Glasflächen, schwebenden Dekorationen, austauschbaren Software-Karten oder standardisierten Hero-Aufbauten ergänzen.\n- Keine erfundenen Texte, Zahlen, Bewertungen, Kunden, Auszeichnungen oder rechtlichen Angaben.\n- Inhalte kurz, konkret und projektspezifisch schreiben; keine Werbefloskeln und keine künstlichen Dreier-Aufzählungen.\n- Mobile als eigene Anordnung behandeln. Navigation, Dialoge, Formulare und Hauptaktionen auf kleinen Bildschirmen praktisch testen.\n- Eingaben validieren, externe Inhalte bereinigen, Secrets ausschließlich serverseitig verwenden und bestehende Auth-/RLS-Grenzen erhalten.\n- Datenschutz, Einwilligungen, Impressum, Barrierefreiheit, Sicherheit, Metadaten, Performance und Fehlerzustände passend zum realen Funktionsumfang prüfen.\n- Änderungen mit Build, Lint, Tests und einem echten Bedienablauf kontrollieren.\n\n## ERWARTETE AUSGABE\nSetze die Verbesserung direkt im bestehenden Projekt um. Dokumentiere anschließend knapp: geänderte Dateien, behobene Probleme, bewusst erhaltene Bereiche, durchgeführte Prüfungen und noch offene Entscheidungen.\n${readable.join('\n')}`;el.revisionPromptResult.hidden=false;el.revisionStatus.textContent='Überarbeitungsauftrag ist fertig.'}catch(err){el.revisionStatus.textContent=err.message||'Auftrag konnte nicht erstellt werden'}finally{el.createRevisionPromptBtn.disabled=false}}
+
+  async function installApp(){if(!state.installPrompt)return;state.installPrompt.prompt();await state.installPrompt.userChoice;state.installPrompt=null;el.installAppBtn.hidden=true}
+
   function downloadText(filename,text,type="text/plain") { const blob=new Blob([text],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500); }
 
   function resetProject(){
@@ -1508,18 +1536,20 @@
     el.settingsLoginBtn?.addEventListener("click",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});
     el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
     el.saveProfileBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.manageProfilesBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.createProfileBtn.addEventListener("click",createProfileFromDialog);
-    el.accountBtn.addEventListener("click",()=>{updateAccountUi();renderGuestLimit();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",signIn);el.signUpBtn.addEventListener("click",signUp);el.guestContinueBtn.addEventListener("click",closeAccountGate);el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});
+    el.accountBtn.addEventListener("click",()=>{updateAccountUi();renderGuestLimit();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",signIn);el.signUpBtn.addEventListener("click",signUp);el.forgotPasswordBtn?.addEventListener('click',resetPassword);el.saveNewPasswordBtn?.addEventListener('click',saveNewPassword);el.guestContinueBtn.addEventListener("click",closeAccountGate);el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});
     el.themeToggleBtn.addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
     el.runAiReviewBtn.addEventListener("click",()=>{if(state.engine!=="local"&&!state.settings.aiClarifications){populateSettingsDialog();el.settingsDialog.showModal();return;}runProjectReview(true)});
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
     el.resetBtn.addEventListener("click",resetProject);el.startNewBtn.addEventListener("click",resetProject);el.brandHome.addEventListener("click",e=>{e.preventDefault();goStep(1,true)});
+    el.installAppBtn?.addEventListener('click',installApp);el.createRevisionPromptBtn?.addEventListener('click',createRevisionPrompt);el.copyRevisionPromptBtn?.addEventListener('click',async()=>{await navigator.clipboard.writeText(el.revisionPrompt.value);el.revisionStatus.textContent='Auftrag kopiert.'});el.downloadRevisionPromptBtn?.addEventListener('click',()=>downloadText('sitebrief-ueberarbeitungsauftrag.md',el.revisionPrompt.value,'text/markdown'));
   }
 
   function init(){
     cacheElements();
     initTheme();
+    renderProjectOptions();
     const rememberedEmail=localStorage.getItem(REMEMBERED_EMAIL_KEY)||"";if(rememberedEmail){el.authEmail.value=rememberedEmail;el.rememberEmail.checked=true;}
     const hadSavedProject=Boolean(localStorage.getItem(STORAGE_KEY));
     loadLibrary();loadSettings();loadProfiles();restoreState();
@@ -1536,6 +1566,8 @@
     if(state.concepts.length){renderConcepts();renderSelectedPreview();el.generationStatus.textContent=`${state.concepts.length} gespeicherte Richtungen geladen.`}
     bindEvents();renderAiConnections();renderAiReviewCard();applyPlanUi();goStep(state.currentStep,true);updateGuide();updateAccountUi();
     initCloudIntegration();
+    window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.installPrompt=event;if(el.installAppBtn)el.installAppBtn.hidden=false});window.addEventListener('appinstalled',()=>{state.installPrompt=null;if(el.installAppBtn)el.installAppBtn.hidden=true});
+    if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
     setInterval(saveState,2500);
   }
 
