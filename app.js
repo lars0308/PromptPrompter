@@ -92,7 +92,7 @@
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
-      "resetBtn","startNewBtn","brandHome","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn"
+      "resetBtn","startNewBtn","brandHome","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage"
     ].forEach(id => el[id] = document.getElementById(id));
   }
 
@@ -220,11 +220,13 @@
         ? {status:el.openaiConnectionStatus,input:el.openaiApiKey,connect:el.openaiConnectBtn,test:el.openaiTestBtn,disconnect:el.openaiDisconnectBtn,message:el.openaiConnectionMessage}
         : provider==='gemini'
           ? {status:el.geminiConnectionStatus,input:el.geminiApiKey,connect:el.geminiConnectBtn,test:el.geminiTestBtn,disconnect:el.geminiDisconnectBtn,message:el.geminiConnectionMessage}
-          : {status:el.cloudflareConnectionStatus,input:el.cloudflareApiToken,account:el.cloudflareAccountId,connect:el.cloudflareConnectBtn,test:el.cloudflareTestBtn,disconnect:el.cloudflareDisconnectBtn,message:el.cloudflareConnectionMessage};
+          : provider==='cloudflare'
+            ? {status:el.cloudflareConnectionStatus,input:el.cloudflareApiToken,account:el.cloudflareAccountId,connect:el.cloudflareConnectBtn,test:el.cloudflareTestBtn,disconnect:el.cloudflareDisconnectBtn,message:el.cloudflareConnectionMessage}
+            : {status:el.githubConnectionStatus,input:el.githubToken,connect:el.githubConnectBtn,test:el.githubTestBtn,disconnect:el.githubDisconnectBtn,message:el.githubConnectionMessage};
   }
 
   function renderAiConnections(){
-    for(const provider of ['gateway','openai','gemini','cloudflare']){
+    for(const provider of ['gateway','openai','gemini','cloudflare','github']){
       const ui=aiConnectionEls(provider); if(!ui.status) continue;
       const conn=aiConnection(provider), logged=cloudReady();
       ui.status.className='connection-status'+(conn?' connected':'');
@@ -1488,6 +1490,7 @@
     el.openaiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("openai"));el.openaiTestBtn?.addEventListener("click",()=>testAiProviderConnection("openai"));el.openaiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("openai"));
     el.geminiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gemini"));el.geminiTestBtn?.addEventListener("click",()=>testAiProviderConnection("gemini"));el.geminiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gemini"));
     el.cloudflareConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("cloudflare"));el.cloudflareTestBtn?.addEventListener("click",()=>testAiProviderConnection("cloudflare"));el.cloudflareDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("cloudflare"));
+    el.githubConnectBtn?.addEventListener('click',()=>saveAiProviderConnection('github'));el.githubTestBtn?.addEventListener('click',()=>testAiProviderConnection('github'));el.githubDisconnectBtn?.addEventListener('click',()=>disconnectAiProvider('github'));
     el.previewLightboxClose?.addEventListener("click",closePreviewLightbox);el.previewLightbox?.addEventListener("click",e=>{if(e.target===el.previewLightbox)closePreviewLightbox()});el.previewLightboxDownload?.addEventListener("click",()=>downloadConceptImage(state.concepts.find(c=>c.id===lightboxConceptId)));el.previewLightboxSelect?.addEventListener("click",()=>{selectConcept(lightboxConceptId);closePreviewLightbox()});
     el.settingsLoginBtn?.addEventListener("click",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});
     el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
