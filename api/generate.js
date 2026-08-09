@@ -70,12 +70,15 @@ function reviewText(projectReview={}){
   return `Previous review warnings:\n${warnings}\nPrevious blockers:\n${blockers}`;
 }
 
-function makeConceptPrompt({count,project,references,controls,template,modules,settings,clarifications,projectReview}){
+function makeConceptPrompt({count,project,references,controls,template,modules,settings,clarifications,projectReview,tier='free'}){
   const variants=VARIANTS.slice(0,count);
   return `You are a senior web art director designing a real project, not a generic AI landing page. Create exactly ${count} visual directions. They must be structurally different, not color variations of one layout. Use these layoutVariant values exactly once and in this order: ${variants.join(", ")}.
 
 CUSTOM MASTER TEMPLATE
 ${templateText(template)}
+
+PRODUCT TIER
+${tier==='ultimate'?'ULTIMATE: apply every supplied expert control and project-specific art-direction signal.':tier==='pro'?'PRO: honor supplied modules and create client-ready, implementation-focused directions.':'FREE: use the fixed professional quality standard; keep the result concise, credible and fully usable.'}
 
 ACTIVE USER MODULES
 ${moduleText(modules)}
@@ -244,12 +247,12 @@ async function callGemini({key,model,prompt,images}){
   return cleanJsonText(text);
 }
 
-async function callGeminiPreviewImage({key,project,concept}){
+async function callGeminiPreviewImage({key,project,concept,tier='pro'}){
   const prompt=`Create one polished, high-fidelity desktop website homepage screenshot at 16:9. It must look like a finished, credible design ready to present to a client, not a wireframe, moodboard, browser mockup, or collage. Use realistic layout, typography, spacing, imagery and UI details. Do not show a browser frame or device. Keep visible text short and correctly spelled.\n\nProject: ${project.name||"Website"}\nType: ${project.type||"Website"}\nGoal: ${project.goal||""}\nAudience: ${project.audience||""}\nDescription: ${project.description||""}\nDirection: ${concept.name||""}\nMood: ${concept.mood||""}\nLayout: ${concept.layout||""}\nHero: ${concept.hero||""}\nTypography: ${concept.type||""}\nPalette: ${(concept.palette||[]).join(", ")}\nHeadline: ${concept.headline||""}\nSubline: ${concept.subline||""}`;
   const response=await fetch("https://generativelanguage.googleapis.com/v1beta/interactions",{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({model:"gemini-3.1-flash-image",input:prompt,response_format:{type:"image",mime_type:"image/jpeg",aspect_ratio:"16:9",image_size:"1K"}})});const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.error?.message||"Gemini image request failed"),{status:response.status});
   let image=data.output_image?.data?data.output_image:null;if(!image)for(const step of data.steps||[])for(const block of step.content||[])if(block.type==="image"&&block.data){image=block;break}if(!image)throw new Error("Gemini hat kein Bild zurückgegeben");return {imageDataUrl:`data:${image.mime_type||image.mimeType||"image/jpeg"};base64,${image.data}`};
 }
-async function callCloudflarePreviewImage({key,project,concept}){
+async function callCloudflarePreviewImage({key,project,concept,tier='pro'}){
   const split=key.indexOf(':');if(split<1)throw Object.assign(new Error('Cloudflare-Verbindung ist unvollständig.'),{status:503});const accountId=key.slice(0,split),token=key.slice(split+1);
   const brand=String(project.name||project.type||'Website').trim().slice(0,36);
   const headline=String(concept.headline||project.goal||'').trim().slice(0,54);
@@ -290,12 +293,12 @@ module.exports = async function handler(req,res){
   try{
     const body=req.body||{};
     const entitlement=await getEntitlements(req);
-    const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},modules=[],settings={},clarifications=[],projectReview={}}=body;
-    if(entitlement.plan==="free") return res.status(403).json({error:"Externe KI-Generierung ist ab Pro verfügbar. Der lokale Qualitätsmodus bleibt kostenlos nutzbar."});
-    if(entitlement.plan==="pro" && !["openai","gateway"].includes(engine) && action!=="preview-image") return res.status(403).json({error:"Dieser KI-Anbieter ist in Ultimate verfügbar."});
+    const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},clarifications=[],projectReview={}}=body,modules=entitlement.plan==='free'?[]:(Array.isArray(body.modules)?body.modules:[]),settings=entitlement.plan==='free'?{legalRegion:'Deutschland / EU',checks:{privacy:true,imprint:true,accessibility:true,security:true,performance:true},noInventLegal:true,finalChecklist:true}:body.settings||{};
+    if(entitlement.plan==="free"&&!entitlement.ownApiKeys) return res.status(403).json({error:"Externe KI-Generierung ist ab Pro oder mit dem eigenen API-Key-Add-on verfügbar."});
+    if(entitlement.plan==="pro" && !entitlement.ownApiKeys && !["openai","gateway"].includes(engine) && action!=="preview-image") return res.status(403).json({error:"Dieser KI-Anbieter ist in Ultimate oder mit dem API-Key-Add-on verfügbar."});
     if(action==="preview-image"){
-      if(entitlement.plan==="pro"&&body.imageProvider!=="cloudflare")return res.status(403).json({error:"Gemini-Bildvorschauen sind in Ultimate verfügbar."});
-      const imageProvider=body.imageProvider==='cloudflare'?'cloudflare':'gemini';const resolved=await resolveProviderKey(req,imageProvider);if(!resolved.key)throw Object.assign(new Error(`Kein ${imageProvider==='cloudflare'?'Cloudflare':'Gemini'} API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.`),{status:503});const result=imageProvider==='cloudflare'?await callCloudflarePreviewImage({key:resolved.key,project,concept:body.concept||{}}):await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{}});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);return res.status(200).json(result);
+      if(entitlement.plan==="pro"&&!entitlement.ownApiKeys&&body.imageProvider!=="cloudflare")return res.status(403).json({error:"Gemini-Bildvorschauen sind in Ultimate oder mit dem API-Key-Add-on verfügbar."});
+      const imageProvider=body.imageProvider==='cloudflare'?'cloudflare':'gemini';const resolved=await resolveProviderKey(req,imageProvider);if(entitlement.plan==='free'&&entitlement.ownApiKeys&&resolved.source!=='account')throw Object.assign(new Error('Für dieses Add-on muss ein eigener API-Key verbunden sein.'),{status:403});if(!resolved.key)throw Object.assign(new Error(`Kein ${imageProvider==='cloudflare'?'Cloudflare':'Gemini'} API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.`),{status:503});const result=imageProvider==='cloudflare'?await callCloudflarePreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan}):await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);return res.status(200).json(result);
     }
     if(!["gateway","openai","gemini"].includes(engine)) return res.status(400).json({error:"Use the browser's local generator for local mode"});
     let prompt,schema,name;
@@ -309,10 +312,11 @@ module.exports = async function handler(req,res){
       schema=refineSchema();name="sitebrief_refined_concept";
     }else{
       const count=Math.min(entitlement.maxConcepts,Math.max(3,Number(body.count)||entitlement.maxConcepts));
-      prompt=makeConceptPrompt({count,project,references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview});
+      prompt=makeConceptPrompt({count,project,references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview,tier:entitlement.plan});
       schema=conceptsSchema(count);name="sitebrief_concepts";
     }
     const resolved = await resolveProviderKey(req,engine);
+    if(entitlement.plan==='free'&&entitlement.ownApiKeys&&resolved.source!=='account')throw Object.assign(new Error('Für dieses Add-on muss ein eigener API-Key verbunden sein.'),{status:403});
     if(!resolved.key) throw Object.assign(new Error(engine==="openai"?"Kein OpenAI API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":engine==="gemini"?"Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":"Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
     const result=engine==="openai" ? await callOpenAI({key:resolved.key,model,prompt,images,schema,name}) : engine==="gemini" ? await callGemini({key:resolved.key,model,prompt,images}) : await callGateway({key:resolved.key,model,prompt,images,schema,name});
     res.setHeader('X-SiteBrief-AI-Key-Source', resolved.source);
