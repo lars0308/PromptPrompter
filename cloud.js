@@ -48,7 +48,7 @@ const Cloud = {
     this.user = data?.session?.user || null;
     this.client.auth.onAuthStateChange((_event, session) => {
       this.user = session?.user || null;
-      this.emit(_event === 'PASSWORD_RECOVERY' ? 'password-recovery' : 'auth', { user: this.user });
+      this.emit(_event === 'PASSWORD_RECOVERY' ? 'password-recovery' : 'auth', { user: this.user, authEvent: _event });
     });
 
     try { this.systemProfiles = await this.loadSystemProfiles(); } catch { this.systemProfiles = []; }
