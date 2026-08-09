@@ -34,12 +34,16 @@
     <div class="top-actions">
       <span class="engine-state"><i></i><span id="engineStatus">Lokal bereit</span></span><span class="sync-state" id="syncState">Lokal</span>
       <button type="button" class="upgrade-btn" id="upgradeBtn">Upgraden</button>
-      <button type="button" class="text-btn" id="installAppBtn" hidden>App installieren</button>
-      <button type="button" class="theme-toggle" id="themeToggleBtn" aria-label="Dunkelmodus aktivieren"><span aria-hidden="true"></span><b>Dunkel</b></button>
-      <button type="button" class="text-btn admin-entry" id="adminBtn" hidden>Verwaltung</button><button type="button" class="text-btn" id="accountBtn">Anmelden</button><button type="button" class="text-btn" id="openLibraryBtn">Bibliotheken</button>
-      <button type="button" class="text-btn" id="openSettingsBtn">Einstellungen</button>
-      <button type="button" class="text-btn" id="resetBtn">Projekt zurücksetzen</button>
+      <button type="button" class="topbar-menu-toggle" id="topbarMenuToggle" aria-label="Menü öffnen" aria-expanded="false" aria-controls="topbarMenu"><i aria-hidden="true"><b></b><b></b><b></b></i></button>
+      <div class="topbar-menu" id="topbarMenu">
+        <button type="button" class="text-btn" id="installAppBtn" hidden>App installieren</button>
+        <button type="button" class="theme-toggle" id="themeToggleBtn" aria-label="Dunkelmodus aktivieren"><span aria-hidden="true"></span><b>Dunkel</b></button>
+        <button type="button" class="text-btn admin-entry" id="adminBtn" hidden>Verwaltung</button><button type="button" class="text-btn" id="accountBtn">Anmelden</button><button type="button" class="text-btn" id="openLibraryBtn">Bibliotheken</button>
+        <button type="button" class="text-btn" id="openSettingsBtn">Einstellungen</button>
+        <button type="button" class="text-btn" id="resetBtn">Projekt zurücksetzen</button>
+      </div>
     </div>
+    <div class="topbar-menu-backdrop" id="topbarMenuBackdrop" hidden></div>
   </header>
 
   <main id="welcomePage" class="welcome-page">

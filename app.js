@@ -102,6 +102,7 @@
   const el = {};
   function cacheElements(){
     [
+      "topbarMenuToggle","topbarMenu","topbarMenuBackdrop",
       "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","clientName","clientType","clientWebsite","clientContact","importClientWebsiteBtn","clientImportStatus","clientSources","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
       "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences",
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
@@ -140,8 +141,24 @@
   const customPrompt=(message,value='',options={})=>showAppAction({...options,message,input:true,value});
   const customAlert=(message,options={})=>showAppAction({...options,message,cancelLabel:'',confirmLabel:'Verstanden'});
 
-  function closeWelcomeIntro(){localStorage.setItem(ONBOARDING_KEY,'1');if(el.welcomeIntroDialog.open)el.welcomeIntroDialog.close()}
+  function closeWelcomeIntro(){localStorage.setItem(ONBOARDING_KEY,'1');if(el.welcomeIntroDialog.open)el.welcomeIntroDialog.close();if(!cloudReady())showAccountGate()}
   function showWelcomeIntroOnce(){if(localStorage.getItem(ONBOARDING_KEY)||document.querySelector('dialog[open]'))return;el.welcomeIntroDialog.showModal()}
+
+  function initTopbarMenu(){
+    if(!el.topbarMenuToggle||!el.topbarMenu)return;
+    document.body.appendChild(el.topbarMenu);
+    if(el.topbarMenuBackdrop)document.body.appendChild(el.topbarMenuBackdrop);
+    const close=()=>{el.topbarMenu.classList.remove('open');el.topbarMenuToggle.setAttribute('aria-expanded','false');if(el.topbarMenuBackdrop)el.topbarMenuBackdrop.hidden=true};
+    const toggle=()=>{
+      const willOpen=!el.topbarMenu.classList.contains('open');
+      if(willOpen){const rect=el.topbarMenuToggle.getBoundingClientRect();el.topbarMenu.style.top=`${Math.round(rect.bottom+8)}px`;el.topbarMenu.style.right=`${Math.round(window.innerWidth-rect.right)}px`;}
+      el.topbarMenu.classList.toggle('open',willOpen);el.topbarMenuToggle.setAttribute('aria-expanded',String(willOpen));if(el.topbarMenuBackdrop)el.topbarMenuBackdrop.hidden=!willOpen;
+    };
+    el.topbarMenuToggle.addEventListener('click',toggle);
+    el.topbarMenuBackdrop?.addEventListener('click',close);
+    el.topbarMenu.addEventListener('click',event=>{if(event.target.closest('button,a'))close()});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
+  }
 
   function enhanceDialogBackButtons(){
     $$('.library-dialog .dialog-head').forEach(header=>{
@@ -1857,6 +1874,7 @@
     initDialogSystem();
     enhanceDialogBackButtons();
     initPlanCards();
+    initTopbarMenu();
     initTheme();
     enhanceSettingsAccordion();
     initMobileWorkflowMenu();
