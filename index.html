@@ -43,8 +43,7 @@
 
   <main id="welcomePage" class="welcome-page">
     <section class="welcome-hero">
-      <div><span class="section-kicker">PROJEKTE KLAR STARTEN</span><h1>Aus einer Idee wird ein Briefing, mit dem wirklich gebaut werden kann.</h1><p>Prompt.ai ordnet Anforderungen, prüft offene Punkte und erstellt konkrete Richtungen sowie einen belastbaren Umsetzungsauftrag.</p><div class="welcome-actions"><button type="button" class="solid-btn" id="startWorkflowBtn">Neues Projekt starten</button><button type="button" class="outline-btn" id="quickRevisionBtn">Webseite überarbeiten</button></div></div>
-      <aside><span>SO FUNKTIONIERT ES</span><ol><li><b>01</b> Projekt verständlich beschreiben</li><li><b>02</b> Rückfragen und Richtung klären</li><li><b>03</b> Prompt oder Website-Paket erstellen</li></ol></aside>
+      <div><span class="section-kicker">DEIN PROJEKT, KLAR VORBEREITET</span><h1>Aus deiner Idee wird ein Auftrag, mit dem die KI direkt arbeiten kann.</h1><p>Du beschreibst dein Vorhaben in deinen eigenen Worten. Prompt.ai ordnet die Angaben, liest vorhandene Seiten ein, fragt nur bei wichtigen Lücken nach und erstellt daraus Vorschauen, Unterlagen und den fertigen Prompt.</p><div class="welcome-actions"><button type="button" class="solid-btn" id="startWorkflowBtn">Neues Projekt starten</button><button type="button" class="outline-btn" id="quickRevisionBtn">Webseite überarbeiten</button></div></div>
     </section>
     <section class="welcome-workspace" aria-labelledby="workspaceTitle">
       <div class="welcome-section-head workspace-heading"><span>DEIN ARBEITSBEREICH</span><h2 id="workspaceTitle">Weiterarbeiten statt neu suchen.</h2><p>Öffne ein bestehendes Projekt oder starte direkt mit der Aufgabe, die du gerade erledigen willst.</p></div>
@@ -56,7 +55,6 @@
       <div class="welcome-projects-head"><div><span>AKTUELLE PROJEKTE</span><h3>Zuletzt bearbeitet</h3></div><button type="button" class="text-btn" id="welcomeAccountBtn">Anmelden & synchronisieren</button></div>
       <div class="welcome-project-list" id="welcomeProjectList" aria-live="polite"></div>
     </section>
-    <section class="welcome-features"><article><span>EINFACH</span><h2>Verständlich starten</h2><p>Das Projekt wird Schritt für Schritt geordnet. Du brauchst weder Prompt-Wissen noch technische Vorkenntnisse.</p></article><article><span>AUTOMATISCH</span><h2>Weniger Handarbeit</h2><p>Prompt.ai prüft fehlende Angaben, schlägt passende Bausteine vor und hält Entscheidungen über den ganzen Ablauf zusammen.</p></article><article><span>FLEXIBEL</span><h2>Vom Briefing bis zum Projekt</h2><p>Ergebnis als Master-Prompt, Kundenunterlagen, Dateipaket oder direkt ausführbare Website-Vorschau – passend zum gewählten Umfang.</p></article></section>
     <section class="welcome-pricing" id="pricing"><div class="welcome-section-head"><span>TARIFE</span><h2>Ein guter Entwurf ist in jedem Tarif Pflicht.</h2></div><div class="plans-grid"><article><h3>Kostenlos</h3><strong>0 €</strong><p class="plan-summary">Für eigene Ideen und einen vollständigen ersten Projektentwurf.</p><ul><li>Geführter Projektablauf mit Codex als Ziel-Agent</li><li>Drei unterschiedliche responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Website-Grundscan mit einfachem Überarbeitungsauftrag</li><li>Abgespeckte lokale Grundprüfung</li></ul><button type="button" class="outline-btn" id="startFreeBtn">Kostenlos starten</button></article><article class="recommended"><h3>Pro</h3><strong data-public-price="pro">15,99 € / Monat</strong><p class="plan-summary">Für echte Kundenprojekte, vollständige Übergaben und direkte Website-Erstellung.</p><ul><li>Claude Code oder Codex, geführt oder automatisch</li><li>Vier individuelle Richtungen und erweiterte Projektprüfung</li><li>Website-Überarbeitung mit Seitenumfang, Referenzen und Dateien</li><li>Eigene Module, Skills und Projektprofile</li><li>Ausgearbeitetes Kundenbriefing und Übergabe-Dokument</li><li>Website-Dateipaket mit direkter HTML-Vorschau</li></ul><button type="button" class="solid-btn" data-start-plan="pro">Pro wählen</button></article><article><h3>Ultimate</h3><strong data-public-price="ultimate">25,99 € / Monat</strong><p class="plan-summary">Für Agenturen und volle Kontrolle über Generator, Modelle und Veröffentlichung.</p><ul><li>Alle Ziel-Agenten, Auto- und Expertenmodus</li><li>Prompt-Werkstatt mit Technik-, Design- und Abnahmeregeln</li><li>Mehrere Prompts als benannte Schnellvarianten speichern</li><li>Fünf Richtungen und sämtliche Profi-Einstellungen</li><li>Eigene KI-Verbindungen und GitHub-Veröffentlichung</li><li>Alle Funktionen aus Pro</li></ul><button type="button" class="outline-btn" data-start-plan="ultimate">Ultimate wählen</button></article></div></section>
   </main>
 
@@ -308,7 +306,7 @@
 
         <div class="prompt-meta" id="promptMeta"></div>
         <textarea id="masterPrompt" class="master-prompt" spellcheck="false"></textarea>
-        <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn" id="downloadPromptBtn">Master-Prompt speichern</button><button type="button" class="outline-btn" id="downloadProjectSourcesBtn">Projekt-Quellen speichern</button><button type="button" class="outline-btn" id="downloadHandoffPackageBtn">Komplettes Übergabe-ZIP</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
+        <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn agent-open-btn" id="openAgentBtn">Agent öffnen</button><button type="button" class="outline-btn" id="downloadPromptBtn">Master-Prompt speichern</button><button type="button" class="outline-btn" id="downloadProjectSourcesBtn">Projekt-Quellen speichern</button><button type="button" class="outline-btn" id="downloadHandoffPackageBtn">Komplettes Übergabe-ZIP</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
         <section class="prompt-handoff" id="promptHandoff"><div><span>MIT DER KI ÜBERGEBEN</span><h2>Vorschau und Referenzen gehören zum Prompt.</h2><p id="promptHandoffText">Prompt.ai stellt die ausgewählte Vorschau, Bildreferenzen, Unterlagen und eine Linkliste als gemeinsames Übergabepaket zusammen.</p></div><div class="prompt-handoff-preview" id="promptHandoffPreview"></div></section>
         <section class="client-result-card">
           <div><span>PROJEKTUNTERLAGEN</span><h2>Mehr als eine kurze Zusammenfassung</h2><p>Projektbericht, echtes Kundenbriefing und technische Übergabe werden mit Ziel, Seitenumfang, Inhalten, Freigaben, Zuständigkeiten und Abnahmekriterien aufgebaut.</p></div>
@@ -366,6 +364,21 @@
       </div>
     </aside>
   </div>
+
+  <dialog id="welcomeIntroDialog" class="library-dialog welcome-intro-dialog">
+    <div class="dialog-frame">
+      <button type="button" class="close-dialog intro-close" id="closeWelcomeIntroBtn" aria-label="Einführung schließen">×</button>
+      <div class="welcome-intro-body"><span>WILLKOMMEN BEI PROMPT.AI</span><h2>Du erklärst das Projekt. Prompt.ai macht es für die KI eindeutig.</h2><p>Starte ein neues Projekt, wenn eine Website oder Anwendung von Grund auf entstehen soll. Nutze „Webseite überarbeiten“, wenn bereits etwas vorhanden ist und du gezielte Änderungen möchtest.</p><ol><li><b>1</b><div><strong>In normalen Worten beschreiben</strong><small>Es muss kein perfekter Prompt sein. Ziel, Inhalte und Wünsche reichen.</small></div></li><li><b>2</b><div><strong>Nur wichtige Fragen klären</strong><small>Hinweise werden automatisch geprüft. Antworten brauchst du nur bei echten Rückfragen.</small></div></li><li><b>3</b><div><strong>Ergebnis direkt weitergeben</strong><small>Prompt kopieren oder den gewählten Agenten gleich öffnen.</small></div></li></ol><button type="button" class="solid-btn" id="confirmWelcomeIntroBtn">Verstanden – los geht’s</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="appActionDialog" class="library-dialog app-action-dialog">
+    <div class="dialog-frame"><div class="app-action-body"><span id="appActionKicker">PROMPT.AI</span><h2 id="appActionTitle">Bestätigen</h2><p id="appActionMessage"></p><label class="field" id="appActionInputWrap" hidden><span id="appActionInputLabel">Eingabe</span><input id="appActionInput" type="text" /></label><div class="app-action-buttons"><button type="button" class="text-btn" id="appActionCancelBtn">Abbrechen</button><button type="button" class="solid-btn" id="appActionConfirmBtn">Bestätigen</button></div></div></div>
+  </dialog>
+
+  <dialog id="agentLaunchDialog" class="library-dialog agent-launch-dialog">
+    <div class="dialog-frame"><button type="button" class="close-dialog agent-launch-close" id="closeAgentLaunchBtn" aria-label="Schließen">×</button><div class="agent-launch-body"><span>PROMPT IST KOPIERT</span><h2 id="agentLaunchTitle">Agent öffnen</h2><p id="agentLaunchText">Der fertige Prompt liegt in deiner Zwischenablage. Öffne jetzt den ausgewählten Agenten und füge ihn dort ein.</p><div class="agent-launch-options"><button type="button" class="solid-btn" id="openAgentWebBtn">Im Browser öffnen</button><button type="button" class="outline-btn" id="openAgentDesktopBtn" hidden>Desktop-App öffnen</button></div><small id="agentLaunchHint"></small></div></div>
+  </dialog>
 
   <dialog id="quickRevisionDialog" class="library-dialog quick-revision-dialog">
     <form method="dialog" class="dialog-frame">
