@@ -29,10 +29,33 @@ async function accountKey(req, provider){
   return typeof data === 'string' ? data.trim() : '';
 }
 
+async function systemKey(provider){
+  if(provider === 'github') return '';
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if(!serviceRoleKey) return '';
+  const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/sitebrief_get_system_ai_connection_secret`, {
+    method: 'POST',
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ p_provider: provider })
+  });
+  if(!response.ok) return '';
+  const data = await response.json();
+  return typeof data === 'string' ? data.trim() : '';
+}
+
 async function resolveProviderKey(req, provider){
   try{
     const stored = await accountKey(req, provider);
     if(stored) return { key: stored, source: 'account' };
+  }catch{}
+  try{
+    const central = await systemKey(provider);
+    if(central) return { key: central, source: 'system' };
   }catch{}
   const fallback = envKey(provider);
   if(fallback) return { key: fallback, source: 'server' };
@@ -40,4 +63,3 @@ async function resolveProviderKey(req, provider){
 }
 
 module.exports = { resolveProviderKey };
-
