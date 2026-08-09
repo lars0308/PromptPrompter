@@ -3,12 +3,41 @@ const {SUPABASE_URL,PUBLISHABLE_KEY}=require('../server/supabase-user');
 const {stripeRequest,stripeGet}=require('../server/stripe-rest');
 
 const uuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
+const AI_PROVIDERS=['gateway','openai','gemini','cloudflare'];
+const validAiProvider=value=>{const provider=String(value||'').toLowerCase();if(!AI_PROVIDERS.includes(provider))throw Object.assign(new Error('Unbekannter KI-Anbieter.'),{status:400});return provider};
 async function audit(adminId,action,targetId,details={}){try{await serviceFetch('/rest/v1/sitebrief_admin_audit',{method:'POST',headers:{Prefer:'return=minimal'},body:{admin_user_id:adminId,action,target_user_id:uuid(targetId)?targetId:null,details}})}catch{}}
+async function systemAiSecret(provider){const response=await serviceFetch('/rest/v1/rpc/sitebrief_get_system_ai_connection_secret',{method:'POST',body:{p_provider:provider}});return typeof response.data==='string'?response.data.trim():''}
+async function testAiProvider(provider,secret){
+  let url,headers;
+  if(provider==='gateway'){url='https://ai-gateway.vercel.sh/v1/models';headers={Authorization:`Bearer ${secret}`,'Content-Type':'application/json'};}
+  else if(provider==='openai'){url='https://api.openai.com/v1/models';headers={Authorization:`Bearer ${secret}`,'Content-Type':'application/json'};}
+  else if(provider==='gemini'){url='https://generativelanguage.googleapis.com/v1beta/models';headers={'x-goog-api-key':secret,'Content-Type':'application/json'};}
+  else {const split=secret.indexOf(':');if(split<1)throw Object.assign(new Error('Cloudflare benötigt Account-ID und API-Token.'),{status:400});const accountId=secret.slice(0,split),token=secret.slice(split+1);url=`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/models/search?per_page=5`;headers={Authorization:`Bearer ${token}`,'Content-Type':'application/json'};}
+  const response=await fetch(url,{headers});const data=await response.json().catch(()=>({}));
+  if(!response.ok||data?.success===false)throw Object.assign(new Error(data?.error?.message||data?.errors?.[0]?.message||data?.message||'API-Zugang wurde vom Anbieter abgelehnt.'),{status:response.status||400});
+  const raw=provider==='gemini'?(data.models||[]).map(x=>String(x.name||'').replace(/^models\//,'')):provider==='cloudflare'?(data.result||[]).map(x=>x.name||x.id):(data.data||[]).map(x=>x.id);
+  return raw.filter(Boolean).slice(0,100);
+}
 
 module.exports=async function(req,res){
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
   try{
     const admin=await requireAdmin(req),body=req.body||{},action=String(body.action||'');
+
+    if(action==='ai-save'){
+      const provider=validAiProvider(body.provider);let secret=String(body.secret||'').trim();
+      if(provider==='cloudflare'&&body.accountId&&body.apiToken)secret=`${String(body.accountId).trim()}:${String(body.apiToken).trim()}`;
+      const routeRole=['primary','fallback1','fallback2','manual'].includes(body.routeRole)?body.routeRole:'manual';
+      const result=await serviceFetch('/rest/v1/rpc/sitebrief_admin_set_system_ai_connection',{method:'POST',body:{p_provider:provider,p_secret:secret||null,p_default_model:String(body.defaultModel||'').trim(),p_enabled:body.enabled!==false,p_route_role:routeRole}});
+      await audit(admin.id,action,null,{provider,routeRole,enabled:body.enabled!==false});return res.status(200).json({ok:true,connection:result.data});
+    }
+    if(action==='ai-delete'){
+      const provider=validAiProvider(body.provider);await serviceFetch('/rest/v1/rpc/sitebrief_admin_delete_system_ai_connection',{method:'POST',body:{p_provider:provider}});await audit(admin.id,action,null,{provider});return res.status(200).json({ok:true});
+    }
+    if(action==='ai-test'||action==='ai-models'){
+      const provider=validAiProvider(body.provider),secret=await systemAiSecret(provider);if(!secret)throw Object.assign(new Error('Für diesen Anbieter ist kein zentraler Key gespeichert.'),{status:503});const models=await testAiProvider(provider,secret);return res.status(200).json({ok:true,provider,models});
+    }
+
     if(['suspend','unsuspend','set-plan','send-password-reset','cancel-subscription','refund-latest'].includes(action)&&!uuid(body.userId))return res.status(400).json({error:'Ungültiger Benutzer.'});
     if(action==='suspend'){
       const days=Math.max(1,Math.min(3650,Number(body.days)||30)),until=new Date(Date.now()+days*86400000).toISOString();
