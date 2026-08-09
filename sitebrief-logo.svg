@@ -1,11 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Prompt.ai</title>
-  <rect width="512" height="512" rx="104" fill="#f7fafc"/>
+  <desc id="desc">Ein klares P aus verbundenen blauen Knoten.</desc>
+  <rect width="512" height="512" rx="104" fill="#f8fafb"/>
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M147 112v288" stroke="#155b8c" stroke-width="30"/>
-    <path d="M147 112l134-5 119 73 31 117-77 75-124 49-83-21 94-166-94 67 118-124-118-65 111 196 23-201-50 127 169-54-159 54 113 138" stroke="#2d8fc7" stroke-width="10"/>
-    <path d="M147 301l114-67 93 138M147 400l114-166 170 63M281 107l-40 127 159-54M230 421l31-187" stroke="#155b8c" stroke-width="9"/>
+    <path d="M143 96V416" stroke="#124f7c" stroke-width="26"/>
+    <path d="M143 96L282 94 380 151 402 247 348 319 245 363 143 416" stroke="#278bc2" stroke-width="8"/>
+    <path d="M143 96L246 158 380 151M143 96L258 246 282 94M143 246L246 158 402 247M143 246L258 246 348 319M143 246L245 363 258 246M143 416L245 363 348 319M246 158L258 246 380 151M282 94L258 246 402 247M380 151L348 319 258 246" stroke="#1b76aa" stroke-width="7"/>
   </g>
-  <g fill="#2d8fc7"><circle cx="281" cy="107" r="23"/><circle cx="400" cy="180" r="22"/><circle cx="431" cy="297" r="22"/><circle cx="354" cy="372" r="22"/><circle cx="230" cy="421" r="21"/><circle cx="241" cy="234" r="18"/></g>
-  <g fill="#155b8c"><circle cx="147" cy="112" r="25"/><circle cx="147" cy="301" r="18"/><circle cx="147" cy="400" r="25"/><circle cx="261" cy="284" r="34"/></g>
+  <g fill="#124f7c">
+    <circle cx="143" cy="96" r="24"/>
+    <circle cx="143" cy="246" r="15"/>
+    <circle cx="143" cy="416" r="24"/>
+    <circle cx="258" cy="246" r="31"/>
+  </g>
+  <g fill="#2d93c9">
+    <circle cx="282" cy="94" r="20"/>
+    <circle cx="246" cy="158" r="17"/>
+    <circle cx="380" cy="151" r="20"/>
+    <circle cx="402" cy="247" r="20"/>
+    <circle cx="348" cy="319" r="20"/>
+    <circle cx="245" cy="363" r="18"/>
+  </g>
 </svg>

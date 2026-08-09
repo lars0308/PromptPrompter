@@ -139,7 +139,7 @@ ${documentText(documents)}
 CONTROLS
 Originality ${controls.originality}/100; avoid AI/template look ${controls.antiSlop}/100; motion ${controls.motion}/100; information density ${controls.density}/100.
 
-For every direction return a memorable project-specific name, a short mood, exactly four valid hex colors, typography concept, layout principle, hero principle, one of the required composition variants, and concrete preview copy. No fake statistics, reviews, logos or awards. Avoid default AI/SaaS conventions: badge + centered giant headline + two buttons, gradient orbs, glass cards, repetitive three-card grids, excessive rounded rectangles. Use reference inputs only for user-approved aspects and never copy a reference one-to-one. The concept must leave room for all enabled compliance/quality checks, but do not invent legal copy, company facts or claims of compliance. Output only the requested JSON.`;
+For every direction return a memorable project-specific name, a short mood, exactly four valid hex colors, typography concept, layout principle, hero principle, one of the required composition variants, and concrete preview copy. Every direction must differ in information hierarchy, composition, typography and image treatment — a palette swap is not a distinct direction. Keep preview copy short enough to fit a real mobile layout. No fake statistics, reviews, logos or awards. Avoid default AI/SaaS conventions: badge + centered giant headline + two buttons, gradient orbs, glass cards, repetitive three-card grids, excessive rounded rectangles. Use reference inputs only for user-approved aspects and never copy a reference one-to-one. Use the real industry and project purpose to drive visual decisions; do not fall back to generic agency or portfolio styling. The concept must leave room for all enabled compliance/quality checks, but do not invent legal copy, company facts or claims of compliance. Output only the requested JSON.`;
 }
 
 function makeRefinePrompt({project,concept,refinement,references,documents,controls,template,modules,settings,clarifications,projectReview}){
@@ -241,6 +241,12 @@ DELIVERY RULES
 - requiredInputs must state exactly what the owner still needs to supply, where it comes from and why it is needed.
 - For factual or legal content that is missing, use an explicit, professionally worded placeholder and list it in requiredInputs.
 - Keep the package within 20 text files. Prefer a coherent minimal implementation over unnecessary dependencies.
+- The visual quality standard is identical for every subscription tier. Paid plans add workflow and delivery features, never permission to use a generic or visibly weaker design.
+- Derive the page model, navigation and components from the actual project. Do not force every project into the same landing-page sequence.
+- Build mobile as a deliberate composition with tested type wrapping, spacing and navigation. No horizontal overflow, clipped text or desktop-only interactions.
+- Use at least three project-specific design decisions that could not be transferred unchanged to an unrelated industry.
+- When several pages are requested, create the real page files/routes and shared navigation instead of compressing everything into one homepage.
+- Before returning, verify that every generated file is internally consistent, referenced assets exist, primary links work and the package follows its own setup instructions.
 
 OUTPUT TARGET
 ${outputTarget||'Static HTML / CSS / JavaScript'}
