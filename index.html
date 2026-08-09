@@ -427,6 +427,12 @@
               </div>
               <small class="connection-message" id="cloudflareConnectionMessage"></small>
             </article>
+            <article class="ai-connection-card">
+              <div class="ai-connection-head"><div><span>ULTIMATE · EXPORT</span><strong>GitHub</strong><p>Veröffentlicht dein Website-Paket direkt als neues Repository. Der Zugangsschlüssel wird verschlüsselt in Supabase Vault gespeichert.</p></div><span class="connection-status" id="githubConnectionStatus">Nicht verbunden</span></div>
+              <label class="field"><span>GitHub Personal Access Token</span><input id="githubToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_… oder ghp_…" /></label>
+              <div class="connection-actions"><button type="button" class="solid-btn mini" id="githubConnectBtn">Speichern & verbinden</button><button type="button" class="outline-btn mini" id="githubTestBtn">Testen</button><button type="button" class="text-btn" id="githubDisconnectBtn" hidden>Trennen</button></div>
+              <small class="connection-message" id="githubConnectionMessage">Token benötigt Berechtigung zum Erstellen und Schreiben von Repositories.</small>
+            </article>
           </div>
         </section>
 
