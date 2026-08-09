@@ -38,3 +38,5 @@
   }
   document.addEventListener('DOMContentLoaded',()=>{init();publicContent();$('#offerCta').addEventListener('click',()=>$('#plansDialog')?.showModal());$('#offerClose').addEventListener('click',()=>{$('#offerBanner').hidden=true;sessionStorage.setItem('sitebrief-offer-hidden','1')})});
 })();
+
+(()=>{const load=()=>{if(document.querySelector('script[data-admin-ai-ui]'))return;const s=document.createElement('script');s.src='./admin-ai-ui.js';s.defer=true;s.dataset.adminAiUi='1';document.head.appendChild(s)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load()})();
