@@ -1,4 +1,5 @@
 const {SUPABASE_URL,authorization,authenticatedUser}=require('./supabase-user');
+const ADMIN_EMAIL=String(process.env.PROMPT_AI_ADMIN_EMAIL||'service.battermann@gmx.de').trim().toLowerCase();
 
 function serviceKey(){
   const key=process.env.SUPABASE_SERVICE_ROLE_KEY||'';
@@ -16,6 +17,7 @@ async function serviceFetch(path,{method='GET',body,headers={}}={}){
 
 async function requireAdmin(req){
   const user=await authenticatedUser(req);
+  if(String(user?.email||'').trim().toLowerCase()!==ADMIN_EMAIL)throw Object.assign(new Error('Dieser Bereich ist nur für Administratoren verfügbar.'),{status:403});
   const response=await fetch(`${SUPABASE_URL}/rest/v1/sitebrief_admins?select=user_id&user_id=eq.${encodeURIComponent(user.id)}&limit=1`,{headers:{apikey:serviceKey(),Authorization:`Bearer ${serviceKey()}`}});
   const rows=response.ok?await response.json():[];
   if(!rows?.[0])throw Object.assign(new Error('Dieser Bereich ist nur für Administratoren verfügbar.'),{status:403});
