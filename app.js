@@ -16,6 +16,7 @@
   const GUEST_USAGE_KEY = "sitebrief-v6-guest-runs";
   const THEME_KEY = "sitebrief-theme";
   const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
+  const QUICK_REVISION_VARIANTS_KEY = "sitebrief-v6-revision-variants";
   const GUEST_RUN_LIMIT = 3;
   const PROJECT_OPTIONS = {
     free:{types:["Website","Landingpage"],goals:["Anfragen gewinnen","Informieren"]},
@@ -81,6 +82,7 @@
     ownApiKeys: false,
     clientContext:"",
     generatedWebsite:null,
+    quickRevisionContext:null,
     userProfile: {displayName:"",companyName:"",website:"",defaultClientType:""},
     cloud: {configured:false,user:null,syncing:false,lastSynced:null,error:""},
     editing: {template:"",module:"",skill:""},
@@ -106,7 +108,8 @@
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
-      "resetBtn","startNewBtn","brandHome","installAppBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel"
+      "resetBtn","startNewBtn","brandHome","installAppBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
+      "workspaceNewProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","workspaceLibraryHint","welcomeProjectList","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn"
     ].forEach(id => el[id] = document.getElementById(id));
   }
 
@@ -361,7 +364,7 @@
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
     renderProjectOptions();
-    renderProfileUi();renderModuleSelection();renderSkillSelection();
+    renderProfileUi();renderModuleSelection();renderSkillSelection();applyQuickRevisionPlanUi();renderWelcomeProjects();
   }
 
   function updateAccountUi(){
@@ -370,6 +373,7 @@
     if(state.cloud.user){
       if(el.openLibraryBtn){el.openLibraryBtn.disabled=false;el.openLibraryBtn.title=""}if(el.generatorEngine)el.generatorEngine.disabled=false;
       el.accountBtn.textContent=state.isAdmin?"Verwaltung":"Profil";
+      const welcomeAccount=document.getElementById('welcomeAccountBtn');if(welcomeAccount)welcomeAccount.textContent='Profil & Synchronisierung';
       el.accountLoggedOut.hidden=true;el.accountLoggedIn.hidden=false;
       el.accountEmail.textContent=state.cloud.user.email||"Angemeldet";el.accountUserId.textContent=state.cloud.user.id||"";
       if(el.apiAddonCard)el.apiAddonCard.hidden=state.ownApiKeys;
@@ -377,9 +381,9 @@
       const counts={profiles:state.profiles.length,modules:state.modules.length,skills:state.skills.length,projects:state.cloudProjects.length};
       el.cloudStats.innerHTML=`<div><b>${counts.profiles}</b><span>Profile</span></div><div><b>${counts.modules}</b><span>Module</span></div><div><b>${counts.skills}</b><span>Skills</span></div><div><b>${counts.projects}</b><span>Projekte</span></div>`;
       renderCloudProjects();
-      if(!state.cloud.syncing) setSyncState("Cloud",state.cloud.error?"error":"synced");
+      if(!state.cloud.syncing) setSyncState("Cloud",state.cloud.error?"error":"synced");renderWelcomeProjects();
     }else{
-      el.accountBtn.textContent="Anmelden";el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;setSyncState("Cloud bereit");if(el.openLibraryBtn){el.openLibraryBtn.disabled=true;el.openLibraryBtn.title="Bibliotheken sind nach der Anmeldung verfügbar"}if(el.generatorEngine){el.generatorEngine.value="local";state.engine="local";el.generatorEngine.disabled=true;el.generatorModel.disabled=true;}
+      el.accountBtn.textContent="Anmelden";const welcomeAccount=document.getElementById('welcomeAccountBtn');if(welcomeAccount)welcomeAccount.textContent='Anmelden & synchronisieren';el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;setSyncState("Cloud bereit");if(el.openLibraryBtn){el.openLibraryBtn.disabled=true;el.openLibraryBtn.title="Bibliotheken sind nach der Anmeldung verfügbar"}if(el.generatorEngine){el.generatorEngine.value="local";state.engine="local";el.generatorEngine.disabled=true;el.generatorModel.disabled=true;}renderWelcomeProjects();
     }
   }
 
@@ -586,12 +590,84 @@
   }
 
   async function loadCloudProject(row){
-    if(!row?.state)return;applySavedState(row.state,{persistLocal:true});state.currentProjectId=row.id;await hydrateCloudReferenceImages();renderReferences();renderClientSources();renderUnderstanding();renderLibrary();renderConcepts();renderSelectedPreview();updateEngineUi();$$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));goStep(state.currentStep,true);el.accountDialog.close();
+    if(!row?.state)return;applySavedState(row.state,{persistLocal:true});state.currentProjectId=row.id;await hydrateCloudReferenceImages();renderReferences();renderClientSources();renderUnderstanding();renderLibrary();renderConcepts();renderSelectedPreview();updateEngineUi();$$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));goStep(state.currentStep,true);if(el.accountDialog.open)el.accountDialog.close();renderWelcomeProjects();
   }
 
   async function deleteCloudProject(id){
     if(!confirm("Dieses Cloud-Projekt wirklich löschen?"))return;try{await window.SiteBriefCloud.deleteProject(id);state.cloudProjects=state.cloudProjects.filter(x=>x.id!==id);renderCloudProjects();updateAccountUi()}catch(err){el.syncMessage.textContent=err?.message||"Projekt konnte nicht gelöscht werden.";el.syncMessage.className="auth-message error";}
   }
+
+  function showWorkflow(step=1){
+    document.getElementById('welcomePage').hidden=true;document.getElementById('workflowApp').hidden=false;goStep(step,true);
+  }
+
+  function showWelcome(){
+    document.getElementById('welcomePage').hidden=false;document.getElementById('workflowApp').hidden=true;renderWelcomeProjects();window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function renderWelcomeProjects(){
+    if(!el.welcomeProjectList)return;el.welcomeProjectList.innerHTML='';
+    const rows=[];
+    const localProject=project();
+    if(localProject.name||localProject.description)rows.push({id:state.currentProjectId,title:localProject.name||localProject.client?.name||localProject.description.slice(0,54)||'Aktueller Entwurf',status:state.currentStep>=8?'fertig vorbereitet':`Schritt ${state.currentStep} von 8`,local:true,state:null});
+    state.cloudProjects.filter(row=>row.id!==state.currentProjectId).slice(0,5).forEach(row=>rows.push(row));
+    if(!rows.length){el.welcomeProjectList.innerHTML='<div class="welcome-project-empty"><strong>Noch kein Projekt angelegt</strong><p>Starte ein neues Projekt. Nach der Anmeldung werden deine Entwürfe automatisch hier angezeigt.</p></div>';return;}
+    rows.slice(0,6).forEach(row=>{
+      const card=document.createElement('article');card.className='welcome-project-card';const date=row.updated_at?new Date(row.updated_at).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}):'auf diesem Gerät';
+      const status=row.local?row.status:(row.status==='complete'?'fertig vorbereitet':'Entwurf');
+      card.innerHTML=`<button type="button" aria-label="${escapeHtml(row.title||'Projekt')} öffnen"><span>${row.local?'AKTUELL':'CLOUD-PROJEKT'}</span><strong>${escapeHtml(row.title||'Unbenanntes Projekt')}</strong><small>${escapeHtml(status)} · ${escapeHtml(date)}</small><i>Öffnen →</i></button>`;
+      card.querySelector('button').addEventListener('click',async()=>{if(row.local){showWorkflow(state.currentStep);return}await loadCloudProject(row);showWorkflow(state.currentStep)});el.welcomeProjectList.appendChild(card);
+    });
+  }
+
+  function quickRevisionVariants(){
+    let local=[];try{const value=JSON.parse(localStorage.getItem(QUICK_REVISION_VARIANTS_KEY)||'[]');local=Array.isArray(value)?value:[]}catch{}
+    const library=state.templates.filter(item=>item.quickRevision).map(item=>({id:item.id,name:item.name,prompt:item.prompt,url:item.url||'',updatedAt:item.updatedAt||''}));const merged=new Map([...local,...library].map(item=>[item.id,item]));return [...merged.values()].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  }
+
+  function renderQuickRevisionVariants(){
+    if(!el.quickRevisionVariantSelect)return;const variants=quickRevisionVariants();el.quickRevisionVariantSelect.innerHTML='<option value="">Gespeicherte Variante wählen</option>'+variants.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('');
+  }
+
+  function applyQuickRevisionPlanUi(){
+    if(!el.quickRevisionDialog)return;const rules=planRules(),pro=rules.existing,ultimate=rules.advanced;
+    const setBlock=(block,enabled,note,lockedNote)=>{if(!block)return;block.classList.toggle('locked',!enabled);$$('input,textarea,select',block).forEach(control=>control.disabled=!enabled);if(note)note.textContent=enabled?'In deinem Tarif freigeschaltet.':lockedNote};
+    setBlock(el.quickRevisionProBlock,pro,el.quickRevisionProNote,'Ab Pro: mehrere Seiten, Referenzen und Projektdateien einbeziehen.');
+    setBlock(el.quickRevisionUltimateBlock,ultimate,el.quickRevisionUltimateNote,'In Ultimate: technische Regeln und Abnahmekriterien einzeln festlegen.');
+    el.quickRevisionVariantTools.hidden=!ultimate;el.quickRevisionPrompt.readOnly=!pro;
+    const agents=rules.agents.filter(key=>AGENT_NAMES[key]);const current=el.quickRevisionAgent.value;el.quickRevisionAgent.innerHTML=agents.map(key=>`<option value="${key}">${escapeHtml(AGENT_NAMES[key])}</option>`).join('');el.quickRevisionAgent.value=agents.includes(current)?current:agents[0];
+    if(el.workspaceLibraryHint)el.workspaceLibraryHint.textContent=rules.modules?'Deine gespeicherten Bausteine direkt öffnen.':'Eigene Bausteine sind ab Pro verfügbar.';
+    renderQuickRevisionVariants();
+  }
+
+  function openQuickRevision(){applyQuickRevisionPlanUi();el.quickRevisionDialog.showModal();setTimeout(()=>el.quickRevisionUrl.focus(),50)}
+
+  async function buildQuickRevisionPrompt(context,url,description){
+    const rules=planRules(),pro=rules.existing,ultimate=rules.advanced,readable=[];
+    if(pro)for(const file of [...(el.quickRevisionFiles.files||[])].slice(0,12)){if(/\.(html|css|js|jsx|ts|tsx|json|md)$/i.test(file.name)&&file.size<=300000)readable.push(`\n### DATEI: ${file.name}\n${(await file.text()).slice(0,30000)}`);else readable.push(`\n### BEIGEFÜGTE DATEI: ${file.name}\nDatei vor der Änderung vollständig prüfen.`)}
+    const pages=Array.isArray(context?.pages)?context.pages:[],pageDetails=pages.slice(0,20).map(page=>`- ${page.title||page.kind||'Seite'}${page.url?` (${page.url})`:''}: ${String(page.summary||'keine Zusammenfassung').slice(0,900)}`).join('\n');
+    const scanState=context?.error?`Der automatische Scan war nicht vollständig möglich: ${context.error}. Öffne die Website selbst und prüfe alle betroffenen Seiten vor der Änderung.`:`Automatisch erfasst: ${pages.length} Seiten, ${(context?.links||[]).length} Links und ${(context?.images||[]).length} Bilder.`;
+    const proBlock=pro?`\n## GEZIELTER UMFANG\nZu erhaltende Bereiche:\n${el.quickRevisionPreserve.value.trim()||'Nicht gesondert festgelegt. Vorhandene funktionierende Bereiche erhalten.'}\n\nBetroffene Seiten und Bereiche:\n${el.quickRevisionScope.value.trim()||'Aus den Änderungswünschen und dem Scan ableiten.'}\n\nZusätzliche Referenz:\n${el.quickRevisionReference.value.trim()||'Keine.'}`:'';
+    const ultimateBlock=ultimate?`\n## TECHNISCHE DETAILVORGABEN\n${el.quickRevisionTechnical.value.trim()||'Vorhandenen Stack, Abhängigkeiten und Konventionen respektieren.'}\n\n## DESIGN- UND INHALTSREGELN\n${el.quickRevisionDesignRules.value.trim()||'Keine zusätzlichen Regeln eingetragen.'}\n\n## VERBINDLICHE ABNAHMEKRITERIEN\n${el.quickRevisionAcceptance.value.trim()||'Alle beschriebenen Änderungen funktionieren auf Desktop und Mobil ohne bestehende Abläufe zu beschädigen.'}\n\n## VERBINDLICHE PRÜFUNGEN\n${el.quickRevisionChecks.value.trim()||'Passenden Build, vorhandene Tests und die betroffenen Nutzerwege ausführen.'}`:'';
+    return `# WEBSITE-ÜBERARBEITUNG — ${AGENT_NAMES[el.quickRevisionAgent.value].toUpperCase()}\n\nArbeite an der bestehenden Website. Erstelle keinen austauschbaren Neubau. Untersuche zuerst den vorhandenen Stand, benenne erhaltenswerte Teile und setze danach die gewünschten Änderungen vollständig um.\n\n## WEBSITE UND SCAN\nURL: ${url}\nTitel: ${context?.siteName||context?.title||'nicht erkannt'}\n${scanState}\n\nErkannte Seiten:\n${pageDetails||'- Keine Seiten automatisch erfasst. Website manuell prüfen.'}\n\n## GEWÜNSCHTE ÄNDERUNGEN\n${description}${proBlock}${ultimateBlock}\n\n## VERBINDLICHES VORGEHEN\n1. Website und vorhandene Projektdateien vollständig prüfen.\n2. Probleme und betroffene Dateien oder Komponenten kurz benennen.\n3. Änderungen direkt im bestehenden Projekt umsetzen; funktionierende Bereiche erhalten.\n4. Mobile Navigation, Abstände, Überläufe, Formulare und Hauptaktionen praktisch kontrollieren.\n5. Keine erfundenen Inhalte, Bewertungen, Firmenangaben oder Rechtstexte ergänzen.\n6. Datenschutz, Impressum, Barrierefreiheit, Sicherheit, Metadaten und Performance passend zum Umfang prüfen.\n7. Build und vorhandene Tests ausführen und gefundene Fehler beheben.\n\n## ABSCHLUSS\nNenne knapp die geänderten Dateien, behobenen Probleme, bewusst erhaltenen Bereiche, ausgeführten Prüfungen und echte offene Entscheidungen. Lasse keine Platzhalter oder unnötigen TODOs zurück.${readable.join('\n')}`;
+  }
+
+  async function scanAndBuildQuickRevision(){
+    let url=el.quickRevisionUrl.value.trim(),description=el.quickRevisionDescription.value.trim();if(!/^https?:\/\//i.test(url))url=`https://${url}`;try{new URL(url)}catch{el.quickRevisionStatus.textContent='Bitte eine gültige Website-Adresse eingeben.';return}if(description.length<20){el.quickRevisionStatus.textContent='Beschreibe die gewünschten Änderungen etwas genauer.';return}
+    try{el.scanQuickRevisionBtn.disabled=true;el.quickRevisionStatus.textContent='Website, Seitenstruktur, Links und Bilder werden gelesen…';let context;
+      try{const response=await sitebriefApiFetch('/api/site-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Scan nicht möglich');context=data}
+      catch(error){context={url,pages:[],links:[],images:[],error:error.message||'Website nicht automatisch erreichbar'}}
+      state.quickRevisionContext=context;el.quickRevisionPrompt.value=await buildQuickRevisionPrompt(context,url,description);el.quickRevisionResult.hidden=false;el.quickRevisionScanResult.textContent=context.error?'Grundauftrag erstellt · Website muss der Agent selbst öffnen':`${(context.pages||[]).length} Seiten · ${(context.links||[]).length} Links · ${(context.images||[]).length} Bilder erfasst`;el.quickRevisionStatus.textContent='Überarbeitungsauftrag ist fertig.';renderQuickRevisionVariants();el.quickRevisionResult.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(error){el.quickRevisionStatus.textContent=error.message||'Auftrag konnte nicht erstellt werden.'}finally{el.scanQuickRevisionBtn.disabled=false}
+  }
+
+  async function saveQuickRevisionVariant(){
+    if(!planRules().advanced){el.plansDialog?.showModal();return}const name=el.quickRevisionVariantName.value.trim(),prompt=el.quickRevisionPrompt.value.trim();if(!name||!prompt){el.quickRevisionStatus.textContent='Bitte einen Namen eintragen und zuerst einen Auftrag erstellen.';return}const variants=quickRevisionVariants(),existing=variants.find(item=>item.name.toLowerCase()===name.toLowerCase()),item={id:existing?.id||uid('revision'),name,prompt,url:el.quickRevisionUrl.value.trim(),updatedAt:new Date().toISOString()},template={...item,tag:'REVISION',summary:`Schnellvariante für ${item.url||'eine Website-Überarbeitung'}`,quickRevision:true};state.templates=[template,...state.templates.filter(entry=>entry.id!==item.id)];saveLibrary();localStorage.setItem(QUICK_REVISION_VARIANTS_KEY,JSON.stringify([item,...variants.filter(entry=>entry.id!==item.id)].slice(0,30)));if(cloudReady())try{await window.SiteBriefCloud.saveLibraryItem('template',template)}catch{el.quickRevisionStatus.textContent='Lokal gespeichert; Cloud-Synchronisierung war nicht möglich.'}el.quickRevisionVariantName.value='';renderQuickRevisionVariants();renderLibraryList('template');el.quickRevisionVariantSelect.value=item.id;el.quickRevisionStatus.textContent='Prompt-Variante in deiner Bibliothek gespeichert.';
+  }
+
+  function loadQuickRevisionVariant(id){const item=quickRevisionVariants().find(entry=>entry.id===id);if(!item)return;el.quickRevisionPrompt.value=item.prompt;el.quickRevisionUrl.value=item.url||el.quickRevisionUrl.value;el.quickRevisionResult.hidden=false;el.quickRevisionScanResult.textContent=`Gespeicherte Variante: ${item.name}`}
+
+  async function deleteQuickRevisionVariant(){const id=el.quickRevisionVariantSelect.value;if(!id)return;const variants=quickRevisionVariants(),item=variants.find(entry=>entry.id===id);if(!item||!confirm(`Variante „${item.name}“ löschen?`))return;localStorage.setItem(QUICK_REVISION_VARIANTS_KEY,JSON.stringify(variants.filter(entry=>entry.id!==id)));state.templates=state.templates.filter(entry=>entry.id!==id);saveLibrary();renderLibraryList('template');renderQuickRevisionVariants();if(cloudReady())try{await window.SiteBriefCloud.deleteLibraryItem('template',id)}catch{}el.quickRevisionStatus.textContent='Variante gelöscht.'}
 
   function tokenize(text){
     return [...new Set(String(text||"").toLowerCase().replace(/[^a-z0-9äöüß\s-]/g," ").split(/\s+/).filter(x => x.length > 3))];
@@ -1673,9 +1749,10 @@
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
-    const showWorkflow=()=>{document.getElementById('welcomePage').hidden=true;document.getElementById('workflowApp').hidden=false;goStep(1,true)};
-    document.getElementById('startWorkflowBtn')?.addEventListener('click',showWorkflow);document.getElementById('startFreeBtn')?.addEventListener('click',showWorkflow);document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
-    el.resetBtn.addEventListener("click",resetProject);el.startNewBtn.addEventListener("click",resetProject);el.brandHome.addEventListener("click",e=>{e.preventDefault();document.getElementById('welcomePage').hidden=false;document.getElementById('workflowApp').hidden=true;window.scrollTo({top:0,behavior:'smooth'})});
+    document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>showWorkflow(1));el.workspaceNewProjectBtn?.addEventListener('click',()=>showWorkflow(1));document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
+    [el.quickRevisionBtn,el.workspaceRevisionBtn].forEach(button=>button?.addEventListener('click',openQuickRevision));el.workspaceLibraryBtn?.addEventListener('click',()=>openLibrary('templates'));
+    el.scanQuickRevisionBtn?.addEventListener('click',scanAndBuildQuickRevision);el.copyQuickRevisionBtn?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(el.quickRevisionPrompt.value);el.quickRevisionStatus.textContent='Auftrag kopiert.'}catch{el.quickRevisionStatus.textContent='Kopieren war nicht möglich.'}});el.downloadQuickRevisionBtn?.addEventListener('click',()=>downloadText('prompt-ai-website-ueberarbeiten.md',el.quickRevisionPrompt.value,'text/markdown'));el.saveQuickRevisionVariantBtn?.addEventListener('click',saveQuickRevisionVariant);el.quickRevisionVariantSelect?.addEventListener('change',()=>loadQuickRevisionVariant(el.quickRevisionVariantSelect.value));el.deleteQuickRevisionVariantBtn?.addEventListener('click',deleteQuickRevisionVariant);
+    el.resetBtn.addEventListener("click",resetProject);el.startNewBtn.addEventListener("click",resetProject);el.brandHome.addEventListener("click",e=>{e.preventDefault();showWelcome()});
     el.installAppBtn?.addEventListener('click',installApp);el.buildWebsiteBtn?.addEventListener('click',buildWebsiteWithAi);el.downloadGeneratedWebsiteBtn?.addEventListener('click',downloadGeneratedWebsite);el.createRevisionPromptBtn?.addEventListener('click',createRevisionPrompt);el.copyRevisionPromptBtn?.addEventListener('click',async()=>{await navigator.clipboard.writeText(el.revisionPrompt.value);el.revisionStatus.textContent='Auftrag kopiert.'});el.downloadRevisionPromptBtn?.addEventListener('click',()=>downloadText('sitebrief-ueberarbeitungsauftrag.md',el.revisionPrompt.value,'text/markdown'));
   }
 
