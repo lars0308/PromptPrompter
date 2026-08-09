@@ -57,6 +57,7 @@
         <div class="section-kicker">01 — PROJEKT</div>
         <h1>Was soll entstehen?</h1>
         <p class="lead">Beschreibe es so, wie du es jemandem am Tisch erklären würdest. SiteBrief macht daraus ein strukturiertes Briefing.</p>
+        <section class="client-context-card"><div class="selection-head"><div><span>FÜR WEN ENTSTEHT DAS PROJEKT?</span><p>Eigener Betrieb, Kunde oder internes Projekt. Vorhandene Website-Daten können direkt übernommen werden.</p></div></div><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" type="text" placeholder="z. B. Musterbetrieb GmbH" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Vorhandene Website oder Datenquelle</span><input id="clientWebsite" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Website-Daten übernehmen</button><small id="clientImportStatus"></small></div></section>
 
         <label class="field field-large">
           <span>Kurzbeschreibung</span>
@@ -276,8 +277,8 @@
         <textarea id="masterPrompt" class="master-prompt" spellcheck="false"></textarea>
         <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn" id="downloadPromptBtn">Als .md speichern</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
         <section class="client-result-card">
-          <div><span>AB PRO</span><h2>Kundenunterlagen</h2><p>Ein verständliches Briefing und eine Übergabeübersicht, die du deinem Kunden vorlegen kannst.</p></div>
-          <div class="client-result-actions"><button type="button" class="outline-btn" id="downloadClientBriefBtn">Kundenbriefing</button><button type="button" class="outline-btn" id="downloadHandoverBtn">Übergabe-Dokument</button></div>
+          <div><span>PROJEKTBERICHT · KUNDENUNTERLAGEN AB PRO</span><h2>Dokumentation zum Ergebnis</h2><p>Ein vollständiger Projektbericht für jeden Durchlauf; Kundenbriefing und Übergabeübersicht ab Pro.</p></div>
+          <div class="client-result-actions"><button type="button" class="solid-btn" id="downloadProjectReportBtn">Projektbericht</button><button type="button" class="outline-btn" id="downloadClientBriefBtn">Kundenbriefing</button><button type="button" class="outline-btn" id="downloadHandoverBtn">Übergabe-Dokument</button></div>
           <small id="clientResultHint"></small>
         </section>
         <section class="export-result-card">
@@ -484,6 +485,7 @@
         <div id="accountLoggedOut">
           <p class="account-intro" id="accountIntro">Melde dich an, um gespeicherte Projekte, Profile, Bibliotheken, Module und Skills auf allen Geräten zu verwenden.</p>
           <div class="guest-limit-box" id="guestLimitBox"><strong id="guestLimitTitle">Ohne Anmeldung testen</strong><p id="guestLimitNote">Du kannst SiteBrief als Gast dreimal vollständig verwenden.</p></div>
+          <div class="auth-plan-grid"><article><span>FREE</span><strong>Ausprobieren</strong><small>Codex, drei Richtungen und feste Qualitätsstandards.</small></article><article><span>PRO</span><strong>Kundenprojekte</strong><small>Claude/Codex, Module, Skills, Bericht und ZIP-Export.</small></article><article><span>ULTIMATE</span><strong>Volle Kontrolle</strong><small>Alle Agenten, Modelle, Einstellungen und GitHub-Export.</small></article></div>
           <label class="field"><span>E-Mail</span><input id="authEmail" type="email" autocomplete="email" placeholder="name@beispiel.de" /></label>
           <label class="field"><span>Passwort</span><input id="authPassword" type="password" autocomplete="current-password" minlength="8" /></label>
           <label class="remember-login"><input id="rememberEmail" type="checkbox" checked /><span>E-Mail auf diesem Gerät merken</span></label>
@@ -493,6 +495,8 @@
         <div id="accountLoggedIn" hidden>
           <div class="account-user"><span>ANGEMELDET ALS</span><strong id="accountEmail">–</strong><small id="accountUserId"></small></div>
           <div class="cloud-stats" id="cloudStats"></div>
+          <section class="account-profile-settings"><span>BENUTZERPROFIL</span><div class="field-grid two"><label class="field"><span>Name</span><input id="userDisplayName" type="text" /></label><label class="field"><span>Firma / Agentur</span><input id="userCompanyName" type="text" /></label><label class="field"><span>Website</span><input id="userWebsite" type="url" /></label><label class="field"><span>Standard-Auftraggeber</span><select id="userDefaultClientType"><option value="">Nicht festgelegt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="kunde">Kundenprojekt</option><option value="intern">Internes Projekt</option></select></label></div><button type="button" class="outline-btn" id="saveUserProfileBtn">Profil speichern</button><small id="userProfileMessage"></small></section>
+          <section class="api-addon-card" id="apiAddonCard"><div><span>OPTIONALES ADD-ON</span><strong>Eigene KI-API-Keys</strong><p>Eigene OpenAI-, Gemini-, Gateway- und Cloudflare-Schlüssel verschlüsselt hinterlegen.</p></div><div><b>5,99 € / Monat</b><button type="button" class="solid-btn" id="startApiAddonCheckoutBtn">Add-on buchen</button></div></section>
           <div class="cloud-projects"><span>LETZTE PROJEKTE</span><div id="cloudProjectList" class="cloud-project-list"></div></div>
           <div class="inline-actions"><button type="button" class="solid-btn" id="syncNowBtn">Jetzt synchronisieren</button><button type="button" class="outline-btn" id="signOutBtn">Abmelden</button></div>
           <p id="syncMessage" class="auth-message"></p>
