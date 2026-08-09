@@ -9,4 +9,7 @@ async function authenticatedUser(req){
 async function ownSubscription(req){
   const response=await fetch(`${SUPABASE_URL}/rest/v1/sitebrief_subscriptions?select=*&limit=1`,{headers:{apikey:PUBLISHABLE_KEY,Authorization:authorization(req)}});if(!response.ok)return null;return (await response.json())?.[0]||null;
 }
-module.exports={SUPABASE_URL,PUBLISHABLE_KEY,authorization,authenticatedUser,ownSubscription};
+async function ownApiAddon(req){
+  const response=await fetch(`${SUPABASE_URL}/rest/v1/sitebrief_addons?select=*&addon=eq.own_api_keys&limit=1`,{headers:{apikey:PUBLISHABLE_KEY,Authorization:authorization(req)}});if(!response.ok)return null;return (await response.json())?.[0]||null;
+}
+module.exports={SUPABASE_URL,PUBLISHABLE_KEY,authorization,authenticatedUser,ownSubscription,ownApiAddon};
