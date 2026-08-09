@@ -45,15 +45,12 @@
     <section class="welcome-hero">
       <div><span class="section-kicker">DEIN PROJEKT, KLAR VORBEREITET</span><h1>Aus deiner Idee wird ein Auftrag, mit dem die KI direkt arbeiten kann.</h1><p>Du beschreibst dein Vorhaben in deinen eigenen Worten. Prompt.ai ordnet die Angaben, liest vorhandene Seiten ein, fragt nur bei wichtigen Lücken nach und erstellt daraus Vorschauen, Unterlagen und den fertigen Prompt.</p><div class="welcome-actions"><button type="button" class="solid-btn" id="startWorkflowBtn">Neues Projekt starten</button><button type="button" class="outline-btn" id="quickRevisionBtn">Webseite überarbeiten</button></div></div>
     </section>
-    <section class="welcome-workspace" aria-labelledby="workspaceTitle">
-      <div class="welcome-section-head workspace-heading"><span>DEIN ARBEITSBEREICH</span><h2 id="workspaceTitle">Weiterarbeiten statt neu suchen.</h2><p>Öffne ein bestehendes Projekt oder starte direkt mit der Aufgabe, die du gerade erledigen willst.</p></div>
-      <div class="welcome-tools">
-        <article class="welcome-tool-card primary"><span>NEU</span><h3>Projekt erstellen</h3><p>Vom ersten Briefing über Richtungen und Rückfragen bis zum fertigen Umsetzungsauftrag.</p><button type="button" class="solid-btn" id="workspaceNewProjectBtn">Projekt starten</button></article>
-        <article class="welcome-tool-card"><span>DIREKTZUGRIFF</span><h3>Webseite überarbeiten</h3><p>Website einlesen, Änderungswünsche beschreiben und einen vollständigen Überarbeitungsauftrag erzeugen.</p><button type="button" class="outline-btn" id="workspaceRevisionBtn">Website prüfen</button></article>
-        <article class="welcome-tool-card"><span>DEINE BAUSTEINE</span><h3>Bibliothek</h3><p>Prompt-Vorlagen, Module und Agent-Skills verwalten und für neue Projekte wiederverwenden.</p><button type="button" class="outline-btn" id="workspaceLibraryBtn">Bibliothek öffnen</button><small id="workspaceLibraryHint">Eigene Bausteine sind ab Pro verfügbar.</small></article>
+    <section class="welcome-workspace" aria-label="Direktzugriffe">
+      <div class="welcome-quick-actions">
+        <button type="button" class="solid-btn" id="workspaceNewProjectBtn">Neues Projekt</button>
+        <button type="button" class="outline-btn" id="workspaceRevisionBtn">Webseite überarbeiten</button>
+        <button type="button" class="outline-btn" id="workspaceLibraryBtn">Bibliothek öffnen</button>
       </div>
-      <div class="welcome-projects-head"><div><span>AKTUELLE PROJEKTE</span><h3>Zuletzt bearbeitet</h3></div><button type="button" class="text-btn" id="welcomeAccountBtn">Anmelden & synchronisieren</button></div>
-      <div class="welcome-project-list" id="welcomeProjectList" aria-live="polite"></div>
     </section>
     <section class="welcome-pricing" id="pricing"><div class="welcome-section-head"><span>TARIFE</span><h2>Ein guter Entwurf ist in jedem Tarif Pflicht.</h2></div><div class="plans-grid"><article><h3>Kostenlos</h3><strong>0 €</strong><p class="plan-summary">Für eigene Ideen und einen vollständigen ersten Projektentwurf.</p><ul><li>Geführter Projektablauf mit Codex als Ziel-Agent</li><li>Drei unterschiedliche responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Website-Grundscan mit einfachem Überarbeitungsauftrag</li><li>Abgespeckte lokale Grundprüfung</li></ul><button type="button" class="outline-btn" id="startFreeBtn">Kostenlos starten</button></article><article class="recommended"><h3>Pro</h3><strong data-public-price="pro">15,99 € / Monat</strong><p class="plan-summary">Für echte Kundenprojekte, vollständige Übergaben und direkte Website-Erstellung.</p><ul><li>Claude Code oder Codex, geführt oder automatisch</li><li>Vier individuelle Richtungen und erweiterte Projektprüfung</li><li>Website-Überarbeitung mit Seitenumfang, Referenzen und Dateien</li><li>Eigene Module, Skills und Projektprofile</li><li>Ausgearbeitetes Kundenbriefing und Übergabe-Dokument</li><li>Website-Dateipaket mit direkter HTML-Vorschau</li></ul><button type="button" class="solid-btn" data-start-plan="pro">Pro wählen</button></article><article><h3>Ultimate</h3><strong data-public-price="ultimate">25,99 € / Monat</strong><p class="plan-summary">Für Agenturen und volle Kontrolle über Generator, Modelle und Veröffentlichung.</p><ul><li>Alle Ziel-Agenten, Auto- und Expertenmodus</li><li>Prompt-Werkstatt mit Technik-, Design- und Abnahmeregeln</li><li>Mehrere Prompts als benannte Schnellvarianten speichern</li><li>Fünf Richtungen und sämtliche Profi-Einstellungen</li><li>Eigene KI-Verbindungen und GitHub-Veröffentlichung</li><li>Alle Funktionen aus Pro</li></ul><button type="button" class="outline-btn" data-start-plan="ultimate">Ultimate wählen</button></article></div></section>
   </main>
@@ -197,7 +194,7 @@
 
         <div class="ai-review-card" id="aiReviewCard">
           <div><span>PROJEKTPRÜFUNG</span><strong id="aiReviewTitle">Noch nicht mit der Generator-KI geprüft</strong><p id="aiReviewText">Wenn eine externe KI aktiv ist, kann sie fehlende Angaben, Widersprüche und nicht umsetzbare Wünsche erkennen und gezielt nachfragen.</p><div class="task-progress" id="reviewProgress" hidden><div class="task-progress-label"><b id="reviewProgressPercent">0 %</b><small id="reviewProgressText">Analyse wird vorbereitet…</small></div><div class="task-progress-track"><i id="reviewProgressFill"></i></div></div></div>
-          <button type="button" class="outline-btn mini" id="runAiReviewBtn">Jetzt prüfen</button>
+          <div class="ai-review-actions"><button type="button" class="outline-btn mini" id="runAiReviewBtn">Jetzt prüfen</button><button type="button" class="text-btn" id="buyReviewInlineBtn">Erweitert für 3,99 €</button></div>
         </div>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="2">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="4">Module & Skills <i>→</i></button></div>
@@ -387,30 +384,30 @@
         <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
       </header>
       <div class="quick-revision-body">
-        <section class="quick-revision-intro"><p>Prompt.ai liest die erreichbaren Seiten, sammelt Struktur und Inhalte und verbindet sie mit deinen Änderungswünschen. Du erhältst einen Auftrag, den du direkt in Codex oder Claude einfügen kannst.</p><div class="tier-path"><span><b>Free</b> Grundscan und Auftrag</span><span><b>Pro</b> Seitenumfang, Referenzen und Dateianalyse</span><span><b>Ultimate</b> technische Detailregeln und Prompt-Schnellvarianten</span></div></section>
         <div class="field-grid two">
           <label class="field"><span>Bestehende Website</span><input id="quickRevisionUrl" type="url" placeholder="https://deine-website.de" /></label>
           <label class="field"><span>Ziel-Agent</span><select id="quickRevisionAgent"><option value="codex">Codex</option><option value="claude">Claude Code</option></select></label>
         </div>
-        <label class="field field-large"><span>Was soll geändert werden?</span><textarea id="quickRevisionDescription" rows="6" placeholder="Beschreibe, was nicht passt, was erhalten bleiben soll und wie das Ergebnis aussehen oder funktionieren soll."></textarea></label>
-        <section class="quick-tier-block" id="quickRevisionProBlock">
-          <div class="quick-tier-head"><div><span>PRO-WERKZEUGE</span><strong>Den Auftrag genauer eingrenzen</strong></div><small id="quickRevisionProNote"></small></div>
-          <div class="field-grid two">
+        <label class="field field-large"><span>Was soll geändert werden?</span><textarea id="quickRevisionDescription" rows="4" placeholder="Beschreibe, was nicht passt, was erhalten bleiben soll und wie das Ergebnis aussehen oder funktionieren soll."></textarea></label>
+        <aside class="quick-upgrade-note" id="quickRevisionUpgradeNote"><span>Für ein noch besseres Ergebnis</span><p>Mit Pro kannst du betroffene Seiten, zu erhaltende Bereiche, Referenzen und Projektdateien gezielt einbeziehen.</p><button type="button" class="outline-btn mini" data-upgrade-plans>Pro abonnieren</button></aside>
+        <details class="quick-tier-block quick-accordion" id="quickRevisionProBlock">
+          <summary><span><b>Pro</b><strong>Seiten, Referenzen und Dateien</strong></span><small id="quickRevisionProNote"></small></summary>
+          <div class="field-grid two quick-accordion-content">
             <label class="field"><span>Was muss erhalten bleiben?</span><textarea id="quickRevisionPreserve" rows="3" placeholder="z. B. Texte, Bilder, Seitenstruktur, Buchungsfunktion"></textarea></label>
             <label class="field"><span>Betroffene Seiten / Bereiche</span><textarea id="quickRevisionScope" rows="3" placeholder="z. B. Startseite, mobile Navigation und Leistungen"></textarea></label>
             <label class="field"><span>Neue Referenz <em>optional</em></span><input id="quickRevisionReference" type="url" placeholder="https://…" /></label>
             <label class="field"><span>Projektdateien oder Screenshots</span><input id="quickRevisionFiles" type="file" multiple accept=".zip,.html,.css,.js,.jsx,.ts,.tsx,.json,.md,image/png,image/jpeg,image/webp" /></label>
           </div>
-        </section>
-        <section class="quick-tier-block ultimate" id="quickRevisionUltimateBlock">
-          <div class="quick-tier-head"><div><span>ULTIMATE PROMPT-WERKSTATT</span><strong>Technik, Grenzen und Abnahme exakt festlegen</strong></div><small id="quickRevisionUltimateNote"></small></div>
-          <div class="field-grid two">
+        </details>
+        <details class="quick-tier-block quick-accordion ultimate" id="quickRevisionUltimateBlock">
+          <summary><span><b>Ultimate</b><strong>Technik, Regeln und Abnahme</strong></span><small id="quickRevisionUltimateNote"></small></summary>
+          <div class="field-grid two quick-accordion-content">
             <label class="field"><span>Technische Vorgaben</span><textarea id="quickRevisionTechnical" rows="4" placeholder="Framework, Komponenten, Datenbank, Hosting, erlaubte Abhängigkeiten …"></textarea></label>
             <label class="field"><span>Design- und Inhaltsregeln</span><textarea id="quickRevisionDesignRules" rows="4" placeholder="Typografie, Raster, Bildregeln, verbotene Muster, Tonfall …"></textarea></label>
             <label class="field"><span>Abnahmekriterien</span><textarea id="quickRevisionAcceptance" rows="4" placeholder="Woran muss eindeutig erkennbar sein, dass die Überarbeitung fertig ist?"></textarea></label>
             <label class="field"><span>Prüfungen und Befehle</span><textarea id="quickRevisionChecks" rows="4" placeholder="Build, Tests, Browsergrößen, Lighthouse, konkrete Nutzerwege …"></textarea></label>
           </div>
-        </section>
+        </details>
         <div class="quick-revision-actions"><button type="button" class="solid-btn" id="scanQuickRevisionBtn">Website scannen & Auftrag erstellen</button><small id="quickRevisionStatus"></small></div>
         <section class="quick-revision-result" id="quickRevisionResult" hidden>
           <div class="quick-result-head"><div><span>FERTIGER AUFTRAG</span><strong id="quickRevisionScanResult">Website ausgewertet</strong></div><div><button type="button" class="solid-btn mini" id="copyQuickRevisionBtn">Kopieren</button><button type="button" class="outline-btn mini" id="downloadQuickRevisionBtn">Speichern</button></div></div>
@@ -427,17 +424,22 @@
   <dialog id="libraryDialog" class="library-dialog">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
-        <div><span>DEINE BIBLIOTHEKEN</span><h2>Vorlagen, Module & Skills</h2></div>
+        <div><span>DEINE BIBLIOTHEK</span><h2>Projekte und Bausteine</h2></div>
         <button type="submit" class="close-dialog" aria-label="Schließen">×</button>
       </header>
       <div class="library-tabs" role="tablist">
-        <button type="button" class="active" data-library-tab="templates">Prompt-Vorlagen</button>
+        <button type="button" class="active" data-library-tab="projects">Zuletzt bearbeitet</button>
+        <button type="button" data-library-tab="templates">Prompt-Vorlagen</button>
         <button type="button" data-library-tab="modules">Module</button>
         <button type="button" data-library-tab="skills">Agent-Skills</button>
       </div>
       <div class="library-tools"><button type="button" class="text-btn" id="exportLibraryBtn">Alles als JSON sichern</button><button type="button" class="text-btn" id="importLibraryBtn">JSON importieren</button><input id="importLibraryInput" type="file" accept=".json,application/json" hidden /></div>
 
-      <section class="library-pane active" data-library-pane="templates">
+      <section class="library-pane active" data-library-pane="projects">
+        <div id="libraryProjectList" class="welcome-project-list library-project-list" aria-live="polite"></div>
+      </section>
+
+      <section class="library-pane" data-library-pane="templates">
         <div id="templateLibraryList" class="library-items"></div>
         <div class="library-editor">
           <h3 id="templateEditorTitle">Prompt-Vorlage anlegen</h3>
@@ -622,10 +624,11 @@
           </div>
         </div>
         <div id="accountLoggedIn" hidden>
-          <section class="account-overview-head"><div class="account-user"><span>MEIN PROFIL</span><h2>Persönliche Angaben und Projekte</h2><strong id="accountEmail">–</strong><small id="accountUserId"></small></div><div class="cloud-stats" id="cloudStats"></div></section>
+          <section class="account-overview-head"><div class="account-user"><span>MEIN PROFIL</span><h2>Persönliche Angaben und Sicherheit</h2><strong id="accountEmail">–</strong><small id="accountUserId"></small></div><div class="cloud-stats" id="cloudStats"></div></section>
           <section class="account-profile-settings"><div class="account-section-head"><div><strong>Profildaten</strong><p>Diese Angaben werden bei neuen Projekten auf Wunsch als Ausgangspunkt verwendet.</p></div></div><div class="field-grid two"><label class="field"><span>Name</span><input id="userDisplayName" type="text" /></label><label class="field"><span>Firma / Agentur</span><input id="userCompanyName" type="text" /></label><label class="field"><span>Website</span><input id="userWebsite" type="url" /></label><label class="field"><span>Standard-Auftraggeber</span><select id="userDefaultClientType"><option value="">Nicht festgelegt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="kunde">Kundenprojekt</option><option value="intern">Internes Projekt</option></select></label></div><div class="account-save-row"><button type="button" class="solid-btn" id="saveUserProfileBtn">Änderungen speichern</button><small id="userProfileMessage"></small></div></section>
           <section class="api-addon-card" id="apiAddonCard"><div><span>OPTIONALES ADD-ON</span><strong>Eigene KI-API-Keys</strong><p>Eigene OpenAI-, Gemini-, Gateway- und Cloudflare-Schlüssel verschlüsselt hinterlegen.</p></div><div><b>5,99 € / Monat</b><button type="button" class="solid-btn" id="startApiAddonCheckoutBtn">Add-on buchen</button></div></section>
-          <div class="cloud-projects"><span>LETZTE PROJEKTE</span><div id="cloudProjectList" class="cloud-project-list"></div></div>
+          <section class="account-tool-card"><div><strong>Face ID &amp; Biometrie</strong><p>Bestätige dich auf diesem Gerät mit Face ID, Fingerabdruck oder Geräte-PIN.</p></div><div><button type="button" class="outline-btn" id="faceIdBtn">Face ID einrichten</button><small id="faceIdMessage"></small></div></section>
+          <section class="account-support-card"><div class="account-section-head"><div><strong>Support-Anfrage</strong><p>Beschreibe kurz dein Anliegen. Deine Anfrage wird deinem Konto zugeordnet.</p></div></div><div class="field-grid two"><label class="field"><span>Thema</span><select id="supportCategory"><option value="technical">Technisches Problem</option><option value="billing">Zahlung &amp; Tarif</option><option value="account">Konto &amp; Anmeldung</option><option value="feedback">Idee &amp; Feedback</option></select></label><label class="field"><span>Betreff</span><input id="supportSubject" type="text" maxlength="120" placeholder="Worum geht es?" /></label></div><label class="field"><span>Nachricht</span><textarea id="supportMessage" rows="4" maxlength="3000" placeholder="Was ist passiert und wobei brauchst du Hilfe?"></textarea></label><div class="account-save-row"><button type="button" class="solid-btn" id="sendSupportBtn">Anfrage senden</button><small id="supportStatus"></small></div></section>
           <div class="inline-actions"><button type="button" class="solid-btn" id="syncNowBtn">Jetzt synchronisieren</button><button type="button" class="outline-btn" id="signOutBtn">Abmelden</button></div>
           <p id="syncMessage" class="auth-message"></p>
         </div>
@@ -670,7 +673,7 @@
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>TARIFE</span><h2>Passender Umfang für dein Projekt</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="plans-grid">
-        <article><h3>Kostenlos</h3><strong>0 €</strong><p class="plan-summary">Ein vollständiger Einstieg mit drei brauchbaren Entwurfsrichtungen.</p><ul><li>Geführter Ablauf und Codex-Ziel</li><li>Drei responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Lokale Grundprüfung in reduziertem Umfang</li></ul><div class="single-check-note"><strong>Mehr Prüfung für ein Projekt?</strong><small>Erweiterte Einzelprüfung für 3,99 € oder ohne Einzelkauf in Pro.</small></div><button type="button" class="outline-btn" disabled>Aktueller Einstieg</button></article>
+        <article><h3>Kostenlos</h3><strong>0 €</strong><p class="plan-summary">Ein vollständiger Einstieg mit drei brauchbaren Entwurfsrichtungen.</p><ul><li>Geführter Ablauf und Codex-Ziel</li><li>Drei responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Lokale Grundprüfung in reduziertem Umfang</li></ul><div class="single-check-note"><strong>Mehr Prüfung für ein Projekt?</strong><small>Erweiterte Einzelprüfung für 3,99 € oder ohne Einzelkauf in Pro.</small><button type="button" class="outline-btn mini" id="buySingleReviewBtn">Für 3,99 € kaufen</button></div><button type="button" class="outline-btn" disabled>Aktueller Einstieg</button></article>
         <article class="recommended"><h3>Pro</h3><strong id="proPriceLabel">15,99 € / Monat</strong><p class="plan-summary">Für Kundenprojekte von der Prüfung bis zur direkt sichtbaren Website.</p><ul><li>Claude Code oder Codex, geführt oder automatisch</li><li>Vier individuelle Richtungen</li><li>Erweiterte Projektprüfung</li><li>Website-Überarbeitung mit Referenzen, Seitenauswahl und Dateien</li><li>Module, Skills und eigene Projektprofile</li><li>Kundenbriefing, Übergabe und ZIP</li></ul><button type="button" class="solid-btn" id="startProCheckoutBtn">Pro wählen</button></article>
         <article><h3>Ultimate</h3><strong id="ultimatePriceLabel">25,99 € / Monat</strong><p class="plan-summary">Alle Werkzeuge für Agenturen, verschiedene Modelle und Veröffentlichung.</p><ul><li>Alle Funktionen aus Pro</li><li>Alle Agenten und fünf Richtungen</li><li>Prompt-Werkstatt mit detaillierten Technik-, Design- und Prüffeldern</li><li>Mehrere Prompts als Schnellvarianten speichern</li><li>Eigene KI-Verbindungen inklusive</li><li>Expertenmodus, bestehende Projekte und GitHub-Veröffentlichung</li></ul><button type="button" class="outline-btn" id="startUltimateCheckoutBtn">Ultimate wählen</button></article>
       </div>
@@ -682,10 +685,11 @@
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>ADMINISTRATION</span><h2>Prompt.ai verwalten</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="admin-body">
-        <nav class="admin-tabs" aria-label="Adminbereiche"><button type="button" class="active" data-admin-tab="overview">Übersicht</button><button type="button" data-admin-tab="users">Benutzer & Abos</button><button type="button" data-admin-tab="messages">Mitteilungen</button><button type="button" data-admin-tab="offer">Aktion & Testphase</button></nav>
+        <nav class="admin-tabs" aria-label="Adminbereiche"><button type="button" class="active" data-admin-tab="overview">Übersicht</button><button type="button" data-admin-tab="users">Benutzer &amp; Abos</button><button type="button" data-admin-tab="support">Support</button><button type="button" data-admin-tab="messages">Mitteilungen</button><button type="button" data-admin-tab="offer">Aktion &amp; Testphase</button></nav>
         <p id="adminMessage" class="auth-message"></p>
         <section class="admin-pane active" data-admin-pane="overview"><div id="adminStats" class="admin-stats"></div><div class="admin-section-head"><div><span>NUTZUNG</span><h3>Verwendete KI-Modelle</h3></div><button type="button" class="outline-btn mini" id="adminReloadBtn">Neu laden</button></div><div id="adminUsage" class="admin-usage"></div><div class="admin-section-head admin-runs-head"><div><span>LETZTE VERARBEITUNGEN</span><h3>Prompts und Projekte</h3><p>Aus Datenschutzgründen werden Projektname, Art, Ziel und Verarbeitung angezeigt – nicht der vollständige vertrauliche Prompttext.</p></div></div><div id="adminRuns" class="admin-runs"></div></section>
         <section class="admin-pane" data-admin-pane="users"><div class="admin-section-head"><div><span>KONTEN</span><h3>Registrierte Benutzer</h3></div><input id="adminUserSearch" type="search" placeholder="E-Mail oder Firma suchen" /></div><div id="adminUsers" class="admin-users"></div></section>
+        <section class="admin-pane" data-admin-pane="support"><div class="admin-section-head"><div><span>SUPPORT</span><h3>Anfragen der Benutzer</h3></div></div><div id="adminSupport" class="admin-support"></div></section>
         <section class="admin-pane" data-admin-pane="messages"><div class="admin-split"><div><div class="admin-section-head"><div><span>AKTIVE MELDUNGEN</span><h3>Mitteilungen</h3></div></div><div id="adminAnnouncements" class="admin-announcements"></div></div><div class="admin-editor"><span>NEUE MITTEILUNG</span><label class="field"><span>Titel</span><input id="announcementTitle" maxlength="120" /></label><label class="field"><span>Text</span><textarea id="announcementBody" rows="5" maxlength="2000"></textarea></label><div class="field-grid two"><label class="field"><span>Stufe</span><select id="announcementLevel"><option value="info">Info</option><option value="success">Erfolg</option><option value="warning">Warnung</option><option value="critical">Kritisch</option></select></label><label class="field"><span>Ende <em>optional</em></span><input id="announcementEndsAt" type="datetime-local" /></label></div><label class="check-row"><input id="announcementActive" type="checkbox" checked /><span><strong>Sofort anzeigen</strong><small>Ist nach dem Speichern für Nutzer sichtbar.</small></span></label><button type="button" class="solid-btn" id="saveAnnouncementBtn">Mitteilung veröffentlichen</button></div></div></section>
         <section class="admin-pane" data-admin-pane="offer"><div class="admin-offer-editor"><div class="admin-section-head"><div><span>STRIPE & STARTSEITE</span><h3>Testphase oder Rabattaktion</h3><p>Diese Angaben steuern gleichzeitig Banner und Checkout. Alternativ liest Prompt.ai die Metadaten <code>trial_days</code>, <code>discount_percent</code>, <code>coupon_id</code> und <code>offer_title</code> direkt vom Pro-Preis in Stripe.</p></div></div><label class="check-row"><input id="offerEnabled" type="checkbox" /><span><strong>Aktion aktiv</strong><small>Banner wird öffentlich angezeigt und hat Vorrang vor Stripe-Metadaten.</small></span></label><div class="field-grid two"><label class="field"><span>Kleine Überschrift</span><input id="adminOfferEyebrow" placeholder="JETZT KOSTENLOS TESTEN" /></label><label class="field"><span>Button</span><input id="adminOfferCta" placeholder="Kostenlos testen" /></label></div><label class="field"><span>Hauptüberschrift</span><input id="adminOfferTitle" placeholder="Pro 14 Tage kostenlos testen" /></label><label class="field"><span>Beschreibung</span><textarea id="adminOfferDescription" rows="3"></textarea></label><div class="field-grid three"><label class="field"><span>Testtage</span><input id="adminOfferTrialDays" type="number" min="0" max="365" /></label><label class="field"><span>Rabatt in %</span><input id="adminOfferDiscount" type="number" min="0" max="100" /></label><label class="field"><span>Ende <em>optional</em></span><input id="adminOfferEndsAt" type="datetime-local" /></label></div><label class="field"><span>Stripe Coupon-ID <em>nur bei automatischem Rabatt</em></span><input id="adminOfferCoupon" placeholder="z. B. Coupon-ID" /></label><button type="button" class="solid-btn" id="saveOfferBtn">Aktion speichern</button></div></section>
       </div>

@@ -145,7 +145,7 @@ const Cloud = {
 
   async loadUserBundle() {
     const userId = this.assertUser();
-    const [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes, subscriptionRes, adminRes, addonRes, userProfileRes] = await Promise.all([
+    const [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes, subscriptionRes, adminRes, addonRes, userProfileRes, reviewCreditsRes] = await Promise.all([
       this.client.from('sitebrief_user_settings').select('data,active_profile_id').eq('user_id', userId).maybeSingle(),
       this.client.from('sitebrief_profiles').select('id,name,description,config,is_default,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
       this.client.from('sitebrief_templates').select('id,name,tag,summary,prompt,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
@@ -156,7 +156,8 @@ const Cloud = {
       this.client.from('sitebrief_subscriptions').select('plan,status,current_period_end').eq('user_id', userId).maybeSingle(),
       this.client.from('sitebrief_admins').select('user_id').eq('user_id', userId).maybeSingle(),
       this.client.from('sitebrief_addons').select('addon,status,current_period_end').eq('user_id',userId).eq('addon','own_api_keys').maybeSingle(),
-      this.client.from('sitebrief_user_profiles').select('display_name,company_name,website,default_client_type').eq('user_id',userId).maybeSingle()
+      this.client.from('sitebrief_user_profiles').select('display_name,company_name,website,default_client_type').eq('user_id',userId).maybeSingle(),
+      this.client.from('sitebrief_review_credits').select('credits').eq('user_id',userId).maybeSingle()
     ]);
     for (const result of [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes, subscriptionRes, adminRes, addonRes, userProfileRes]) {
       if (result.error) throw result.error;
@@ -171,8 +172,22 @@ const Cloud = {
       projects: projectsRes.data || [],
       aiConnections: connectionsRes.data || [],
       subscription: {...(subscriptionRes.data || {plan:'free',status:'active'}),isAdmin:Boolean(adminRes.data),ownApiKeys:Boolean(adminRes.data)||subscriptionRes.data?.plan==='ultimate'||(['active','trialing'].includes(addonRes.data?.status))},
-      userProfile:userProfileRes.data?{displayName:userProfileRes.data.display_name||'',companyName:userProfileRes.data.company_name||'',website:userProfileRes.data.website||'',defaultClientType:userProfileRes.data.default_client_type||''}:null
+      userProfile:userProfileRes.data?{displayName:userProfileRes.data.display_name||'',companyName:userProfileRes.data.company_name||'',website:userProfileRes.data.website||'',defaultClientType:userProfileRes.data.default_client_type||''}:null,
+      reviewCredits:Number(reviewCreditsRes.data?.credits)||0
     };
+  },
+
+  async createSupportRequest({category,subject,message}){
+    const userId=this.assertUser();
+    const {error}=await this.client.from('sitebrief_support_requests').insert({user_id:userId,category,subject,message});
+    if(error)throw error;
+  },
+
+  async useReviewCredit(){
+    this.assertUser();
+    const {data,error}=await this.client.rpc('sitebrief_use_review_credit');
+    if(error)throw error;
+    return Number(data)||0;
   },
 
   async saveUserProfile(profile){

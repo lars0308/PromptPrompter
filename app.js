@@ -17,6 +17,7 @@
   const THEME_KEY = "sitebrief-theme";
   const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
   const QUICK_REVISION_VARIANTS_KEY = "sitebrief-v6-revision-variants";
+  const BIOMETRIC_KEY = "prompt-ai-biometric-v1";
   const ONBOARDING_KEY = "prompt-ai-welcome-seen-v1";
   const GUEST_RUN_LIMIT = 3;
   const PROJECT_OPTIONS = {
@@ -81,6 +82,7 @@
     subscriptionPeriodEnd: null,
     isAdmin: false,
     ownApiKeys: false,
+    reviewCredits: 0,
     clientContext:"",
     generatedWebsite:null,
     quickRevisionContext:null,
@@ -102,15 +104,15 @@
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
       "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadProjectSourcesBtn","downloadHandoffPackageBtn","downloadBriefBtn","promptHandoff","promptHandoffText","promptHandoffPreview","downloadProjectReportBtn","downloadClientBriefBtn","downloadHandoverBtn","downloadWebsiteZipBtn","buildWebsiteBtn","downloadGeneratedWebsiteBtn","websiteBuildStatus","websiteBuildProgress","websiteBuildStage","websiteBuildPercent","websiteBuildFill","websiteBuildStages","websiteBuildPreview","websiteBuildTruthNote","websiteRequirements","publishGithubBtn","clientResultHint","exportResultHint",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
-      "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","cloudProjectList",
+      "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","libraryProjectList","faceIdBtn","faceIdMessage","supportCategory","supportSubject","supportMessage","sendSupportBtn","supportStatus",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
       "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","cloudflareConnectionStatus","cloudflareAccountId","cloudflareApiToken","cloudflareConnectBtn","cloudflareTestBtn","cloudflareDisconnectBtn","cloudflareConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
-      "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
+      "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","buyReviewInlineBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
-      "resetBtn","startNewBtn","brandHome","installAppBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
-      "workspaceNewProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","workspaceLibraryHint","welcomeProjectList","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn","welcomeIntroDialog","closeWelcomeIntroBtn","confirmWelcomeIntroBtn","appActionDialog","appActionKicker","appActionTitle","appActionMessage","appActionInputWrap","appActionInputLabel","appActionInput","appActionCancelBtn","appActionConfirmBtn","openAgentBtn","agentLaunchDialog","closeAgentLaunchBtn","agentLaunchTitle","agentLaunchText","openAgentWebBtn","openAgentDesktopBtn","agentLaunchHint"
+      "resetBtn","startNewBtn","brandHome","installAppBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","buySingleReviewBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
+      "workspaceNewProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionUpgradeNote","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn","welcomeIntroDialog","closeWelcomeIntroBtn","confirmWelcomeIntroBtn","appActionDialog","appActionKicker","appActionTitle","appActionMessage","appActionInputWrap","appActionInputLabel","appActionInput","appActionCancelBtn","appActionConfirmBtn","openAgentBtn","agentLaunchDialog","closeAgentLaunchBtn","agentLaunchTitle","agentLaunchText","openAgentWebBtn","openAgentDesktopBtn","agentLaunchHint"
     ].forEach(id => el[id] = document.getElementById(id));
   }
 
@@ -391,10 +393,12 @@
     const moduleStep=document.getElementById('stepModules');if(moduleStep)moduleStep.classList.toggle('tier-unavailable',!rules.modules);
     if(el.openLibraryBtn)el.openLibraryBtn.hidden=!rules.modules;
     document.querySelectorAll('[data-open-library],[data-mobile-library]').forEach(button=>button.hidden=!rules.modules);
+    if(el.workspaceLibraryBtn){el.workspaceLibraryBtn.disabled=!rules.modules;el.workspaceLibraryBtn.textContent=rules.modules?'Bibliothek öffnen':'Pro Variante benötigt';el.workspaceLibraryBtn.title=rules.modules?'':'Die Bibliothek ist ab Pro verfügbar.';el.workspaceLibraryBtn.classList.toggle('plan-disabled',!rules.modules)}
+    if(el.buySingleReviewBtn)el.buySingleReviewBtn.hidden=state.plan!=="free"||state.isAdmin;
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
     renderProjectOptions();
-    renderProfileUi();renderModuleSelection();renderSkillSelection();applyQuickRevisionPlanUi();renderWelcomeProjects();
+    renderProfileUi();renderModuleSelection();renderSkillSelection();applyQuickRevisionPlanUi();renderCloudProjects();renderAiReviewCard();
   }
 
   function updateAccountUi(){
@@ -410,10 +414,10 @@
       if(el.userDisplayName){el.userDisplayName.value=state.userProfile.displayName||'';el.userCompanyName.value=state.userProfile.companyName||'';el.userWebsite.value=state.userProfile.website||'';el.userDefaultClientType.value=state.userProfile.defaultClientType||''}
       const counts={profiles:state.profiles.length,modules:state.modules.length,skills:state.skills.length,projects:state.cloudProjects.length};
       el.cloudStats.innerHTML=`<div><b>${counts.profiles}</b><span>Profile</span></div><div><b>${counts.modules}</b><span>Module</span></div><div><b>${counts.skills}</b><span>Skills</span></div><div><b>${counts.projects}</b><span>Projekte</span></div>`;
-      renderCloudProjects();
-      if(!state.cloud.syncing) setSyncState("Cloud",state.cloud.error?"error":"synced");renderWelcomeProjects();
+      renderCloudProjects();renderBiometricUi();
+      if(!state.cloud.syncing) setSyncState("Cloud",state.cloud.error?"error":"synced");
     }else{
-      el.accountBtn.textContent="Anmelden";const welcomeAccount=document.getElementById('welcomeAccountBtn');if(welcomeAccount)welcomeAccount.textContent='Anmelden & synchronisieren';el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;setSyncState("Cloud bereit");if(el.openLibraryBtn){el.openLibraryBtn.disabled=true;el.openLibraryBtn.title="Bibliotheken sind nach der Anmeldung verfügbar"}if(el.generatorEngine){el.generatorEngine.value="local";state.engine="local";el.generatorEngine.disabled=true;el.generatorModel.disabled=true;}renderWelcomeProjects();
+      el.accountBtn.textContent="Anmelden";el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;setSyncState("Cloud bereit");if(el.openLibraryBtn){el.openLibraryBtn.disabled=true;el.openLibraryBtn.title="Bibliotheken sind nach der Anmeldung verfügbar"}if(el.generatorEngine){el.generatorEngine.value="local";state.engine="local";el.generatorEngine.disabled=true;el.generatorModel.disabled=true;}
     }
   }
 
@@ -470,6 +474,7 @@
       state.isAdmin=Boolean(subscription.isAdmin);
       window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:state.isAdmin}}));
       state.ownApiKeys=Boolean(subscription.ownApiKeys);
+      state.reviewCredits=Number(bundle.reviewCredits)||0;
       state.subscriptionStatus=subscription.status||'active';state.subscriptionPeriodEnd=subscription.current_period_end||null;
       state.userProfile={...state.userProfile,...(bundle.userProfile||{})};
       state.plan=state.isAdmin?"ultimate":(["active","trialing"].includes(subscription.status)&&["pro","ultimate"].includes(subscription.plan)?subscription.plan:"free");
@@ -519,7 +524,7 @@
     const params=new URLSearchParams(location.search),result=params.get('checkout');if(!result)return;
     if(result==='cancel'){showCheckoutNotice('Zahlung abgebrochen. Es wurde nichts geändert.','error');history.replaceState({},'',location.pathname+location.hash);return}
     const product=params.get('product')||'';showCheckoutNotice('Zahlung bestätigt. Freischaltung wird geprüft…');
-    for(let attempt=0;attempt<10;attempt++){if(attempt)await new Promise(resolve=>setTimeout(resolve,1600));await loadCloudBundle({pushLocalIfEmpty:false});const ready=product==='own_api_keys'?state.ownApiKeys:product==='ultimate'?state.plan==='ultimate':product==='pro'?['pro','ultimate'].includes(state.plan):state.plan!=='free'||state.ownApiKeys;if(ready){showCheckoutNotice('Freigeschaltet. Dein neuer Umfang ist jetzt verfügbar.','good');history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>document.getElementById('checkoutNotice')?.remove(),6000);return}}
+    for(let attempt=0;attempt<10;attempt++){if(attempt)await new Promise(resolve=>setTimeout(resolve,1600));await loadCloudBundle({pushLocalIfEmpty:false});const ready=product==='single_review'?state.reviewCredits>0:product==='own_api_keys'?state.ownApiKeys:product==='ultimate'?state.plan==='ultimate':product==='pro'?['pro','ultimate'].includes(state.plan):state.plan!=='free'||state.ownApiKeys;if(ready){showCheckoutNotice(product==='single_review'?'Eine erweiterte Projektprüfung ist jetzt verfügbar.':'Freigeschaltet. Dein neuer Umfang ist jetzt verfügbar.','good');history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>document.getElementById('checkoutNotice')?.remove(),6000);return}}
     showCheckoutNotice('Die Zahlung war erfolgreich, die Freischaltung braucht noch einen Moment. Bitte gleich erneut synchronisieren.','error');history.replaceState({},'',location.pathname+location.hash);
   }
 
@@ -556,7 +561,7 @@
   }
 
   async function signOut(){
-    try{await window.SiteBriefCloud.signOut();state.cloud.user=null;state.cloudProjects=[];state.aiConnections=[];state.plan='free';state.isAdmin=false;state.ownApiKeys=false;window.SiteBriefCloud.aiConnections=[];renderAiConnections();applyPlanUi();setSyncState("Cloud bereit");updateAccountUi();el.accountDialog.close();}catch(err){el.syncMessage.textContent=err?.message||"Abmelden fehlgeschlagen.";el.syncMessage.className="auth-message error";}
+    try{await window.SiteBriefCloud.signOut();state.cloud.user=null;state.cloudProjects=[];state.aiConnections=[];state.plan='free';state.isAdmin=false;state.ownApiKeys=false;state.reviewCredits=0;window.SiteBriefCloud.aiConnections=[];renderAiConnections();applyPlanUi();setSyncState("Cloud bereit");updateAccountUi();el.accountDialog.close();}catch(err){el.syncMessage.textContent=err?.message||"Abmelden fehlgeschlagen.";el.syncMessage.className="auth-message error";}
   }
 
   function applySavedState(saved,{persistLocal=false}={}){
@@ -615,17 +620,20 @@
   }
 
   function renderCloudProjects(){
-    if(!el.cloudProjectList)return;el.cloudProjectList.innerHTML="";
-    if(!state.cloudProjects.length){el.cloudProjectList.innerHTML='<div class="cloud-project-row"><div><strong>Noch keine Cloud-Projekte</strong><small>Der aktuelle Entwurf wird nach Login automatisch gespeichert.</small></div></div>';return;}
-    state.cloudProjects.slice(0,8).forEach(row=>{
-      const div=document.createElement("div");div.className="cloud-project-row";const date=row.updated_at?new Date(row.updated_at).toLocaleString("de-DE"):"";
-      div.innerHTML=`<div><strong>${escapeHtml(row.title||"Unbenanntes Projekt")}</strong><small>${escapeHtml(date)} · ${escapeHtml(row.status||"draft")}</small></div><button type="button" data-load>laden</button><button type="button" data-delete>löschen</button>`;
-      div.querySelector("[data-load]").addEventListener("click",()=>loadCloudProject(row));div.querySelector("[data-delete]").addEventListener("click",()=>deleteCloudProject(row.id));el.cloudProjectList.appendChild(div);
+    if(!el.libraryProjectList)return;el.libraryProjectList.innerHTML="";
+    const rows=[],localProject=project();
+    if(localProject.name||localProject.description)rows.push({id:state.currentProjectId,title:localProject.name||localProject.client?.name||localProject.description.slice(0,54)||'Aktueller Entwurf',status:state.currentStep>=8?'complete':'draft',local:true});
+    state.cloudProjects.filter(row=>row.id!==state.currentProjectId).forEach(row=>rows.push(row));
+    if(!rows.length){el.libraryProjectList.innerHTML='<div class="welcome-project-empty"><strong>Noch kein Projekt angelegt</strong><p>Neue und synchronisierte Projekte erscheinen hier.</p></div>';return;}
+    rows.forEach(row=>{
+      const card=document.createElement('article');card.className='welcome-project-card';const date=row.updated_at?new Date(row.updated_at).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}):'auf diesem Gerät';
+      card.innerHTML=`<button type="button" data-load><span>${row.local?'AKTUELL':'CLOUD-PROJEKT'}</span><strong>${escapeHtml(row.title||'Unbenanntes Projekt')}</strong><small>${row.status==='complete'?'fertig vorbereitet':'Entwurf'} · ${escapeHtml(date)}</small><i>Öffnen →</i></button>${row.local?'':`<button type="button" class="project-delete-btn" data-delete aria-label="Projekt löschen">×</button>`}`;
+      card.querySelector('[data-load]').addEventListener('click',async()=>{if(row.local){showWorkflow(state.currentStep);el.libraryDialog.close();return}await loadCloudProject(row);showWorkflow(state.currentStep)});card.querySelector('[data-delete]')?.addEventListener('click',()=>deleteCloudProject(row.id));el.libraryProjectList.appendChild(card);
     });
   }
 
   async function loadCloudProject(row){
-    if(!row?.state)return;applySavedState(row.state,{persistLocal:true});state.currentProjectId=row.id;await hydrateCloudReferenceImages();renderReferences();renderClientSources();renderUnderstanding();renderLibrary();renderConcepts();renderSelectedPreview();updateEngineUi();$$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));goStep(state.currentStep,true);if(el.accountDialog.open)el.accountDialog.close();renderWelcomeProjects();
+    if(!row?.state)return;applySavedState(row.state,{persistLocal:true});state.currentProjectId=row.id;await hydrateCloudReferenceImages();renderReferences();renderClientSources();renderUnderstanding();renderLibrary();renderConcepts();renderSelectedPreview();updateEngineUi();$$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));goStep(state.currentStep,true);if(el.accountDialog.open)el.accountDialog.close();if(el.libraryDialog.open)el.libraryDialog.close();renderCloudProjects();
   }
 
   async function deleteCloudProject(id){
@@ -637,22 +645,7 @@
   }
 
   function showWelcome(){
-    document.getElementById('welcomePage').hidden=false;document.getElementById('workflowApp').hidden=true;renderWelcomeProjects();window.scrollTo({top:0,behavior:'smooth'});
-  }
-
-  function renderWelcomeProjects(){
-    if(!el.welcomeProjectList)return;el.welcomeProjectList.innerHTML='';
-    const rows=[];
-    const localProject=project();
-    if(localProject.name||localProject.description)rows.push({id:state.currentProjectId,title:localProject.name||localProject.client?.name||localProject.description.slice(0,54)||'Aktueller Entwurf',status:state.currentStep>=8?'fertig vorbereitet':`Schritt ${state.currentStep} von 8`,local:true,state:null});
-    state.cloudProjects.filter(row=>row.id!==state.currentProjectId).slice(0,5).forEach(row=>rows.push(row));
-    if(!rows.length){el.welcomeProjectList.innerHTML='<div class="welcome-project-empty"><strong>Noch kein Projekt angelegt</strong><p>Starte ein neues Projekt. Nach der Anmeldung werden deine Entwürfe automatisch hier angezeigt.</p></div>';return;}
-    rows.slice(0,6).forEach(row=>{
-      const card=document.createElement('article');card.className='welcome-project-card';const date=row.updated_at?new Date(row.updated_at).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}):'auf diesem Gerät';
-      const status=row.local?row.status:(row.status==='complete'?'fertig vorbereitet':'Entwurf');
-      card.innerHTML=`<button type="button" aria-label="${escapeHtml(row.title||'Projekt')} öffnen"><span>${row.local?'AKTUELL':'CLOUD-PROJEKT'}</span><strong>${escapeHtml(row.title||'Unbenanntes Projekt')}</strong><small>${escapeHtml(status)} · ${escapeHtml(date)}</small><i>Öffnen →</i></button>`;
-      card.querySelector('button').addEventListener('click',async()=>{if(row.local){showWorkflow(state.currentStep);return}await loadCloudProject(row);showWorkflow(state.currentStep)});el.welcomeProjectList.appendChild(card);
-    });
+    document.getElementById('welcomePage').hidden=false;document.getElementById('workflowApp').hidden=true;window.scrollTo({top:0,behavior:'smooth'});
   }
 
   function quickRevisionVariants(){
@@ -666,25 +659,31 @@
 
   function applyQuickRevisionPlanUi(){
     if(!el.quickRevisionDialog)return;const rules=planRules(),pro=rules.existing,ultimate=rules.advanced;
-    const setBlock=(block,enabled,note,lockedNote)=>{if(!block)return;block.classList.toggle('locked',!enabled);$$('input,textarea,select',block).forEach(control=>control.disabled=!enabled);if(note)note.textContent=enabled?'In deinem Tarif freigeschaltet.':lockedNote};
-    setBlock(el.quickRevisionProBlock,pro,el.quickRevisionProNote,'Ab Pro: mehrere Seiten, Referenzen und Projektdateien einbeziehen.');
-    setBlock(el.quickRevisionUltimateBlock,ultimate,el.quickRevisionUltimateNote,'In Ultimate: technische Regeln und Abnahmekriterien einzeln festlegen.');
+    const setBlock=(block,enabled,note)=>{if(!block)return;block.hidden=!enabled;if(!enabled)block.open=false;$$('input,textarea,select',block).forEach(control=>control.disabled=!enabled);if(note)note.textContent='Verfügbar'};
+    setBlock(el.quickRevisionProBlock,pro,el.quickRevisionProNote);
+    setBlock(el.quickRevisionUltimateBlock,ultimate,el.quickRevisionUltimateNote);
+    if(el.quickRevisionUpgradeNote)el.quickRevisionUpgradeNote.hidden=pro;
     el.quickRevisionVariantTools.hidden=!ultimate;el.quickRevisionPrompt.readOnly=!pro;
     const agents=rules.agents.filter(key=>AGENT_NAMES[key]);const current=el.quickRevisionAgent.value;el.quickRevisionAgent.innerHTML=agents.map(key=>`<option value="${key}">${escapeHtml(AGENT_NAMES[key])}</option>`).join('');el.quickRevisionAgent.value=agents.includes(current)?current:agents[0];
-    if(el.workspaceLibraryHint)el.workspaceLibraryHint.textContent=rules.modules?'Deine gespeicherten Bausteine direkt öffnen.':'Eigene Bausteine sind ab Pro verfügbar.';
     renderQuickRevisionVariants();
   }
 
   function openQuickRevision(){applyQuickRevisionPlanUi();el.quickRevisionDialog.showModal();setTimeout(()=>el.quickRevisionUrl.focus(),50)}
 
-  async function buildQuickRevisionPrompt(context,url,description){
+  async function analyzeQuickRevisionInputs(context,url){
+    const rules=planRules(),payload={action:'revision-brief',engine:'gateway',revisionInput:{changeRequest:el.quickRevisionDescription.value.trim(),preserve:rules.existing?el.quickRevisionPreserve.value.trim():'',scope:rules.existing?el.quickRevisionScope.value.trim():'',reference:rules.existing?el.quickRevisionReference.value.trim():'',technical:rules.advanced?el.quickRevisionTechnical.value.trim():'',designRules:rules.advanced?el.quickRevisionDesignRules.value.trim():'',acceptance:rules.advanced?el.quickRevisionAcceptance.value.trim():'',checks:rules.advanced?el.quickRevisionChecks.value.trim():''},siteContext:{url,siteName:context?.siteName||context?.title||'',description:context?.description||'',pages:Array.isArray(context?.pages)?context.pages.slice(0,20):[]}};
+    const response=await sitebriefApiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await response.json();if(!response.ok)throw new Error(data.error||'Die Angaben konnten nicht durch die KI aufbereitet werden.');return data;
+  }
+
+  async function buildQuickRevisionPrompt(context,url,brief){
     const rules=planRules(),pro=rules.existing,ultimate=rules.advanced,readable=[];
     if(pro)for(const file of [...(el.quickRevisionFiles.files||[])].slice(0,12)){if(/\.(html|css|js|jsx|ts|tsx|json|md)$/i.test(file.name)&&file.size<=300000)readable.push(`\n### DATEI: ${file.name}\n${(await file.text()).slice(0,30000)}`);else readable.push(`\n### BEIGEFÜGTE DATEI: ${file.name}\nDatei vor der Änderung vollständig prüfen.`)}
     const pages=Array.isArray(context?.pages)?context.pages:[],pageDetails=pages.slice(0,20).map(page=>`- ${page.title||page.kind||'Seite'}${page.url?` (${page.url})`:''}: ${String(page.summary||'keine Zusammenfassung').slice(0,900)}`).join('\n');
     const scanState=context?.error?`Der automatische Scan war nicht vollständig möglich: ${context.error}. Öffne die Website selbst und prüfe alle betroffenen Seiten vor der Änderung.`:`Automatisch erfasst: ${pages.length} Seiten, ${(context?.links||[]).length} Links und ${(context?.images||[]).length} Bilder.`;
-    const proBlock=pro?`\n## GEZIELTER UMFANG\nZu erhaltende Bereiche:\n${el.quickRevisionPreserve.value.trim()||'Nicht gesondert festgelegt. Vorhandene funktionierende Bereiche erhalten.'}\n\nBetroffene Seiten und Bereiche:\n${el.quickRevisionScope.value.trim()||'Aus den Änderungswünschen und dem Scan ableiten.'}\n\nZusätzliche Referenz:\n${el.quickRevisionReference.value.trim()||'Keine.'}`:'';
-    const ultimateBlock=ultimate?`\n## TECHNISCHE DETAILVORGABEN\n${el.quickRevisionTechnical.value.trim()||'Vorhandenen Stack, Abhängigkeiten und Konventionen respektieren.'}\n\n## DESIGN- UND INHALTSREGELN\n${el.quickRevisionDesignRules.value.trim()||'Keine zusätzlichen Regeln eingetragen.'}\n\n## VERBINDLICHE ABNAHMEKRITERIEN\n${el.quickRevisionAcceptance.value.trim()||'Alle beschriebenen Änderungen funktionieren auf Desktop und Mobil ohne bestehende Abläufe zu beschädigen.'}\n\n## VERBINDLICHE PRÜFUNGEN\n${el.quickRevisionChecks.value.trim()||'Passenden Build, vorhandene Tests und die betroffenen Nutzerwege ausführen.'}`:'';
-    return `# WEBSITE-ÜBERARBEITUNG — ${AGENT_NAMES[el.quickRevisionAgent.value].toUpperCase()}\n\nArbeite an der bestehenden Website. Erstelle keinen austauschbaren Neubau. Untersuche zuerst den vorhandenen Stand, benenne erhaltenswerte Teile und setze danach die gewünschten Änderungen vollständig um.\n\n## WEBSITE UND SCAN\nURL: ${url}\nTitel: ${context?.siteName||context?.title||'nicht erkannt'}\n${scanState}\n\nErkannte Seiten:\n${pageDetails||'- Keine Seiten automatisch erfasst. Website manuell prüfen.'}\n\n## GEWÜNSCHTE ÄNDERUNGEN\n${description}${proBlock}${ultimateBlock}\n\n## VERBINDLICHES VORGEHEN\n1. Website und vorhandene Projektdateien vollständig prüfen.\n2. Probleme und betroffene Dateien oder Komponenten kurz benennen.\n3. Änderungen direkt im bestehenden Projekt umsetzen; funktionierende Bereiche erhalten.\n4. Mobile Navigation, Abstände, Überläufe, Formulare und Hauptaktionen praktisch kontrollieren.\n5. Keine erfundenen Inhalte, Bewertungen, Firmenangaben oder Rechtstexte ergänzen.\n6. Datenschutz, Impressum, Barrierefreiheit, Sicherheit, Metadaten und Performance passend zum Umfang prüfen.\n7. Build und vorhandene Tests ausführen und gefundene Fehler beheben.\n\n## ABSCHLUSS\nNenne knapp die geänderten Dateien, behobenen Probleme, bewusst erhaltenen Bereiche, ausgeführten Prüfungen und echte offene Entscheidungen. Lasse keine Platzhalter oder unnötigen TODOs zurück.${readable.join('\n')}`;
+    const proBlock=pro?`\n## GEZIELTER UMFANG\nZu erhaltende Bereiche:\n${brief.preserve}\n\nBetroffene Seiten und Bereiche:\n${brief.scope}\n\nVerwendung der zusätzlichen Referenz:\n${brief.referenceUse}`:'';
+    const ultimateBlock=ultimate?`\n## TECHNISCHE DETAILVORGABEN\n${brief.technical}\n\n## DESIGN- UND INHALTSREGELN\n${brief.designRules}\n\n## VERBINDLICHE ABNAHMEKRITERIEN\n${brief.acceptance}\n\n## VERBINDLICHE PRÜFUNGEN\n${brief.checks}`:'';
+    const priorities=(brief.priorities||[]).map((item,index)=>`${index+1}. ${item}`).join('\n');
+    return `# WEBSITE-ÜBERARBEITUNG — ${AGENT_NAMES[el.quickRevisionAgent.value].toUpperCase()}\n\nArbeite an der bestehenden Website. Erstelle keinen austauschbaren Neubau. Untersuche zuerst den vorhandenen Stand, benenne erhaltenswerte Teile und setze danach die gewünschten Änderungen vollständig um.\n\n## WEBSITE UND SCAN\nURL: ${url}\nTitel: ${context?.siteName||context?.title||'nicht erkannt'}\n${scanState}\n\nErkannte Seiten:\n${pageDetails||'- Keine Seiten automatisch erfasst. Website manuell prüfen.'}\n\n## PROFESSIONELL AUFBEREITETE ÄNDERUNGEN\n${brief.changeRequest}\n\n## PRIORITÄTEN\n${priorities||'1. Die beschriebenen Änderungen vollständig und nachvollziehbar umsetzen.'}${proBlock}${ultimateBlock}\n\n## VERBINDLICHES VORGEHEN\n1. Website und vorhandene Projektdateien vollständig prüfen.\n2. Probleme und betroffene Dateien oder Komponenten kurz benennen.\n3. Änderungen direkt im bestehenden Projekt umsetzen; funktionierende Bereiche erhalten.\n4. Mobile Navigation, Abstände, Überläufe, Formulare und Hauptaktionen praktisch kontrollieren.\n5. Keine erfundenen Inhalte, Bewertungen, Firmenangaben oder Rechtstexte ergänzen.\n6. Datenschutz, Impressum, Barrierefreiheit, Sicherheit, Metadaten und Performance passend zum Umfang prüfen.\n7. Build und vorhandene Tests ausführen und gefundene Fehler beheben.\n\n## ABSCHLUSS\nNenne knapp die geänderten Dateien, behobenen Probleme, bewusst erhaltenen Bereiche, ausgeführten Prüfungen und echte offene Entscheidungen. Lasse keine Platzhalter oder unnötigen TODOs zurück.${readable.join('\n')}`;
   }
 
   async function scanAndBuildQuickRevision(){
@@ -692,7 +691,7 @@
     try{el.scanQuickRevisionBtn.disabled=true;el.quickRevisionStatus.textContent='Website, Seitenstruktur, Links und Bilder werden gelesen…';let context;
       try{const response=await sitebriefApiFetch('/api/site-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Scan nicht möglich');context=data}
       catch(error){context={url,pages:[],links:[],images:[],error:error.message||'Website nicht automatisch erreichbar'}}
-      state.quickRevisionContext=context;el.quickRevisionPrompt.value=await buildQuickRevisionPrompt(context,url,description);el.quickRevisionResult.hidden=false;el.quickRevisionScanResult.textContent=context.error?'Grundauftrag erstellt · Website muss der Agent selbst öffnen':`${(context.pages||[]).length} Seiten · ${(context.links||[]).length} Links · ${(context.images||[]).length} Bilder erfasst`;el.quickRevisionStatus.textContent='Überarbeitungsauftrag ist fertig.';renderQuickRevisionVariants();el.quickRevisionResult.scrollIntoView({behavior:'smooth',block:'start'});
+      state.quickRevisionContext=context;el.quickRevisionStatus.textContent='Änderungswünsche werden von der KI analysiert und professionell aufbereitet…';const brief=await analyzeQuickRevisionInputs(context,url);el.quickRevisionPrompt.value=await buildQuickRevisionPrompt(context,url,brief);el.quickRevisionResult.hidden=false;el.quickRevisionScanResult.textContent=context.error?'Auftrag erstellt · Website muss der Agent selbst öffnen':`${(context.pages||[]).length} Seiten · ${(context.links||[]).length} Links · ${(context.images||[]).length} Bilder erfasst`;el.quickRevisionStatus.textContent='Überarbeitungsauftrag ist professionell aufbereitet.';renderQuickRevisionVariants();el.quickRevisionResult.scrollIntoView({behavior:'smooth',block:'start'});
     }catch(error){el.quickRevisionStatus.textContent=error.message||'Auftrag konnte nicht erstellt werden.'}finally{el.scanQuickRevisionBtn.disabled=false}
   }
 
@@ -910,23 +909,27 @@
     state.projectReview=null;state.reviewSignature="";state.reviewDeferred=false;saveSettings();saveProfiles();saveState();renderAiReviewCard();updateGuide();el.settingsDialog.close();
   }
 
-  function localProjectReview(){
-    const p=project(), questions=[], warnings=[], blockers=[];
-    if(state.plan!=="free"||state.isAdmin){
+  function localProjectReview(forceExtended=false){
+    const p=project(), questions=[], warnings=[], blockers=[],extended=forceExtended||state.plan!=="free"||state.isAdmin;
+    if(extended){
       if(state.settings.askMissing && !p.audience) questions.push({id:uid("q"),question:"Für wen soll die Seite hauptsächlich funktionieren?",reason:"Zielgruppe beeinflusst Ton, Informationsdichte und wichtigste Handlungen.",suggestedAnswer:"",required:false});
       if(state.settings.askMissing && /shop|onlineshop/i.test(p.type) && !/produkt|sortiment|verkauf/i.test(p.description)) questions.push({id:uid("q"),question:"Was wird im Shop verkauft und gibt es besondere Varianten, Versand- oder Zahlungsanforderungen?",reason:"Ohne diese Angaben bleibt die Shop-Struktur zu allgemein.",suggestedAnswer:"",required:false});
     }
     if(state.settings.checks?.privacy) warnings.push({area:"Datenschutz",severity:"info",message:"Externe Dienste und Formulare vor dem Livegang prüfen."});
     if(state.settings.checks?.imprint) warnings.push({area:"Impressum",severity:"info",message:"Echte Anbieterangaben ergänzen; fehlende Firmendaten nicht erfinden."});
-    if((state.plan!=="free"||state.isAdmin)&&state.settings.noInventLegal) warnings.push({area:"Recht",severity:"info",message:"Rechtliche Pflichttexte und Unternehmensdaten nur aus bestätigten Angaben übernehmen."});
+    if(extended&&state.settings.noInventLegal) warnings.push({area:"Recht",severity:"info",message:"Rechtliche Pflichttexte und Unternehmensdaten nur aus bestätigten Angaben übernehmen."});
+    if(extended&&state.settings.checks?.accessibility)warnings.push({area:"Barrierefreiheit",severity:"info",message:"Semantik, Tastaturbedienung, Kontraste und verständliche Formularmeldungen praktisch prüfen."});
+    if(extended&&state.settings.checks?.security)warnings.push({area:"Sicherheit",severity:"info",message:"Eingaben, Berechtigungen, Secrets und externe Schnittstellen vor der Übergabe kontrollieren."});
+    if(extended&&state.settings.checks?.performance)warnings.push({area:"Performance",severity:"info",message:"Bildgrößen, Abhängigkeiten und Ladeverhalten auf Mobilgeräten prüfen."});
     return {ready:questions.length===0,questions:questions.slice(0,state.settings.maxQuestions),warnings,blockers,assumptions:[]};
   }
 
   function renderAiReviewCard(){
     if(!el.aiReviewCard) return;
+    if(el.buyReviewInlineBtn)el.buyReviewInlineBtn.hidden=state.plan!=="free"||state.isAdmin||state.reviewCredits>0;
     if(!cloudReady()){el.aiReviewTitle.textContent="Im Gastmodus nicht verfügbar";el.aiReviewText.textContent="Die ausführliche Projektprüfung und Gegenfragen werden nach der Anmeldung freigeschaltet.";el.runAiReviewBtn.hidden=true;return;}el.runAiReviewBtn.hidden=false;
     if(state.engine==="local"){
-      el.aiReviewTitle.textContent=state.plan==="free"&&!state.isAdmin?"Kostenlose Grundprüfung":"Lokale Grundprüfung aktiv";el.aiReviewText.textContent=state.plan==="free"&&!state.isAdmin?"Enthalten sind kurze Hinweise zu Datenschutz und Impressum. Eine ausführliche Einzelprüfung kostet 3,99 €; in Pro ist sie ohne Einzelkauf enthalten.":`Ohne externe KI werden die aktiven Pflichtbereiche geprüft: ${activeCheckNames().join(", ")||"keine"}.`;el.runAiReviewBtn.textContent="Grundprüfung anzeigen";return;
+      const free=state.plan==="free"&&!state.isAdmin;el.aiReviewTitle.textContent=free?(state.reviewCredits>0?"Erweiterte Prüfung verfügbar":"Kostenlose Grundprüfung"):"Lokale Grundprüfung aktiv";el.aiReviewText.textContent=free?(state.reviewCredits>0?`${state.reviewCredits} gekaufte Prüfung verfügbar. Sie wird erst beim Start verbraucht.`:"Enthalten sind kurze Hinweise zu Datenschutz und Impressum. Eine ausführliche Einzelprüfung kostet 3,99 €; in Pro ist sie ohne Einzelkauf enthalten."):`Ohne externe KI werden die aktiven Pflichtbereiche geprüft: ${activeCheckNames().join(", ")||"keine"}.`;el.runAiReviewBtn.textContent=free&&state.reviewCredits>0?"Erweiterte Prüfung starten":"Grundprüfung anzeigen";return;
     }
     if(!state.settings.aiClarifications){el.aiReviewTitle.textContent="KI-Gegenfragen sind deaktiviert";el.aiReviewText.textContent="Du kannst sie unter Einstellungen wieder aktivieren. Die Pflichtbereiche bleiben trotzdem Bestandteil des Master-Prompts.";el.runAiReviewBtn.textContent="Einstellungen";return;}
     const review=state.projectReview;
@@ -994,7 +997,10 @@
     el.aiReviewTitle.textContent="Projekt wird geprüft…";el.runAiReviewBtn.disabled=true;startTaskProgress("review",18);
     let review;
     try{
-      if(state.engine==="local") review=localProjectReview();
+      if(state.engine==="local"){
+        const usesCredit=state.plan==="free"&&!state.isAdmin&&state.reviewCredits>0;
+        if(usesCredit)state.reviewCredits=await window.SiteBriefCloud.useReviewCredit();review=localProjectReview(usesCredit);
+      }
       else{
         const payload={action:"review",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),settings:settingsForApi(),template:selectedTemplate()||{},modules:selectedModules(),clarifications:state.clarifications};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Projektprüfung fehlgeschlagen");review=data;
@@ -1643,12 +1649,13 @@
     if(cloudReady())try{await window.SiteBriefCloud.deleteLibraryItem(type,id)}catch(err){state.cloud.error=err?.message||"Löschen konnte nicht synchronisiert werden";setSyncState("Sync-Fehler","error")}
   }
 
-  function openLibrary(tab="templates"){
+  function openLibrary(tab="projects"){
     if(!planRules().modules){el.plansDialog?.showModal();return;}
     el.libraryDialog.showModal();switchLibraryTab(tab);
   }
   function switchLibraryTab(tab){
     $$('[data-library-tab]').forEach(b=>b.classList.toggle('active',b.dataset.libraryTab===tab));$$('[data-library-pane]').forEach(p=>p.classList.toggle('active',p.dataset.libraryPane===tab));
+    const tools=el.libraryDialog?.querySelector('.library-tools');if(tools)tools.hidden=tab==='projects';if(tab==='projects')renderCloudProjects();
   }
 
   function exportLibrary(){
@@ -1725,6 +1732,12 @@
   async function openBillingPortal(){try{const response=await sitebriefApiFetch('/api/portal',{method:'POST'}),data=await response.json();if(!response.ok)throw new Error(data.error||'Aboverwaltung nicht verfügbar');location.href=data.url}catch(err){await customAlert(err.message,{title:'Aboverwaltung nicht erreichbar'})}}
   async function publishToGithub(){if(!planRules().github){el.plansDialog?.showModal();return}const repoName=await customPrompt('Wie soll das neue GitHub-Repository heißen?',(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9-]+/g,'-'),{title:'GitHub-Repository anlegen',inputLabel:'Repository-Name',confirmLabel:'Veröffentlichen'});if(!repoName)return;try{el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='GitHub-Veröffentlichung wird vorbereitet…';const files=state.generatedWebsite?.files||exportedWebsiteFiles(),response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repoName,files})}),data=await response.json();if(!response.ok)throw new Error(data.error||'GitHub-Veröffentlichung nicht möglich');el.exportResultHint.innerHTML=`Veröffentlicht: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>`}catch(err){el.exportResultHint.textContent=err.message}finally{el.publishGithubBtn.disabled=false}}
   async function saveUserProfile(){if(!cloudReady())return;const profile={displayName:el.userDisplayName.value.trim(),companyName:el.userCompanyName.value.trim(),website:el.userWebsite.value.trim(),defaultClientType:el.userDefaultClientType.value};try{el.saveUserProfileBtn.disabled=true;await window.SiteBriefCloud.saveUserProfile(profile);state.userProfile=profile;el.userProfileMessage.textContent='Profil gespeichert ✓'}catch(err){el.userProfileMessage.textContent=err.message||'Profil konnte nicht gespeichert werden'}finally{el.saveUserProfileBtn.disabled=false}}
+  function biometricRecord(){try{const row=JSON.parse(localStorage.getItem(BIOMETRIC_KEY)||'null');return row?.userId===state.cloud.user?.id?row:null}catch{return null}}
+  function bytesToBase64Url(value){return btoa(String.fromCharCode(...new Uint8Array(value))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+  function base64UrlToBytes(value){const normalized=String(value).replace(/-/g,'+').replace(/_/g,'/'),padded=normalized+'='.repeat((4-normalized.length%4)%4);return Uint8Array.from(atob(padded),character=>character.charCodeAt(0))}
+  function renderBiometricUi(){if(!el.faceIdBtn)return;const supported=window.isSecureContext&&window.PublicKeyCredential&&navigator.credentials;if(!supported){el.faceIdBtn.disabled=true;el.faceIdBtn.textContent='Nicht unterstützt';el.faceIdMessage.textContent='Face ID benötigt HTTPS und einen unterstützten Browser.';return}const active=Boolean(biometricRecord());el.faceIdBtn.disabled=false;el.faceIdBtn.textContent=active?'Face ID testen':'Face ID einrichten';el.faceIdMessage.textContent=active?'Auf diesem Gerät eingerichtet.':'Die biometrischen Daten bleiben auf deinem Gerät.'}
+  async function handleBiometric(){if(!cloudReady())return;try{el.faceIdBtn.disabled=true;el.faceIdMessage.textContent='Geräteprüfung wird geöffnet…';const existing=biometricRecord(),challenge=crypto.getRandomValues(new Uint8Array(32));if(existing){await navigator.credentials.get({publicKey:{challenge,allowCredentials:[{type:'public-key',id:base64UrlToBytes(existing.credentialId)}],userVerification:'required',timeout:60000}});el.faceIdMessage.textContent='Face ID erfolgreich bestätigt ✓';return}const userBytes=new TextEncoder().encode(state.cloud.user.id).slice(0,64),credential=await navigator.credentials.create({publicKey:{challenge,rp:{name:'Prompt.ai'},user:{id:userBytes,name:state.cloud.user.email||state.cloud.user.id,displayName:state.userProfile.displayName||state.cloud.user.email||'Prompt.ai Nutzer'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'preferred',userVerification:'required'},attestation:'none',timeout:60000}});if(!credential)throw new Error('Die Einrichtung wurde abgebrochen.');localStorage.setItem(BIOMETRIC_KEY,JSON.stringify({userId:state.cloud.user.id,credentialId:bytesToBase64Url(credential.rawId),createdAt:new Date().toISOString()}));el.faceIdMessage.textContent='Face ID ist auf diesem Gerät eingerichtet ✓';renderBiometricUi()}catch(err){el.faceIdMessage.textContent=err?.name==='NotAllowedError'?'Face ID wurde abgebrochen.':(err?.message||'Face ID konnte nicht eingerichtet werden.')}finally{el.faceIdBtn.disabled=false}}
+  async function sendSupportRequest(){if(!cloudReady())return;const subject=el.supportSubject.value.trim(),message=el.supportMessage.value.trim();if(subject.length<4||message.length<15){el.supportStatus.textContent='Bitte Betreff und Anliegen etwas genauer ausfüllen.';return}try{el.sendSupportBtn.disabled=true;el.supportStatus.textContent='Wird gesendet…';await window.SiteBriefCloud.createSupportRequest({category:el.supportCategory.value,subject,message});el.supportSubject.value='';el.supportMessage.value='';el.supportStatus.textContent='Anfrage wurde gesendet ✓'}catch(err){el.supportStatus.textContent=err?.message||'Anfrage konnte nicht gesendet werden.'}finally{el.sendSupportBtn.disabled=false}}
   function renderClientSources(){if(!el.clientSources)return;el.clientSources.innerHTML=state.sourceUrls.map(item=>`<div class="source-item" data-source-id="${escapeHtml(item.id)}"><div><strong>${escapeHtml(item.title||(()=>{try{return new URL(item.url).hostname}catch{return 'Datenquelle'}})())}</strong><small>${escapeHtml(item.url)}</small></div><span>${item.summary?'INHALT ÜBERNOMMEN':'LINK GESPEICHERT'}</span><button type="button" class="remove-btn" aria-label="Quelle entfernen">×</button></div>`).join('');$$('.source-item',el.clientSources).forEach(row=>row.querySelector('button').addEventListener('click',()=>{state.sourceUrls=state.sourceUrls.filter(x=>x.id!==row.dataset.sourceId);state.clientContext=state.sourceUrls.map(x=>x.summary||'').filter(Boolean).join('\n\n').slice(0,8000);renderClientSources();saveState();renderAiReviewCard()}))}
 
   async function importClientWebsite(){let url=el.clientWebsite.value.trim();if(!url){el.clientImportStatus.textContent='Bitte zuerst eine Website-, Google- oder Datenquellen-Adresse eingeben.';return}if(!/^https?:\/\//i.test(url))url=`https://${url}`;try{new URL(url)}catch{el.clientImportStatus.textContent='Die Adresse ist ungültig.';return}if(state.sourceUrls.some(x=>x.url===url)){el.clientWebsite.value='';el.clientImportStatus.textContent='Diese Quelle ist bereits eingetragen.';return}const source={id:uid('source'),url,title:'',summary:'',pages:[],links:[],images:[]};state.sourceUrls.push(source);renderClientSources();try{el.importClientWebsiteBtn.disabled=true;el.clientImportStatus.textContent='Website, Rechtstexte, Links und Bilder werden gelesen…';const response=await sitebriefApiFetch('/api/site-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Quelle konnte nicht direkt gelesen werden');source.url=data.url||url;source.title=data.siteName||data.title||'';source.summary=[data.description,data.summary].filter(Boolean).join('\n').slice(0,6000);source.pages=Array.isArray(data.pages)?data.pages:[];source.links=Array.isArray(data.links)?data.links:[];source.images=Array.isArray(data.images)?data.images:[];if(!el.clientName.value.trim())el.clientName.value=source.title;if(!el.projectName.value.trim())el.projectName.value=source.title;state.clientContext=state.sourceUrls.flatMap(x=>(x.pages||[]).map(page=>`${page.title||page.kind}: ${page.summary}`)).join('\n\n').slice(0,24000);if(source.summary&&!el.projectDescription.value.trim())el.projectDescription.value=source.summary.slice(0,1800);el.descriptionCount.textContent=el.projectDescription.value.length;const legal=source.pages.filter(page=>['impressum','datenschutz'].includes(page.kind)).length;el.clientImportStatus.textContent=`${source.pages.length} Seiten, ${source.links.length} Links und ${source.images.length} Bilder übernommen${legal?` · ${legal} Rechtstext${legal===1?'':'e'}`:''} ✓`}catch(err){el.clientImportStatus.textContent=`Link gespeichert, aber nicht automatisch auslesbar: ${err.message}. Ergänze bei Bedarf Screenshot oder PDF.`}finally{el.clientWebsite.value='';el.importClientWebsiteBtn.disabled=false;renderClientSources();state.understandingConfirmed=false;saveState()}}
@@ -1765,9 +1778,9 @@
     el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1300)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
     el.downloadProjectReportBtn?.addEventListener('click',()=>downloadText('sitebrief-projektbericht.md',buildProjectReport(),'text/markdown'));
-    el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
-    el.startApiAddonCheckoutBtn?.addEventListener('click',()=>beginCheckout('own_api_keys'));el.saveUserProfileBtn?.addEventListener('click',saveUserProfile);el.importClientWebsiteBtn?.addEventListener('click',importClientWebsite);document.addEventListener('click',e=>{if(e.target.closest('[data-api-addon]'))beginCheckout('own_api_keys')});
-    el.openLibraryBtn.addEventListener("click",()=>openLibrary("templates"));$$('[data-open-library]').forEach(b=>b.addEventListener("click",()=>openLibrary(b.dataset.openLibrary)));$$('[data-library-tab]').forEach(b=>b.addEventListener("click",()=>switchLibraryTab(b.dataset.libraryTab)));
+    el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));[el.buySingleReviewBtn,el.buyReviewInlineBtn].forEach(button=>button?.addEventListener('click',()=>beginCheckout('single_review')));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
+    el.startApiAddonCheckoutBtn?.addEventListener('click',()=>beginCheckout('own_api_keys'));el.saveUserProfileBtn?.addEventListener('click',saveUserProfile);el.faceIdBtn?.addEventListener('click',handleBiometric);el.sendSupportBtn?.addEventListener('click',sendSupportRequest);el.importClientWebsiteBtn?.addEventListener('click',importClientWebsite);document.addEventListener('click',e=>{if(e.target.closest('[data-api-addon]'))beginCheckout('own_api_keys')});
+    el.openLibraryBtn.addEventListener("click",()=>openLibrary("projects"));$$('[data-open-library]').forEach(b=>b.addEventListener("click",()=>openLibrary(b.dataset.openLibrary)));$$('[data-library-tab]').forEach(b=>b.addEventListener("click",()=>switchLibraryTab(b.dataset.libraryTab)));
     el.openSettingsBtn.addEventListener("click",()=>{populateSettingsDialog();el.settingsDialog.showModal()});el.saveSettingsBtn.addEventListener("click",saveSettingsFromDialog);
     el.gatewayConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gateway"));el.gatewayTestBtn?.addEventListener("click",()=>testAiProviderConnection("gateway"));el.gatewayDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gateway"));
     el.openaiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("openai"));el.openaiTestBtn?.addEventListener("click",()=>testAiProviderConnection("openai"));el.openaiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("openai"));
@@ -1785,7 +1798,7 @@
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
     document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>showWorkflow(1));el.workspaceNewProjectBtn?.addEventListener('click',()=>showWorkflow(1));document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
-    [el.quickRevisionBtn,el.workspaceRevisionBtn].forEach(button=>button?.addEventListener('click',openQuickRevision));el.workspaceLibraryBtn?.addEventListener('click',()=>openLibrary('templates'));
+    [el.quickRevisionBtn,el.workspaceRevisionBtn].forEach(button=>button?.addEventListener('click',openQuickRevision));el.workspaceLibraryBtn?.addEventListener('click',()=>openLibrary('projects'));[el.quickRevisionProBlock,el.quickRevisionUltimateBlock].forEach(block=>block?.addEventListener('toggle',()=>{if(block.open&&block.classList.contains('locked')){block.open=false;el.quickRevisionDialog.close();el.plansDialog?.showModal()}}));
     el.closeWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.confirmWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.welcomeIntroDialog?.addEventListener('cancel',event=>{event.preventDefault();closeWelcomeIntro()});el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBtn?.addEventListener('click',()=>el.agentLaunchDialog.close());el.agentLaunchDialog?.addEventListener('cancel',event=>{event.preventDefault();el.agentLaunchDialog.close()});
     el.scanQuickRevisionBtn?.addEventListener('click',scanAndBuildQuickRevision);el.copyQuickRevisionBtn?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(el.quickRevisionPrompt.value);el.quickRevisionStatus.textContent='Auftrag kopiert.'}catch{el.quickRevisionStatus.textContent='Kopieren war nicht möglich.'}});el.downloadQuickRevisionBtn?.addEventListener('click',()=>downloadText('prompt-ai-website-ueberarbeiten.md',el.quickRevisionPrompt.value,'text/markdown'));el.saveQuickRevisionVariantBtn?.addEventListener('click',saveQuickRevisionVariant);el.quickRevisionVariantSelect?.addEventListener('change',()=>loadQuickRevisionVariant(el.quickRevisionVariantSelect.value));el.deleteQuickRevisionVariantBtn?.addEventListener('click',deleteQuickRevisionVariant);
     el.resetBtn.addEventListener("click",resetProject);el.startNewBtn.addEventListener("click",resetProject);el.brandHome.addEventListener("click",e=>{e.preventDefault();showWelcome()});
