@@ -290,8 +290,11 @@
           <small id="clientResultHint"></small>
         </section>
         <section class="export-result-card">
-          <div><span>EXPORT & VERÖFFENTLICHUNG</span><h2>Vom Ergebnis direkt zum Projekt</h2><p id="exportResultHint">Website-Paket und GitHub-Veröffentlichung sind in höheren Tarifen enthalten.</p></div>
-          <div class="client-result-actions"><button type="button" class="solid-btn" id="downloadWebsiteZipBtn">Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn">Auf GitHub veröffentlichen</button></div>
+          <div><span>DIREKTE ERSTELLUNG AB PRO</span><h2>Website aus diesem Briefing bauen</h2><p id="exportResultHint">Die gewählte KI erstellt ein vollständiges Dateipaket und nennt anschließend alle noch benötigten Inhalte und Zugänge.</p></div>
+          <div class="client-result-actions"><button type="button" class="solid-btn" id="buildWebsiteBtn">Website jetzt erstellen</button><button type="button" class="outline-btn" id="downloadGeneratedWebsiteBtn" hidden>Erstellte Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn">Auf GitHub veröffentlichen</button></div>
+          <div class="website-build-status" id="websiteBuildStatus" aria-live="polite"></div>
+          <div class="website-requirements" id="websiteRequirements" hidden></div>
+          <button type="button" class="text-btn" id="downloadWebsiteZipBtn">Einfaches Starterpaket herunterladen</button>
         </section>
 
         <section class="revision-studio" id="revisionStudio">
