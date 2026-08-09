@@ -229,13 +229,13 @@
   function guestRunsRemaining(){return Math.max(0,GUEST_RUN_LIMIT-guestRunCount())}
   function renderGuestLimit(){
     if(!el.guestLimitNote)return;const remaining=guestRunsRemaining(),exhausted=remaining===0;
-    el.guestLimitBox.classList.toggle("exhausted",exhausted);el.guestLimitTitle.textContent=exhausted?"Gast-Limit erreicht":"Ohne Anmeldung testen";
-    el.guestLimitNote.textContent=exhausted?"Deine drei kostenlosen Gast-Durchläufe sind verbraucht. Melde dich an oder lege ein Konto an, um weiterzumachen.":`Noch ${remaining} von ${GUEST_RUN_LIMIT} Gast-Durchläufen verfügbar. Gespeicherte Cloud-Daten und Bibliotheken sind erst nach der Anmeldung verfügbar.`;
+    el.guestLimitBox.classList.toggle("exhausted",exhausted);el.guestLimitTitle.textContent=exhausted?"Gast-Limit erreicht":"Erst einmal ansehen";
+    el.guestLimitNote.textContent=exhausted?"Die drei Gast-Durchläufe sind verbraucht. Mit einem Konto kannst du weiterarbeiten.":`${remaining} von ${GUEST_RUN_LIMIT} kostenlosen Durchläufen verfügbar. Ohne Cloud-Speicherung.`;
     el.guestContinueBtn.hidden=exhausted;
   }
   function showAccountGate(){
     if(cloudReady()||!el.accountDialog)return;updateAccountUi();renderGuestLimit();el.accountDialog.classList.add("guest-gate");el.accountDialogKicker.textContent="WILLKOMMEN BEI SITEBRIEF";el.accountDialogTitle.textContent=guestRunsRemaining()?"Anmelden oder kostenlos testen":"Zum Weitermachen anmelden";
-    el.accountIntro.textContent="Mit deiner Anmeldung werden Projekte, Profile, Bibliotheken, Module und Skills geladen und geräteübergreifend gespeichert.";if(!el.accountDialog.open)el.accountDialog.showModal();
+    el.accountIntro.textContent="Melde dich an und arbeite auf jedem Gerät an deinen Projekten weiter.";if(!el.accountDialog.open)el.accountDialog.showModal();
   }
   function closeAccountGate(){el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
   function consumeGuestRun(){if(cloudReady())return;localStorage.setItem(GUEST_USAGE_KEY,String(Math.min(GUEST_RUN_LIMIT,guestRunCount()+1)));renderGuestLimit()}
