@@ -21,7 +21,7 @@ module.exports=async function(req,res){
   try{
     let url=await safeUrl(String(req.body?.url||'')),response;
     for(let i=0;i<3;i++){
-      response=await fetch(url,{redirect:'manual',headers:{'User-Agent':'SiteBrief/1.0 Website Context Import','Accept':'text/html,application/xhtml+xml'},signal:AbortSignal.timeout(8000)});
+      response=await fetch(url,{redirect:'manual',headers:{'User-Agent':'Prompt.ai/1.0 Website Context Import','Accept':'text/html,application/xhtml+xml'},signal:AbortSignal.timeout(8000)});
       if(response.status>=300&&response.status<400&&response.headers.get('location')){url=await safeUrl(new URL(response.headers.get('location'),url).href);continue}break;
     }
     if(!response?.ok)throw Object.assign(new Error(`Website antwortet mit Status ${response?.status||'unbekannt'}.`),{status:502});
