@@ -17,6 +17,7 @@
   const THEME_KEY = "sitebrief-theme";
   const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
   const QUICK_REVISION_VARIANTS_KEY = "sitebrief-v6-revision-variants";
+  const ONBOARDING_KEY = "prompt-ai-welcome-seen-v1";
   const GUEST_RUN_LIMIT = 3;
   const PROJECT_OPTIONS = {
     free:{types:["Website","Landingpage"],goals:["Anfragen gewinnen","Informieren"]},
@@ -109,8 +110,35 @@
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
       "resetBtn","startNewBtn","brandHome","installAppBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
-      "workspaceNewProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","workspaceLibraryHint","welcomeProjectList","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn"
+      "workspaceNewProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","workspaceLibraryHint","welcomeProjectList","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn","welcomeIntroDialog","closeWelcomeIntroBtn","confirmWelcomeIntroBtn","appActionDialog","appActionKicker","appActionTitle","appActionMessage","appActionInputWrap","appActionInputLabel","appActionInput","appActionCancelBtn","appActionConfirmBtn","openAgentBtn","agentLaunchDialog","closeAgentLaunchBtn","agentLaunchTitle","agentLaunchText","openAgentWebBtn","openAgentDesktopBtn","agentLaunchHint"
     ].forEach(id => el[id] = document.getElementById(id));
+  }
+
+  let dialogScrollY=0,actionDialogResolve=null;
+  function syncDialogScrollLock(){
+    const open=Boolean(document.querySelector('dialog[open]'));if(open&&!document.body.classList.contains('dialog-open')){dialogScrollY=window.scrollY;document.body.style.top=`-${dialogScrollY}px`;document.body.classList.add('dialog-open')}else if(!open&&document.body.classList.contains('dialog-open')){document.body.classList.remove('dialog-open');document.body.style.top='';window.scrollTo(0,dialogScrollY)}
+  }
+  function initDialogSystem(){
+    const observer=new MutationObserver(syncDialogScrollLock);$$('dialog').forEach(dialog=>observer.observe(dialog,{attributes:true,attributeFilter:['open']}));
+    el.appActionCancelBtn.addEventListener('click',()=>finishAppAction(null));el.appActionConfirmBtn.addEventListener('click',()=>finishAppAction(el.appActionInputWrap.hidden?true:el.appActionInput.value));el.appActionDialog.addEventListener('cancel',event=>{event.preventDefault();finishAppAction(null)});
+    window.PromptAiDialog={confirm:(message,options={})=>showAppAction({...options,message}),prompt:(message,value='',options={})=>showAppAction({...options,message,input:true,value}),alert:(message,options={})=>showAppAction({...options,message,cancelLabel:'',confirmLabel:'Verstanden'})};
+  }
+  function showAppAction({title='Bitte bestätigen',message='',kicker='PROMPT.AI',confirmLabel='Bestätigen',cancelLabel='Abbrechen',danger=false,input=false,value='',inputLabel='Eingabe'}={}){
+    if(actionDialogResolve)actionDialogResolve(null);el.appActionKicker.textContent=kicker;el.appActionTitle.textContent=title;el.appActionMessage.textContent=message;el.appActionConfirmBtn.textContent=confirmLabel;el.appActionConfirmBtn.classList.toggle('danger',danger);el.appActionCancelBtn.textContent=cancelLabel;el.appActionCancelBtn.hidden=!cancelLabel;el.appActionInputWrap.hidden=!input;el.appActionInputLabel.textContent=inputLabel;el.appActionInput.value=value;el.appActionDialog.showModal();if(input)setTimeout(()=>{el.appActionInput.focus();el.appActionInput.select()},50);return new Promise(resolve=>{actionDialogResolve=resolve});
+  }
+  function finishAppAction(value){if(el.appActionDialog.open)el.appActionDialog.close();const resolve=actionDialogResolve;actionDialogResolve=null;if(resolve)resolve(value)}
+  const customConfirm=(message,options={})=>showAppAction({...options,message});
+  const customPrompt=(message,value='',options={})=>showAppAction({...options,message,input:true,value});
+  const customAlert=(message,options={})=>showAppAction({...options,message,cancelLabel:'',confirmLabel:'Verstanden'});
+
+  function closeWelcomeIntro(){localStorage.setItem(ONBOARDING_KEY,'1');if(el.welcomeIntroDialog.open)el.welcomeIntroDialog.close()}
+  function showWelcomeIntroOnce(){if(localStorage.getItem(ONBOARDING_KEY)||document.querySelector('dialog[open]'))return;el.welcomeIntroDialog.showModal()}
+
+  const AGENT_LAUNCH={claude:{web:'https://claude.ai/new',desktop:prompt=>`claude://code/new?q=${encodeURIComponent(prompt.slice(0,14000))}`},codex:{web:'https://chatgpt.com/codex'},chatgpt:{web:'https://chatgpt.com/'},gemini:{web:'https://gemini.google.com/app'},cursor:{web:'https://cursor.com/agents'},v0:{web:'https://v0.dev/chat'},universal:{web:'https://chatgpt.com/'}};
+  async function showAgentLaunch(){
+    const config=AGENT_LAUNCH[state.targetAgent]||AGENT_LAUNCH.universal,name=AGENT_NAMES[state.targetAgent]||'Agent',prompt=el.masterPrompt.value;try{await navigator.clipboard.writeText(prompt)}catch{}
+    el.agentLaunchTitle.textContent=`${name} öffnen`;el.agentLaunchText.textContent=`Der fertige Prompt wurde kopiert. Öffne ${name} und füge ihn dort ein.`;el.openAgentWebBtn.textContent=`${name} im Browser öffnen`;el.openAgentDesktopBtn.hidden=!config.desktop;el.openAgentDesktopBtn.textContent=`${name} Desktop öffnen`;el.agentLaunchHint.textContent=config.desktop?'Wenn die Desktop-App nicht installiert ist, nutze einfach den Browser.':'Für diesen Agenten wird die Web-Version geöffnet.';
+    el.openAgentWebBtn.onclick=()=>{window.open(config.web,'_blank','noopener');el.agentLaunchDialog.close()};el.openAgentDesktopBtn.onclick=()=>{location.href=config.desktop(prompt);el.agentLaunchDialog.close()};el.agentLaunchDialog.showModal();
   }
 
   function project(){
@@ -153,6 +181,7 @@
 
   function saveLibrary(){
     try{ localStorage.setItem(LIBRARY_KEY, JSON.stringify({version:6,templates:state.templates,modules:state.modules,skills:state.skills})); }catch{}
+    scheduleCloudLibrarySave();
   }
 
   function loadSettings(){
@@ -198,7 +227,7 @@
     };
   }
 
-  let cloudProjectTimer=null, cloudSettingsTimer=null;
+  let cloudProjectTimer=null, cloudSettingsTimer=null, cloudLibraryTimer=null;
   function saveState({cloud=true}={}){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableProjectState())); }catch{}
     if(cloud) scheduleCloudProjectSave();
@@ -336,11 +365,12 @@
     if(!rules.modes.includes(state.mode))state.mode=rules.modes[0];
     $$('.mode-switch button').forEach(button=>{const allowed=rules.modes.includes(button.dataset.mode);button.hidden=!allowed;button.classList.toggle('active',button.dataset.mode===state.mode)});
     if(!rules.agents.includes(state.targetAgent))state.targetAgent=rules.agents[0];
+    if(el.openAgentBtn)el.openAgentBtn.textContent=`${AGENT_NAMES[state.targetAgent]} öffnen`;
     $$('#agentSelector button').forEach(button=>{const allowed=rules.agents.includes(button.dataset.agent);button.hidden=!allowed;button.disabled=false;button.classList.toggle("active",button.dataset.agent===state.targetAgent)});
     if(el.conceptCount){el.conceptCount.max=String(rules.concepts);if(Number(el.conceptCount.value)>rules.concepts)el.conceptCount.value=String(rules.concepts)}
     if(el.previewFormat){const current=el.previewFormat.value,options=[['html','HTML-Website']];if(rules.modules||state.ownApiKeys)options.push(['image-cloudflare','Cloudflare-Bild']);if(rules.advanced||state.ownApiKeys)options.push(['image-gemini','Gemini-Bild']);el.previewFormat.innerHTML=options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('');el.previewFormat.value=options.some(([value])=>value===current)?current:'html'}
     if(el.currentPlanBadge)el.currentPlanBadge.textContent="PROFIL";
-    if(el.currentPlanTitle)el.currentPlanTitle.textContent=state.isAdmin?"Vollzugriff":`${rules.label}-Tarif`;
+    if(el.currentPlanTitle)el.currentPlanTitle.textContent=state.isAdmin?"Vollzugriff":rules===PLAN_RULES.free?"Kostenloser Tarif":`${rules.label}-Tarif`;
     if(el.currentPlanDescription){const trialEnd=state.subscriptionPeriodEnd?new Intl.DateTimeFormat('de-DE').format(new Date(state.subscriptionPeriodEnd)):'';el.currentPlanDescription.textContent=state.subscriptionStatus==='trialing'?`Kostenlose Testphase aktiv${trialEnd?` bis ${trialEnd}`:''}.`:rules===PLAN_RULES.free?"Gute Ergebnisse mit geführten Standards und drei Richtungen.":rules===PLAN_RULES.pro?"Claude/Codex, Module, Skills, vier Richtungen und Kundenunterlagen.":"Alle Agenten, Modelle, Profile, Einstellungen und fünf Richtungen."}
     if(el.clientResultHint)el.clientResultHint.textContent=rules.clientDocs?"Ausgearbeitete Kundenunterlagen sind freigeschaltet.":"Der Projektbericht ist enthalten. Ausgearbeitetes Kundenbriefing und technische Übergabe sind in Pro enthalten.";
     [el.downloadClientBriefBtn,el.downloadHandoverBtn].forEach(button=>{if(button)button.hidden=!rules.clientDocs});
@@ -399,6 +429,10 @@
     cloudSettingsTimer=setTimeout(()=>syncSettings().catch(()=>{}),700);
   }
 
+  function scheduleCloudLibrarySave(){
+    if(!cloudReady())return;clearTimeout(cloudLibraryTimer);cloudLibraryTimer=setTimeout(async()=>{try{setSyncState('Bibliothek speichert…','syncing');for(const item of state.templates)await window.SiteBriefCloud.saveLibraryItem('template',item);for(const item of state.modules)await window.SiteBriefCloud.saveLibraryItem('module',item);for(const item of state.skills)await window.SiteBriefCloud.saveLibraryItem('skill',item);setSyncState('Cloud','synced')}catch(error){state.cloud.error=error?.message||'Bibliothek konnte nicht synchronisiert werden';setSyncState('Sync-Fehler','error')}},650);
+  }
+
   async function syncSettings(){
     if(!cloudReady()) return;
     try{
@@ -444,17 +478,18 @@
       }
       state.activeProfileId=bundle.activeProfileId||state.settings.activeProfileId||state.activeProfileId||"";
       state.profiles=mergeById(localProfiles,bundle.profiles||[]);
-      state.templates=mergeById(localLibrary.templates,bundle.templates||[]);
+      state.templates=mergeById(localLibrary.templates,bundle.templates||[]).map(x=>({...x,quickRevision:Boolean(x.quickRevision||x.tag==='REVISION')}));
       state.modules=mergeById(localLibrary.modules,bundle.modules||[]).map(x=>({...x,activation:x.activation||"manual"}));
       state.skills=mergeById(localLibrary.skills,bundle.skills||[]).map(x=>({...x,sourceFile:x.sourceFile||x.source_file||null,activation:x.activation||"manual"}));
       state.cloudProjects=bundle.projects||[];
       state.aiConnections=bundle.aiConnections||[];
       window.SiteBriefCloud.aiConnections=[...state.aiConnections];
       if(pushLocalIfEmpty){
-        if(!(bundle.templates||[]).length && localLibrary.templates.length) for(const item of localLibrary.templates) await window.SiteBriefCloud.saveLibraryItem("template",item);
-        if(!(bundle.modules||[]).length && localLibrary.modules.length) for(const item of localLibrary.modules) await window.SiteBriefCloud.saveLibraryItem("module",item);
-        if(!(bundle.skills||[]).length && localLibrary.skills.length) for(const item of localLibrary.skills) await window.SiteBriefCloud.saveLibraryItem("skill",item);
-        if(!(bundle.profiles||[]).length && localProfiles.length) for(const item of localProfiles) await window.SiteBriefCloud.saveProfile(item);
+        const missing=(local,remote)=>local.filter(item=>!(remote||[]).some(saved=>saved.id===item.id));
+        for(const item of missing(localLibrary.templates,bundle.templates))await window.SiteBriefCloud.saveLibraryItem("template",item);
+        for(const item of missing(localLibrary.modules,bundle.modules))await window.SiteBriefCloud.saveLibraryItem("module",item);
+        for(const item of missing(localLibrary.skills,bundle.skills))await window.SiteBriefCloud.saveLibraryItem("skill",item);
+        for(const item of missing(localProfiles,bundle.profiles))await window.SiteBriefCloud.saveProfile(item);
       }
       saveLibrary();saveProfiles();try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(state.settings));}catch{}
       state.cloud.syncing=false;state.cloud.error="";state.cloud.lastSynced=new Date();setSyncState("Cloud","synced");
@@ -489,7 +524,7 @@
   }
 
   async function initCloudIntegration(){
-    if(!window.SiteBriefCloudReady){state.cloud.configured=false;updateAccountUi();showAccountGate();return;}
+    if(!window.SiteBriefCloudReady){state.cloud.configured=false;updateAccountUi();return;}
     try{
       const result=await window.SiteBriefCloudReady;
       state.cloud.configured=Boolean(result?.configured);state.cloud.user=result?.user||null;
@@ -504,8 +539,8 @@
       });
       if(state.cloud.user){await loadCloudBundle();await handleCheckoutReturn();}
       if(!state.activeProfileId){const def=state.systemProfiles.find(x=>x.is_default)||state.systemProfiles[0];if(def){state.activeProfileId=def.id;state.settings.activeProfileId=def.id;saveProfiles();}}
-      renderProfileUi();updateAccountUi();if(!state.cloud.user)showAccountGate();
-    }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();showAccountGate();}
+      renderProfileUi();updateAccountUi();
+    }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();}
   }
 
   async function signIn(){
@@ -594,7 +629,7 @@
   }
 
   async function deleteCloudProject(id){
-    if(!confirm("Dieses Cloud-Projekt wirklich löschen?"))return;try{await window.SiteBriefCloud.deleteProject(id);state.cloudProjects=state.cloudProjects.filter(x=>x.id!==id);renderCloudProjects();updateAccountUi()}catch(err){el.syncMessage.textContent=err?.message||"Projekt konnte nicht gelöscht werden.";el.syncMessage.className="auth-message error";}
+    if(!await customConfirm("Dieses Cloud-Projekt wirklich löschen?",{title:'Projekt löschen',confirmLabel:'Projekt löschen',danger:true}))return;try{await window.SiteBriefCloud.deleteProject(id);state.cloudProjects=state.cloudProjects.filter(x=>x.id!==id);renderCloudProjects();updateAccountUi()}catch(err){el.syncMessage.textContent=err?.message||"Projekt konnte nicht gelöscht werden.";el.syncMessage.className="auth-message error";}
   }
 
   function showWorkflow(step=1){
@@ -667,7 +702,7 @@
 
   function loadQuickRevisionVariant(id){const item=quickRevisionVariants().find(entry=>entry.id===id);if(!item)return;el.quickRevisionPrompt.value=item.prompt;el.quickRevisionUrl.value=item.url||el.quickRevisionUrl.value;el.quickRevisionResult.hidden=false;el.quickRevisionScanResult.textContent=`Gespeicherte Variante: ${item.name}`}
 
-  async function deleteQuickRevisionVariant(){const id=el.quickRevisionVariantSelect.value;if(!id)return;const variants=quickRevisionVariants(),item=variants.find(entry=>entry.id===id);if(!item||!confirm(`Variante „${item.name}“ löschen?`))return;localStorage.setItem(QUICK_REVISION_VARIANTS_KEY,JSON.stringify(variants.filter(entry=>entry.id!==id)));state.templates=state.templates.filter(entry=>entry.id!==id);saveLibrary();renderLibraryList('template');renderQuickRevisionVariants();if(cloudReady())try{await window.SiteBriefCloud.deleteLibraryItem('template',id)}catch{}el.quickRevisionStatus.textContent='Variante gelöscht.'}
+  async function deleteQuickRevisionVariant(){const id=el.quickRevisionVariantSelect.value;if(!id)return;const variants=quickRevisionVariants(),item=variants.find(entry=>entry.id===id);if(!item||!await customConfirm(`Variante „${item.name}“ wirklich löschen?`,{title:'Prompt-Variante löschen',confirmLabel:'Löschen',danger:true}))return;localStorage.setItem(QUICK_REVISION_VARIANTS_KEY,JSON.stringify(variants.filter(entry=>entry.id!==id)));state.templates=state.templates.filter(entry=>entry.id!==id);saveLibrary();renderLibraryList('template');renderQuickRevisionVariants();if(cloudReady())try{await window.SiteBriefCloud.deleteLibraryItem('template',id)}catch{}el.quickRevisionStatus.textContent='Variante gelöscht.'}
 
   function tokenize(text){
     return [...new Set(String(text||"").toLowerCase().replace(/[^a-z0-9äöüß\s-]/g," ").split(/\s+/).filter(x => x.length > 3))];
@@ -847,7 +882,7 @@
   }
 
   async function deleteOwnProfile(id){
-    if(!confirm("Dieses eigene Profil wirklich löschen?"))return;state.profiles=state.profiles.filter(x=>x.id!==id);if(state.activeProfileId===id)state.activeProfileId="";saveProfiles();renderProfileUi();if(cloudReady())try{await window.SiteBriefCloud.deleteProfile(id)}catch{};
+    if(!await customConfirm("Dieses eigene Profil wirklich löschen?",{title:'Profil löschen',confirmLabel:'Profil löschen',danger:true}))return;state.profiles=state.profiles.filter(x=>x.id!==id);if(state.activeProfileId===id)state.activeProfileId="";saveProfiles();renderProfileUi();if(cloudReady())try{await window.SiteBriefCloud.deleteProfile(id)}catch{};
   }
 
   async function createProfileFromDialog(){
@@ -1600,7 +1635,7 @@
   }
 
   async function deleteLibraryItem(type,id){
-    if(!confirm("Diesen Eintrag wirklich löschen?"))return;
+    if(!await customConfirm("Diesen Eintrag wirklich löschen?",{title:'Bibliothekseintrag löschen',confirmLabel:'Löschen',danger:true}))return;
     if(type==="template"){state.templates=state.templates.filter(x=>x.id!==id);if(state.templateId===id)state.templateId="";}
     if(type==="module"){state.modules=state.modules.filter(x=>x.id!==id);state.selectedModuleIds=state.selectedModuleIds.filter(x=>x!==id);}
     if(type==="skill"){state.skills=state.skills.filter(x=>x.id!==id);state.selectedSkillIds=state.selectedSkillIds.filter(x=>x!==id);}
@@ -1622,7 +1657,7 @@
 
   async function importLibrary(file){
     if(!file)return;if(!cloudReady()){showAccountGate();el.importLibraryInput.value="";return;}try{const data=JSON.parse(await file.text()),root=data.library&&typeof data.library==="object"?{...data,...data.library}:data,items=Array.isArray(data)?data:[];const typed=type=>items.filter(x=>String(x.type||x.kind||"").toLowerCase()===type);const templates=[...(Array.isArray(root.templates)?root.templates:[]),...typed("template")];const modules=[...(Array.isArray(root.modules)?root.modules:[]),...typed("module")];const skills=[...(Array.isArray(root.skills)?root.skills:[]),...(Array.isArray(root.agentSkills)?root.agentSkills:[]),...typed("skill")];const profiles=Array.isArray(root.profiles)?root.profiles:[];const normalize=(x,type)=>({...x,name:x.name||x.title||x.id||`Importierter ${type}`,prompt:x.prompt||x.instructions||x.content||x.body||""});
-      state.templates=mergeById(state.templates,templates.map(x=>({...normalize(x,"Vorlage"),id:x.id||uid("tpl")})).filter(x=>x.prompt));state.modules=mergeById(state.modules,modules.map(x=>({...normalize(x,"Modul"),id:x.id||uid("mod"),activation:x.activation||"manual"})).filter(x=>x.prompt));state.skills=mergeById(state.skills,skills.map(x=>({...normalize(x,"Skill"),id:x.id||uid("skill"),agent:x.agent||"all",activation:x.activation||"manual"})).filter(x=>x.prompt));state.profiles=mergeById(state.profiles,profiles.map(x=>({...x,id:x.id||uid("profile")})));if(root.activeProfileId)state.activeProfileId=root.activeProfileId;if(root.settings&&typeof root.settings==="object"){state.settings={...DEFAULT_SETTINGS,...root.settings,checks:{...DEFAULT_SETTINGS.checks,...(root.settings.checks||{})}};saveSettings();}saveLibrary();saveProfiles();renderLibrary();renderProfileUi();renderAiReviewCard();recommendModules(false);updateGuide();syncEverything();}catch{alert("Die JSON-Datei konnte nicht als Prompt.ai-Bibliothek gelesen werden.")}
+      state.templates=mergeById(state.templates,templates.map(x=>({...normalize(x,"Vorlage"),id:x.id||uid("tpl")})).filter(x=>x.prompt));state.modules=mergeById(state.modules,modules.map(x=>({...normalize(x,"Modul"),id:x.id||uid("mod"),activation:x.activation||"manual"})).filter(x=>x.prompt));state.skills=mergeById(state.skills,skills.map(x=>({...normalize(x,"Skill"),id:x.id||uid("skill"),agent:x.agent||"all",activation:x.activation||"manual"})).filter(x=>x.prompt));state.profiles=mergeById(state.profiles,profiles.map(x=>({...x,id:x.id||uid("profile")})));if(root.activeProfileId)state.activeProfileId=root.activeProfileId;if(root.settings&&typeof root.settings==="object"){state.settings={...DEFAULT_SETTINGS,...root.settings,checks:{...DEFAULT_SETTINGS.checks,...(root.settings.checks||{})}};saveSettings();}saveLibrary();saveProfiles();renderLibrary();renderProfileUi();renderAiReviewCard();recommendModules(false);updateGuide();syncEverything();}catch{await customAlert("Die JSON-Datei konnte nicht als Prompt.ai-Bibliothek gelesen werden.",{title:'Import nicht möglich'})}
     el.importLibraryInput.value="";
   }
 
@@ -1686,9 +1721,9 @@
     }catch(err){el.websiteBuildProgress.hidden=false;el.websiteBuildProgress.classList.add('failed');el.websiteBuildStage.textContent='Erstellung wurde abgebrochen';el.websiteBuildTruthNote.textContent='Der letzte bestätigte Arbeitsschritt bleibt sichtbar. Du kannst den Vorgang erneut starten.';el.websiteBuildStatus.textContent=err.message||'Website konnte nicht erstellt werden.'}
     finally{el.buildWebsiteBtn.disabled=false}
   }
-  async function beginCheckout(plan){if(!cloudReady()){showAccountGate();return}try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');location.href=data.url}catch(err){alert(err.message)}}
-  async function openBillingPortal(){try{const response=await sitebriefApiFetch('/api/portal',{method:'POST'}),data=await response.json();if(!response.ok)throw new Error(data.error||'Aboverwaltung nicht verfügbar');location.href=data.url}catch(err){alert(err.message)}}
-  async function publishToGithub(){if(!planRules().github){el.plansDialog?.showModal();return}const repoName=prompt('Name des neuen GitHub-Repositories:',(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9-]+/g,'-'));if(!repoName)return;try{el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='GitHub-Veröffentlichung wird vorbereitet…';const files=state.generatedWebsite?.files||exportedWebsiteFiles(),response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repoName,files})}),data=await response.json();if(!response.ok)throw new Error(data.error||'GitHub-Veröffentlichung nicht möglich');el.exportResultHint.innerHTML=`Veröffentlicht: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>`}catch(err){el.exportResultHint.textContent=err.message}finally{el.publishGithubBtn.disabled=false}}
+  async function beginCheckout(plan){if(!cloudReady()){showAccountGate();return}try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');location.href=data.url}catch(err){await customAlert(err.message,{title:'Zahlung nicht möglich'})}}
+  async function openBillingPortal(){try{const response=await sitebriefApiFetch('/api/portal',{method:'POST'}),data=await response.json();if(!response.ok)throw new Error(data.error||'Aboverwaltung nicht verfügbar');location.href=data.url}catch(err){await customAlert(err.message,{title:'Aboverwaltung nicht erreichbar'})}}
+  async function publishToGithub(){if(!planRules().github){el.plansDialog?.showModal();return}const repoName=await customPrompt('Wie soll das neue GitHub-Repository heißen?',(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9-]+/g,'-'),{title:'GitHub-Repository anlegen',inputLabel:'Repository-Name',confirmLabel:'Veröffentlichen'});if(!repoName)return;try{el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='GitHub-Veröffentlichung wird vorbereitet…';const files=state.generatedWebsite?.files||exportedWebsiteFiles(),response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repoName,files})}),data=await response.json();if(!response.ok)throw new Error(data.error||'GitHub-Veröffentlichung nicht möglich');el.exportResultHint.innerHTML=`Veröffentlicht: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>`}catch(err){el.exportResultHint.textContent=err.message}finally{el.publishGithubBtn.disabled=false}}
   async function saveUserProfile(){if(!cloudReady())return;const profile={displayName:el.userDisplayName.value.trim(),companyName:el.userCompanyName.value.trim(),website:el.userWebsite.value.trim(),defaultClientType:el.userDefaultClientType.value};try{el.saveUserProfileBtn.disabled=true;await window.SiteBriefCloud.saveUserProfile(profile);state.userProfile=profile;el.userProfileMessage.textContent='Profil gespeichert ✓'}catch(err){el.userProfileMessage.textContent=err.message||'Profil konnte nicht gespeichert werden'}finally{el.saveUserProfileBtn.disabled=false}}
   function renderClientSources(){if(!el.clientSources)return;el.clientSources.innerHTML=state.sourceUrls.map(item=>`<div class="source-item" data-source-id="${escapeHtml(item.id)}"><div><strong>${escapeHtml(item.title||(()=>{try{return new URL(item.url).hostname}catch{return 'Datenquelle'}})())}</strong><small>${escapeHtml(item.url)}</small></div><span>${item.summary?'INHALT ÜBERNOMMEN':'LINK GESPEICHERT'}</span><button type="button" class="remove-btn" aria-label="Quelle entfernen">×</button></div>`).join('');$$('.source-item',el.clientSources).forEach(row=>row.querySelector('button').addEventListener('click',()=>{state.sourceUrls=state.sourceUrls.filter(x=>x.id!==row.dataset.sourceId);state.clientContext=state.sourceUrls.map(x=>x.summary||'').filter(Boolean).join('\n\n').slice(0,8000);renderClientSources();saveState();renderAiReviewCard()}))}
 
@@ -1706,8 +1741,8 @@
 
   function downloadText(filename,text,type="text/plain") { const blob=new Blob([text],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500); }
 
-  function resetProject(){
-    if(!confirm("Projekt zurücksetzen? Deine Bibliotheken bleiben erhalten."))return;localStorage.removeItem(STORAGE_KEY);location.reload();
+  async function resetProject(){
+    if(!await customConfirm("Das aktuelle Projekt wird zurückgesetzt. Deine Bibliotheken bleiben erhalten.",{title:'Projekt zurücksetzen',confirmLabel:'Zurücksetzen',danger:true}))return;localStorage.removeItem(STORAGE_KEY);location.reload();
   }
 
   function bindEvents(){
@@ -1717,7 +1752,7 @@
     el.addUrlBtn.addEventListener("click",addUrl);el.referenceUrl.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addUrl()}});
     el.uploadZone.addEventListener("click",e=>{if(!e.target.closest("button")||e.target.closest("button"))el.imageInput.click()});el.uploadZone.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();el.imageInput.click()}});el.imageInput.addEventListener("change",e=>addImages(e.target.files));
     ["dragenter","dragover"].forEach(evt=>el.uploadZone.addEventListener(evt,e=>{e.preventDefault();el.uploadZone.classList.add("drag")}));["dragleave","drop"].forEach(evt=>el.uploadZone.addEventListener(evt,e=>{e.preventDefault();el.uploadZone.classList.remove("drag")}));el.uploadZone.addEventListener("drop",e=>addImages(e.dataTransfer.files));
-    $$('#agentSelector button').forEach(b=>b.addEventListener("click",()=>{state.targetAgent=b.dataset.agent;$$('#agentSelector button').forEach(x=>x.classList.toggle('active',x===b));state.selectedSkillIds=state.selectedSkillIds.filter(id=>visibleSkills().some(s=>s.id===id));applyAlwaysActiveItems(false);renderSkillSelection();saveState();updateGuide()}));
+    $$('#agentSelector button').forEach(b=>b.addEventListener("click",()=>{state.targetAgent=b.dataset.agent;$$('#agentSelector button').forEach(x=>x.classList.toggle('active',x===b));if(el.openAgentBtn)el.openAgentBtn.textContent=`${AGENT_NAMES[state.targetAgent]} öffnen`;state.selectedSkillIds=state.selectedSkillIds.filter(id=>visibleSkills().some(s=>s.id===id));applyAlwaysActiveItems(false);renderSkillSelection();saveState();updateGuide()}));
     el.generatorEngine.addEventListener("change",()=>{state.modelsLoaded=false;updateEngineUi()});el.generatorModel.addEventListener("input",()=>{state.model=el.generatorModel.value.trim();saveState();renderAiReviewCard()});
     $$('[data-output]',el.outputTargetSelector).forEach(button=>button.addEventListener('click',()=>{if(button.dataset.output==='existing'&&!planRules().existing){el.plansDialog?.showModal();return}state.outputTarget=button.dataset.output;renderOutputTarget();renderProfileImpact();saveState();updateGuide()}));
     el.templateSelect.addEventListener("change",()=>{state.templateId=el.templateSelect.value;saveState();updateGuide()});el.recommendModulesBtn.addEventListener("click",()=>recommendModules(true));
@@ -1751,6 +1786,7 @@
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
     document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>showWorkflow(1));el.workspaceNewProjectBtn?.addEventListener('click',()=>showWorkflow(1));document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
     [el.quickRevisionBtn,el.workspaceRevisionBtn].forEach(button=>button?.addEventListener('click',openQuickRevision));el.workspaceLibraryBtn?.addEventListener('click',()=>openLibrary('templates'));
+    el.closeWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.confirmWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.welcomeIntroDialog?.addEventListener('cancel',event=>{event.preventDefault();closeWelcomeIntro()});el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBtn?.addEventListener('click',()=>el.agentLaunchDialog.close());el.agentLaunchDialog?.addEventListener('cancel',event=>{event.preventDefault();el.agentLaunchDialog.close()});
     el.scanQuickRevisionBtn?.addEventListener('click',scanAndBuildQuickRevision);el.copyQuickRevisionBtn?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(el.quickRevisionPrompt.value);el.quickRevisionStatus.textContent='Auftrag kopiert.'}catch{el.quickRevisionStatus.textContent='Kopieren war nicht möglich.'}});el.downloadQuickRevisionBtn?.addEventListener('click',()=>downloadText('prompt-ai-website-ueberarbeiten.md',el.quickRevisionPrompt.value,'text/markdown'));el.saveQuickRevisionVariantBtn?.addEventListener('click',saveQuickRevisionVariant);el.quickRevisionVariantSelect?.addEventListener('change',()=>loadQuickRevisionVariant(el.quickRevisionVariantSelect.value));el.deleteQuickRevisionVariantBtn?.addEventListener('click',deleteQuickRevisionVariant);
     el.resetBtn.addEventListener("click",resetProject);el.startNewBtn.addEventListener("click",resetProject);el.brandHome.addEventListener("click",e=>{e.preventDefault();showWelcome()});
     el.installAppBtn?.addEventListener('click',installApp);el.buildWebsiteBtn?.addEventListener('click',buildWebsiteWithAi);el.downloadGeneratedWebsiteBtn?.addEventListener('click',downloadGeneratedWebsite);el.createRevisionPromptBtn?.addEventListener('click',createRevisionPrompt);el.copyRevisionPromptBtn?.addEventListener('click',async()=>{await navigator.clipboard.writeText(el.revisionPrompt.value);el.revisionStatus.textContent='Auftrag kopiert.'});el.downloadRevisionPromptBtn?.addEventListener('click',()=>downloadText('sitebrief-ueberarbeitungsauftrag.md',el.revisionPrompt.value,'text/markdown'));
@@ -1758,6 +1794,7 @@
 
   function init(){
     cacheElements();
+    initDialogSystem();
     initTheme();
     enhanceSettingsAccordion();
     initMobileWorkflowMenu();
@@ -1778,6 +1815,7 @@
     if(state.concepts.length){renderConcepts();renderSelectedPreview();el.generationStatus.textContent=`${state.concepts.length} gespeicherte Richtungen geladen.`}
     bindEvents();renderAiConnections();renderAiReviewCard();applyPlanUi();goStep(state.currentStep,true);updateGuide();updateAccountUi();
     initCloudIntegration();
+    setTimeout(showWelcomeIntroOnce,350);
     window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.installPrompt=event;if(el.installAppBtn)el.installAppBtn.hidden=false});window.addEventListener('appinstalled',()=>{state.installPrompt=null;if(el.installAppBtn)el.installAppBtn.hidden=true});
     if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
     setInterval(()=>saveState({cloud:false}),15000);
