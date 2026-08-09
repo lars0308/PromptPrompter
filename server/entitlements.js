@@ -12,14 +12,16 @@ async function ownRow(req, table, select){
 }
 
 async function getEntitlements(req){
-  const [subscription,admin]=await Promise.all([
+  const [subscription,admin,apiAddon]=await Promise.all([
     ownRow(req,'sitebrief_subscriptions','plan,status'),
-    ownRow(req,'sitebrief_admins','user_id')
+    ownRow(req,'sitebrief_admins','user_id'),
+    ownRow(req,'sitebrief_addons','addon,status')
   ]);
   const isAdmin=Boolean(admin?.user_id);
   const active=['active','trialing'].includes(subscription?.status);
   const plan=isAdmin?'ultimate':(active&&['pro','ultimate'].includes(subscription?.plan)?subscription.plan:'free');
-  return {plan,isAdmin,maxConcepts:plan==='ultimate'?5:plan==='pro'?4:3};
+  const ownApiKeys=isAdmin||plan==='ultimate'||(apiAddon?.addon==='own_api_keys'&&['active','trialing'].includes(apiAddon.status));
+  return {plan,isAdmin,ownApiKeys,maxConcepts:plan==='ultimate'?5:plan==='pro'?4:3};
 }
 
 module.exports={getEntitlements};
