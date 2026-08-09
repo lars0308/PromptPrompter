@@ -64,3 +64,76 @@
   function start(){ensureUi();document.addEventListener('click',event=>{if(event.target.closest('#adminBtn'))setTimeout(()=>{ensureUi();if(!loaded)load()},80)})}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
+
+(()=>{
+  'use strict';
+  const ONBOARDING_KEY='prompt-ai-welcome-seen-v1';
+  function installRepairStyles(){
+    if(document.getElementById('promptMobileRepairStyles'))return;
+    const style=document.createElement('style');
+    style.id='promptMobileRepairStyles';
+    style.textContent=`
+      .welcome-intro-dialog.splash-only{width:min(920px,calc(100vw - 24px))!important;max-width:none!important}
+      .welcome-intro-dialog.splash-only .dialog-frame{overflow:hidden!important;background:#fff!important}
+      .welcome-intro-dialog.splash-only .welcome-intro-body{padding:0!important}
+      .welcome-intro-dialog.splash-only .welcome-intro-body>:not(.welcome-intro-video){display:none!important}
+      .welcome-intro-dialog.splash-only .welcome-intro-video{width:100%!important;aspect-ratio:16/9!important;object-fit:contain!important;margin:0!important;border-radius:18px!important;background:#fff!important;box-shadow:none!important}
+      .welcome-intro-dialog.splash-only .intro-close{right:14px!important;top:14px!important;background:rgba(23,24,20,.78)!important;color:#fff!important}
+      @media(max-width:820px){
+        #libraryDialog,#settingsDialog{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:5px!important;overflow:hidden!important;background:transparent!important}
+        #libraryDialog .dialog-frame,#settingsDialog .dialog-frame{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;border-radius:18px!important;overflow:hidden!important}
+        #libraryDialog .dialog-head,#settingsDialog .dialog-head{flex:0 0 auto!important;padding:16px 17px!important}
+        #libraryDialog .library-tabs{flex:0 0 auto!important;display:flex!important;gap:6px!important;padding:8px 12px!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important}
+        #libraryDialog .library-tabs::-webkit-scrollbar{display:none!important}
+        #libraryDialog .library-tabs button{flex:0 0 auto!important;min-height:42px!important;padding:9px 13px!important}
+        #libraryDialog .library-tools{flex:0 0 auto!important;display:flex!important;gap:14px!important;padding:10px 14px!important;overflow-x:auto!important;white-space:nowrap!important;scrollbar-width:none!important}
+        #libraryDialog .library-tools::-webkit-scrollbar{display:none!important}
+        #libraryDialog .library-pane{display:none!important;flex:1 1 auto!important;min-height:0!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;padding:14px!important}
+        #libraryDialog .library-pane.active{display:block!important}
+        #libraryDialog .library-project-list,#libraryDialog .welcome-project-list{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;max-width:none!important;gap:12px!important;padding:0!important;margin:0!important}
+        #libraryDialog .welcome-project-card{width:100%!important;min-width:0!important;margin:0!important}
+        #libraryDialog .library-items{width:100%!important;max-height:none!important;overflow:visible!important;padding:0!important;border-right:0!important;border-bottom:1px solid var(--line)!important}
+        #libraryDialog .library-editor{width:100%!important;padding:18px 0 28px!important}
+        #settingsDialog .settings-body{display:block!important;flex:1 1 auto!important;width:100%!important;min-height:0!important;min-width:0!important;padding:0 14px 24px!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important}
+        #settingsDialog .settings-section{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important}
+        #settingsDialog .settings-section.is-collapsible:not(.is-open)>:not(.settings-heading){display:none!important}
+        #settingsDialog .settings-section.is-open>:not(.settings-heading){max-width:100%!important;margin-left:0!important;margin-right:0!important}
+        #settingsDialog .ai-connection-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:auto!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;gap:12px!important}
+        #settingsDialog .ai-connection-card,#settingsDialog .connection-login-row,#settingsDialog .plan-current,#settingsDialog .settings-upgrade-note{width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important}
+        #settingsDialog .connection-actions{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
+        #settingsDialog .connection-actions button{width:100%!important}
+        #settingsDialog input,#settingsDialog select,#settingsDialog textarea{width:100%!important;min-width:0!important;max-width:100%!important}
+        #settingsDialog .settings-footer{width:100%!important;padding-left:0!important;padding-right:0!important}
+        .welcome-intro-dialog.splash-only{width:calc(100vw - 16px)!important;margin:8px!important}
+        .welcome-intro-dialog.splash-only .dialog-frame{max-height:calc(100dvh - 16px)!important;border-radius:18px!important}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  function configureIntro(dialog){
+    const video=dialog.querySelector('.welcome-intro-video');
+    if(!video)return;
+    const seen=localStorage.getItem(ONBOARDING_KEY)==='1';
+    dialog.classList.toggle('splash-only',seen);
+    if(seen){
+      video.loop=false;
+      try{video.currentTime=0}catch{}
+      const finish=()=>document.getElementById('closeWelcomeIntroBtn')?.click();
+      video.addEventListener('ended',finish,{once:true});
+      video.play().catch(()=>{});
+    }else{
+      video.loop=true;
+      video.play().catch(()=>{});
+    }
+  }
+  function init(){
+    installRepairStyles();
+    const intro=document.getElementById('welcomeIntroDialog');
+    if(intro){
+      const observer=new MutationObserver(()=>{if(intro.open)configureIntro(intro)});
+      observer.observe(intro,{attributes:true,attributeFilter:['open']});
+      if(intro.open)configureIntro(intro);
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
