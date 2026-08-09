@@ -37,6 +37,15 @@ module.exports=async function(req,res){
     if(action==='ai-test'||action==='ai-models'){
       const provider=validAiProvider(body.provider),secret=await systemAiSecret(provider);if(!secret)throw Object.assign(new Error('Für diesen Anbieter ist kein zentraler Key gespeichert.'),{status:503});const models=await testAiProvider(provider,secret);return res.status(200).json({ok:true,provider,models});
     }
+    if(action==='preview-route-save'){
+      const provider=String(body.provider||'').toLowerCase();if(!['gemini','cloudflare'].includes(provider))return res.status(400).json({error:'Für Bildvorschauen werden aktuell Gemini und Cloudflare unterstützt.'});
+      const model=String(body.model||'').trim().slice(0,180);if(!model||!/^[a-zA-Z0-9@._:/-]+$/.test(model))return res.status(400).json({error:'Bitte eine gültige Bildmodell-ID angeben.'});
+      const row={label:String(body.label||'').trim().slice(0,100)||`${provider} · ${model}`,provider,model,priority:Math.max(1,Math.min(1000,Number(body.priority)||100)),enabled:body.enabled!==false,updated_at:new Date().toISOString()};if(uuid(body.id))row.id=body.id;
+      await serviceFetch('/rest/v1/sitebrief_preview_ai_routes?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:row});await audit(admin.id,action,null,{provider,model,priority:row.priority,enabled:row.enabled});return res.status(200).json({ok:true});
+    }
+    if(action==='preview-route-delete'){
+      if(!uuid(body.id))return res.status(400).json({error:'Ungültige Vorschau-KI.'});await serviceFetch(`/rest/v1/sitebrief_preview_ai_routes?id=eq.${encodeURIComponent(body.id)}`,{method:'DELETE'});await audit(admin.id,action,null,{id:body.id});return res.status(200).json({ok:true});
+    }
 
     if(['suspend','unsuspend','set-plan','send-password-reset','cancel-subscription','refund-latest'].includes(action)&&!uuid(body.userId))return res.status(400).json({error:'Ungültiger Benutzer.'});
     if(action==='suspend'){
