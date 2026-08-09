@@ -495,7 +495,8 @@
         <section class="settings-section">
           <div class="settings-heading"><strong>Eigene Verbindungen</strong><p>Schlüssel sicher hinterlegen und einmal testen. Die Auswahl triffst du später im Projekt.</p></div>
           <div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein Prompt.ai-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
-          <div class="ai-connection-grid">
+          <div class="connection-login-row" id="connectionUpgradeRow" hidden><span>Eigene KI-Verbindungen sind ab Ultimate enthalten oder als Zusatz für 5,99 € / Monat buchbar.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
+          <div class="ai-connection-grid" id="aiConnectionGrid">
             <article class="ai-connection-card recommended">
               <div class="ai-connection-head">
                 <div><span>EMPFOHLEN</span><strong>Vercel AI Gateway</strong><p>Ein Key für verschiedene Modellanbieter. Ideal, wenn du OpenAI, Claude oder Gemini flexibel nutzen möchtest.</p></div>

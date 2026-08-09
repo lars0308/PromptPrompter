@@ -115,7 +115,7 @@
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
       "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","libraryProjectList","faceIdBtn","faceIdMessage","supportCategory","supportSubject","supportMessage","sendSupportBtn","supportStatus",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
-      "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","cloudflareConnectionStatus","cloudflareAccountId","cloudflareApiToken","cloudflareConnectBtn","cloudflareTestBtn","cloudflareDisconnectBtn","cloudflareConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
+      "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","connectionUpgradeRow","aiConnectionGrid","settingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","cloudflareConnectionStatus","cloudflareAccountId","cloudflareApiToken","cloudflareConnectBtn","cloudflareTestBtn","cloudflareDisconnectBtn","cloudflareConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
       "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","buyReviewInlineBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
@@ -143,21 +143,34 @@
   const customAlert=(message,options={})=>showAppAction({...options,message,cancelLabel:'',confirmLabel:'Verstanden'});
 
   function closeWelcomeIntro(){localStorage.setItem(ONBOARDING_KEY,'1');if(el.welcomeIntroDialog.open)el.welcomeIntroDialog.close();if(!cloudReady())showAccountGate()}
-  function showWelcomeIntroOnce(){if(localStorage.getItem(ONBOARDING_KEY)||document.querySelector('dialog[open]'))return;el.welcomeIntroDialog.showModal()}
+  function showWelcomeIntroOnce(){if(document.querySelector('dialog[open]'))return;el.welcomeIntroDialog.showModal()}
+
+  function initPasswordToggles(){
+    $$('input[type="password"]').forEach(input=>{
+      if(input.closest('.password-field'))return;
+      const wrap=document.createElement('div');wrap.className='password-field';
+      input.parentNode.insertBefore(wrap,input);wrap.appendChild(input);
+      const btn=document.createElement('button');btn.type='button';btn.className='password-toggle';btn.setAttribute('aria-label','Passwort anzeigen');
+      btn.innerHTML='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+      wrap.appendChild(btn);
+      btn.addEventListener('click',()=>{const show=input.type==='password';input.type=show?'text':'password';btn.classList.toggle('is-visible',show);btn.setAttribute('aria-label',show?'Passwort verbergen':'Passwort anzeigen')});
+    });
+  }
 
   function initTopbarMenu(){
     if(!el.topbarMenuToggle||!el.topbarMenu)return;
     document.body.appendChild(el.topbarMenu);
-    if(el.topbarMenuBackdrop)document.body.appendChild(el.topbarMenuBackdrop);
-    const close=()=>{el.topbarMenu.classList.remove('open');el.topbarMenuToggle.setAttribute('aria-expanded','false');if(el.topbarMenuBackdrop)el.topbarMenuBackdrop.hidden=true};
-    const toggle=()=>{
+    el.topbarMenuBackdrop?.remove();
+    const close=()=>{el.topbarMenu.classList.remove('open');el.topbarMenuToggle.setAttribute('aria-expanded','false')};
+    const toggle=(event)=>{
+      event.stopPropagation();
       const willOpen=!el.topbarMenu.classList.contains('open');
       if(willOpen){const rect=el.topbarMenuToggle.getBoundingClientRect();el.topbarMenu.style.top=`${Math.round(rect.bottom+8)}px`;el.topbarMenu.style.right=`${Math.round(window.innerWidth-rect.right)}px`;}
-      el.topbarMenu.classList.toggle('open',willOpen);el.topbarMenuToggle.setAttribute('aria-expanded',String(willOpen));if(el.topbarMenuBackdrop)el.topbarMenuBackdrop.hidden=!willOpen;
+      el.topbarMenu.classList.toggle('open',willOpen);el.topbarMenuToggle.setAttribute('aria-expanded',String(willOpen));
     };
     el.topbarMenuToggle.addEventListener('click',toggle);
-    el.topbarMenuBackdrop?.addEventListener('click',close);
     el.topbarMenu.addEventListener('click',event=>{if(event.target.closest('button,a'))close()});
+    document.addEventListener('click',event=>{if(el.topbarMenu.classList.contains('open')&&!el.topbarMenu.contains(event.target)&&event.target!==el.topbarMenuToggle&&!el.topbarMenuToggle.contains(event.target))close()});
     document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
   }
 
@@ -432,8 +445,8 @@
     if(!rules.existing&&state.outputTarget==='existing')state.outputTarget='next-vercel';
     if(el.revisionProGate)el.revisionProGate.hidden=rules.existing;if(el.revisionEditor)el.revisionEditor.hidden=!rules.existing;
     if(el.exportResultHint)el.exportResultHint.textContent=rules.github?"Website durch die gewählte KI erstellen, als ZIP laden oder auf GitHub veröffentlichen.":rules.zip?"Die gewählte KI erstellt das Website-Paket. GitHub-Veröffentlichung ist in Ultimate enthalten.":"Direkte Website-Erstellung und Kundenunterlagen sind ab Pro enthalten.";
-    const advancedSection=el.gatewayApiKey?.closest(".settings-section");
-    if(advancedSection)advancedSection.hidden=!state.ownApiKeys;
+    if(el.connectionUpgradeRow)el.connectionUpgradeRow.hidden=!cloudReady()||state.ownApiKeys;
+    if(el.aiConnectionGrid)el.aiConnectionGrid.hidden=!cloudReady()||!state.ownApiKeys;
     const qualitySection=el.setAiClarifications?.closest(".settings-section");
     const checksSection=el.setLegalRegion?.closest(".settings-section");
     if(qualitySection)qualitySection.hidden=state.plan==="free"&&!state.isAdmin;
@@ -443,7 +456,7 @@
     if(el.openLibraryBtn)el.openLibraryBtn.hidden=!rules.modules;
     document.querySelectorAll('[data-open-library],[data-mobile-library]').forEach(button=>button.hidden=!rules.modules);
     if(el.workspaceLibraryBtn){el.workspaceLibraryBtn.disabled=!rules.modules;el.workspaceLibraryBtn.textContent=rules.modules?'Bibliothek öffnen':'Pro Variante benötigt';el.workspaceLibraryBtn.title=rules.modules?'':'Die Bibliothek ist ab Pro verfügbar.';el.workspaceLibraryBtn.classList.toggle('plan-disabled',!rules.modules)}
-    if(el.upgradeBtn){el.upgradeBtn.hidden=state.plan!=='free'&& !state.isAdmin;el.upgradeBtn.textContent='Upgraden'}
+    if(el.upgradeBtn){el.upgradeBtn.hidden=state.plan!=='free';el.upgradeBtn.textContent='Upgraden'}
     if(el.upgradeMenuBtn)el.upgradeMenuBtn.hidden=state.plan==='ultimate';
     if(el.buySingleReviewBtn)el.buySingleReviewBtn.hidden=state.plan!=="free"||state.isAdmin;
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
@@ -594,12 +607,13 @@
           if(!state.cloud.user){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}updateAccountUi();
           if(state.cloud.user){try{await loadCloudBundle()}catch{}closeAccountGate();}
           if(previousUserId!==nextUserId){
-            if(payload.authEvent==='SIGNED_IN'&&nextUserId){await continuePendingAuthPlan();showWelcome();}
+            if(payload.authEvent==='SIGNED_IN'&&nextUserId){await continuePendingAuthPlan();showWelcome();maybePromptBiometric();}
             else if(payload.authEvent==='SIGNED_OUT'&&!nextUserId){showWelcome();}
           }
         }
       });
-      if(state.cloud.user){await loadCloudBundle();await handleCheckoutReturn();}
+      if(state.cloud.user){await loadCloudBundle();await handleCheckoutReturn();maybePromptBiometric();}
+      document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybePromptBiometric()});
       if(!state.activeProfileId){const def=state.systemProfiles.find(x=>x.is_default)||state.systemProfiles[0];if(def){state.activeProfileId=def.id;state.settings.activeProfileId=def.id;saveProfiles();}}
       renderProfileUi();updateAccountUi();
     }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();}
@@ -1806,6 +1820,18 @@
   async function publishToGithub(){if(!planRules().github){el.plansDialog?.showModal();return}const repoName=await customPrompt('Wie soll das neue GitHub-Repository heißen?',(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9-]+/g,'-'),{title:'GitHub-Repository anlegen',inputLabel:'Repository-Name',confirmLabel:'Veröffentlichen'});if(!repoName)return;try{el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='GitHub-Veröffentlichung wird vorbereitet…';const files=state.generatedWebsite?.files||exportedWebsiteFiles(),response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repoName,files})}),data=await response.json();if(!response.ok)throw new Error(data.error||'GitHub-Veröffentlichung nicht möglich');el.exportResultHint.innerHTML=`Veröffentlicht: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>`}catch(err){el.exportResultHint.textContent=err.message}finally{el.publishGithubBtn.disabled=false}}
   async function saveUserProfile(){if(!cloudReady())return;const profile={displayName:el.userDisplayName.value.trim(),companyName:el.userCompanyName.value.trim(),website:el.userWebsite.value.trim(),defaultClientType:el.userDefaultClientType.value};try{el.saveUserProfileBtn.disabled=true;await window.SiteBriefCloud.saveUserProfile(profile);state.userProfile=profile;el.userProfileMessage.textContent='Profil gespeichert ✓'}catch(err){el.userProfileMessage.textContent=err.message||'Profil konnte nicht gespeichert werden'}finally{el.saveUserProfileBtn.disabled=false}}
   function biometricRecord(){try{const row=JSON.parse(localStorage.getItem(BIOMETRIC_KEY)||'null');return row?.userId===state.cloud.user?.id?row:null}catch{return null}}
+  let lastBiometricPromptAt=0,biometricPrompting=false;
+  async function maybePromptBiometric(){
+    if(biometricPrompting||!cloudReady())return;
+    const record=biometricRecord();if(!record)return;
+    const supported=window.isSecureContext&&window.PublicKeyCredential&&navigator.credentials;if(!supported)return;
+    const now=Date.now();if(now-lastBiometricPromptAt<15000)return;lastBiometricPromptAt=now;biometricPrompting=true;
+    try{
+      const challenge=crypto.getRandomValues(new Uint8Array(32));
+      await navigator.credentials.get({publicKey:{challenge,allowCredentials:[{type:'public-key',id:base64UrlToBytes(record.credentialId)}],userVerification:'required',timeout:60000}});
+    }catch{}
+    finally{biometricPrompting=false}
+  }
   function bytesToBase64Url(value){return btoa(String.fromCharCode(...new Uint8Array(value))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
   function base64UrlToBytes(value){const normalized=String(value).replace(/-/g,'+').replace(/_/g,'/'),padded=normalized+'='.repeat((4-normalized.length%4)%4);return Uint8Array.from(atob(padded),character=>character.charCodeAt(0))}
   function renderBiometricUi(){if(!el.faceIdBtn)return;const supported=window.isSecureContext&&window.PublicKeyCredential&&navigator.credentials;if(!supported){el.faceIdBtn.disabled=true;el.faceIdBtn.textContent='Nicht unterstützt';el.faceIdMessage.textContent='Face ID benötigt HTTPS und einen unterstützten Browser.';return}const active=Boolean(biometricRecord());el.faceIdBtn.disabled=false;el.faceIdBtn.textContent=active?'Face ID testen':'Face ID einrichten';el.faceIdMessage.textContent=active?'Auf diesem Gerät eingerichtet.':'Die biometrischen Daten bleiben auf deinem Gerät.'}
@@ -1889,6 +1915,7 @@
     enhanceDialogBackButtons();
     initPlanCards();
     initTopbarMenu();
+    initPasswordToggles();
     initTheme();
     enhanceSettingsAccordion();
     initMobileWorkflowMenu();
