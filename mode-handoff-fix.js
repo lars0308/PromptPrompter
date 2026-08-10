@@ -14,6 +14,7 @@
   function read(){try{return JSON.parse(sessionStorage.getItem(HANDOFF_KEY)||'null')}catch{return null}}
   function write(value){try{sessionStorage.setItem(HANDOFF_KEY,JSON.stringify(value))}catch{}}
   function clear(){try{[HANDOFF_KEY,SIMPLE_START_KEY,PENDING_MODE_KEY,PENDING_BRIEF_KEY].forEach(k=>sessionStorage.removeItem(k))}catch{}}
+  function claimInitialAdvance(){try{sessionStorage.removeItem(SIMPLE_START_KEY)}catch{}}
   function modeLabel(mode){return mode==='auto'?'AUTO':mode==='expert'?'EXPERTE':'GEFÜHRT'}
   function step(){return Number($('.step-panel.active')?.dataset.stepPanel||0)}
   function uiReady(){return document.documentElement.classList.contains('prompt-home-ready')&&!document.documentElement.classList.contains('prompt-access-pending')}
@@ -48,7 +49,7 @@
   function release(box){active=false;clearTimeout(timer);clearInterval(sentenceTimer);clear();box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
   function finish(data){
     if(finishing)return;const elapsed=Date.now()-startedAt,box=$('#promptModeHandoff');if(elapsed<MIN_VISIBLE_MS||!uiReady()){timer=setTimeout(()=>tick(data),70);return}
-    finishing=true;clearInterval(sentenceTimer);const remaining=Math.max(0,Math.min(SENTENCE_MS, SENTENCE_MS-(Date.now()-sentenceStartedAt)));
+    finishing=true;clearInterval(sentenceTimer);const remaining=Math.max(0,Math.min(SENTENCE_MS,SENTENCE_MS-(Date.now()-sentenceStartedAt)));
     setTimeout(()=>{if(!active)return;const host=$('#promptModeHandoff .prompt-mode-handoff-status'),base=$('.base',host||document),blue=$('.blue',host||document);if(base)base.textContent='Referenzen sind bereit.';if(blue){blue.textContent='Referenzen sind bereit.';blue.style.clipPath='inset(0)'}setTimeout(()=>release(box),240)},remaining)
   }
   function failOpen(message){if(finishing)return;finishing=true;clearInterval(sentenceTimer);const box=$('#promptModeHandoff');setSentence(message||'Projekt wird geöffnet.',true);setTimeout(()=>release(box),520)}
@@ -59,7 +60,7 @@
     if(advanceStarted&&n===1&&Date.now()-startedAt>5000&&retryCount<1){const next=$('#stepProject .next-btn');if(next&&!next.disabled){retryCount++;allowAdvance=true;next.click();allowAdvance=false}}
     if(Date.now()-startedAt>FAIL_OPEN_MS){failOpen('Projekt wird geöffnet.');return}timer=setTimeout(()=>tick(data),80)
   }
-  function boot(){styles();const data=read();if(!data?.brief||!data?.mode){document.documentElement.classList.remove('prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();return}active=true;startedAt=Date.now();document.documentElement.classList.add('prompt-mode-handoff-active');overlay(data);tick(data)}
+  function boot(){styles();const data=read();if(!data?.brief||!data?.mode){document.documentElement.classList.remove('prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();return}claimInitialAdvance();active=true;startedAt=Date.now();document.documentElement.classList.add('prompt-mode-handoff-active');overlay(data);tick(data)}
 
   document.addEventListener('click',rememberSelection,true);document.addEventListener('click',guardClicks,true);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
