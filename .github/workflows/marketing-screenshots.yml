@@ -3,7 +3,7 @@ name: Prompt.ai marketing screenshots
 on:
   push:
     paths:
-      - 'scripts/capture-marketing-screenshots.mjs'
+      - 'scripts/capture-real-ui-fast.mjs'
       - '.github/workflows/marketing-screenshots.yml'
   workflow_dispatch:
 
@@ -13,7 +13,7 @@ permissions:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,10 +26,9 @@ jobs:
       - name: Start local Prompt.ai
         run: |
           python3 -m http.server 4173 >/tmp/prompt-ai-http.log 2>&1 &
-          echo $! > /tmp/prompt-ai-http.pid
           sleep 2
       - name: Capture real UI screenshots
-        run: node scripts/capture-marketing-screenshots.mjs
+        run: node scripts/capture-real-ui-fast.mjs
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
         with:
