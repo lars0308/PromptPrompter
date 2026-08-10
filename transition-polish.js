@@ -1,8 +1,7 @@
 (()=>{
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
-  const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-  let settleTimer=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false,lastStep=0;
+  let settleTimer=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false;
   const STEP_STABLE_MS=90;
   const SENTENCE_MS=1080;
 
@@ -56,7 +55,7 @@
   }
   function setSentence(text,immediate=false){
     const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;
-    const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('run');void host.offsetWidth;host.classList.add('run','');host.classList.remove('is-changing')};
+    const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('run');void host.offsetWidth;host.classList.add('run');host.classList.remove('is-changing')};
     if(immediate){apply();return}
     host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)
   }
@@ -107,6 +106,6 @@
     window.addEventListener('pageshow',()=>schedule(0));window.addEventListener('promptai:access',()=>schedule(0));
   }
   function bind(){document.addEventListener('click',onClick,true);document.addEventListener('click',blockLateHiddenClicks,true)}
-  function init(){installStyles();bind();observe();lastStep=currentStep();sync()}
+  function init(){installStyles();bind();observe();sync()}
   installStyles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
