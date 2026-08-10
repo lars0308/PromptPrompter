@@ -1,9 +1,9 @@
-name: Prompt.ai marketing screenshots
+name: Prompt.ai final UI QA
 
 on:
   push:
     paths:
-      - 'scripts/capture-real-ui-final.mjs'
+      - 'scripts/qa-final-ui.mjs'
       - '.github/workflows/marketing-screenshots.yml'
   workflow_dispatch:
 
@@ -27,12 +27,12 @@ jobs:
         run: |
           python3 -m http.server 4173 >/tmp/prompt-ai-http.log 2>&1 &
           sleep 2
-      - name: Capture real UI screenshots
-        run: node scripts/capture-real-ui-final.mjs
-      - name: Upload screenshots
+      - name: Run mobile and desktop UI QA
+        run: node scripts/qa-final-ui.mjs
+      - name: Upload QA screenshots
         uses: actions/upload-artifact@v4
         with:
-          name: prompt-ai-v1-real-ui-screenshots
-          path: marketing-screenshots/*.png
+          name: prompt-ai-v1-final-ui-qa
+          path: marketing-screenshots/*
           if-no-files-found: error
           retention-days: 30
