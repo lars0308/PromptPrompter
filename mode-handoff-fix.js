@@ -5,7 +5,7 @@
   const PENDING_MODE_KEY='prompt-ai-new-project-mode-v2';
   const PENDING_BRIEF_KEY='prompt-ai-new-project-brief-v1';
   const $=(s,r=document)=>r.querySelector(s);
-  let active=false,allowAdvance=false,advanceStarted=false,retryCount=0,timer=0,startedAt=0,sentenceTimer=0,sentenceIndex=0;
+  let active=false,allowAdvance=false,advanceStarted=false,retryCount=0,timer=0,startedAt=0,sentenceTimer=0,sentenceIndex=0,sentenceStartedAt=0,finishing=false;
   const MIN_VISIBLE_MS=520;
   const FAIL_OPEN_MS=16000;
   const SENTENCE_MS=1020;
@@ -32,42 +32,33 @@
     `;document.head.appendChild(s)
   }
 
-  function rememberSelection(event){
-    const card=event.target.closest?.('[data-project-mode]');if(!card||card.disabled)return;
-    const brief=String($('#simpleIntakeText')?.value||'').trim();if(brief.length<8)return;
-    write({mode:card.dataset.projectMode||'guided',brief,createdAt:Date.now()});
-  }
-
+  function rememberSelection(event){const card=event.target.closest?.('[data-project-mode]');if(!card||card.disabled)return;const brief=String($('#simpleIntakeText')?.value||'').trim();if(brief.length<8)return;write({mode:card.dataset.projectMode||'guided',brief,createdAt:Date.now()})}
   function setSentence(text,immediate=false){
     const host=$('#promptModeHandoff .prompt-mode-handoff-status'),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;
-    const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('run');void host.offsetWidth;host.classList.add('run');host.classList.remove('is-changing')};
+    const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('run');void host.offsetWidth;host.classList.add('run');host.classList.remove('is-changing');sentenceStartedAt=Date.now()};
     if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)
   }
-  function startSentences(){clearInterval(sentenceTimer);sentenceIndex=0;setSentence(sentences[0],true);sentenceTimer=setInterval(()=>{if(!active){clearInterval(sentenceTimer);return}sentenceIndex=(sentenceIndex+1)%sentences.length;setSentence(sentences[sentenceIndex])},SENTENCE_MS+230)}
-
-  function overlay(data){
-    let box=$('#promptModeHandoff');if(box)return box;
-    box=document.createElement('section');box.id='promptModeHandoff';box.className='prompt-mode-handoff';box.setAttribute('aria-live','polite');
-    box.innerHTML=`<div><span class="kicker">PROMPT.AI · ${modeLabel(data.mode)}</span><strong>Projekt wird vorbereitet</strong><div class="prompt-mode-handoff-status"><span class="base">Beschreibung wird übernommen.</span><span class="blue" aria-hidden="true">Beschreibung wird übernommen.</span></div><div class="prompt-mode-handoff-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>`;
-    document.body.appendChild(box);startSentences();return box
-  }
+  function startSentences(){clearInterval(sentenceTimer);sentenceIndex=0;setSentence(sentences[0],true);sentenceTimer=setInterval(()=>{if(!active||finishing){clearInterval(sentenceTimer);return}sentenceIndex=(sentenceIndex+1)%sentences.length;setSentence(sentences[sentenceIndex])},SENTENCE_MS+230)}
+  function overlay(data){let box=$('#promptModeHandoff');if(box)return box;box=document.createElement('section');box.id='promptModeHandoff';box.className='prompt-mode-handoff';box.setAttribute('aria-live','polite');box.innerHTML=`<div><span class="kicker">PROMPT.AI · ${modeLabel(data.mode)}</span><strong>Projekt wird vorbereitet</strong><div class="prompt-mode-handoff-status"><span class="base">Beschreibung wird übernommen.</span><span class="blue" aria-hidden="true">Beschreibung wird übernommen.</span></div><div class="prompt-mode-handoff-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>`;document.body.appendChild(box);startSentences();return box}
 
   function guardClicks(event){if(!active||allowAdvance)return;if(event.target.closest?.('#stepProject .next-btn')){event.preventDefault();event.stopImmediatePropagation()}}
   function applyBrief(data){const field=$('#projectDescription');if(!field)return false;if(field.value.trim()!==data.brief.trim()){field.value=data.brief.trim();field.dispatchEvent(new Event('input',{bubbles:true}));field.dispatchEvent(new Event('change',{bubbles:true}))}return field.value.trim().length>=8}
   function applyMode(data){const button=$(`.mode-switch button[data-mode="${data.mode}"]`);if(!button)return false;if(document.documentElement.classList.contains('prompt-access-pending'))return false;if(button.disabled||button.classList.contains('locked'))return false;if(!button.classList.contains('active'))button.click();document.documentElement.dataset.promptMode=data.mode;return button.classList.contains('active')}
 
   function release(box){active=false;clearTimeout(timer);clearInterval(sentenceTimer);clear();box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
-  function finish(data){const elapsed=Date.now()-startedAt,box=$('#promptModeHandoff');if(elapsed<MIN_VISIBLE_MS||!uiReady()){timer=setTimeout(()=>tick(data),70);return}setSentence('Referenzen sind bereit.');setTimeout(()=>release(box),220)}
-  function failOpen(message){const box=$('#promptModeHandoff');setSentence(message||'Projekt wird geöffnet.');setTimeout(()=>release(box),420)}
+  function finish(data){
+    if(finishing)return;const elapsed=Date.now()-startedAt,box=$('#promptModeHandoff');if(elapsed<MIN_VISIBLE_MS||!uiReady()){timer=setTimeout(()=>tick(data),70);return}
+    finishing=true;clearInterval(sentenceTimer);const remaining=Math.max(0,Math.min(SENTENCE_MS, SENTENCE_MS-(Date.now()-sentenceStartedAt)));
+    setTimeout(()=>{if(!active)return;const host=$('#promptModeHandoff .prompt-mode-handoff-status'),base=$('.base',host||document),blue=$('.blue',host||document);if(base)base.textContent='Referenzen sind bereit.';if(blue){blue.textContent='Referenzen sind bereit.';blue.style.clipPath='inset(0)'}setTimeout(()=>release(box),240)},remaining)
+  }
+  function failOpen(message){if(finishing)return;finishing=true;clearInterval(sentenceTimer);const box=$('#promptModeHandoff');setSentence(message||'Projekt wird geöffnet.',true);setTimeout(()=>release(box),520)}
 
   function tick(data){
-    if(!active)return;const workflow=$('#workflowApp');applyBrief(data);applyMode(data);const n=step();
-    if(n>=2){finish(data);return}
+    if(!active||finishing)return;const workflow=$('#workflowApp');applyBrief(data);applyMode(data);const n=step();if(n>=2){finish(data);return}
     if(workflow&&!workflow.hidden&&n===1&&!advanceStarted&&applyBrief(data)&&applyMode(data)){const next=$('#stepProject .next-btn');if(next&&!next.disabled){advanceStarted=true;allowAdvance=true;next.click();allowAdvance=false}}
     if(advanceStarted&&n===1&&Date.now()-startedAt>5000&&retryCount<1){const next=$('#stepProject .next-btn');if(next&&!next.disabled){retryCount++;allowAdvance=true;next.click();allowAdvance=false}}
     if(Date.now()-startedAt>FAIL_OPEN_MS){failOpen('Projekt wird geöffnet.');return}timer=setTimeout(()=>tick(data),80)
   }
-
   function boot(){styles();const data=read();if(!data?.brief||!data?.mode){document.documentElement.classList.remove('prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();return}active=true;startedAt=Date.now();document.documentElement.classList.add('prompt-mode-handoff-active');overlay(data);tick(data)}
 
   document.addEventListener('click',rememberSelection,true);document.addEventListener('click',guardClicks,true);
