@@ -1,7 +1,7 @@
 const core=require('../server/generate-core');
 const previewImage=require('../server/preview-image');
 const sandboxBuild=require('../server/sandbox-build');
-const freePrompt=require('../server/free-prompt');
+const freePrompt=require('../server/free-prompt-v2');
 const {taskForAction,listProfiles}=require('../server/system-ai-profiles');
 const {getQuotaSummary,assertQuota,consumeWebsiteGeneration,quotaErrorPayload}=require('../server/quota');
 
