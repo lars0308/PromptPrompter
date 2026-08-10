@@ -1,96 +1,112 @@
 (()=>{
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
-  const HANDOFF_KEY='prompt-ai-mode-handoff-v1';
-  let settleTimer=0,sentenceTimer=0,lastKind='';
+  const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+  let settleTimer=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false,lastStep=0;
+  const STEP_STABLE_MS=90;
+  const SENTENCE_MS=1080;
 
-  function workflowVisible(){
-    const workflow=$('#workflowApp');
-    if(!workflow||workflow.hidden)return false;
-    try{return getComputedStyle(workflow).display!=='none'}catch{return true}
-  }
-  function currentStep(){return Number($('.step-panel.active')?.dataset.stepPanel||0)}
-  function clarificationOpen(){return Boolean($('#clarificationDialog')?.open)}
+  const mode=()=>$('.mode-switch button.active')?.dataset.mode||document.documentElement.dataset.promptMode||'guided';
+  const currentStep=()=>Number($('.step-panel.active')?.dataset.stepPanel||0);
+  function workflowVisible(){const workflow=$('#workflowApp');if(!workflow||workflow.hidden)return false;try{return getComputedStyle(workflow).display!=='none'&&getComputedStyle(workflow).visibility!=='hidden'}catch{return true}}
+  const cleanMode=()=>['guided','auto'].includes(mode());
+  const clarificationOpen=()=>Boolean($('#clarificationDialog')?.open);
 
   function installStyles(){
-    if($('#promptTransitionPolishStyles'))return;
-    const style=document.createElement('style');
-    style.id='promptTransitionPolishStyles';
-    style.textContent=`
-      html.prompt-review-transition,html.prompt-review-transition body{overflow:hidden!important}
-      html.prompt-review-transition #flowTransitionCompact{position:fixed!important;z-index:2147483500!important;inset:0!important;display:grid!important;place-items:center!important;width:100vw!important;max-width:none!important;min-height:100dvh!important;margin:0!important;padding:26px 24px!important;background:var(--paper,#f4f5f6)!important;color:var(--ink,#171814)!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important}
-      html.prompt-review-transition #flowTransitionCompact>div{width:min(560px,100%)!important;text-align:center!important}
-      html.prompt-review-transition #flowTransitionCompact span{font-size:9px!important;font-weight:850!important;letter-spacing:.13em!important;color:var(--ui-blue,var(--accent,#1689c7))!important}
-      html.prompt-review-transition #flowTransitionCompact strong{margin-top:9px!important;font-size:clamp(31px,8vw,47px)!important;line-height:1.02!important;letter-spacing:-.05em!important}
-      html.prompt-review-transition #flowTransitionCompact small{display:block!important;min-height:25px!important;max-width:430px!important;margin:18px auto 0!important;color:var(--muted,#6e6c64)!important;font-size:clamp(14px,3.7vw,17px)!important;line-height:1.45!important;transition:opacity .16s ease,transform .16s ease!important}
-      html.prompt-review-transition #flowTransitionCompact small.is-changing{opacity:0!important;transform:translateY(4px)!important}
-      html.prompt-review-transition #flowTransitionCompact .prompt-process-lines,html.prompt-review-transition #flowTransitionCompact>div>i{display:none!important}
-      html.prompt-review-transition #guidedCleanHead{display:none!important}
-      html[data-clean-project-flow="1"] #promptCompletionFlash{display:none!important}
-      .prompt-transition-dots{display:flex;justify-content:center;gap:7px;margin-top:22px}.prompt-transition-dots i{display:block!important;width:7px!important;height:7px!important;margin:0!important;border:0!important;border-radius:50%!important;background:var(--ui-blue,var(--accent,#1689c7))!important;opacity:.28;animation:promptTransitionDot 1.05s ease-in-out infinite!important}.prompt-transition-dots i:nth-child(2){animation-delay:.13s!important}.prompt-transition-dots i:nth-child(3){animation-delay:.26s!important}
-      @keyframes promptTransitionDot{0%,70%,100%{opacity:.25;transform:translateY(0)}35%{opacity:1;transform:translateY(-4px)}}
-      @media(prefers-reduced-motion:reduce){.prompt-transition-dots i{animation:none!important;opacity:.75!important}html.prompt-review-transition #flowTransitionCompact small{transition:none!important}}
-    `;
-    document.head.appendChild(style);
+    if($('#promptWorkflowStabilityStyles'))return;
+    const s=document.createElement('style');s.id='promptWorkflowStabilityStyles';s.textContent=`
+      html[data-clean-project-flow="1"] #promptBriefHandoff,
+      html[data-clean-project-flow="1"] #flowTransitionCompact,
+      html[data-clean-project-flow="1"] .streamline-working,
+      html[data-clean-project-flow="1"] #modeFlowPanel{display:none!important}
+      html[data-clean-project-flow="1"].prompt-review-transition #workflowApp .step-panel.active{display:flex!important;visibility:visible!important;pointer-events:auto!important}
+      html[data-clean-project-flow="1"].prompt-review-transition #flowTransitionCompact{display:none!important}
+      html[data-clean-project-flow="1"] #stepReferences .next-btn{font-size:0!important;white-space:nowrap!important}
+      html[data-clean-project-flow="1"] #stepReferences .next-btn>i{display:none!important}
+      html[data-clean-project-flow="1"] #stepReferences .next-btn:before{content:'Rückmeldung prüfen';font-size:12px;font-weight:760;letter-spacing:-.012em}
+      html[data-clean-project-flow="1"] #stepReferences .next-btn:after{content:'→';margin-left:18px;font-size:18px;font-weight:600;line-height:1}
+      html.prompt-workflow-loading,html.prompt-workflow-loading body{overflow:hidden!important}
+      html.prompt-workflow-loading #guidedCleanHead{visibility:hidden!important}
+      #promptWorkflowLoader{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style}
+      #promptWorkflowLoader.is-leaving{opacity:0;pointer-events:none}
+      #promptWorkflowLoader>div{width:min(560px,100%);text-align:center}
+      #promptWorkflowLoader .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}
+      #promptWorkflowLoader strong{display:block;margin-top:9px;font-size:clamp(31px,8vw,47px);line-height:1.02;letter-spacing:-.05em}
+      .prompt-loader-sentence{position:relative;display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;overflow:hidden;transition:opacity .16s ease,transform .16s ease}
+      .prompt-loader-sentence.is-changing{opacity:0;transform:translateY(4px)}
+      .prompt-loader-sentence .blue{position:absolute;inset:0;color:var(--ui-blue,var(--accent,#1689c7));clip-path:inset(0 100% 0 0);pointer-events:none}
+      .prompt-loader-sentence.run .blue{animation:promptSentenceFill ${SENTENCE_MS}ms cubic-bezier(.22,.68,.24,1) forwards}
+      @keyframes promptSentenceFill{to{clip-path:inset(0 0 0 0)}}
+      .prompt-loader-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-loader-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptLoaderPulse 1.05s ease-in-out infinite}.prompt-loader-pulse i:nth-child(2){animation-delay:.13s}.prompt-loader-pulse i:nth-child(3){animation-delay:.26s}
+      @keyframes promptLoaderPulse{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
+      .project-mode-transition{background:var(--paper,#f4f5f6)!important;animation:none!important;transition:opacity .2s ease!important}.project-mode-transition>div{width:min(560px,100%)!important;padding:0 22px!important}.project-mode-transition strong{font-size:clamp(31px,8vw,47px)!important;line-height:1.02!important;letter-spacing:-.05em!important}.project-mode-transition small{font-size:clamp(15px,3.8vw,18px)!important;font-weight:650!important;color:var(--muted,#6e6c64)!important}.project-mode-transition>div>i{display:none!important}
+      @media(prefers-reduced-motion:reduce){#promptWorkflowLoader,.prompt-loader-sentence{transition:none!important}.prompt-loader-sentence .blue{animation:none!important;clip-path:inset(0)!important}.prompt-loader-pulse i{animation:none!important;opacity:.7!important}}
+    `;document.head.appendChild(s)
   }
 
-  const lines={
-    review:['Angaben werden geprüft.','Nur wichtige Rückfragen bleiben übrig.','Der nächste Schritt wird vorbereitet.'],
-    preview:['Antworten werden zusammengeführt.','Die Vorschau wird vorbereitet.','Fast fertig.']
+  const copy={
+    review:{kicker:'RÜCKMELDUNG',title:'Briefing wird geprüft',sentences:['Angaben werden geprüft.','Offene Punkte werden erkannt.','Rückfragen werden vorbereitet.']},
+    preview:{kicker:'VORSCHAU',title:'Vorschau wird vorbereitet',sentences:['Antworten werden verbunden.','Die Richtung wird vorbereitet.','Vorschau wird erstellt.']}
   };
 
-  function ensureDots(box){
-    const host=box?.firstElementChild;if(!host||$('.prompt-transition-dots',host))return;
-    const dots=document.createElement('div');dots.className='prompt-transition-dots';dots.setAttribute('aria-hidden','true');dots.innerHTML='<i></i><i></i><i></i>';host.appendChild(dots);
+  function loader(){
+    let box=$('#promptWorkflowLoader');if(box)return box;
+    box=document.createElement('section');box.id='promptWorkflowLoader';box.setAttribute('aria-live','polite');box.innerHTML='<div><span class="kicker"></span><strong></strong><div class="prompt-loader-sentence"><span class="base"></span><span class="blue" aria-hidden="true"></span></div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>';
+    document.body.appendChild(box);return box
   }
-  function setSentence(node,text){
-    if(!node||node.textContent===text)return;
-    node.classList.add('is-changing');
-    setTimeout(()=>{if(!node.isConnected)return;node.textContent=text;node.classList.remove('is-changing')},165);
+  function setSentence(text,immediate=false){
+    const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;
+    const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('run');void host.offsetWidth;host.classList.add('run','');host.classList.remove('is-changing')};
+    if(immediate){apply();return}
+    host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)
   }
-  function stopCycle(){clearInterval(sentenceTimer);sentenceTimer=0;lastKind=''}
-  function startCycle(box,kind){
-    const sentence=$('small',box);if(!sentence)return;
-    if(lastKind===kind&&sentenceTimer)return;
-    stopCycle();lastKind=kind;let index=0;setSentence(sentence,lines[kind][0]);
-    sentenceTimer=setInterval(()=>{
-      if(!document.documentElement.classList.contains('prompt-review-transition')||!box.isConnected){stopCycle();return}
-      index=(index+1)%lines[kind].length;setSentence(sentence,lines[kind][index]);
-    },920);
+  function startCycle(kind){
+    const data=copy[kind];if(!data)return;clearInterval(cycleTimer);let index=0;setSentence(data.sentences[index],true);
+    cycleTimer=setInterval(()=>{const box=$('#promptWorkflowLoader');if(!box||activeKind!==kind){clearInterval(cycleTimer);return}index=(index+1)%data.sentences.length;setSentence(data.sentences[index])},SENTENCE_MS+240)
   }
-
-  function removeDuplicateHandoff(){
-    const duplicate=$('#promptBriefHandoff');if(!duplicate)return;
-    let hasModeHandoff=Boolean($('#promptModeHandoff'));try{hasModeHandoff=hasModeHandoff||Boolean(sessionStorage.getItem(HANDOFF_KEY))}catch{}
-    if(hasModeHandoff)duplicate.remove();
+  function show(kind){
+    if(userExited||!workflowVisible()||!cleanMode())return;const data=copy[kind];if(!data)return;
+    const box=loader();box.classList.remove('is-leaving');document.documentElement.classList.add('prompt-workflow-loading');
+    const kicker=$('.kicker',box),title=$('strong',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;if(title.textContent!==data.title)title.textContent=data.title;
+    if(activeKind!==kind){activeKind=kind;startCycle(kind)}
   }
-
-  function syncTransition(){
-    installStyles();removeDuplicateHandoff();
-    const visible=workflowVisible(),step=currentStep(),show=visible&&[3,4,5].includes(step)&&!clarificationOpen();
-    document.documentElement.classList.toggle('prompt-review-transition',show);
-    const box=$('#flowTransitionCompact');
-    if(!show){box?.classList.remove('show');stopCycle();if(!visible){document.documentElement.classList.remove('prompt-clarification-exit');$('#promptCompletionFlash')?.remove()}return}
-    if(!box)return;
-    box.classList.add('show');ensureDots(box);
-    const kicker=$('span',box),title=$('strong',box),kind=step===5?'preview':'review';
-    if(kicker)kicker.textContent=kind==='preview'?'VORSCHAU':'RÜCKMELDUNG';
-    if(title)title.textContent=kind==='preview'?'Vorschau wird vorbereitet':'Briefing wird geprüft';
-    startCycle(box,kind);
+  function hide(immediate=false){
+    clearInterval(cycleTimer);cycleTimer=0;activeKind='';const box=$('#promptWorkflowLoader');document.documentElement.classList.remove('prompt-workflow-loading');if(!box)return;
+    if(immediate){box.remove();return}box.classList.add('is-leaving');setTimeout(()=>box.remove(),250)
   }
 
-  function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(syncTransition,24)}
-  function blockHiddenWorkflowClicks(event){
-    const next=event.target.closest?.('#workflowApp .next-btn');
-    if(next&&!workflowVisible()){event.preventDefault();event.stopImmediatePropagation()}
-  }
-  function bind(){
-    document.addEventListener('click',blockHiddenWorkflowClicks,true);
-    document.addEventListener('click',event=>{if(event.target.closest?.('#brandHome,.guided-clean-exit'))setTimeout(schedule,0)},true);
-    new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style']});
-    window.addEventListener('pageshow',schedule);window.addEventListener('promptai:access',schedule);
+  function normalizePreReload(){
+    const box=$('.project-mode-transition');if(!box)return;const strong=$('strong',box),small=$('small',box);if(strong)strong.textContent='Projekt wird vorbereitet';if(small)small.textContent='Beschreibung wird übernommen.'
   }
 
-  function init(){installStyles();bind();syncTransition()}
+  function sync(){
+    installStyles();
+    const visible=workflowVisible(),step=currentStep();
+    if(!visible){pendingFromReferences=false;hide(true);return}
+    if(userExited)return;
+    if(clarificationOpen()){pendingFromReferences=false;hide();return}
+    if(step===2){if(!pendingFromReferences)hide();return}
+    if(step===3||step===4){pendingFromReferences=false;show('review');return}
+    if(step===5){pendingFromReferences=false;show('preview');return}
+    if(step>=6||step===1){pendingFromReferences=false;hide();return}
+  }
+  function schedule(delay=STEP_STABLE_MS){clearTimeout(settleTimer);settleTimer=setTimeout(sync,delay)}
+
+  function onClick(event){
+    const refNext=event.target.closest?.('#stepReferences .next-btn');
+    if(refNext&&workflowVisible()&&cleanMode()){userExited=false;pendingFromReferences=true;show('review');schedule(180);return}
+    if(event.target.closest?.('#workspaceNewProjectBtn,#startNewBtn,[data-project-mode]')){userExited=false;setTimeout(normalizePreReload,0);return}
+    if(event.target.closest?.('#brandHome,.guided-clean-exit')){userExited=true;pendingFromReferences=false;hide(true);document.documentElement.classList.remove('prompt-review-transition','prompt-clarification-exit');return}
+    if(event.target.closest?.('#clarificationDialog .close-dialog')){pendingFromReferences=false;hide();return}
+  }
+  function blockLateHiddenClicks(event){
+    if(workflowVisible())return;const button=event.target.closest?.('#workflowApp .next-btn,#workflowApp .back-btn');if(button&&!event.isTrusted){event.preventDefault();event.stopImmediatePropagation()}
+  }
+  function observe(){
+    new MutationObserver(()=>schedule()).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style']});
+    window.addEventListener('pageshow',()=>schedule(0));window.addEventListener('promptai:access',()=>schedule(0));
+  }
+  function bind(){document.addEventListener('click',onClick,true);document.addEventListener('click',blockLateHiddenClicks,true)}
+  function init(){installStyles();bind();observe();lastStep=currentStep();sync()}
   installStyles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
