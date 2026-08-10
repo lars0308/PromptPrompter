@@ -18,6 +18,7 @@
       html[data-clean-project-flow="1"] #flowTransitionCompact,
       html[data-clean-project-flow="1"] .streamline-working,
       html[data-clean-project-flow="1"] #modeFlowPanel,
+      html[data-clean-project-flow="1"] #promptCompletionFlash,
       html[data-prompt-mode="guided"] #promptBriefHandoff,
       html[data-prompt-mode="auto"] #promptBriefHandoff,
       html[data-prompt-mode="guided"] #flowTransitionCompact,
@@ -25,7 +26,9 @@
       html[data-prompt-mode="guided"] .streamline-working,
       html[data-prompt-mode="auto"] .streamline-working,
       html[data-prompt-mode="guided"] #modeFlowPanel,
-      html[data-prompt-mode="auto"] #modeFlowPanel{display:none!important}
+      html[data-prompt-mode="auto"] #modeFlowPanel,
+      html[data-prompt-mode="guided"] #promptCompletionFlash,
+      html[data-prompt-mode="auto"] #promptCompletionFlash{display:none!important}
       html[data-clean-project-flow="1"].prompt-review-transition #workflowApp .step-panel.active,
       html[data-prompt-mode="guided"].prompt-review-transition #workflowApp .step-panel.active,
       html[data-prompt-mode="auto"].prompt-review-transition #workflowApp .step-panel.active{display:flex!important;visibility:visible!important;pointer-events:auto!important}
@@ -68,38 +71,21 @@
     preview:{kicker:'VORSCHAU',title:'Vorschau wird vorbereitet',sentences:['Antworten werden verbunden.','Die Richtung wird vorbereitet.','Vorschau wird erstellt.']}
   };
 
-  function loader(){
-    let box=$('#promptWorkflowLoader');if(box)return box;
-    box=document.createElement('section');box.id='promptWorkflowLoader';box.setAttribute('aria-live','polite');box.innerHTML='<div><span class="kicker"></span><strong></strong><div class="prompt-loader-sentence"><span class="base"></span><span class="blue" aria-hidden="true"></span></div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>';
-    document.body.appendChild(box);return box
-  }
-  function setSentence(text,immediate=false){
-    const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;
-    const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('run');void host.offsetWidth;host.classList.add('run');host.classList.remove('is-changing')};
-    if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)
-  }
+  function loader(){let box=$('#promptWorkflowLoader');if(box)return box;box=document.createElement('section');box.id='promptWorkflowLoader';box.setAttribute('aria-live','polite');box.innerHTML='<div><span class="kicker"></span><strong></strong><div class="prompt-loader-sentence"><span class="base"></span><span class="blue" aria-hidden="true"></span></div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>';document.body.appendChild(box);return box}
+  function setSentence(text,immediate=false){const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('run');void host.offsetWidth;host.classList.add('run');host.classList.remove('is-changing')};if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)}
   function startCycle(kind){const data=copy[kind];if(!data)return;clearInterval(cycleTimer);let index=0;setSentence(data.sentences[index],true);cycleTimer=setInterval(()=>{const box=$('#promptWorkflowLoader');if(!box||activeKind!==kind){clearInterval(cycleTimer);return}index=(index+1)%data.sentences.length;setSentence(data.sentences[index])},SENTENCE_MS+240)}
   function show(kind){if(userExited||!workflowVisible()||!cleanMode())return;const data=copy[kind];if(!data)return;const box=loader();box.classList.remove('is-leaving');document.documentElement.classList.add('prompt-workflow-loading');const kicker=$('.kicker',box),title=$('strong',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;if(title.textContent!==data.title)title.textContent=data.title;if(activeKind!==kind){activeKind=kind;startCycle(kind)}}
   function hide(immediate=false){clearInterval(cycleTimer);cycleTimer=0;activeKind='';const box=$('#promptWorkflowLoader');document.documentElement.classList.remove('prompt-workflow-loading');if(!box)return;if(immediate){box.remove();return}box.classList.add('is-leaving');setTimeout(()=>box.remove(),250)}
 
   function normalizePreReload(){const box=$('.project-mode-transition');if(!box)return;const strong=$('strong',box),small=$('small',box);if(strong)strong.textContent='Projekt wird vorbereitet';if(small)small.textContent='Beschreibung wird übernommen.'}
-  function closeLateWorkflowUi(){const dialog=$('#clarificationDialog');if(dialog?.open){try{dialog.close('cancel')}catch{dialog.removeAttribute('open')}}document.documentElement.classList.remove('prompt-review-transition','prompt-clarification-exit')}
+  function closeLateWorkflowUi(){const dialog=$('#clarificationDialog');if(dialog?.open){try{dialog.close('cancel')}catch{dialog.removeAttribute('open')}}$('#promptCompletionFlash')?.remove();document.documentElement.classList.remove('prompt-review-transition','prompt-clarification-exit')}
 
-  function sync(){
-    installStyles();const visible=workflowVisible(),step=currentStep();
-    if(!visible){pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}
-    if(userExited)return;
-    if(clarificationOpen()){pendingFromReferences=false;hide();return}
-    if(step===2){if(!pendingFromReferences)hide();return}
-    if(step===3||step===4){pendingFromReferences=false;show('review');return}
-    if(step===5){pendingFromReferences=false;show('preview');return}
-    if(step>=6||step===1){pendingFromReferences=false;hide();return}
-  }
+  function sync(){installStyles();const visible=workflowVisible(),step=currentStep();if(!visible){pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}if(userExited)return;if(clarificationOpen()){pendingFromReferences=false;hide();return}if(step===2){if(!pendingFromReferences)hide();return}if(step===3||step===4){pendingFromReferences=false;show('review');return}if(step===5){pendingFromReferences=false;show('preview');return}if(step>=6||step===1){pendingFromReferences=false;hide();return}}
   function schedule(delay=STEP_STABLE_MS){clearTimeout(settleTimer);settleTimer=setTimeout(sync,delay)}
 
   function onClick(event){
     const refNext=event.target.closest?.('#stepReferences .next-btn');if(refNext&&workflowVisible()&&cleanMode()){userExited=false;pendingFromReferences=true;show('review');schedule(180);return}
-    if(event.target.closest?.('#workspaceNewProjectBtn,#startNewBtn,[data-project-mode]')){userExited=false;setTimeout(normalizePreReload,0);return}
+    if(event.target.closest?.('#workspaceNewProjectBtn,#workspaceLastProjectBtn,#startNewBtn,[data-project-mode]')){userExited=false;setTimeout(normalizePreReload,0);return}
     if(event.target.closest?.('#brandHome,.guided-clean-exit')){userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}
     if(event.target.closest?.('#clarificationDialog .close-dialog')){pendingFromReferences=false;hide();return}
   }
