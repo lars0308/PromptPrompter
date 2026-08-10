@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const PROVIDERS={
     gateway:{name:'Vercel AI Gateway',hint:'Zentrale Text-KI und Modell-Routing',placeholder:'AI Gateway API-Key'},
     openai:{name:'OpenAI',hint:'Direkte OpenAI-Verarbeitung',placeholder:'sk-…'},
