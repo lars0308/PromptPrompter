@@ -11,11 +11,12 @@ await fs.mkdir(OUT,{recursive:true});
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:430,height:932},deviceScaleFactor:1,colorScheme:'light',locale:'de-DE'});
 page.setDefaultTimeout(3000);
+await page.route('**/cloud.js*',r=>r.fulfill({status:200,contentType:'application/javascript',body:'// cloud disabled for deterministic screenshots'}));
 await page.route('**/admin-console.js*',r=>r.fulfill({status:200,contentType:'application/javascript',body:'// screenshot harness'}));
 await page.route('**/api/**',r=>r.fulfill({status:200,contentType:'application/json',body:'{}'}));
 await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded',timeout:10000});
-await page.waitForTimeout(300);
-for(const src of scripts){await page.addScriptTag({url:`http://127.0.0.1:4173/${src}`});}
+await page.waitForTimeout(250);
+for(const src of scripts)await page.addScriptTag({url:`http://127.0.0.1:4173/${src}`});
 
 async function reset(plan='free'){
   await page.evaluate(plan=>{
@@ -28,9 +29,9 @@ async function reset(plan='free'){
     const a=document.querySelector('#workflowApp');if(a)a.hidden=true;
     window.scrollTo(0,0);
   },plan);
-  await page.waitForTimeout(120);
+  await page.waitForTimeout(100);
 }
-async function snap(name,fullPage=false){await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(80);await page.screenshot({path:`${OUT}/${name}.png`,fullPage});console.log(name)}
+async function snap(name,fullPage=false){await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(60);await page.screenshot({path:`${OUT}/${name}.png`,fullPage});console.log(name)}
 async function showStep(n,mode='guided'){
   await page.evaluate(({n,mode,brief})=>{
     for(const d of document.querySelectorAll('dialog[open]')){try{d.close()}catch{}}
@@ -44,42 +45,35 @@ async function showStep(n,mode='guided'){
     document.querySelectorAll('.step-nav').forEach(p=>p.classList.toggle('active',Number(p.dataset.step)===n));
     window.scrollTo(0,0);
   },{n,mode,brief});
-  await page.waitForTimeout(220);
+  await page.waitForTimeout(180);
 }
 
-// 01 — Logo-Ladescreen aus dem echten Intro-Code
 await reset();
 await page.evaluate(()=>{const d=document.querySelector('#welcomeIntroDialog');if(d){try{d.showModal()}catch{}}});
-await page.waitForTimeout(100);
+await page.waitForTimeout(80);
 await snap('01-logo-ladescreen');
 
-// 02 — Startseite Free
 await reset();
 await snap('02-startseite-free');
 
-// 03 — Website-Beschreibung
 await reset();
 await page.evaluate(({brief})=>{window.PromptAiHomeEntry.openWebsite();setTimeout(()=>{const t=document.querySelector('#simpleIntakeText');if(t)t.value=brief},20)},{brief});
-await page.waitForTimeout(80);
+await page.waitForTimeout(60);
 await snap('03-internetseite-beschreiben');
 
-// 04 — Arbeitsweg / Tarife; für das Bild alle drei echten Karten sichtbar
 await reset('ultimate');
 await page.evaluate(({brief})=>{void window.PromptAiProjectStart.startFromBrief(brief)},{brief});
-await page.waitForTimeout(120);
+await page.waitForTimeout(100);
 await snap('04-arbeitsweg-waehlen');
 
-// 05 — Referenzen
 await reset();
 await showStep(2,'guided');
 await page.evaluate(()=>{const u=document.querySelector('#referenceUrl');if(u)u.value='https://beispiel-dachdecker.de';const h=document.querySelector('#stepReferences .reference-note-block');if(h)h.innerHTML='<span>OPTIONAL</span><p>Referenzen helfen Prompt.ai, Stil, Aufbau und Wirkung genauer zu verstehen. Ohne Referenzen kannst du direkt weiter.</p>'});
 await snap('05-referenzen');
 
-// 06 — KI-Hintergrundarbeit im geführten Ablauf
 await showStep(3,'guided');
 await snap('06-ki-arbeitet-im-hintergrund');
 
-// 07 — Vorschau. Inhalt ist ein Demo-Dachdeckerprojekt; Prompt.ai-Oberfläche ist echter aktueller Code.
 await showStep(6,'guided');
 await page.evaluate(()=>{
   const status=document.querySelector('#generationStatus');if(status)status.textContent='3 Richtungen aus deiner Beschreibung und den Referenzen vorbereitet.';
@@ -90,21 +84,18 @@ await page.evaluate(()=>{
 });
 await snap('07-vorschau-gefuhrt',true);
 
-// 08 — Master-Prompt Ergebnis
 await showStep(8,'guided');
 await page.evaluate(({brief})=>{const p=document.querySelector('#masterPrompt');if(p)p.value=`Du bist Senior Webdesigner und Frontend-Entwickler.\n\nAUFGABE\nErstelle eine moderne, eigenständige Internetseite für einen Dachdeckerbetrieb in Lindhorst und Umgebung.\n\nAUSGANGSLAGE\n${brief}\n\nGESTALTUNG\n- abstrakte, hochwertige Richtung\n- natürliche Grüntöne\n- klare Typografie ohne typischen KI-Landingpage-Look\n- regionale Nähe und Vertrauen sichtbar machen\n\nINHALTE\nLeistungen, Einsatzgebiet, Bewertungen und Kontakt müssen schnell erfassbar sein. Mobile First umsetzen.`;document.querySelector('#stepPrompt')?.classList.remove('master-generating')},{brief});
-await page.waitForTimeout(80);
+await page.waitForTimeout(60);
 await snap('08-master-prompt',true);
 
-// 09 — Freier Prompt einfacher Einstieg
 await reset();
 await page.evaluate(({freeBrief})=>{window.PromptAiHomeEntry.openFreePrompt();setTimeout(()=>{const t=document.querySelector('#simpleIntakeText');if(t)t.value=freeBrief},20)},{freeBrief});
-await page.waitForTimeout(80);
+await page.waitForTimeout(60);
 await snap('09-freier-prompt-einstieg');
 
-// 10 — Freier Prompt Free-Ansicht mit Pro-Hinweis
 await page.evaluate(({freeBrief})=>{document.querySelector('#simpleIntakeDialog')?.close();const b=document.querySelector('#workspaceFreePromptBtn');if(typeof b?.__promptFreeOriginal==='function')b.__promptFreeOriginal();setTimeout(()=>{const cat=document.querySelector('#freePromptCategory');if(cat){cat.value='video';cat.dispatchEvent(new Event('change',{bubbles:true}))}const d=document.querySelector('#freePromptDescription');if(d)d.value=freeBrief},20)},{freeBrief});
-await page.waitForTimeout(100);
+await page.waitForTimeout(80);
 await snap('10-freier-prompt-free',true);
 
 await browser.close();
