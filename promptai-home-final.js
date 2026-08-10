@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  let timer=0,lastTitle='';
+  let timer=0;
   window.PromptAiHomeFinalLock=true;
 
   function styles(){
@@ -98,7 +98,7 @@
     if($('#workflowApp')?.hidden)document.documentElement.removeAttribute('data-clean-project-flow');
     const hero=$('.welcome-hero'),h1=$('h1',hero),kicker=$('.section-kicker',hero),name=resolvedName();if(!hero||!h1)return;
     if(kicker&&kicker.textContent!=='PROMPT.AI')kicker.textContent='PROMPT.AI';
-    const desired=name?`Willkommen, ${name}.`:'Willkommen.';lastTitle=desired;
+    const desired=name?`Willkommen, ${name}.`:'Willkommen.';
     if(h1.dataset.homeTitle!==desired)h1.dataset.homeTitle=desired;
     if(h1.textContent!==desired)h1.textContent=desired;
     const intro=$('.home-intro-copy',hero);if(intro)intro.setAttribute('aria-hidden','true');
