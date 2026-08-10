@@ -1,6 +1,7 @@
 (()=>{
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
+  let settleTimer=0;
 
   function styles(){
     if($('#entryGateStyles'))return;
@@ -34,6 +35,7 @@
   }
 
   function settle(){styles();ensureGateActions();resetExpansion()}
-  function init(){settle();new MutationObserver(settle).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});window.addEventListener('promptai:access',settle);window.addEventListener('pageshow',settle)}
+  function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
+  function init(){settle();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});window.addEventListener('promptai:access',schedule);window.addEventListener('pageshow',schedule)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

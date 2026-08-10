@@ -630,16 +630,23 @@
     }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();maybeShowEntryGate();}
   }
 
+  function withTimeout(promise,ms=20000,message="Die Verbindung hat zu lange gedauert. Bitte versuch es erneut."){
+    return new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>reject(new Error(message)),ms);
+      promise.then(v=>{clearTimeout(timer);resolve(v)},err=>{clearTimeout(timer);reject(err)});
+    });
+  }
+
   async function signIn(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||!password)return;
-    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await window.SiteBriefCloud.signIn(email,password);if(el.rememberEmail?.checked)localStorage.setItem(REMEMBERED_EMAIL_KEY,email);else localStorage.removeItem(REMEMBERED_EMAIL_KEY);state.cloud.user=data.user;el.authPassword.value="";el.authMessage.textContent="Angemeldet. Die Sitzung bleibt auf diesem Gerät erhalten.";el.authMessage.className="auth-message good";}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
+    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await withTimeout(window.SiteBriefCloud.signIn(email,password));if(el.rememberEmail?.checked)localStorage.setItem(REMEMBERED_EMAIL_KEY,email);else localStorage.removeItem(REMEMBERED_EMAIL_KEY);state.cloud.user=data.user;el.authPassword.value="";el.authMessage.textContent="Angemeldet. Die Sitzung bleibt auf diesem Gerät erhalten.";el.authMessage.className="auth-message good";}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
   }
 
   async function signUp(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||password.length<8){el.authMessage.textContent="Bitte E-Mail und mindestens 8 Zeichen Passwort eingeben.";el.authMessage.className="auth-message error";return;}
-    try{const data=await window.SiteBriefCloud.signUp(email,password);if(data.session){state.cloud.user=data.user;el.authMessage.textContent="Konto angelegt und angemeldet.";}else el.authMessage.textContent="Konto angelegt. Bitte bestätige die E-Mail und melde dich danach an.";el.authMessage.className="auth-message good";}catch(err){el.authMessage.textContent=err?.message||"Konto konnte nicht angelegt werden.";el.authMessage.className="auth-message error";}
+    try{el.authMessage.textContent="Konto wird angelegt…";el.authMessage.className="auth-message";const data=await withTimeout(window.SiteBriefCloud.signUp(email,password));if(data.session){state.cloud.user=data.user;el.authMessage.textContent="Konto angelegt und angemeldet.";}else el.authMessage.textContent="Konto angelegt. Bitte bestätige die E-Mail und melde dich danach an.";el.authMessage.className="auth-message good";}catch(err){el.authMessage.textContent=err?.message||"Konto konnte nicht angelegt werden.";el.authMessage.className="auth-message error";}
   }
 
   async function signOut(){

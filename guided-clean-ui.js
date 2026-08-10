@@ -55,6 +55,27 @@
         .guided-clean-lead{font-size:12px;margin:13px 0 22px}
         html[data-clean-project-flow="1"] #stepReferences .dropzone{grid-template-columns:38px 1fr!important}
       }
+      html[data-theme="dark"][data-clean-project-flow="1"] body{background:var(--paper)}
+      html[data-theme="dark"][data-clean-project-flow="1"] #workflowApp{background:var(--paper)}
+      html[data-theme="dark"][data-clean-project-flow="1"] .workspace{background:var(--surface);border-color:var(--line);box-shadow:0 24px 70px rgba(0,0,0,.4)}
+      html[data-theme="dark"] .guided-clean-head{border-color:var(--line);background:var(--surface)}
+      html[data-theme="dark"] .guided-clean-exit{color:var(--muted)}html[data-theme="dark"] .guided-clean-exit:hover{background:var(--surface-soft);color:var(--ink)}
+      html[data-theme="dark"][data-clean-project-flow="1"] .step-panel{background:var(--surface)}
+      html[data-theme="dark"][data-clean-project-flow="1"] .step-panel>h1,html[data-theme="dark"][data-clean-project-flow="1"] .preview-step-head h1{color:var(--ink)}
+      html[data-theme="dark"] .guided-clean-lead{color:var(--muted)}
+      html[data-theme="dark"][data-clean-project-flow="1"] .field>span,html[data-theme="dark"][data-clean-project-flow="1"] .compact-field>span{color:var(--muted)}
+      html[data-theme="dark"][data-clean-project-flow="1"] .field input,html[data-theme="dark"][data-clean-project-flow="1"] .field select,html[data-theme="dark"][data-clean-project-flow="1"] .field textarea,html[data-theme="dark"][data-clean-project-flow="1"] .compact-field select{border-color:var(--line)!important;background:var(--input,var(--surface))!important;color:var(--ink)}
+      html[data-theme="dark"][data-clean-project-flow="1"] .outline-btn{border-color:var(--line)!important;background:var(--surface)!important;color:var(--ink)!important}
+      html[data-theme="dark"][data-clean-project-flow="1"] .text-btn{color:var(--muted)}
+      html[data-theme="dark"][data-clean-project-flow="1"] .step-actions{border-color:var(--line)!important}
+      html[data-theme="dark"][data-clean-project-flow="1"] #stepReferences .dropzone{border-color:var(--line);background:var(--surface-soft)}
+      html[data-theme="dark"][data-clean-project-flow="1"] #stepReferences .reference-note-block{border-color:var(--line)}
+      html[data-theme="dark"][data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{border-color:var(--line)!important;background:var(--surface-soft)!important}
+      html[data-theme="dark"][data-clean-project-flow="1"] #stepPreviews .generation-status{color:var(--muted)}
+      html[data-theme="dark"][data-clean-project-flow="1"] #stepPreviews .concept-option{border-color:var(--line)!important;background:var(--surface)!important}
+      html[data-theme="dark"][data-clean-project-flow="1"] #stepRefine .quick-refinements button{border-color:var(--line);background:var(--surface)}
+      html[data-theme="dark"][data-clean-project-flow="1"] #stepPrompt .master-prompt{border-color:var(--line)!important;background:var(--input,var(--surface))!important;color:var(--ink)}
+      @media(max-width:760px){html[data-theme="dark"][data-clean-project-flow="1"] #workflowApp{background:var(--paper)}}
     `;document.head.appendChild(s);
   }
 
