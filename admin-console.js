@@ -13,5 +13,5 @@
     };
     load('./admin-console-core.js?v=20260810-8',()=>{document.addEventListener=original;next?.()});
   };
-  load('./owner-access.js?v=20260810-1',()=>load('./intro-flow-fix.js?v=20260810-1',()=>loadCore(()=>load('./ui-regression-fixes.js?v=20260810-8',()=>load('./project-start-ui.js?v=20260810-1',()=>load('./stability-ui.js?v=20260810-2',()=>load('./mode-flow-ui.js?v=20260810-6',()=>load('./preview-ai-admin.js?v=20260810-6',()=>load('./product-polish.js?v=20260810-3',()=>load('./sandbox-preview.js?v=20260810-1',()=>load('./workflow-cleanup.js?v=20260810-2',()=>load('./generator-selection.js?v=20260810-1'))))))))))));
+  load('./owner-access.js?v=20260810-1',()=>load('./intro-flow-fix.js?v=20260810-1',()=>loadCore(()=>load('./ui-regression-fixes.js?v=20260810-8',()=>load('./project-start-ui.js?v=20260810-1',()=>load('./stability-ui.js?v=20260810-2',()=>load('./mode-flow-ui.js?v=20260810-6',()=>load('./system-ai-routing.js?v=20260810-1',()=>load('./preview-ai-admin.js?v=20260810-6',()=>load('./system-ai-studio.js?v=20260810-1',()=>load('./product-polish.js?v=20260810-3',()=>load('./sandbox-preview.js?v=20260810-1',()=>load('./workflow-cleanup.js?v=20260810-2',()=>load('./generator-selection.js?v=20260810-1'))))))))))))));
 })();
