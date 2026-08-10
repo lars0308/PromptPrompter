@@ -1,4 +1,4 @@
-// Final focused regression runner after UI observer stabilization.
+// Final focused regression runner after both UI stabilizers were made idempotent.
 import {chromium} from 'playwright';
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
