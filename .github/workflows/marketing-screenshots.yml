@@ -28,7 +28,7 @@ jobs:
           python3 -m http.server 4173 >/tmp/prompt-ai-http.log 2>&1 &
           sleep 2
       - name: Run mobile and desktop UI QA
-        run: node scripts/qa-final-ui-fast.mjs
+        run: timeout 120s node scripts/qa-final-ui-fast.mjs
       - name: Upload QA screenshots
         uses: actions/upload-artifact@v4
         with:
