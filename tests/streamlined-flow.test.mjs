@@ -38,7 +38,7 @@ test('new flow is cached and loaded after the home entry',async()=>{
   const loader=await text('admin-console.js'),sw=await text('sw.js'),clean=await text('guided-clean-ui.js'),unified=await text('unified-ui-v1.js');
   const home=loader.indexOf('home-entry-ui.js'),stream=loader.indexOf('streamlined-project-flow.js'),guided=loader.indexOf('guided-clean-ui.js'),allUi=loader.indexOf('unified-ui-v1.js');
   assert.ok(home>=0&&home<stream&&stream<guided&&guided<allUi);
-  assert.match(sw,/prompt-ai-shell-v29/);
+  assert.match(sw,/prompt-ai-shell-v30/);
   assert.match(sw,/streamlined-project-flow\.js/);
   assert.match(sw,/guided-clean-ui\.js/);
   assert.match(sw,/unified-ui-v1\.js/);
