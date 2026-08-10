@@ -1,5 +1,5 @@
 const {authenticatedUser,ownSubscription,ownApiAddon}=require('../server/supabase-user');
-const {stripeRequest,stripeGet,resolveRecurringPrice,resolveOneTimePrice}=require('../server/stripe-rest');
+const {stripeRequest,stripeGet,resolveRecurringPrice,resolveRecurringPriceObject,resolveOneTimePrice}=require('../server/stripe-rest');
 const {currentPublicOffer:currentOffer}=require('../server/public-offer');
 
 function appOrigin(req){
@@ -41,8 +41,7 @@ async function defaultPaymentMethod(subscription,customerId){
   try{
     let pm=subscription?.default_payment_method||null;
     if(pm&&typeof pm==='object')return paymentSummary(pm);
-    let customer=null;
-    if(!pm&&customerId){customer=await stripeGet(`customers/${encodeURIComponent(customerId)}`);pm=customer?.invoice_settings?.default_payment_method||null;}
+    if(!pm&&customerId){const customer=await stripeGet(`customers/${encodeURIComponent(customerId)}`);pm=customer?.invoice_settings?.default_payment_method||null;}
     if(pm&&typeof pm==='object')return paymentSummary(pm);
     if(typeof pm==='string'&&pm.startsWith('pm_'))return paymentSummary(await stripeGet(`payment_methods/${encodeURIComponent(pm)}`));
   }catch{}
@@ -116,11 +115,45 @@ async function subscriptionOverview(req){
     canCancel:Boolean(mainStripe&&['active','trialing','past_due'].includes(mainStripe.status)&&!mainStripe.cancelAtPeriodEnd&&!mainStripe.cancelAt)
   };
 }
+function productId(price){return typeof price?.product==='string'?price.product:String(price?.product?.id||'')}
+async function portalConfigurationParams(origin){
+  const [pro,ultimate]=await Promise.all([resolveRecurringPriceObject('pro'),resolveRecurringPriceObject('ultimate')]),prices=[pro,ultimate],groups=new Map();
+  for(const price of prices){const product=productId(price);if(!product||!price?.id)continue;if(!groups.has(product))groups.set(product,[]);groups.get(product).push(price.id)}
+  if(!groups.size)throw new Error('Pro- und Ultimate-Preise konnten für das Kundenportal nicht aufgelöst werden.');
+  const fingerprint=prices.map(x=>String(x?.id||'')).filter(Boolean).sort().join('|'),params={
+    name:'Prompt.ai Kundenportal',
+    default_return_url:`${origin}/?billing=return`,
+    'metadata[prompt_ai]':'billing-v1',
+    'metadata[price_fingerprint]':fingerprint,
+    'features[invoice_history][enabled]':'true',
+    'features[payment_method_update][enabled]':'true',
+    'features[subscription_cancel][enabled]':'true',
+    'features[subscription_cancel][mode]':'at_period_end',
+    'features[subscription_cancel][proration_behavior]':'none',
+    'features[subscription_cancel][cancellation_reason][enabled]':'true',
+    'features[subscription_cancel][cancellation_reason][options][0]':'too_expensive',
+    'features[subscription_cancel][cancellation_reason][options][1]':'missing_features',
+    'features[subscription_cancel][cancellation_reason][options][2]':'switched_service',
+    'features[subscription_cancel][cancellation_reason][options][3]':'unused',
+    'features[subscription_cancel][cancellation_reason][options][4]':'other',
+    'features[subscription_update][enabled]':'true',
+    'features[subscription_update][default_allowed_updates][0]':'price',
+    'features[subscription_update][proration_behavior]':'create_prorations'
+  };
+  [...groups.entries()].forEach(([product,ids],i)=>{params[`features[subscription_update][products][${i}][product]`]=product;ids.forEach((id,j)=>{params[`features[subscription_update][products][${i}][prices][${j}]`]=id})});
+  return {params,fingerprint};
+}
+async function ensurePortalConfiguration(origin){
+  const {params,fingerprint}=await portalConfigurationParams(origin),list=await stripeGet('billing_portal/configurations',{active:'true',limit:100}).catch(()=>({data:[]})),existing=(list.data||[]).find(x=>x?.metadata?.prompt_ai==='billing-v1'||x?.name==='Prompt.ai Kundenportal');
+  if(existing&&String(existing.metadata?.price_fingerprint||'')===fingerprint)return existing.id;
+  if(existing?.id)return (await stripeRequest(`billing_portal/configurations/${encodeURIComponent(existing.id)}`,params)).id;
+  return (await stripeRequest('billing_portal/configurations',params)).id;
+}
 async function portalSession(req,origin){
   const [subscription,addon]=await Promise.all([ownSubscription(req),ownApiAddon(req)]),target=req.body?.target==='addon'?addon:subscription,customer=target?.provider_customer_id||subscription?.provider_customer_id||addon?.provider_customer_id,subscriptionId=target?.provider_subscription_id;
   if(!customer)throw Object.assign(new Error('Für dieses Konto besteht noch kein Stripe-Abo.'),{status:404});
-  const flow=String(req.body?.flow||'');
-  const params={customer,return_url:`${origin}/?billing=return`};
+  const flow=String(req.body?.flow||''),configuration=await ensurePortalConfiguration(origin).catch(()=>''),params={customer,return_url:`${origin}/?billing=return`};
+  if(configuration)params.configuration=configuration;
   if(flow==='payment'){
     params['flow_data[type]']='payment_method_update';
     params['flow_data[after_completion][type]']='redirect';
@@ -140,7 +173,8 @@ async function portalSession(req,origin){
   }
   try{return await stripeRequest('billing_portal/sessions',params)}catch(error){
     if(!flow)throw error;
-    return stripeRequest('billing_portal/sessions',{customer,return_url:`${origin}/?billing=return`});
+    const fallback={customer,return_url:`${origin}/?billing=return`};if(configuration)fallback.configuration=configuration;
+    return stripeRequest('billing_portal/sessions',fallback);
   }
 }
 
