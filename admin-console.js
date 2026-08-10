@@ -11,7 +11,7 @@
       if(type==='DOMContentLoaded'&&document.readyState!=='loading'){queueMicrotask(()=>listener.call(document,new Event('DOMContentLoaded')));return;}
       return original.call(document,type,listener,options);
     };
-    load('./admin-console-core.js?v=20260810-7',()=>{document.addEventListener=original;next?.()});
+    load('./admin-console-core.js?v=20260810-8',()=>{document.addEventListener=original;next?.()});
   };
-  loadCore(()=>load('./ui-regression-fixes.js?v=20260810-7',()=>load('./stability-ui.js?v=20260810-1',()=>load('./mode-flow-ui.js?v=20260810-5',()=>load('./preview-ai-admin.js?v=20260810-5',()=>load('./product-polish.js?v=20260810-2'))))));
+  loadCore(()=>load('./ui-regression-fixes.js?v=20260810-8',()=>load('./stability-ui.js?v=20260810-2',()=>load('./mode-flow-ui.js?v=20260810-6',()=>load('./preview-ai-admin.js?v=20260810-6',()=>load('./product-polish.js?v=20260810-3',()=>load('./sandbox-preview.js?v=20260810-1')))))));
 })();
