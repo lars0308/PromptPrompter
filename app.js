@@ -26,6 +26,8 @@
   const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
   const QUICK_REVISION_VARIANTS_KEY = "sitebrief-v6-revision-variants";
   const BIOMETRIC_KEY = "prompt-ai-biometric-v1";
+  const ENTRY_GATE_KEY = "prompt-ai-entry-gate-shown-v1";
+  const MODE_HANDOFF_KEY = "prompt-ai-mode-handoff-v1";
   const GUEST_RUN_LIMIT = 3;
   const PROJECT_OPTIONS = {
     free:{types:["Website","Landingpage"],goals:["Anfragen gewinnen","Informieren"]},
@@ -319,6 +321,15 @@
     if(cloudReady()||!el.accountDialog)return;updateAccountUi();renderGuestLimit();el.accountDialog.classList.add("guest-gate");el.accountDialogKicker.textContent="WILLKOMMEN BEI PROMPT.AI";el.accountDialogTitle.textContent=guestRunsRemaining()?"Anmelden oder kostenlos testen":"Zum Weitermachen anmelden";
     el.accountIntro.textContent="Melde dich an und arbeite auf jedem Gerät an deinen Projekten weiter.";if(!el.accountDialog.open)el.accountDialog.showModal();
   }
+  function maybeShowEntryGate(){
+    if(cloudReady())return;
+    let midFlow=false;try{midFlow=Boolean(sessionStorage.getItem(MODE_HANDOFF_KEY))||sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)==='1'}catch{}
+    if(midFlow)return;
+    let alreadyShown=false;try{alreadyShown=sessionStorage.getItem(ENTRY_GATE_KEY)==='1'}catch{}
+    if(alreadyShown)return;
+    try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}
+    showAccountGate();
+  }
   function closeAccountGate(){el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
   let pendingAuthPlan=null;
   function pickAuthPlan(plan){
@@ -593,7 +604,7 @@
   }
 
   async function initCloudIntegration(){
-    if(!window.SiteBriefCloudReady){state.cloud.configured=false;updateAccountUi();return;}
+    if(!window.SiteBriefCloudReady){state.cloud.configured=false;updateAccountUi();maybeShowEntryGate();return;}
     try{
       const result=await window.SiteBriefCloudReady;
       state.cloud.configured=Boolean(result?.configured);state.cloud.user=result?.user||null;
@@ -614,8 +625,8 @@
       if(state.cloud.user){await loadCloudBundle();await handleCheckoutReturn();maybePromptBiometric();}
       document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybePromptBiometric()});
       if(!state.activeProfileId){const def=state.systemProfiles.find(x=>x.is_default)||state.systemProfiles[0];if(def){state.activeProfileId=def.id;state.settings.activeProfileId=def.id;saveProfiles();}}
-      renderProfileUi();updateAccountUi();
-    }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();}
+      renderProfileUi();updateAccountUi();maybeShowEntryGate();
+    }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();maybeShowEntryGate();}
   }
 
   async function signIn(){
