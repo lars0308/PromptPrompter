@@ -3,6 +3,7 @@
   const STORAGE_KEY='sitebrief-v6-state';
   const CONTINUE_KEY='sitebrief-v6-continue-workflow';
   const PENDING_MODE_KEY='prompt-ai-new-project-mode-v2';
+  const PENDING_BRIEF_KEY='prompt-ai-new-project-brief-v1';
   const CHECKPOINT_KEY='prompt-ai-ui-checkpoint-v2';
   const ADMIN_EMAIL='service.battermann@gmx.de';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -23,7 +24,6 @@
   function installStyles(){
     if($('#projectStartStyles'))return;
     const style=document.createElement('style');style.id='projectStartStyles';style.textContent=`
-      /* Der Arbeitsmodus ist eine Projektentscheidung und bleibt während des Projekts fix. */
       #modeSwitch{display:none!important}
       .project-mode-dialog{width:min(760px,calc(100vw - 20px));border:0;padding:0;background:transparent;color:var(--ink)}
       .project-mode-dialog::backdrop{background:rgba(8,12,10,.70);backdrop-filter:blur(12px)}
@@ -32,14 +32,14 @@
       .project-mode-head span{display:block;color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}.project-mode-head h2{margin:8px 54px 8px 0;font-size:clamp(30px,6vw,48px);line-height:1;letter-spacing:-.045em}.project-mode-head p{margin:0;color:var(--muted);line-height:1.55;max-width:620px}
       .project-mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:24px}.project-mode-card{display:flex;min-height:210px;padding:18px;align-items:flex-start;flex-direction:column;text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink)}.project-mode-card:hover:not(:disabled){border-color:var(--accent);transform:translateY(-1px)}.project-mode-card b{display:block;font-size:19px}.project-mode-card small{display:block;margin-top:8px;color:var(--muted);line-height:1.5}.project-mode-card i{display:block;margin-top:auto;padding-top:18px;color:var(--accent);font-style:normal;font-size:10px;font-weight:800;letter-spacing:.06em}.project-mode-card:disabled{opacity:.55;cursor:not-allowed}.project-mode-card:disabled i{color:var(--muted)}
       .project-mode-foot{margin:18px 0 0;color:var(--muted);font-size:10px;line-height:1.5}
-      .project-mode-transition{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;background:var(--paper);color:var(--ink);animation:projectModeFade .22s ease both}.project-mode-transition div{text-align:center}.project-mode-transition strong{display:block;font-size:22px}.project-mode-transition small{display:block;margin-top:7px;color:var(--muted)}.project-mode-transition i{display:block;width:120px;height:3px;margin:20px auto 0;overflow:hidden;border-radius:99px;background:var(--line)}.project-mode-transition i:after{content:'';display:block;width:40%;height:100%;background:var(--accent);animation:projectModeTrack 1s ease-in-out infinite}@keyframes projectModeFade{from{opacity:0}to{opacity:1}}@keyframes projectModeTrack{from{transform:translateX(-120%)}to{transform:translateX(320%)}}
+      .project-mode-transition{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;background:var(--paper);color:var(--ink);animation:projectModeFade .22s ease both}.project-mode-transition div{text-align:center}.project-mode-transition strong{display:block;font-size:22px}.project-mode-transition small{display:block;margin-top:7px;color:var(--muted)}.project-mode-transition i{display:block;width:120px;height:3px;margin:20px auto 0;overflow:hidden;border-radius:99px;background:var(--line)}.project-mode-transition i:after{content:'';display:block;width:40%;height:100%;background:#278bc2;animation:projectModeTrack 1s ease-in-out infinite}@keyframes projectModeFade{from{opacity:0}to{opacity:1}}@keyframes projectModeTrack{from{transform:translateX(-120%)}to{transform:translateX(320%)}}
       @media(max-width:720px){.project-mode-dialog{width:100vw;height:100dvh;max-width:none;max-height:none;margin:0}.project-mode-frame{min-height:100dvh;max-height:none;border:0;border-radius:0;padding:26px 16px 40px}.project-mode-grid{grid-template-columns:1fr}.project-mode-card{min-height:0}.project-mode-card i{margin-top:14px;padding-top:0}}
     `;document.head.appendChild(style);
   }
 
   function ensureDialog(){
     let dialog=$('#projectModeDialog');if(dialog)return dialog;
-    dialog=document.createElement('dialog');dialog.id='projectModeDialog';dialog.className='project-mode-dialog';dialog.innerHTML=`<div class="project-mode-frame"><button type="button" class="project-mode-close" aria-label="Schließen">×</button><div class="project-mode-head"><span>NEUES PROJEKT</span><h2>Wie möchtest du arbeiten?</h2><p>Diese Auswahl gilt für das ganze Projekt. Während des Ablaufs wird der Modus nicht mehr gewechselt.</p></div><div class="project-mode-grid"><button type="button" class="project-mode-card" data-project-mode="guided"><b>Geführt</b><small>Du beschreibst das Projekt. Prompt.ai stellt nur die Fragen, die das Ergebnis wirklich verändern, und bereitet den Rest vor.</small><i>Auswählen →</i></button><button type="button" class="project-mode-card" data-project-mode="auto"><b>Auto</b><small>Briefing und Referenzen rein. Projektart, Agent, Technik, Regeln und Richtungen werden möglichst automatisch gewählt.</small><i>Auswählen →</i></button><button type="button" class="project-mode-card" data-project-mode="expert"><b>Experte</b><small>Volle Kontrolle über Agent, KI, Modell, Ausgabeziel, Module, Skills, Vorschauen und Feinschliff.</small><i>Auswählen →</i></button></div><p class="project-mode-foot">Geführt ist in Free enthalten. Auto ist ab Pro verfügbar, Experte in Ultimate.</p></div>`;
+    dialog=document.createElement('dialog');dialog.id='projectModeDialog';dialog.className='project-mode-dialog';dialog.innerHTML=`<div class="project-mode-frame"><button type="button" class="project-mode-close" aria-label="Schließen">×</button><div class="project-mode-head"><span>WEBSITE-PROJEKT</span><h2>Wie möchtest du die Internetseite vorbereiten?</h2><p>Diese Auswahl gilt für das ganze Projekt. Während des Ablaufs bleibt der Arbeitsweg fest.</p></div><div class="project-mode-grid"><button type="button" class="project-mode-card" data-project-mode="guided"><b>Geführt</b><small>Prompt.ai fragt nur nach Angaben, die den Website-Auftrag wirklich verändern.</small><i>Auswählen →</i></button><button type="button" class="project-mode-card" data-project-mode="auto"><b>Auto</b><small>Beschreibung und Referenzen rein. Technik, Regeln und Richtungen werden möglichst automatisch vorbereitet.</small><i>Auswählen →</i></button><button type="button" class="project-mode-card" data-project-mode="expert"><b>Experte</b><small>Volle Kontrolle über Agent, KI, Modell, Ausgabeziel, Module, Skills, Vorschauen und Feinschliff.</small><i>Auswählen →</i></button></div><p class="project-mode-foot">Geführt ist in Free enthalten. Auto ist ab Pro verfügbar, Experte in Ultimate.</p></div>`;
     document.body.appendChild(dialog);
     dialog.querySelector('.project-mode-close').onclick=()=>dialog.close();dialog.addEventListener('cancel',e=>{e.preventDefault();dialog.close()});
     return dialog;
@@ -48,6 +48,7 @@
     const dialog=ensureDialog();$$('[data-project-mode]',dialog).forEach(btn=>{const mode=btn.dataset.projectMode,ok=allowed(mode);btn.disabled=!ok;btn.querySelector('i').textContent=ok?'Auswählen →':mode==='auto'?'Pro erforderlich':'Ultimate erforderlich'});
   }
   function chooseMode(){
+    if((access().plan||'free')==='free'&&!access().isAdmin)return Promise.resolve('guided');
     const dialog=ensureDialog();refreshCards();
     return new Promise(resolve=>{
       const cleanup=()=>{$$('[data-project-mode]',dialog).forEach(btn=>btn.onclick=null);dialog.removeEventListener('close',onClose)};
@@ -59,29 +60,36 @@
   function hasCurrentProject(){return Boolean($('#projectName')?.value?.trim()||$('#projectDescription')?.value?.trim())}
   async function confirmReplace(reset=false){
     if(!reset&&!hasCurrentProject())return true;
-    const text=reset?'Das aktuelle Projekt wird zurückgesetzt. Deine Bibliotheken bleiben erhalten.':'Das aktuelle Projekt wird durch ein leeres neues Projekt ersetzt. Bereits gespeicherte Bibliotheken bleiben erhalten.';
-    if(window.PromptAiDialog?.confirm)return Boolean(await window.PromptAiDialog.confirm(text,{title:reset?'Projekt zurücksetzen':'Neues Projekt',confirmLabel:reset?'Zurücksetzen':'Neu beginnen',danger:true}));
+    const text=reset?'Das aktuelle Projekt wird zurückgesetzt. Deine Bibliotheken bleiben erhalten.':'Das aktuelle Projekt wird durch ein leeres neues Website-Projekt ersetzt. Bereits gespeicherte Bibliotheken bleiben erhalten.';
+    if(window.PromptAiDialog?.confirm)return Boolean(await window.PromptAiDialog.confirm(text,{title:reset?'Projekt zurücksetzen':'Neue Internetseite',confirmLabel:reset?'Zurücksetzen':'Neu beginnen',danger:true}));
     return window.confirm(text);
   }
-  function transition(mode){const shield=document.createElement('div');shield.className='project-mode-transition';shield.innerHTML=`<div><strong>${label(mode)} wird vorbereitet</strong><small>Der Arbeitsweg bleibt für dieses Projekt fest.</small><i></i></div>`;document.body.appendChild(shield)}
-  function persistNewProject(mode){
-    try{localStorage.removeItem(STORAGE_KEY);localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({mode,step:1,surface:'workflow',at:Date.now()}));sessionStorage.setItem(PENDING_MODE_KEY,mode);sessionStorage.setItem(CONTINUE_KEY,'1')}catch{}
+  function transition(mode){const shield=document.createElement('div');shield.className='project-mode-transition';shield.innerHTML=`<div><strong>${label(mode)} wird vorbereitet</strong><small>Deine Beschreibung wird übernommen.</small><i></i></div>`;document.body.appendChild(shield)}
+  function persistNewProject(mode,brief=''){
+    try{localStorage.removeItem(STORAGE_KEY);localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({mode,step:1,surface:'workflow',at:Date.now()}));sessionStorage.setItem(PENDING_MODE_KEY,mode);if(brief.trim())sessionStorage.setItem(PENDING_BRIEF_KEY,brief.trim());sessionStorage.setItem(CONTINUE_KEY,'1')}catch{}
   }
-  async function startNew(trigger){
+  async function startNew(trigger,brief=''){
     const reset=trigger?.id==='resetBtn';if(!await confirmReplace(reset))return;
     const mode=await chooseMode();if(!mode)return;
-    persistNewProject(mode);transition(mode);setTimeout(()=>location.reload(),260);
+    persistNewProject(mode,brief);transition(mode);setTimeout(()=>location.reload(),260);
   }
   function interceptNewProject(){
     document.addEventListener('click',event=>{
       const trigger=event.target.closest?.('#workspaceNewProjectBtn,#startNewBtn,#resetBtn');if(!trigger)return;
+      if(trigger.id==='workspaceNewProjectBtn'&&window.PromptAiHomeEntry&&!window.PromptAiHomeEntry.isBypass?.(trigger.id)){
+        event.preventDefault();event.stopImmediatePropagation();window.PromptAiHomeEntry.openWebsite();return;
+      }
       event.preventDefault();event.stopImmediatePropagation();startNew(trigger);
     },true);
   }
+  function applyPendingBrief(){
+    let brief='';try{brief=sessionStorage.getItem(PENDING_BRIEF_KEY)||''}catch{}if(!brief)return false;
+    const field=$('#projectDescription');if(!field)return false;field.value=brief;field.dispatchEvent(new Event('input',{bubbles:true}));field.dispatchEvent(new Event('change',{bubbles:true}));try{sessionStorage.removeItem(PENDING_BRIEF_KEY)}catch{}return true;
+  }
   function applyPendingMode(){
-    let mode='';try{mode=sessionStorage.getItem(PENDING_MODE_KEY)||''}catch{}if(!mode)return;
+    let mode='';try{mode=sessionStorage.getItem(PENDING_MODE_KEY)||''}catch{}if(!mode){applyPendingBrief();return;}
     let attempts=0;const timer=setInterval(()=>{
-      attempts++;
+      attempts++;applyPendingBrief();
       const button=$(`.mode-switch button[data-mode="${mode}"]`);
       const pending=document.documentElement.classList.contains('prompt-access-pending');
       if(button&&!pending&&!button.disabled&&!button.classList.contains('locked')){
@@ -89,7 +97,7 @@
         try{sessionStorage.removeItem(PENDING_MODE_KEY);localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({mode,step:1,surface:'workflow',at:Date.now()}))}catch{}
         clearInterval(timer);return;
       }
-      if(attempts>30)clearInterval(timer);
+      if(attempts>45)clearInterval(timer);
     },120);
   }
   function keepSwitcherHidden(){
@@ -97,5 +105,6 @@
     const observer=new MutationObserver(()=>{if(switcher&&!switcher.hidden)switcher.hidden=true});if(switcher)observer.observe(switcher,{attributes:true,attributeFilter:['hidden']});
   }
   function init(){installStyles();ensureDialog();refreshCards();interceptNewProject();keepSwitcherHidden();applyPendingMode();window.addEventListener('promptai:access',()=>{refreshCards();applyPendingMode()})}
+  window.PromptAiProjectStart={startFromBrief:brief=>startNew($('#workspaceNewProjectBtn'),String(brief||'')),startNew};
   installStyles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
