@@ -707,6 +707,21 @@
     </form>
   </dialog>
 
+  <dialog id="legalDialog" class="library-dialog legal-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head"><div><span id="legalKicker">RECHTLICHES</span><h2 id="legalTitle">Impressum</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
+      <div class="legal-body">
+        <p class="legal-placeholder-note">⚠ Platzhalter – noch nicht rechtsgültig. Diese Seite ersetzt keine rechtliche Prüfung. Vor dem echten Live-Betrieb müssen alle eckig geklammerten Angaben durch geprüfte, echte Inhalte ersetzt werden (z. B. mit anwaltlicher Unterstützung).</p>
+        <div id="legalContent"></div>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="cookie-banner" id="cookieBanner" hidden role="dialog" aria-live="polite" aria-label="Cookie-Hinweis">
+    <p>Wir verwenden technisch notwendige Cookies, damit Anmeldung und Sitzung funktionieren. Optionale Cookies (z.&nbsp;B. Analyse) setzen wir aktuell nicht ohne deine Zustimmung ein. Mehr dazu in unserer <button type="button" class="link-btn" id="cookieBannerPrivacyLink">Datenschutzerklärung</button>.</p>
+    <div class="cookie-banner-actions"><button type="button" class="outline-btn" id="cookieBannerEssentialBtn">Nur notwendige</button><button type="button" class="solid-btn" id="cookieBannerAcceptBtn">Alle akzeptieren</button></div>
+  </div>
+
   <script type="module" src="./cloud.js?v=20260810-2"></script>
   <script src="./app.js?v=20260810-5" defer></script>
   <script src="./admin-console.js?v=20260810-2" defer></script>
