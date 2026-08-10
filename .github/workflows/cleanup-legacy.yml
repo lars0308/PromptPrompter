@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/cleanup-legacy.yml'
+      - 'scripts/cleanup_legacy.py'
 
 permissions:
   contents: write
@@ -18,100 +19,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Clean proven legacy code
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-
-          def read(p): return Path(p).read_text(encoding='utf-8')
-          def write(p,s): Path(p).write_text(s,encoding='utf-8')
-          def once(s,old,new,label):
-              n=s.count(old)
-              if n!=1: raise SystemExit(f'{label}: expected 1 match, got {n}')
-              return s.replace(old,new,1)
-
-          # HTML: obsolete video onboarding dialog.
-          html=read('index.html')
-          html,n=re.subn(r'\s*<dialog id="welcomeIntroDialog".*?</dialog>\s*','\n',html,count=1,flags=re.S)
-          if n!=1: raise SystemExit(f'legacy welcome dialog: expected 1 match, got {n}')
-          write('index.html',html)
-
-          # app.js: stale DOM ids, state, handlers and startup branch for that dialog.
-          app=read('app.js')
-          app=once(app,'  const ONBOARDING_KEY = "prompt-ai-welcome-seen-v1";\n','','app onboarding key')
-          app=once(app,',"welcomeIntroDialog","closeWelcomeIntroBtn","confirmWelcomeIntroBtn"','','app intro ids')
-          app,n=re.subn(r'\n  function closeWelcomeIntro\(\)\{.*?\n  function showWelcomeIntroOnce\(\)\{.*?\}\n','\n',app,count=1,flags=re.S)
-          if n!=1: raise SystemExit(f'app intro functions: expected 1 match, got {n}')
-          app=once(app,"    el.closeWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.confirmWelcomeIntroBtn?.addEventListener('click',closeWelcomeIntro);el.welcomeIntroDialog?.addEventListener('cancel',event=>{event.preventDefault();closeWelcomeIntro()});",'','app intro handlers')
-          app=once(app,"    if(sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)){sessionStorage.removeItem(CONTINUE_WORKFLOW_KEY);showWorkflow(1);}\n    else setTimeout(showWelcomeIntroOnce,350);","    if(sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)){sessionStorage.removeItem(CONTINUE_WORKFLOW_KEY);showWorkflow(1);}",'app intro startup')
-          write('app.js',app)
-
-          # Keep current boot intro; move the only useful route-shield behavior out of legacy file.
-          admin=read('admin-console.js')
-          admin=once(admin,"  const ONBOARDING_KEY='prompt-ai-welcome-seen-v1';\n",'','admin onboarding key')
-          admin=once(admin,"    try{localStorage.setItem(ONBOARDING_KEY,'1')}catch{}\n",'','admin onboarding write')
-          admin=once(admin,"await load('./intro-flow-fix.js?v=20260810-2');",'','legacy loader')
-          admin=admin.replace("#welcomeIntroDialog .welcome-intro-body,#welcomeIntroDialog .intro-close{visibility:hidden!important}",'')
-          guard="""  function preserveInternalRouteReloads(){
-            const observer=new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes){if(!(node instanceof Element))continue;const shield=node.matches?.('.prompt-route-shield')?node:node.querySelector?.('.prompt-route-shield');if(!shield)continue;try{sessionStorage.setItem(CONTINUE_WORKFLOW_KEY,'1')}catch{}shield.querySelector('img')?.remove()}});
-            observer.observe(document.documentElement,{childList:true,subtree:true});
-          }
-
-"""
-          anchor='  function mountBootIntro(){\n'
-          if anchor not in admin: raise SystemExit('boot intro anchor missing')
-          admin=admin.replace(anchor,guard+anchor,1)
-          admin=once(admin,'  mountBootIntro();\n','  preserveInternalRouteReloads();\n  mountBootIntro();\n','route guard init')
-          write('admin-console.js',admin)
-
-          # CSS: strip only selectors/rules owned by deleted onboarding UI.
-          css=read('styles.css')
-          pairs={
-            '.welcome-intro-dialog,.app-action-dialog,.agent-launch-dialog{':'.app-action-dialog,.agent-launch-dialog{',
-            '.welcome-intro-dialog .dialog-frame,.app-action-dialog .dialog-frame,.agent-launch-dialog .dialog-frame{':'.app-action-dialog .dialog-frame,.agent-launch-dialog .dialog-frame{',
-            '.welcome-intro-dialog::backdrop,.app-action-dialog::backdrop,.agent-launch-dialog::backdrop{':'.app-action-dialog::backdrop,.agent-launch-dialog::backdrop{',
-            '.intro-close,.agent-launch-close{':'.agent-launch-close{',
-            '.welcome-intro-body,.agent-launch-body{':'.agent-launch-body{',
-            '.welcome-intro-body>span,.agent-launch-body>span,.app-action-body>span{':'.agent-launch-body>span,.app-action-body>span{',
-            '.welcome-intro-body h2,.agent-launch-body h2,.app-action-body h2{':'.agent-launch-body h2,.app-action-body h2{',
-            '.welcome-intro-body>p,.agent-launch-body>p,.app-action-body>p{':'.agent-launch-body>p,.app-action-body>p{',
-            '.welcome-intro-body,.agent-launch-body,.app-action-body{':'.agent-launch-body,.app-action-body{',
-            '.welcome-intro-body h2,.agent-launch-body h2{':'.agent-launch-body h2{'
-          }
-          for a,b in pairs.items(): css=css.replace(a,b)
-          prefixes=('.welcome-intro-video{','.welcome-intro-body ol{','.welcome-intro-body li{','.welcome-intro-body li>b{','.welcome-intro-body li strong,','.welcome-intro-body li small{','.welcome-intro-body>.solid-btn{')
-          keep=[line for line in css.splitlines() if not line.strip().startswith(prefixes)]
-          css='\n'.join(keep)+('\n' if css.endswith('\n') else '')
-          write('styles.css',css)
-
-          # Proven unused home bookkeeping only.
-          home=read('promptai-home-final.js')
-          home=home.replace("  let timer=0,lastTitle='';","  let timer=0;")
-          home=home.replace("    const desired=name?`Willkommen, ${name}.`:'Willkommen.';lastTitle=desired;\n","    const desired=name?`Willkommen, ${name}.`:'Willkommen.';\n")
-          write('promptai-home-final.js',home)
-
-          # Cache/test references to deleted legacy file.
-          sw=read('sw.js').replace(",'/intro-flow-fix.js'",'').replace(",'./intro-flow-fix.js'",'')
-          write('sw.js',sw)
-          tests=read('tests/smoke.test.mjs')
-          old="test('intro is a logo splash and no longer depends on intro video playback',async()=>{const src=await text('intro-flow-fix.js');assert.match(src,/prompt-logo-splash/);assert.match(src,/sitebrief-logo\\.svg/);assert.match(src,/#278bc2/);assert.match(src,/removeAttribute\\('autoplay'\\)/)});"
-          new="test('app boot intro covers background loading without legacy media',async()=>{const src=await text('admin-console.js'),html=await text('index.html'),sw=await text('sw.js');assert.match(src,/promptAppBoot/);assert.match(src,/sitebrief-logo\\.svg/);assert.match(src,/releaseBootIntro/);assert.match(src,/preserveInternalRouteReloads/);assert.doesNotMatch(src,/intro-flow-fix\\.js|welcomeIntroDialog|ONBOARDING_KEY/);assert.doesNotMatch(html,/welcomeIntroDialog|welcome-intro-video|intro\\.(?:webm|mp4)/);assert.doesNotMatch(sw,/intro-flow-fix\\.js/)});"
-          tests=once(tests,old,new,'intro smoke test')
-          write('tests/smoke.test.mjs',tests)
-
-          for p in ('intro-flow-fix.js','intro.mp4','intro.webm'):
-              Path(p).unlink(missing_ok=True)
-          Path('.github/workflows/cleanup-legacy.yml').unlink(missing_ok=True)
-
-          # Hard safety checks: current boot, workflow and permission cores must remain.
-          runtime={p:read(p) for p in ('index.html','styles.css','app.js','admin-console.js','sw.js')}
-          bad=re.compile(r'welcomeIntroDialog|welcome-intro-video|intro-flow-fix\.js|intro\.(?:webm|mp4)|ONBOARDING_KEY')
-          for p,s in runtime.items():
-              if bad.search(s): raise SystemExit(f'{p}: legacy onboarding reference remains')
-          if not all(x in runtime['admin-console.js'] for x in ('promptAppBoot','releaseBootIntro','preserveInternalRouteReloads')): raise SystemExit('current boot flow changed')
-          if not all(x in runtime['app.js'] for x in ('const PLAN_RULES','workspaceNewProjectBtn','buildMasterPrompt','ultimate','pro')): raise SystemExit('workflow/permission core changed')
-          PY
+      - name: Prepare conservative cleanup
+        run: python scripts/cleanup_legacy.py
       - name: Run full test suite
         run: npm test
       - name: Commit cleanup atomically
