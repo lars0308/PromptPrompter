@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]));
   const PROVIDERS={
     gateway:{name:'Vercel AI Gateway',hint:'Zentrale Text-KI und Modell-Routing',placeholder:'AI Gateway API-Key'},
     openai:{name:'OpenAI',hint:'Direkte OpenAI-Verarbeitung',placeholder:'sk-…'},
@@ -67,18 +67,11 @@
 
 (()=>{
   'use strict';
-  const ONBOARDING_KEY='prompt-ai-welcome-seen-v1';
   function installRepairStyles(){
     if(document.getElementById('promptMobileRepairStyles'))return;
     const style=document.createElement('style');
     style.id='promptMobileRepairStyles';
     style.textContent=`
-      .welcome-intro-dialog.splash-only{width:min(920px,calc(100vw - 24px))!important;max-width:none!important}
-      .welcome-intro-dialog.splash-only .dialog-frame{overflow:hidden!important;background:#fff!important}
-      .welcome-intro-dialog.splash-only .welcome-intro-body{padding:0!important}
-      .welcome-intro-dialog.splash-only .welcome-intro-body>:not(.welcome-intro-video){display:none!important}
-      .welcome-intro-dialog.splash-only .welcome-intro-video{width:100%!important;aspect-ratio:16/9!important;object-fit:contain!important;margin:0!important;border-radius:18px!important;background:#fff!important;box-shadow:none!important}
-      .welcome-intro-dialog.splash-only .intro-close{right:14px!important;top:14px!important;background:rgba(23,24,20,.78)!important;color:#fff!important}
       @media(max-width:820px){
         #libraryDialog,#settingsDialog{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:5px!important;overflow:hidden!important;background:transparent!important}
         #libraryDialog .dialog-frame,#settingsDialog .dialog-frame{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;border-radius:18px!important;overflow:hidden!important}
@@ -104,36 +97,10 @@
         #settingsDialog .connection-actions button{width:100%!important}
         #settingsDialog input,#settingsDialog select,#settingsDialog textarea{width:100%!important;min-width:0!important;max-width:100%!important}
         #settingsDialog .settings-footer{width:100%!important;padding-left:0!important;padding-right:0!important}
-        .welcome-intro-dialog.splash-only{width:calc(100vw - 16px)!important;margin:8px!important}
-        .welcome-intro-dialog.splash-only .dialog-frame{max-height:calc(100dvh - 16px)!important;border-radius:18px!important}
       }
     `;
     document.head.appendChild(style);
   }
-  function configureIntro(dialog){
-    const video=dialog.querySelector('.welcome-intro-video');
-    if(!video)return;
-    const seen=localStorage.getItem(ONBOARDING_KEY)==='1';
-    dialog.classList.toggle('splash-only',seen);
-    if(seen){
-      video.loop=false;
-      try{video.currentTime=0}catch{}
-      const finish=()=>document.getElementById('closeWelcomeIntroBtn')?.click();
-      video.addEventListener('ended',finish,{once:true});
-      video.play().catch(()=>{});
-    }else{
-      video.loop=true;
-      video.play().catch(()=>{});
-    }
-  }
-  function init(){
-    installRepairStyles();
-    const intro=document.getElementById('welcomeIntroDialog');
-    if(intro){
-      const observer=new MutationObserver(()=>{if(intro.open)configureIntro(intro)});
-      observer.observe(intro,{attributes:true,attributeFilter:['open']});
-      if(intro.open)configureIntro(intro);
-    }
-  }
+  function init(){installRepairStyles()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
