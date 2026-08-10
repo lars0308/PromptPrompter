@@ -3,6 +3,7 @@
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   let settleTimer=0,freeStartedAt=0,freeReleaseTimer=0;
   const paid=()=>{const a=window.PromptAiAccess||{};return Boolean(a.isAdmin||a.plan==='pro'||a.plan==='ultimate')};
+  const setText=(node,value)=>{if(node&&node.textContent!==value)node.textContent=value};
 
   function styles(){
     if($('#promptFinalPolishStyles'))return;
@@ -57,23 +58,23 @@
   }
 
   function cleanHints(){
-    const intro=$('.home-intro-copy');if(intro)intro.textContent='Wähle, was du erstellen möchtest.';
-    const reference=$('#stepReferences .guided-clean-lead');if(reference)reference.textContent='Optional: Link, Screenshot, PDF oder andere Unterlage hinzufügen.';
-    const freeIntro=$('#freePromptDialog .free-prompt-intro');if(freeIntro)freeIntro.textContent='Wähle jetzt Typ und Ziel-Tool. Weitere Angaben sind optional.';
-    const upgrade=$('#freePromptUpgrade small');if(upgrade)upgrade.textContent='Pro ergänzt Zielgruppe, Referenzen, Stil, Pflichtpunkte, Verbote und Ausgabeformat.';
-    const account=$('#accountIntro');if(account)account.textContent='Anmelden, um Projekte und Einstellungen zu synchronisieren.';
-    $$('.reference-note-block').forEach(note=>{if(!(note.textContent||'').trim())note.hidden=true});
+    setText($('.home-intro-copy'),'Wähle, was du erstellen möchtest.');
+    setText($('#stepReferences .guided-clean-lead'),'Optional: Link, Screenshot, PDF oder andere Unterlage hinzufügen.');
+    setText($('#freePromptDialog .free-prompt-intro'),'Wähle jetzt Typ und Ziel-Tool. Weitere Angaben sind optional.');
+    setText($('#freePromptUpgrade small'),'Pro ergänzt Zielgruppe, Referenzen, Stil, Pflichtpunkte, Verbote und Ausgabeformat.');
+    setText($('#accountIntro'),'Anmelden, um Projekte und Einstellungen zu synchronisieren.');
+    $$('.reference-note-block').forEach(note=>{if(!(note.textContent||'').trim()&&!note.hidden)note.hidden=true});
   }
 
   function freeFlow(){
     const d=$('#freePromptDialog');if(!d)return;
-    const headKicker=$('.free-prompt-head span',d),headTitle=$('.free-prompt-head h2',d);if(headKicker)headKicker.textContent='SCHRITT 2 · EINSTELLUNGEN';if(headTitle)headTitle.textContent='Prompt genauer einstellen';
+    const headKicker=$('.free-prompt-head span',d),headTitle=$('.free-prompt-head h2',d);setText(headKicker,'SCHRITT 2 · EINSTELLUNGEN');setText(headTitle,'Prompt genauer einstellen');
     const desc=$('#freePromptDescription'),label=desc?.closest('label');if(!desc||!label)return;
-    let card=$('#freePromptBriefCard');if(!card){card=document.createElement('section');card.id='freePromptBriefCard';card.className='free-prompt-brief-card';card.innerHTML='<div><span>DEINE BESCHREIBUNG</span><p id="freePromptBriefText"></p></div><button type="button" class="outline-btn mini" id="freePromptEditBrief">Text ändern</button>';const grid=$('.free-prompt-grid.free-prompt-main',d);grid?.insertAdjacentElement('beforebegin',card);$('#freePromptEditBrief',card).onclick=()=>{label.classList.remove('free-description-collapsed');desc.focus();desc.scrollIntoView({behavior:'smooth',block:'center'})};desc.addEventListener('input',()=>syncBriefCard(),{passive:true})}
+    let card=$('#freePromptBriefCard');if(!card){card=document.createElement('section');card.id='freePromptBriefCard';card.className='free-prompt-brief-card';card.innerHTML='<div><span>DEINE BESCHREIBUNG</span><p id="freePromptBriefText"></p></div><button type="button" class="outline-btn mini" id="freePromptEditBrief">Text ändern</button>';const grid=$('.free-prompt-grid.free-prompt-main',d);grid?.insertAdjacentElement('beforebegin',card);$('#freePromptEditBrief',card).onclick=()=>{label.classList.remove('free-description-collapsed');desc.focus();desc.scrollIntoView({behavior:'smooth',block:'center'})};desc.addEventListener('input',syncBriefCard,{passive:true})}
     syncBriefCard();
-    const advanced=$('#freePromptAdvanced');if(advanced){advanced.hidden=false;advanced.classList.toggle('tier-locked',!paid());$$('input,textarea,select',advanced).forEach(x=>x.disabled=!paid());let lock=$('#freeTierLockCopy');if(!paid()){if(!lock){lock=document.createElement('div');lock.id='freeTierLockCopy';lock.className='free-tier-lock-copy';lock.innerHTML='<b>PRO</b><span>Diese Felder sind sichtbar, aber in Free gesperrt.</span>';advanced.insertBefore(lock,advanced.firstChild)}}else lock?.remove()}
+    const advanced=$('#freePromptAdvanced');if(advanced){if(advanced.hidden)advanced.hidden=false;advanced.classList.toggle('tier-locked',!paid());$$('input,textarea,select',advanced).forEach(x=>{const next=!paid();if(x.disabled!==next)x.disabled=next});let lock=$('#freeTierLockCopy');if(!paid()){if(!lock){lock=document.createElement('div');lock.id='freeTierLockCopy';lock.className='free-tier-lock-copy';lock.innerHTML='<b>PRO</b><span>Diese Felder sind sichtbar, aber in Free gesperrt.</span>';advanced.insertBefore(lock,advanced.firstChild)}}else lock?.remove()}
   }
-  function syncBriefCard(){const desc=$('#freePromptDescription'),label=desc?.closest('label'),text=$('#freePromptBriefText');if(!desc||!label||!text)return;const value=desc.value.trim();text.textContent=value||'Noch keine Beschreibung übernommen.';label.classList.toggle('free-description-collapsed',value.length>=1)}
+  function syncBriefCard(){const desc=$('#freePromptDescription'),label=desc?.closest('label'),text=$('#freePromptBriefText');if(!desc||!label||!text)return;const value=desc.value.trim(),copy=value||'Noch keine Beschreibung übernommen.';setText(text,copy);label.classList.toggle('free-description-collapsed',value.length>=1)}
 
   function ensureFreeStage(){const shell=$('#freePromptDialog .free-prompt-shell');if(!shell)return null;let stage=$('#freePromptGenerationStage');if(stage)return stage;stage=document.createElement('div');stage.id='freePromptGenerationStage';stage.className='free-prompt-generation-stage';stage.innerHTML='<div><span>PROMPT.AI</span><strong>Dein Prompt entsteht</strong><small>Rolle, Ziel, Tool und deine Angaben werden zu einem individuellen Arbeitsauftrag zusammengeführt.</small><i></i></div>';shell.style.position='relative';shell.appendChild(stage);return stage}
   function startFreeGeneration(){const desc=$('#freePromptDescription')?.value.trim()||'';if(desc.length<12)return;const stage=ensureFreeStage();if(!stage)return;clearTimeout(freeReleaseTimer);freeStartedAt=Date.now();stage.classList.add('show');$('#freePromptResult')?.classList.add('result-held')}
@@ -81,13 +82,13 @@
   function watchFreeState(){const status=$('#freePromptStatus'),result=$('#freePromptResult');if(status&&!status.__finalObserved){status.__finalObserved=true;new MutationObserver(()=>{if(status.classList.contains('error'))finishFreeGeneration(true);else if(status.classList.contains('good'))finishFreeGeneration(false)}).observe(status,{childList:true,subtree:true,attributes:true,attributeFilter:['class']})}if(result&&!result.__finalObserved){result.__finalObserved=true;new MutationObserver(()=>{if(!result.hidden)finishFreeGeneration(false)}).observe(result,{attributes:true,attributeFilter:['hidden']})}}
 
   function topDialogs(){
-    $$('dialog[open]').forEach(d=>{const frame=d.querySelector('.dialog-frame,.free-prompt-shell,.project-mode-frame,.simple-intake-shell');if(frame&&matchMedia('(max-width:820px)').matches)frame.scrollTop=0});
-    const menu=$('#topbarMenu');if(menu&&(menu.classList.contains('open')||menu.dataset.open==='true'))menu.scrollTop=0;
+    $$('dialog[open]').forEach(d=>{const frame=d.querySelector('.dialog-frame,.free-prompt-shell,.project-mode-frame,.simple-intake-shell');if(frame&&matchMedia('(max-width:820px)').matches&&frame.scrollTop!==0)frame.scrollTop=0});
+    const menu=$('#topbarMenu');if(menu&&(menu.classList.contains('open')||menu.dataset.open==='true')&&menu.scrollTop!==0)menu.scrollTop=0;
   }
 
   function settle(){styles();cleanHints();freeFlow();watchFreeState();topDialogs()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
-  function bind(){document.addEventListener('click',e=>{if(e.target.closest?.('#freePromptGenerate'))startFreeGeneration();schedule()},true);window.addEventListener('promptai:access',schedule);window.addEventListener('sitebrief:admin',schedule);window.addEventListener('pageshow',schedule);new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open','hidden','class','data-open','aria-expanded']})}
+  function bind(){document.addEventListener('click',e=>{if(e.target.closest?.('#freePromptGenerate'))startFreeGeneration();schedule()},true);window.addEventListener('promptai:access',schedule);window.addEventListener('sitebrief:admin',schedule);window.addEventListener('pageshow',schedule);new MutationObserver(schedule).observe(document.body,{childList:true})}
   function init(){styles();bind();settle();let n=0;const timer=setInterval(()=>{settle();if(++n>20)clearInterval(timer)},180)}
   styles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
