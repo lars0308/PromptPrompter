@@ -24,8 +24,8 @@ async function getEntitlements(req){
   const active=['active','trialing'].includes(subscription?.status);
   const paidPlan=active&&['pro','ultimate'].includes(subscription?.plan)?subscription.plan:'free';
   const addonActive=apiAddon?.addon==='own_api_keys'&&['active','trialing'].includes(apiAddon?.status);
-  const ownApiKeys=paidPlan==='ultimate'||(paidPlan==='pro'&&addonActive);
-  const plan=paidPlan;
+  const plan=isAdmin?'ultimate':paidPlan;
+  const ownApiKeys=isAdmin||plan==='ultimate'||(plan==='pro'&&addonActive);
   return {plan,isAdmin,ownApiKeys,maxConcepts:plan==='ultimate'?5:plan==='pro'?4:3};
 }
 
