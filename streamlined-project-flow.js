@@ -2,13 +2,15 @@
   'use strict';
   const START_KEY='prompt-ai-v1-simple-start';
   const PENDING_MODE_KEY='prompt-ai-new-project-mode-v2';
+  const START_FLOW_VERSION='PROMPT_START_FLOW_V2';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  let lastStep=-1,autoPreviewStarted=false;
+  let lastStep=-1,autoPreviewStarted=false,initialAdvanceInFlight=false;
   const setText=(node,value)=>{if(node&&node.textContent!==value)node.textContent=value};
   const setHtml=(node,value)=>{if(node&&node.innerHTML!==value)node.innerHTML=value};
 
   const mode=()=>$('.mode-switch button.active')?.dataset.mode||'guided';
   const step=()=>Number($('.step-panel.active')?.dataset.stepPanel||0);
+  const clearSimpleStart=()=>{try{sessionStorage.removeItem(START_KEY)}catch{}};
 
   function styles(){
     if($('#streamlinedFlowStyles'))return;
@@ -64,9 +66,20 @@
 
   function maybeSkipInitial(){
     let started=false,intended='';try{started=sessionStorage.getItem(START_KEY)==='1';intended=sessionStorage.getItem(PENDING_MODE_KEY)||mode()}catch{}if(!started)return;
-    if(intended==='expert'){try{sessionStorage.removeItem(START_KEY)}catch{}return}
-    const desc=$('#projectDescription'),next=$('#stepProject .next-btn');if(step()!==1||!desc||desc.value.trim().length<12||!next||next.disabled)return;
-    try{sessionStorage.removeItem(START_KEY)}catch{};setTimeout(()=>next.click(),80);
+    if(intended==='expert'){clearSimpleStart();return}
+    if(step()>=2){clearSimpleStart();initialAdvanceInFlight=false;return}
+    const workflow=$('#workflowApp'),desc=$('#projectDescription'),next=$('#stepProject .next-btn');
+    if(step()!==1||workflow?.hidden||!desc||desc.value.trim().length<12||!next||next.disabled||initialAdvanceInFlight)return;
+    initialAdvanceInFlight=true;
+    let tries=0;
+    const advance=()=>{
+      if(step()>=2){clearSimpleStart();initialAdvanceInFlight=false;return}
+      const currentDesc=$('#projectDescription'),currentNext=$('#stepProject .next-btn');
+      if(!currentDesc||currentDesc.value.trim().length<12||!currentNext||currentNext.disabled){tries++;if(tries<8)setTimeout(advance,220);else initialAdvanceInFlight=false;return}
+      currentNext.click();tries++;
+      if(tries<8)setTimeout(advance,260);else setTimeout(()=>{if(step()>=2)clearSimpleStart();initialAdvanceInFlight=false},320);
+    };
+    setTimeout(advance,120);
   }
 
   function skipHiddenWork(){
@@ -96,10 +109,10 @@
 
   function observe(){
     new MutationObserver(()=>{clearTimeout(observe._t);observe._t=setTimeout(onStep,40)}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','hidden','disabled']});
-    const timer=setInterval(()=>{wrapSimpleStart();onStep()},120);setTimeout(()=>clearInterval(timer),7000);
+    const timer=setInterval(()=>{wrapSimpleStart();onStep()},120);setTimeout(()=>clearInterval(timer),9000);
     window.addEventListener('promptai:access',()=>setTimeout(onStep,0));window.addEventListener('pageshow',()=>setTimeout(onStep,0));
   }
 
-  function init(){styles();wrapSimpleStart();workingPanels();guardPreview();onStep();observe()}
+  function init(){document.documentElement.dataset.promptStartFlow='2';window.PromptAiStartFlowVersion=START_FLOW_VERSION;styles();wrapSimpleStart();workingPanels();guardPreview();onStep();observe()}
   styles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
