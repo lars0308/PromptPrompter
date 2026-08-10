@@ -4,6 +4,7 @@
   const CONTINUE_KEY='sitebrief-v6-continue-workflow';
   const PENDING_MODE_KEY='prompt-ai-new-project-mode-v2';
   const PENDING_BRIEF_KEY='prompt-ai-new-project-brief-v1';
+  const SIMPLE_START_KEY='prompt-ai-v1-simple-start';
   const CHECKPOINT_KEY='prompt-ai-ui-checkpoint-v2';
   const ADMIN_EMAIL='service.battermann@gmx.de';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -66,7 +67,16 @@
   }
   function transition(mode){const shield=document.createElement('div');shield.className='project-mode-transition';shield.innerHTML=`<div><strong>${label(mode)} wird vorbereitet</strong><small>Deine Beschreibung wird übernommen.</small><i></i></div>`;document.body.appendChild(shield)}
   function persistNewProject(mode,brief=''){
-    try{localStorage.removeItem(STORAGE_KEY);localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({mode,step:1,surface:'workflow',at:Date.now()}));sessionStorage.setItem(PENDING_MODE_KEY,mode);if(brief.trim())sessionStorage.setItem(PENDING_BRIEF_KEY,brief.trim());sessionStorage.setItem(CONTINUE_KEY,'1')}catch{}
+    try{
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({mode,step:1,surface:'workflow',at:Date.now()}));
+      sessionStorage.setItem(PENDING_MODE_KEY,mode);
+      if(brief.trim()){
+        sessionStorage.setItem(PENDING_BRIEF_KEY,brief.trim());
+        sessionStorage.setItem(SIMPLE_START_KEY,'1');
+      }
+      sessionStorage.setItem(CONTINUE_KEY,'1');
+    }catch{}
   }
   async function startNew(trigger,brief=''){
     const reset=trigger?.id==='resetBtn';if(!await confirmReplace(reset))return;
