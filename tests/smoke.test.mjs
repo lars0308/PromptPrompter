@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
-const text=path=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
-test('Hobby deployment stays within 12 API functions',async()=>{const files=(await readdir(new URL('../api/',import.meta.url))).filter(x=>x.endsWith('.js'));assert.ok(files.length<=12,`found ${files.length} API functions`)});
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const text=p=>readFile(path.join(root,p),'utf8');
+test('all shipped JavaScript parses',async()=>{const files=[];for(const dir of ['.','api','server'])for(const name of await readdir(path.join(root,dir)))if(name.endsWith('.js'))files.push(path.join(root,dir,name));for(const file of files)execFileSync(process.execPath,['--check',file],{stdio:'pipe'})});
+test('Hobby deployment stays within 12 API functions',async()=>{const files=(await readdir(path.join(root,'api'))).filter(x=>x.endsWith('.js'));assert.ok(files.length<=12,`found ${files.length} API functions`)});
 test('single generation API routes all heavy features',async()=>{const src=await text('api/generate.js');for(const action of ['preview-image','sandbox-build','free-prompt'])assert.match(src,new RegExp(action));assert.match(src,/freePrompt\(req,res\)/)});
 test('system AI supports dedicated free prompt task',async()=>{const src=await text('server/system-ai-profiles.js');assert.match(src,/freeprompt/);assert.match(src,/free-prompt/)});
 test('new project mode is selected once and switcher stays hidden',async()=>{const src=await text('project-start-ui.js');assert.match(src,/#modeSwitch\{display:none!important\}/);for(const mode of ['guided','auto','expert'])assert.match(src,new RegExp(`data-project-mode=\\"${mode}\\"`))});
