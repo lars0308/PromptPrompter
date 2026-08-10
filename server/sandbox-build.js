@@ -1,4 +1,4 @@
-const { authenticatedUser, SUPABASE_URL } = require('./supabase-user');
+const { authenticatedUser, SUPABASE_URL, PUBLISHABLE_KEY, authorization } = require('./supabase-user');
 const { getEntitlements } = require('./entitlements');
 const { rateLimit } = require('./rate-limit');
 
@@ -14,11 +14,6 @@ async function sandboxSdk(){
   SandboxClass=mod.Sandbox;
   return SandboxClass;
 }
-function serviceKey(){
-  const key=process.env.SUPABASE_SERVICE_ROLE_KEY||'';
-  if(!key)throw Object.assign(new Error('SUPABASE_SERVICE_ROLE_KEY fehlt.'),{status:503});
-  return key;
-}
 function encodedPath(path){return String(path||'').split('/').map(encodeURIComponent).join('/')}
 function validOwnedPath(path,userId){
   const value=String(path||'');
@@ -30,9 +25,10 @@ async function readOutput(command,kind='stdout'){
 function clip(text,max=10000){const value=String(text||'');return value.length>max?`${value.slice(-max)}\n…`:value}
 function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 
-async function downloadArchive(path){
-  const key=serviceKey();
-  const response=await fetch(`${SUPABASE_URL}/storage/v1/object/authenticated/${BUCKET}/${encodedPath(path)}`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});
+async function downloadArchive(req,path){
+  const bearer=authorization(req);
+  if(!/^Bearer\s+\S+/i.test(bearer))throw Object.assign(new Error('Bitte zuerst anmelden.'),{status:401});
+  const response=await fetch(`${SUPABASE_URL}/storage/v1/object/authenticated/${BUCKET}/${encodedPath(path)}`,{headers:{apikey:PUBLISHABLE_KEY,Authorization:bearer}});
   if(!response.ok)throw Object.assign(new Error('Das hochgeladene Projekt konnte nicht gelesen werden.'),{status:response.status});
   const length=Number(response.headers.get('content-length')||0);
   if(length&&length>MAX_ARCHIVE_BYTES)throw Object.assign(new Error('Das Projekt-ZIP darf höchstens 24 MB groß sein. node_modules bitte nicht mit hochladen.'),{status:413});
@@ -130,7 +126,7 @@ module.exports=async function sandboxBuild(req,res){
     const path=String(req.body?.storagePath||'');
     if(!validOwnedPath(path,user.id))return res.status(400).json({error:'Ungültiger Projektpfad.'});
     const fullAccess=entitlement.isAdmin||entitlement.plan==='ultimate';
-    const archive=await downloadArchive(path),timeoutMs=fullAccess?15*60*1000:10*60*1000,Sandbox=await sandboxSdk();
+    const archive=await downloadArchive(req,path),timeoutMs=fullAccess?15*60*1000:10*60*1000,Sandbox=await sandboxSdk();
     sandbox=await Sandbox.create({runtime:'node24',resources:{vcpus:fullAccess?2:1},ports:[3000],timeout:timeoutMs,persistent:false,env:{CI:'1'},networkPolicy:'allow-all',tags:{app:'prompt-ai',tier:entitlement.isAdmin?'admin':entitlement.plan}});
     await sandbox.mkDir('/vercel/sandbox/app');
     await sandbox.writeFiles([{path:'/vercel/sandbox/project.zip',content:archive}]);
