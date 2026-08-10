@@ -336,8 +336,18 @@
   function consumeGuestRun(){if(cloudReady())return;localStorage.setItem(GUEST_USAGE_KEY,String(Math.min(GUEST_RUN_LIMIT,guestRunCount()+1)));renderGuestLimit()}
 
   async function sitebriefApiFetch(url, options={}){
+    const {timeoutMs=60000,...rest}=options;
     const auth = await window.SiteBriefCloud?.authHeaders?.().catch?.(()=>({})) || {};
-    return fetch(url,{...options,headers:{...(options.headers||{}),...auth}});
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    try{
+      return await fetch(url,{...rest,headers:{...(rest.headers||{}),...auth},signal:controller.signal});
+    }catch(err){
+      if(err?.name==='AbortError')throw new Error('Die Anfrage hat zu lange gedauert und wurde abgebrochen.');
+      throw err;
+    }finally{
+      clearTimeout(timer);
+    }
   }
 
   function aiConnection(provider){ return state.aiConnections.find(x=>x.provider===provider)||null; }
@@ -1440,7 +1450,7 @@
         if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
         else{
           const payload={action:"concepts",count,engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
-          const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"Generator-Anfrage fehlgeschlagen"); concepts=(data.concepts||[]).slice(0,count).map(normalizedConcept);
+          const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:120000}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"Generator-Anfrage fehlgeschlagen"); concepts=(data.concepts||[]).slice(0,count).map(normalizedConcept);
           if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
         }
         state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
@@ -1462,7 +1472,7 @@
       const concept=state.concepts[i];setTaskProgress("preview",Math.round(38+(i/state.concepts.length)*54),`Bildentwurf ${i+1} von ${state.concepts.length} wird gestaltet…`);
       try{
         const payload={action:"preview-image",imageProvider,project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
-        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Bildvorschau fehlgeschlagen");concept.previewImage=data.imageDataUrl||"";renderConcepts();renderSelectedPreview();
+        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000});const data=await res.json();if(!res.ok)throw new Error(data.error||"Bildvorschau fehlgeschlagen");concept.previewImage=data.imageDataUrl||"";renderConcepts();renderSelectedPreview();
       }catch(err){const message=String(err?.message||"");if(/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(message)){quotaError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Gemini ist verbunden, das Bildkontingent ist momentan erschöpft. Layout-Vorschauen werden weiter angezeigt.";break;}otherError=true;el.generationStatus.className="generation-status error";el.generationStatus.textContent=`Bildentwurf ${i+1} war nicht verfügbar. Die übrigen Vorschauen werden weiter vorbereitet.`;}
     }
     return {kind:quotaError?"quota":otherError?"error":"success"};
