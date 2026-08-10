@@ -39,18 +39,8 @@ write("index.html", html)
 
 # 2) app.js: stale constants, element cache, handlers and startup branch for that dialog.
 app = read("app.js")
-app = once(
-    app,
-    '  const ONBOARDING_KEY = "prompt-ai-welcome-seen-v1";\n',
-    "",
-    "app onboarding key",
-)
-app = once(
-    app,
-    ',"welcomeIntroDialog","closeWelcomeIntroBtn","confirmWelcomeIntroBtn"',
-    "",
-    "app intro ids",
-)
+app = once(app, '  const ONBOARDING_KEY = "prompt-ai-welcome-seen-v1";\n', "", "app onboarding key")
+app = once(app, ',"welcomeIntroDialog","closeWelcomeIntroBtn","confirmWelcomeIntroBtn"', "", "app intro ids")
 app, count = re.subn(
     r'\n  function closeWelcomeIntro\(\)\{.*?\n  function showWelcomeIntroOnce\(\)\{.*?\}\n',
     "\n",
@@ -78,24 +68,9 @@ write("app.js", app)
 # 3) admin-console.js: preserve the current boot intro. Move the one useful internal
 # reload shield behavior out of the legacy intro adapter before deleting it.
 admin = read("admin-console.js")
-admin = once(
-    admin,
-    "  const ONBOARDING_KEY='prompt-ai-welcome-seen-v1';\n",
-    "",
-    "admin onboarding key",
-)
-admin = once(
-    admin,
-    "    try{localStorage.setItem(ONBOARDING_KEY,'1')}catch{}\n",
-    "",
-    "admin onboarding write",
-)
-admin = once(
-    admin,
-    "await load('./intro-flow-fix.js?v=20260810-2');",
-    "",
-    "legacy intro loader",
-)
+admin = once(admin, "  const ONBOARDING_KEY='prompt-ai-welcome-seen-v1';\n", "", "admin onboarding key")
+admin = once(admin, "    try{localStorage.setItem(ONBOARDING_KEY,'1')}catch{}\n", "", "admin onboarding write")
+admin = once(admin, "await load('./intro-flow-fix.js?v=20260810-2');", "", "legacy intro loader")
 admin = admin.replace(
     "#welcomeIntroDialog .welcome-intro-body,#welcomeIntroDialog .intro-close{visibility:hidden!important}",
     "",
@@ -120,7 +95,7 @@ write("admin-console.js", admin)
 
 
 # 4) CSS: remove only selectors/rules that belonged to the deleted onboarding UI.
-# Shared app-action and agent-launch rules are retained verbatim apart from selector lists.
+# Shared app-action and agent-launch rules are retained, with only the obsolete selector removed.
 css = read("styles.css")
 selector_replacements = {
     ".welcome-intro-dialog,.app-action-dialog,.agent-launch-dialog{": ".app-action-dialog,.agent-launch-dialog{",
@@ -137,20 +112,19 @@ selector_replacements = {
 for old, new in selector_replacements.items():
     css = css.replace(old, new)
 
-legacy_rule_prefixes = (
-    ".welcome-intro-video{",
-    ".welcome-intro-body ol{",
-    ".welcome-intro-body li{",
-    ".welcome-intro-body li>b{",
-    ".welcome-intro-body li strong,",
-    ".welcome-intro-body li small{",
-    ".welcome-intro-body>.solid-btn{",
+# These rules are legacy-only and styles.css stores several rules on the same physical line,
+# so remove complete CSS rule fragments instead of dropping whole lines.
+legacy_rule_patterns = (
+    r'\.welcome-intro-video\{[^}]*\}',
+    r'\.welcome-intro-body ol\{[^}]*\}',
+    r'\.welcome-intro-body li\{[^}]*\}',
+    r'\.welcome-intro-body li>b\{[^}]*\}',
+    r'\.welcome-intro-body li strong,\.welcome-intro-body li small\{[^}]*\}',
+    r'\.welcome-intro-body li small\{[^}]*\}',
+    r'\.welcome-intro-body>\.solid-btn\{[^}]*\}',
 )
-css_lines = [
-    line for line in css.splitlines()
-    if not line.strip().startswith(legacy_rule_prefixes)
-]
-css = "\n".join(css_lines) + ("\n" if css.endswith("\n") else "")
+for pattern in legacy_rule_patterns:
+    css = re.sub(pattern, "", css)
 write("styles.css", css)
 
 
