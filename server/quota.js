@@ -47,10 +47,13 @@ async function assertQuota(req,metric){
   if(!METRIC_ACTIONS[metric])throw Object.assign(new Error('Unbekanntes Monatskontingent.'),{status:400});
   const summary=await getQuotaSummary(req),item=summary.metrics[metric];
   if(!summary.authenticated||!summary.available||summary.isAdmin)return {allowed:true,summary,item};
-  if(item.limit<=0||item.used>=item.limit){
+  if(item.limit<=0){
+    const message=metric==='ai_previews'?'KI-Vorschauen sind in Free nicht enthalten. Sie sind ab Pro verfügbar.':`${METRIC_LABELS[metric]||'Diese Funktion'} sind in deinem Tarif nicht enthalten.`;
+    throw Object.assign(new Error(message),{status:403,code:'PLAN_FEATURE_NOT_INCLUDED',metric,quota:summary});
+  }
+  if(item.used>=item.limit){
     const label=METRIC_LABELS[metric]||'Generierungen',reset=nextResetText(summary.periodEnd);
-    const error=Object.assign(new Error(`Dein Monatskontingent für ${label} ist aufgebraucht. Am ${reset} wird es automatisch zurückgesetzt.`),{status:429,code:'MONTHLY_QUOTA_EXHAUSTED',metric,quota:summary});
-    throw error;
+    throw Object.assign(new Error(`Dein Monatskontingent für ${label} ist aufgebraucht. Am ${reset} wird es automatisch zurückgesetzt.`),{status:429,code:'MONTHLY_QUOTA_EXHAUSTED',metric,quota:summary});
   }
   return {allowed:true,summary,item};
 }
