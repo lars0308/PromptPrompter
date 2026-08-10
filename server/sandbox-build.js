@@ -75,7 +75,7 @@ async function projectMeta(sandbox,cwd){
 async function installDependencies(sandbox,cwd,manager){
   if(manager==='pnpm'){
     const corepack=await sandbox.runCommand({cmd:'corepack',args:['enable'],cwd,sudo:true,timeoutMs:15000});
-    if(corepack.exitCode===0)return runChecked(sandbox,{cmd:'pnpm',args:['install','--no-frozen-lockfile','--ignore-workspace-root-check'],cwd},'Abhängigkeiten installieren',110000);
+    if(corepack.exitCode===0)return runChecked(sandbox,{cmd:'pnpm',args:['install','--no-frozen-lockfile'],cwd},'Abhängigkeiten installieren',110000);
   }
   if(manager==='yarn'){
     const corepack=await sandbox.runCommand({cmd:'corepack',args:['enable'],cwd,sudo:true,timeoutMs:15000});
@@ -125,11 +125,13 @@ module.exports=async function sandboxBuild(req,res){
   let sandbox=null;
   try{
     const user=await authenticatedUser(req),entitlement=await getEntitlements(req);
-    if(!['pro','ultimate'].includes(entitlement.plan))return res.status(403).json({error:'Der isolierte Quellcode-Build ist ab Pro verfügbar.'});
+    const hasSandboxAccess=entitlement.isAdmin||['pro','ultimate'].includes(entitlement.plan);
+    if(!hasSandboxAccess)return res.status(403).json({error:'Der isolierte Quellcode-Build ist ab Pro verfügbar.'});
     const path=String(req.body?.storagePath||'');
     if(!validOwnedPath(path,user.id))return res.status(400).json({error:'Ungültiger Projektpfad.'});
-    const archive=await downloadArchive(path),timeoutMs=entitlement.plan==='ultimate'?15*60*1000:10*60*1000,Sandbox=await sandboxSdk();
-    sandbox=await Sandbox.create({runtime:'node24',resources:{vcpus:entitlement.plan==='ultimate'?2:1},ports:[3000],timeout:timeoutMs,persistent:false,env:{CI:'1'},networkPolicy:'allow-all',tags:{app:'prompt-ai',tier:entitlement.plan}});
+    const fullAccess=entitlement.isAdmin||entitlement.plan==='ultimate';
+    const archive=await downloadArchive(path),timeoutMs=fullAccess?15*60*1000:10*60*1000,Sandbox=await sandboxSdk();
+    sandbox=await Sandbox.create({runtime:'node24',resources:{vcpus:fullAccess?2:1},ports:[3000],timeout:timeoutMs,persistent:false,env:{CI:'1'},networkPolicy:'allow-all',tags:{app:'prompt-ai',tier:entitlement.isAdmin?'admin':entitlement.plan}});
     await sandbox.mkDir('/vercel/sandbox/app');
     await sandbox.writeFiles([{path:'/vercel/sandbox/project.zip',content:archive}]);
     const archiveFiles=await validateArchive(sandbox);
