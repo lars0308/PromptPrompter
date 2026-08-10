@@ -1,17 +1,14 @@
 (()=>{
   'use strict';
   document.documentElement.classList.add('prompt-access-pending');
-  if(!document.getElementById('promptAccessBootStyle')){
-    const style=document.createElement('style');style.id='promptAccessBootStyle';style.textContent='html.prompt-access-pending #upgradeBtn,html.prompt-access-pending #upgradeMenuBtn,html.prompt-access-pending #modeSwitch,html.prompt-access-pending .workflow-upgrade,html.prompt-access-pending .quick-upgrade-note,html.prompt-access-pending .quick-tier-block,html.prompt-access-pending #settingsUpgradeNote,html.prompt-access-pending #apiAddonCard,html.prompt-access-pending #currentPlanBadge,html.prompt-access-pending .plan-current{visibility:hidden!important;opacity:0!important;pointer-events:none!important}html.prompt-access-pending #workflowApp:not([hidden]){opacity:0!important}';document.head.appendChild(style);
-  }
-  const load=(src,onload)=>{const script=document.createElement('script');script.src=src;script.async=false;if(onload)script.addEventListener('load',onload,{once:true});document.head.appendChild(script);return script};
-  const loadCore=(next)=>{
-    const original=document.addEventListener;
-    document.addEventListener=function(type,listener,options){
-      if(type==='DOMContentLoaded'&&document.readyState!=='loading'){queueMicrotask(()=>listener.call(document,new Event('DOMContentLoaded')));return;}
-      return original.call(document,type,listener,options);
-    };
-    load('./admin-console-core.js?v=20260810-8',()=>{document.addEventListener=original;next?.()});
-  };
-  load('./owner-access.js?v=20260810-1',()=>load('./intro-flow-fix.js?v=20260810-1',()=>loadCore(()=>load('./ui-regression-fixes.js?v=20260810-8',()=>load('./project-start-ui.js?v=20260810-1',()=>load('./stability-ui.js?v=20260810-2',()=>load('./mode-flow-ui.js?v=20260810-6',()=>load('./system-ai-routing.js?v=20260810-1',()=>load('./preview-ai-admin.js?v=20260810-6',()=>load('./system-ai-studio.js?v=20260810-1',()=>load('./product-polish.js?v=20260810-3',()=>load('./sandbox-preview.js?v=20260810-1',()=>load('./workflow-cleanup.js?v=20260810-2',()=>load('./generator-selection.js?v=20260810-1'))))))))))))));
+  if(!document.getElementById('promptAccessBootStyle')){const s=document.createElement('style');s.id='promptAccessBootStyle';s.textContent='html.prompt-access-pending #upgradeBtn,html.prompt-access-pending #upgradeMenuBtn,html.prompt-access-pending #modeSwitch,html.prompt-access-pending .workflow-upgrade,html.prompt-access-pending .quick-upgrade-note,html.prompt-access-pending .quick-tier-block,html.prompt-access-pending #settingsUpgradeNote,html.prompt-access-pending #apiAddonCard,html.prompt-access-pending #currentPlanBadge,html.prompt-access-pending .plan-current{visibility:hidden!important;opacity:0!important;pointer-events:none!important}html.prompt-access-pending #workflowApp:not([hidden]){opacity:0!important}';document.head.appendChild(s)}
+  const loaded=new Set();
+  function load(src){if(loaded.has(src))return Promise.resolve();loaded.add(src);return new Promise(resolve=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=resolve;s.onerror=resolve;document.head.appendChild(s)})}
+  async function loadCore(){const original=document.addEventListener;document.addEventListener=function(type,listener,options){if(type==='DOMContentLoaded'&&document.readyState!=='loading'){queueMicrotask(()=>listener.call(document,new Event('DOMContentLoaded')));return}return original.call(document,type,listener,options)};await load('./admin-console-core.js?v=20260810-9');document.addEventListener=original}
+  async function critical(){await load('./cloud-fast-bundle.js?v=20260810-1');await load('./intro-flow-fix.js?v=20260810-1');await loadCore();await load('./ui-regression-fixes.js?v=20260810-10');await load('./project-start-ui.js?v=20260810-1');await load('./stability-ui.js?v=20260810-10');await load('./mode-flow-ui.js?v=20260810-6');await load('./system-ai-routing.js?v=20260810-2');await load('./product-polish.js?v=20260810-3');await load('./workflow-cleanup.js?v=20260810-3');await load('./preview-mode-fix.js?v=20260810-1');await load('./free-prompt-ui.js?v=20260810-1');await load('./free-prompt-presets.js?v=20260810-1')}
+  async function adminExtras(){await load('./admin-ai-ui.js?v=20260810-2');await load('./system-ai-studio.js?v=20260810-2')}
+  async function previewExtras(){await load('./sandbox-preview.js?v=20260810-1');await load('./github-sandbox.js?v=20260810-1')}
+  async function accountExtras(){await load('./learning-controls.js?v=20260810-1')}
+  function lazy(){document.addEventListener('click',e=>{if(e.target.closest?.('#adminBtn'))adminExtras();if(e.target.closest?.('#workspacePreviewBtn'))previewExtras();if(e.target.closest?.('#accountBtn,#welcomeAccountBtn'))accountExtras()},{capture:true});const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,900));idle(async()=>{await load('./project-history.js?v=20260810-1');await load('./generator-selection.js?v=20260810-2')},{timeout:2500})}
+  critical().then(lazy);
 })();

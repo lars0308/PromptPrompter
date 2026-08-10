@@ -2,6 +2,10 @@
   "name": "prompt-prompter",
   "version": "0.0.0",
   "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:smoke": "node --test tests/smoke.test.mjs"
+  },
   "dependencies": {
     "@vercel/sandbox": "2.9.0"
   }

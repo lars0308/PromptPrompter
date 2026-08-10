@@ -1,157 +1,26 @@
 const { authenticatedUser, SUPABASE_URL, PUBLISHABLE_KEY, authorization } = require('./supabase-user');
 const { getEntitlements } = require('./entitlements');
+const { resolveProviderKey } = require('./provider-key');
 const { rateLimit } = require('./rate-limit');
 
-const BUCKET = 'sitebrief-references';
-const MAX_ARCHIVE_BYTES = 24 * 1024 * 1024;
-const MAX_UNPACKED_BYTES = 180 * 1024 * 1024;
-const MAX_ARCHIVE_FILES = 4000;
-let SandboxClass = null;
-
-async function sandboxSdk(){
-  if(SandboxClass)return SandboxClass;
-  const mod=await import('@vercel/sandbox');
-  SandboxClass=mod.Sandbox;
-  return SandboxClass;
-}
-function encodedPath(path){return String(path||'').split('/').map(encodeURIComponent).join('/')}
-function validOwnedPath(path,userId){
-  const value=String(path||'');
-  return value.length<420&&!value.includes('..')&&value.startsWith(`${userId}/sandbox-builds/`)&&/\.zip$/i.test(value);
-}
-async function readOutput(command,kind='stdout'){
-  try{return String(await command[kind]()).trim()}catch{return ''}
-}
-function clip(text,max=10000){const value=String(text||'');return value.length>max?`${value.slice(-max)}\n…`:value}
-function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
-
-async function downloadArchive(req,path){
-  const bearer=authorization(req);
-  if(!/^Bearer\s+\S+/i.test(bearer))throw Object.assign(new Error('Bitte zuerst anmelden.'),{status:401});
-  const response=await fetch(`${SUPABASE_URL}/storage/v1/object/authenticated/${BUCKET}/${encodedPath(path)}`,{headers:{apikey:PUBLISHABLE_KEY,Authorization:bearer}});
-  if(!response.ok)throw Object.assign(new Error('Das hochgeladene Projekt konnte nicht gelesen werden.'),{status:response.status});
-  const length=Number(response.headers.get('content-length')||0);
-  if(length&&length>MAX_ARCHIVE_BYTES)throw Object.assign(new Error('Das Projekt-ZIP darf höchstens 24 MB groß sein. node_modules bitte nicht mit hochladen.'),{status:413});
-  const bytes=Buffer.from(await response.arrayBuffer());
-  if(bytes.length>MAX_ARCHIVE_BYTES)throw Object.assign(new Error('Das Projekt-ZIP darf höchstens 24 MB groß sein. node_modules bitte nicht mit hochladen.'),{status:413});
-  return bytes;
-}
-async function runChecked(sandbox,params,label,timeoutMs){
-  const result=await sandbox.runCommand({...params,timeoutMs});
-  if(result.exitCode!==0){
-    const stderr=await readOutput(result,'stderr'),stdout=await readOutput(result,'stdout');
-    throw Object.assign(new Error(`${label} fehlgeschlagen.\n${clip(stderr||stdout,6500)}`),{status:422});
-  }
-  return result;
-}
-async function validateArchive(sandbox){
-  const namesResult=await runChecked(sandbox,{cmd:'unzip',args:['-Z1','/vercel/sandbox/project.zip']},'ZIP prüfen',15000);
-  const names=(await readOutput(namesResult)).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  if(!names.length)throw Object.assign(new Error('Das ZIP ist leer.'),{status:422});
-  if(names.length>MAX_ARCHIVE_FILES)throw Object.assign(new Error(`Das ZIP enthält zu viele Dateien (${names.length}). Bitte node_modules und Build-Caches entfernen.`),{status:413});
-  const unsafe=names.find(name=>name.startsWith('/')||name.split('/').includes('..')||name.includes('\\'));
-  if(unsafe)throw Object.assign(new Error('Das ZIP enthält einen unsicheren Dateipfad und wurde nicht ausgeführt.'),{status:422});
-  const secret=names.find(name=>{
-    const base=name.split('/').pop().toLowerCase();
-    if(base==='.env.example'||base==='.env.sample')return false;
-    return base==='.env'||base.startsWith('.env.')||base==='.npmrc'||base==='id_rsa'||base==='id_ed25519'||/\.(?:pem|p12|pfx|key)$/i.test(base);
-  });
-  if(secret)throw Object.assign(new Error(`Im ZIP wurde eine mögliche Secret-Datei gefunden (${secret}). Entferne API-Keys, .env-Dateien und private Schlüssel vor dem Sandbox-Upload.`),{status:422});
-  const listResult=await runChecked(sandbox,{cmd:'unzip',args:['-l','/vercel/sandbox/project.zip']},'ZIP-Größe prüfen',15000);
-  const listing=await readOutput(listResult),summary=listing.match(/\n\s*(\d+)\s+\d+\s+files?\s*$/i),unpacked=Number(summary?.[1]||0);
-  if(unpacked&&unpacked>MAX_UNPACKED_BYTES)throw Object.assign(new Error('Das entpackte Projekt ist größer als 180 MB. Bitte node_modules, .next, dist und andere Build-Caches entfernen.'),{status:413});
-  return names;
-}
-async function projectMeta(sandbox,cwd){
-  const code=`const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));const all={...(p.dependencies||{}),...(p.devDependencies||{})};const framework=all.next?'next':all.vite?'vite':all.astro?'astro':all['react-scripts']?'cra':all['@angular/core']?'angular':'node';const manager=fs.existsSync('pnpm-lock.yaml')?'pnpm':fs.existsSync('yarn.lock')?'yarn':'npm';process.stdout.write(JSON.stringify({framework,manager,scripts:p.scripts||{},name:p.name||''}))`;
-  const result=await runChecked(sandbox,{cmd:'node',args:['-e',code],cwd},'Projektanalyse',15000);
-  const raw=await readOutput(result);
-  try{return JSON.parse(raw)}catch{throw Object.assign(new Error('package.json konnte nicht ausgewertet werden.'),{status:422})}
-}
-async function installDependencies(sandbox,cwd,manager){
-  if(manager==='pnpm'){
-    const corepack=await sandbox.runCommand({cmd:'corepack',args:['enable'],cwd,sudo:true,timeoutMs:15000});
-    if(corepack.exitCode===0)return runChecked(sandbox,{cmd:'pnpm',args:['install','--no-frozen-lockfile'],cwd},'Abhängigkeiten installieren',110000);
-  }
-  if(manager==='yarn'){
-    const corepack=await sandbox.runCommand({cmd:'corepack',args:['enable'],cwd,sudo:true,timeoutMs:15000});
-    if(corepack.exitCode===0)return runChecked(sandbox,{cmd:'yarn',args:['install'],cwd},'Abhängigkeiten installieren',110000);
-  }
-  return runChecked(sandbox,{cmd:'npm',args:['install','--no-audit','--no-fund','--loglevel=error'],cwd},'Abhängigkeiten installieren',110000);
-}
-async function runScript(sandbox,cwd,manager,script,args=[],detached=false,timeoutMs=120000){
-  const cmd=manager==='pnpm'?'pnpm':manager==='yarn'?'yarn':'npm';
-  const cmdArgs=manager==='yarn'?[script,...args]:['run',script,...(args.length?['--',...args]:[])];
-  return sandbox.runCommand({cmd,args:cmdArgs,cwd,detached,env:{NODE_ENV:'production',CI:'1'},timeoutMs:detached?undefined:timeoutMs});
-}
-async function startServer(sandbox,cwd,meta){
-  const {framework,manager,scripts={}}=meta;
-  if(framework==='next'){
-    if(scripts.start)return runScript(sandbox,cwd,manager,'start',['-p','3000','-H','0.0.0.0'],true);
-    return sandbox.runCommand({cmd:'npx',args:['--yes','next','start','-p','3000','-H','0.0.0.0'],cwd,detached:true,env:{NODE_ENV:'production'}});
-  }
-  if((framework==='vite'||framework==='astro')&&scripts.preview)return runScript(sandbox,cwd,manager,'preview',['--host','0.0.0.0','--port','3000'],true);
-  const candidates=framework==='cra'?['build']:['dist','build','out','public'];
-  const probe=`const fs=require('fs');for(const p of ${JSON.stringify(candidates)})if(fs.existsSync(p)){process.stdout.write(p);break}`;
-  const found=await sandbox.runCommand({cmd:'node',args:['-e',probe],cwd,timeoutMs:10000}),dir=(await readOutput(found))||'';
-  if(dir)return sandbox.runCommand({cmd:'npx',args:['--yes','serve','-s',dir,'-l','3000'],cwd,detached:true,env:{NODE_ENV:'production'}});
-  if(scripts.dev){
-    const args=framework==='next'?['-p','3000','-H','0.0.0.0']:['--host','0.0.0.0','--port','3000'];
-    return runScript(sandbox,cwd,manager,'dev',args,true);
-  }
-  throw Object.assign(new Error('Kein startbarer Build gefunden. Es braucht ein build-, preview-, start- oder dev-Skript.'),{status:422});
-}
-async function waitForPreview(url){
-  let last='';
-  for(let i=0;i<40;i++){
-    try{
-      const response=await fetch(url,{redirect:'manual',headers:{'User-Agent':'Prompt.ai Sandbox Preview'}});
-      last=await response.text();
-      if(response.status<500)return {status:response.status,html:last.slice(0,30000)};
-    }catch{}
-    await sleep(1000);
-  }
-  throw Object.assign(new Error('Der Build lief durch, aber der Vorschau-Server wurde nicht rechtzeitig erreichbar.'),{status:504});
-}
-
-module.exports=async function sandboxBuild(req,res){
-  res.setHeader('Cache-Control','no-store, private');
-  if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
-  if(!rateLimit(req,res,{key:'sandbox-build',limit:2,windowMs:10*60*1000}))return;
-  let sandbox=null;
-  try{
-    const user=await authenticatedUser(req),entitlement=await getEntitlements(req);
-    const hasSandboxAccess=entitlement.isAdmin||['pro','ultimate'].includes(entitlement.plan);
-    if(!hasSandboxAccess)return res.status(403).json({error:'Der isolierte Quellcode-Build ist ab Pro verfügbar.'});
-    const path=String(req.body?.storagePath||'');
-    if(!validOwnedPath(path,user.id))return res.status(400).json({error:'Ungültiger Projektpfad.'});
-    const fullAccess=entitlement.isAdmin||entitlement.plan==='ultimate';
-    const archive=await downloadArchive(req,path),timeoutMs=fullAccess?15*60*1000:10*60*1000,Sandbox=await sandboxSdk();
-    sandbox=await Sandbox.create({runtime:'node24',resources:{vcpus:fullAccess?2:1},ports:[3000],timeout:timeoutMs,persistent:false,env:{CI:'1'},networkPolicy:'allow-all',tags:{app:'prompt-ai',tier:entitlement.isAdmin?'admin':entitlement.plan}});
-    await sandbox.mkDir('/vercel/sandbox/app');
-    await sandbox.writeFiles([{path:'/vercel/sandbox/project.zip',content:archive}]);
-    const archiveFiles=await validateArchive(sandbox);
-    await runChecked(sandbox,{cmd:'unzip',args:['-q','/vercel/sandbox/project.zip','-d','/vercel/sandbox/app']},'ZIP entpacken',30000);
-    const find=await runChecked(sandbox,{cmd:'bash',args:['-lc',"find /vercel/sandbox/app -maxdepth 5 -name package.json -not -path '*/node_modules/*' -not -path '*/.next/*' -print | head -n 1"]},'Projektwurzel suchen',15000),packagePath=await readOutput(find);
-    if(!packagePath)throw Object.assign(new Error('Im ZIP wurde keine package.json gefunden. Für statische HTML-Projekte bitte die lokale Live-Vorschau verwenden.'),{status:422});
-    const cwd=packagePath.replace(/\/package\.json$/,'');
-    const meta=await projectMeta(sandbox,cwd);
-    await installDependencies(sandbox,cwd,meta.manager);
-    let buildLog='Kein build-Skript vorhanden; Vorschau startet direkt.';
-    if(meta.scripts?.build){
-      const built=await runScript(sandbox,cwd,meta.manager,'build',[],false,120000);
-      if(built.exitCode!==0){
-        const stderr=await readOutput(built,'stderr'),stdout=await readOutput(built,'stdout');
-        throw Object.assign(new Error(`Build fehlgeschlagen.\n${clip(stderr||stdout,8000)}`),{status:422});
-      }
-      buildLog=clip(await readOutput(built),5000);
-    }
-    await startServer(sandbox,cwd,meta);
-    const previewUrl=sandbox.domain(3000),ready=await waitForPreview(previewUrl);
-    return res.status(200).json({ok:true,previewUrl,sandboxId:sandbox.name||'',expiresAt:new Date(Date.now()+timeoutMs).toISOString(),framework:meta.framework,projectName:meta.name||'',httpStatus:ready.status,analysisSample:ready.html,buildLog,archiveFiles:archiveFiles.slice(0,120)});
-  }catch(error){
-    if(sandbox)try{await sandbox.stop()}catch{}
-    const status=Number(error?.status)||500;
-    return res.status(status).json({error:error?.message||'Quellprojekt konnte nicht gebaut werden.'});
-  }
-};
+const BUCKET='sitebrief-references',MAX_ARCHIVE_BYTES=24*1024*1024,MAX_UNPACKED_BYTES=180*1024*1024,MAX_ARCHIVE_FILES=4000;
+let SandboxClass=null;
+async function sandboxSdk(){if(SandboxClass)return SandboxClass;SandboxClass=(await import('@vercel/sandbox')).Sandbox;return SandboxClass}
+const encodedPath=path=>String(path||'').split('/').map(encodeURIComponent).join('/');
+function validOwnedPath(path,userId){const v=String(path||'');return v.length<420&&!v.includes('..')&&v.startsWith(`${userId}/sandbox-builds/`)&&/\.zip$/i.test(v)}
+async function output(command,kind='stdout'){try{return String(await command[kind]()).trim()}catch{return''}}
+function clip(text,max=10000){const v=String(text||'');return v.length>max?`${v.slice(-max)}\n…`:v}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function bytesFromResponse(response,label){if(!response.ok)throw Object.assign(new Error(label||'Projekt konnte nicht geladen werden.'),{status:response.status});const len=Number(response.headers.get('content-length')||0);if(len&&len>MAX_ARCHIVE_BYTES)throw Object.assign(new Error('Das Projekt-ZIP darf höchstens 24 MB groß sein.'),{status:413});const bytes=Buffer.from(await response.arrayBuffer());if(bytes.length>MAX_ARCHIVE_BYTES)throw Object.assign(new Error('Das Projekt-ZIP darf höchstens 24 MB groß sein.'),{status:413});return bytes}
+async function downloadArchive(req,path){const bearer=authorization(req);if(!/^Bearer\s+\S+/i.test(bearer))throw Object.assign(new Error('Bitte zuerst anmelden.'),{status:401});return bytesFromResponse(await fetch(`${SUPABASE_URL}/storage/v1/object/authenticated/${BUCKET}/${encodedPath(path)}`,{headers:{apikey:PUBLISHABLE_KEY,Authorization:bearer}}),'Das hochgeladene Projekt konnte nicht gelesen werden.')}
+function parseRepo(input){let v=String(input||'').trim().replace(/^https?:\/\/github\.com\//i,'').replace(/\.git$/i,'').replace(/^\/+|\/+$/g,'');const parts=v.split('/').filter(Boolean);if(parts.length!==2||!parts.every(x=>/^[A-Za-z0-9_.-]{1,100}$/.test(x)))return null;return {owner:parts[0],repo:parts[1],slug:`${parts[0]}/${parts[1]}`}}
+function safeRef(value){const ref=String(value||'').trim();return ref&&/^[A-Za-z0-9._\/-]{1,180}$/.test(ref)&&!ref.includes('..')?ref:''}
+async function downloadGithub(req,repoInput,refInput){const repo=parseRepo(repoInput);if(!repo)throw Object.assign(new Error('Bitte ein GitHub-Repository als owner/repo oder GitHub-URL angeben.'),{status:400});const ref=safeRef(refInput),path=`https://api.github.com/repos/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.repo)}/zipball${ref?`/${ref.split('/').map(encodeURIComponent).join('/')}`:''}`,base={'User-Agent':'Prompt.ai Sandbox','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};let response=await fetch(path,{headers:base,redirect:'follow'});if(!response.ok&&[401,403,404].includes(response.status)){const resolved=await resolveProviderKey(req,'github');if(resolved.key&&resolved.source==='account')response=await fetch(path,{headers:{...base,Authorization:`Bearer ${resolved.key}`},redirect:'follow'})}if(!response.ok){if([401,403,404].includes(response.status))throw Object.assign(new Error('Repository nicht erreichbar. Öffentliche Repositories funktionieren direkt; für private Repositories muss deine eigene GitHub-Verbindung in Prompt.ai freigeschaltet sein.'),{status:response.status===404?404:403});throw Object.assign(new Error('GitHub-Repository konnte nicht geladen werden.'),{status:response.status})}return {bytes:await bytesFromResponse(response,'GitHub-Repository konnte nicht geladen werden.'),source:`GitHub · ${repo.slug}${ref?` @ ${ref}`:''}`}}
+async function runChecked(sandbox,params,label,timeoutMs){const r=await sandbox.runCommand({...params,timeoutMs});if(r.exitCode!==0)throw Object.assign(new Error(`${label} fehlgeschlagen.\n${clip((await output(r,'stderr'))||(await output(r)),6500)}`),{status:422});return r}
+async function validateArchive(sandbox){const nr=await runChecked(sandbox,{cmd:'unzip',args:['-Z1','/vercel/sandbox/project.zip']},'ZIP prüfen',15000),names=(await output(nr)).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!names.length)throw Object.assign(new Error('Das ZIP ist leer.'),{status:422});if(names.length>MAX_ARCHIVE_FILES)throw Object.assign(new Error(`Das ZIP enthält zu viele Dateien (${names.length}). Bitte node_modules und Build-Caches entfernen.`),{status:413});if(names.find(n=>n.startsWith('/')||n.split('/').includes('..')||n.includes('\\')))throw Object.assign(new Error('Das ZIP enthält einen unsicheren Dateipfad.'),{status:422});const secret=names.find(n=>{const b=n.split('/').pop().toLowerCase();if(b==='.env.example'||b==='.env.sample')return false;return b==='.env'||b.startsWith('.env.')||b==='.npmrc'||b==='id_rsa'||b==='id_ed25519'||/\.(?:pem|p12|pfx|key)$/i.test(b)});if(secret)throw Object.assign(new Error(`Im Projekt wurde eine mögliche Secret-Datei gefunden (${secret}). Entferne API-Keys, .env-Dateien und private Schlüssel.`),{status:422});const lr=await runChecked(sandbox,{cmd:'unzip',args:['-l','/vercel/sandbox/project.zip']},'ZIP-Größe prüfen',15000),m=(await output(lr)).match(/\n\s*(\d+)\s+\d+\s+files?\s*$/i),size=Number(m?.[1]||0);if(size&&size>MAX_UNPACKED_BYTES)throw Object.assign(new Error('Das entpackte Projekt ist größer als 180 MB.'),{status:413});return names}
+async function projectMeta(sandbox,cwd){const code=`const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));const all={...(p.dependencies||{}),...(p.devDependencies||{})};const framework=all.next?'next':all.vite?'vite':all.astro?'astro':all['react-scripts']?'cra':all['@angular/core']?'angular':'node';const manager=fs.existsSync('pnpm-lock.yaml')?'pnpm':fs.existsSync('yarn.lock')?'yarn':'npm';process.stdout.write(JSON.stringify({framework,manager,scripts:p.scripts||{},name:p.name||''}))`;const r=await runChecked(sandbox,{cmd:'node',args:['-e',code],cwd},'Projektanalyse',15000);try{return JSON.parse(await output(r))}catch{throw Object.assign(new Error('package.json konnte nicht ausgewertet werden.'),{status:422})}}
+async function installDependencies(s,cwd,m){if(m==='pnpm'){const c=await s.runCommand({cmd:'corepack',args:['enable'],cwd,sudo:true,timeoutMs:15000});if(c.exitCode===0)return runChecked(s,{cmd:'pnpm',args:['install','--no-frozen-lockfile'],cwd},'Abhängigkeiten installieren',110000)}if(m==='yarn'){const c=await s.runCommand({cmd:'corepack',args:['enable'],cwd,sudo:true,timeoutMs:15000});if(c.exitCode===0)return runChecked(s,{cmd:'yarn',args:['install'],cwd},'Abhängigkeiten installieren',110000)}return runChecked(s,{cmd:'npm',args:['install','--no-audit','--no-fund','--loglevel=error'],cwd},'Abhängigkeiten installieren',110000)}
+async function runScript(s,cwd,m,script,args=[],detached=false,timeoutMs=120000){const cmd=m==='pnpm'?'pnpm':m==='yarn'?'yarn':'npm',cmdArgs=m==='yarn'?[script,...args]:['run',script,...(args.length?['--',...args]:[])];return s.runCommand({cmd,args:cmdArgs,cwd,detached,env:{NODE_ENV:'production',CI:'1'},timeoutMs:detached?undefined:timeoutMs})}
+async function startServer(s,cwd,meta){const {framework,manager,scripts={}}=meta;if(framework==='next')return scripts.start?runScript(s,cwd,manager,'start',['-p','3000','-H','0.0.0.0'],true):s.runCommand({cmd:'npx',args:['--yes','next','start','-p','3000','-H','0.0.0.0'],cwd,detached:true,env:{NODE_ENV:'production'}});if((framework==='vite'||framework==='astro')&&scripts.preview)return runScript(s,cwd,manager,'preview',['--host','0.0.0.0','--port','3000'],true);const candidates=framework==='cra'?['build']:['dist','build','out','public'],probe=`const fs=require('fs');for(const p of ${JSON.stringify(candidates)})if(fs.existsSync(p)){process.stdout.write(p);break}`,found=await s.runCommand({cmd:'node',args:['-e',probe],cwd,timeoutMs:10000}),dir=await output(found);if(dir)return s.runCommand({cmd:'npx',args:['--yes','serve','-s',dir,'-l','3000'],cwd,detached:true,env:{NODE_ENV:'production'}});if(scripts.dev)return runScript(s,cwd,manager,'dev',framework==='next'?['-p','3000','-H','0.0.0.0']:['--host','0.0.0.0','--port','3000'],true);throw Object.assign(new Error('Kein startbarer Build gefunden. Es braucht ein build-, preview-, start- oder dev-Skript.'),{status:422})}
+async function waitForPreview(url){let html='';for(let i=0;i<40;i++){try{const r=await fetch(url,{redirect:'manual',headers:{'User-Agent':'Prompt.ai Sandbox Preview'}});html=await r.text();if(r.status<500)return {status:r.status,html:html.slice(0,30000)}}catch{}await sleep(1000)}throw Object.assign(new Error('Der Build lief durch, aber der Vorschau-Server wurde nicht rechtzeitig erreichbar.'),{status:504})}
+module.exports=async function sandboxBuild(req,res){res.setHeader('Cache-Control','no-store, private');if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});if(!rateLimit(req,res,{key:'sandbox-build',limit:2,windowMs:10*60*1000}))return;let sandbox=null;try{const user=await authenticatedUser(req),ent=await getEntitlements(req);if(!(ent.isAdmin||['pro','ultimate'].includes(ent.plan)))return res.status(403).json({error:'Der isolierte Quellcode-Build ist ab Pro verfügbar.'});const storagePath=String(req.body?.storagePath||''),githubRepo=String(req.body?.githubRepo||'');let archive,source='Upload';if(githubRepo){const got=await downloadGithub(req,githubRepo,req.body?.githubRef);archive=got.bytes;source=got.source}else{if(!validOwnedPath(storagePath,user.id))return res.status(400).json({error:'Ungültiger Projektpfad.'});archive=await downloadArchive(req,storagePath)}const full=ent.isAdmin||ent.plan==='ultimate',timeoutMs=full?15*60*1000:10*60*1000,Sandbox=await sandboxSdk();sandbox=await Sandbox.create({runtime:'node24',resources:{vcpus:full?2:1},ports:[3000],timeout:timeoutMs,persistent:false,env:{CI:'1'},networkPolicy:'allow-all',tags:{app:'prompt-ai',tier:ent.isAdmin?'admin':ent.plan}});await sandbox.mkDir('/vercel/sandbox/app');await sandbox.writeFiles([{path:'/vercel/sandbox/project.zip',content:archive}]);const archiveFiles=await validateArchive(sandbox);await runChecked(sandbox,{cmd:'unzip',args:['-q','/vercel/sandbox/project.zip','-d','/vercel/sandbox/app']},'ZIP entpacken',30000);const f=await runChecked(sandbox,{cmd:'bash',args:['-lc',"find /vercel/sandbox/app -maxdepth 6 -name package.json -not -path '*/node_modules/*' -not -path '*/.next/*' -print | head -n 1"]},'Projektwurzel suchen',15000),packagePath=await output(f);if(!packagePath)throw Object.assign(new Error('Im Projekt wurde keine package.json gefunden. Für statische HTML-Projekte bitte die lokale Live-Vorschau verwenden.'),{status:422});const cwd=packagePath.replace(/\/package\.json$/,''),meta=await projectMeta(sandbox,cwd);await installDependencies(sandbox,cwd,meta.manager);let buildLog='Kein build-Skript vorhanden; Vorschau startet direkt.';if(meta.scripts?.build){const b=await runScript(sandbox,cwd,meta.manager,'build',[],false,120000);if(b.exitCode!==0)throw Object.assign(new Error(`Build fehlgeschlagen.\n${clip((await output(b,'stderr'))||(await output(b)),8000)}`),{status:422});buildLog=clip(await output(b),5000)}await startServer(sandbox,cwd,meta);const previewUrl=sandbox.domain(3000),ready=await waitForPreview(previewUrl);return res.status(200).json({ok:true,previewUrl,sandboxId:sandbox.name||'',expiresAt:new Date(Date.now()+timeoutMs).toISOString(),framework:meta.framework,projectName:meta.name||'',source,httpStatus:ready.status,analysisSample:ready.html,buildLog,archiveFiles:archiveFiles.slice(0,120)})}catch(error){if(sandbox)try{await sandbox.stop()}catch{}return res.status(Number(error?.status)||500).json({error:error?.message||'Quellprojekt konnte nicht gebaut werden.'})}}

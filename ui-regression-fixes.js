@@ -1,118 +1,14 @@
 (()=>{
   'use strict';
-  const STATE_KEY='sitebrief-v6-state';
-  const ADMIN_EMAIL='service.battermann@gmx.de';
-  let shieldShown=false,cloudBundleWrapped=false;
-
-  function injectStyles(){
-    if(document.getElementById('promptRegressionStyles'))return;
-    const style=document.createElement('style');
-    style.id='promptRegressionStyles';
-    style.textContent=`
-      :root{--upgrade:#e9781f;--upgrade-ink:#fff}html[data-theme="dark"]{--upgrade:#ff9638;--upgrade-ink:#15100b}
-      .upgrade-btn,#upgradeMenuBtn{border:1px solid color-mix(in srgb,var(--upgrade) 82%,#000)!important;background:var(--upgrade)!important;color:var(--upgrade-ink)!important;border-radius:12px!important;min-height:38px!important;padding:0 15px!important;font-weight:850!important;text-decoration:none!important;box-shadow:0 9px 24px color-mix(in srgb,var(--upgrade) 28%,transparent)!important}
-      .upgrade-btn:hover,#upgradeMenuBtn:hover{background:color-mix(in srgb,var(--upgrade) 88%,#fff)!important;color:var(--upgrade-ink)!important;transform:translateY(-1px)}
-      .auth-plan-heading,.auth-plan-grid{display:none!important}
-      .auth-subscribe-compact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;margin:0 0 14px;padding:15px 16px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--accent) 6%,var(--surface))}
-      .auth-subscribe-compact span,.auth-subscribe-compact strong,.auth-subscribe-compact small{display:block}.auth-subscribe-compact span{font-size:8px;font-weight:800;letter-spacing:.12em;color:var(--accent)}.auth-subscribe-compact strong{margin:4px 0 3px;font-size:15px}.auth-subscribe-compact small{color:var(--muted);font-size:9px;line-height:1.45}.auth-subscribe-compact button{min-width:118px}
-      .account-dialog.auth-transitioning #accountLoggedIn{display:none!important}.account-dialog.auth-transitioning #accountLoggedOut{display:block!important}
-      .prompt-reload-shield{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;background:var(--paper,#090c0a);color:var(--ink,#fff);pointer-events:none}.prompt-reload-shield img{width:min(58vw,440px);height:min(58vw,440px);max-height:62dvh;object-fit:contain;filter:drop-shadow(0 20px 46px rgba(0,0,0,.22))}
-      @media(max-width:820px){
-        #plansDialog{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:5px!important;overflow:hidden!important;background:transparent!important}
-        #plansDialog .dialog-frame{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;border-radius:18px!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important}
-        #plansDialog .dialog-head{flex:0 0 auto!important;padding:16px 17px!important}
-        #plansDialog .plans-grid{display:block!important;flex:0 0 auto!important;width:100%!important;max-height:none!important;overflow:visible!important;padding:14px 12px 24px!important}
-        #plansDialog .plan-card{width:100%!important;max-height:none!important;overflow:visible!important;margin:0 0 12px!important}
-        #plansDialog .plan-card-detail{max-height:none!important;overflow:visible!important;padding-bottom:18px!important}
-        #plansDialog .plan-card-detail button{position:relative!important;z-index:1!important}
-        #plansDialog .dialog-frame>:last-child{margin-bottom:max(28px,env(safe-area-inset-bottom))!important}
-      }
-      @media(max-width:520px){.auth-subscribe-compact{grid-template-columns:1fr}.auth-subscribe-compact button{width:100%}.upgrade-btn{min-height:36px!important;padding:0 12px!important}}
-    `;
-    document.head.appendChild(style);
-  }
-
-  function compactAccountPlans(){
-    const card=document.querySelector('.auth-access-card');if(!card)return;
-    document.querySelector('.auth-plan-heading')?.remove();document.querySelector('.auth-plan-grid')?.remove();
-    if(card.querySelector('.auth-subscribe-compact'))return;
-    const box=document.createElement('div');box.className='auth-subscribe-compact';box.innerHTML='<div><span>MEHR FUNKTIONEN</span><strong>Lieber direkt mit einem Abo starten?</strong><small>Pro und Ultimate bleiben auf einer eigenen Tarifseite und stören die Anmeldung nicht mehr.</small></div><button type="button" class="solid-btn" id="accountSubscribeBtn">Abonnieren</button>';
-    card.insertBefore(box,card.firstChild);
-    box.querySelector('button')?.addEventListener('click',()=>{const account=document.getElementById('accountDialog');if(account?.open)account.close();setTimeout(()=>document.getElementById('plansDialog')?.showModal(),0)});
-  }
-
-  function protectLoginTransition(){
-    const dialog=document.getElementById('accountDialog'),message=document.getElementById('authMessage');if(!dialog)return;
-    ['signInBtn','signUpBtn'].forEach(id=>document.getElementById(id)?.addEventListener('click',()=>dialog.classList.add('auth-transitioning'),true));
-    dialog.addEventListener('close',()=>dialog.classList.remove('auth-transitioning'));
-    if(message)new MutationObserver(()=>{if(message.classList.contains('error'))dialog.classList.remove('auth-transitioning')}).observe(message,{attributes:true,childList:true,subtree:true});
-  }
-
-  function showReloadShield(){
-    if(shieldShown||document.querySelector('.prompt-reload-shield'))return;shieldShown=true;
-    const shield=document.createElement('div');shield.className='prompt-reload-shield';shield.setAttribute('aria-hidden','true');shield.innerHTML='<img src="./sitebrief-logo.svg?v=4" alt="">';document.body.appendChild(shield);
-    try{shield.getBoundingClientRect()}catch{}
-  }
-
-  function protectReloads(){
-    const nativeRemove=Storage.prototype.removeItem;
-    Storage.prototype.removeItem=function(key){if(this===localStorage&&String(key)===STATE_KEY)showReloadShield();return nativeRemove.call(this,key)};
-    window.addEventListener('pageshow',()=>{document.querySelector('.prompt-reload-shield')?.remove();shieldShown=false});
-  }
-
-  function applyPricing(pricing){
-    if(!pricing)return;
-    const set=(selector,value)=>document.querySelectorAll(selector).forEach(node=>{if(value)node.textContent=value});
-    set('#proPriceLabel,[data-public-price="pro"]',pricing.pro);
-    set('#ultimatePriceLabel,[data-public-price="ultimate"]',pricing.ultimate);
-    const addon=document.getElementById('apiAddonCard')?.querySelector('b');if(addon&&pricing.apiKeys)addon.textContent=pricing.apiKeys;
-    if(pricing.singleReview){const inline=document.getElementById('buyReviewInlineBtn'),buy=document.getElementById('buySingleReviewBtn'),note=document.querySelector('.single-check-note>strong');if(inline)inline.textContent=`Erweitert für ${pricing.singleReview}`;if(buy)buy.textContent=`Einmalig für ${pricing.singleReview} prüfen`;if(note)note.textContent=`Erweiterte Prüfung für ein Projekt – ${pricing.singleReview}`}
-  }
-  function applyPublicConfig(data){
-    if(!window.SiteBriefCloud?.config||!data)return;
-    Object.assign(window.SiteBriefCloud.config,{previewRoutes:data.previewRoutes||[],previewProviders:data.previewProviders||[],systemAiRoutes:data.systemAiRoutes||[],systemAiProviders:data.systemAiProviders||[],learningHints:data.learningHints||[]});
-  }
-  async function refreshPricing(){try{const response=await fetch('/api/config',{cache:'no-store'}),data=await response.json();applyPublicConfig(data);applyPricing(data.pricing)}catch{}}
-  function watchPricing(){
-    refreshPricing();
-    ['plansDialog','settingsDialog','accountDialog'].forEach(id=>{const dialog=document.getElementById(id);if(!dialog)return;new MutationObserver(()=>{if(dialog.open)refreshPricing()}).observe(dialog,{attributes:true,attributeFilter:['open']})});
-  }
-
-  function isOwnerAccount(){return String(window.SiteBriefCloud?.user?.email||'').trim().toLowerCase()===ADMIN_EMAIL}
-  function enforceAdminOwner(){
-    const button=document.getElementById('adminBtn'),dialog=document.getElementById('adminDialog');if(!button)return;
-    const owner=isOwnerAccount();if(button.hidden===owner)button.hidden=!owner;if(!owner&&dialog?.open)dialog.close();
-  }
-  function protectAdminUi(){
-    const button=document.getElementById('adminBtn');if(!button)return;
-    enforceAdminOwner();
-    window.addEventListener('sitebrief:admin',()=>queueMicrotask(enforceAdminOwner));
-    const observer=new MutationObserver(enforceAdminOwner);observer.observe(button,{attributes:true,attributeFilter:['hidden','style','class']});
-    window.SiteBriefCloud?.subscribe?.(()=>queueMicrotask(enforceAdminOwner));
-  }
-
-  async function normalizeAccess(bundle,cloud){
-    const sub=bundle.subscription||{},active=['active','trialing'].includes(sub.status),plan=active&&['pro','ultimate'].includes(sub.plan)?sub.plan:'free';let ownApiKeys=plan==='ultimate';
-    if(plan==='pro'&&cloud.user&&cloud.client){
-      try{const {data}=await cloud.client.from('sitebrief_addons').select('addon,status').eq('user_id',cloud.user.id).eq('addon','own_api_keys').maybeSingle();ownApiKeys=['active','trialing'].includes(data?.status)}catch{ownApiKeys=false}
-    }
-    bundle.subscription={...sub,plan,isAdmin:false,ownApiKeys};
-    const personal=Array.isArray(bundle.aiConnections)?bundle.aiConnections.filter(x=>!x.system):[],config=cloud.config||{},providers=[...new Set([...(config.previewProviders||[]),...(config.systemAiProviders||[])])],merged=[...personal];
-    for(const provider of providers)if(provider&&!merged.some(x=>x.provider===provider))merged.push({provider,last4:'zentral',updated_at:null,system:true});
-    bundle.aiConnections=merged;
-    window.PromptAiAccess={plan,ownApiKeys,isAdmin:isOwnerAccount(),hasPersonalAi:personal.length>0};
-    queueMicrotask(()=>{enforceAdminOwner();window.dispatchEvent(new CustomEvent('promptai:access',{detail:window.PromptAiAccess}))});
-    return bundle;
-  }
-
-  async function enableCentralProviders(){
-    if(cloudBundleWrapped||!window.SiteBriefCloud?.loadUserBundle)return;cloudBundleWrapped=true;
-    try{const response=await fetch('/api/config',{cache:'no-store'}),data=await response.json();applyPublicConfig(data)}catch{}
-    const cloud=window.SiteBriefCloud,native=cloud.loadUserBundle.bind(cloud);
-    cloud.loadUserBundle=async(...args)=>normalizeAccess(await native(...args),cloud);
-    if(cloud.user)queueMicrotask(()=>cloud.emit?.('auth',{user:cloud.user,authEvent:'TOKEN_REFRESHED'}));
-  }
-
-  function init(){injectStyles();compactAccountPlans();protectLoginTransition();protectReloads();watchPricing();protectAdminUi();enableCentralProviders()}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+  const ADMIN_EMAIL='service.battermann@gmx.de',$=(s,r=document)=>r.querySelector(s);
+  function styles(){if($('#promptRegressionStyles'))return;const s=document.createElement('style');s.id='promptRegressionStyles';s.textContent=`:root{--upgrade:#e9781f;--upgrade-ink:#fff}html[data-theme="dark"]{--upgrade:#ff9638;--upgrade-ink:#15100b}.upgrade-btn,#upgradeMenuBtn{border:1px solid color-mix(in srgb,var(--upgrade) 82%,#000)!important;background:var(--upgrade)!important;color:var(--upgrade-ink)!important;border-radius:12px!important;min-height:38px!important;padding:0 15px!important;font-weight:850!important;text-decoration:none!important;box-shadow:0 9px 24px color-mix(in srgb,var(--upgrade) 28%,transparent)!important}.auth-plan-heading,.auth-plan-grid{display:none!important}.auth-subscribe-compact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;margin:0 0 14px;padding:15px 16px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--accent) 6%,var(--surface))}.auth-subscribe-compact span,.auth-subscribe-compact strong,.auth-subscribe-compact small{display:block}.auth-subscribe-compact span{font-size:8px;font-weight:800;letter-spacing:.12em;color:var(--accent)}.auth-subscribe-compact strong{margin:4px 0 3px;font-size:15px}.auth-subscribe-compact small{color:var(--muted);font-size:9px;line-height:1.45}.account-dialog.auth-transitioning #accountLoggedIn{display:none!important}.account-dialog.auth-transitioning #accountLoggedOut{display:block!important}@media(max-width:820px){#plansDialog{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:5px!important;overflow:hidden!important;background:transparent!important}#plansDialog .dialog-frame{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;border-radius:18px!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important}#plansDialog .dialog-head{flex:0 0 auto!important;padding:16px 17px!important}#plansDialog .plans-grid{display:block!important;flex:0 0 auto!important;width:100%!important;max-height:none!important;overflow:visible!important;padding:14px 12px 24px!important}#plansDialog .plan-card{width:100%!important;max-height:none!important;overflow:visible!important;margin:0 0 12px!important}#plansDialog .plan-card-detail{max-height:none!important;overflow:visible!important;padding-bottom:18px!important}#plansDialog .dialog-frame>:last-child{margin-bottom:max(28px,env(safe-area-inset-bottom))!important}}@media(max-width:520px){.auth-subscribe-compact{grid-template-columns:1fr}.auth-subscribe-compact button{width:100%}.upgrade-btn{min-height:36px!important;padding:0 12px!important}}`;document.head.appendChild(s)}
+  function compactPlans(){const card=$('.auth-access-card');if(!card)return;$('.auth-plan-heading')?.remove();$('.auth-plan-grid')?.remove();if($('.auth-subscribe-compact',card))return;const box=document.createElement('div');box.className='auth-subscribe-compact';box.innerHTML='<div><span>MEHR FUNKTIONEN</span><strong>Lieber direkt mit einem Abo starten?</strong><small>Pro und Ultimate findest du auf der aufgeräumten Tarifseite.</small></div><button type="button" class="upgrade-btn" id="accountSubscribeBtn">Abonnieren</button>';card.insertBefore(box,card.firstChild);$('#accountSubscribeBtn').onclick=()=>{$('#accountDialog')?.close();setTimeout(()=>$('#plansDialog')?.showModal(),0)}}
+  function loginTransition(){const d=$('#accountDialog'),m=$('#authMessage');if(!d)return;['signInBtn','signUpBtn'].forEach(id=>$(`#${id}`)?.addEventListener('click',()=>d.classList.add('auth-transitioning'),true));d.addEventListener('close',()=>d.classList.remove('auth-transitioning'));if(m)new MutationObserver(()=>{if(m.classList.contains('error'))d.classList.remove('auth-transitioning')}).observe(m,{attributes:true,childList:true,subtree:true})}
+  function applyPricing(p){if(!p)return;const set=(q,v)=>document.querySelectorAll(q).forEach(n=>{if(v)n.textContent=v});set('#proPriceLabel,[data-public-price="pro"]',p.pro);set('#ultimatePriceLabel,[data-public-price="ultimate"]',p.ultimate);const addon=$('#apiAddonCard b');if(addon&&p.apiKeys)addon.textContent=p.apiKeys;if(p.singleReview){if($('#buyReviewInlineBtn'))$('#buyReviewInlineBtn').textContent=`Erweitert für ${p.singleReview}`;if($('#buySingleReviewBtn'))$('#buySingleReviewBtn').textContent=`Einmalig für ${p.singleReview} prüfen`;const note=$('.single-check-note>strong');if(note)note.textContent=`Erweiterte Prüfung für ein Projekt – ${p.singleReview}`}}
+  function applyConfig(data){if(!window.SiteBriefCloud?.config||!data)return;Object.assign(window.SiteBriefCloud.config,data);applyPricing(data.pricing)}
+  async function refreshConfig(){try{const existing=window.SiteBriefCloud?.config;if(existing?.pricing)applyPricing(existing.pricing);const r=await fetch('/api/config',{cache:'no-store'}),data=await r.json();applyConfig(data)}catch{}}
+  function pricingWatch(){applyPricing(window.SiteBriefCloud?.config?.pricing);['plansDialog','settingsDialog','accountDialog'].forEach(id=>{const d=$(`#${id}`);if(d)new MutationObserver(()=>{if(d.open)refreshConfig()}).observe(d,{attributes:true,attributeFilter:['open']})})}
+  function adminUi(){const b=$('#adminBtn'),d=$('#adminDialog'),owner=String(window.SiteBriefCloud?.user?.email||'').trim().toLowerCase()===ADMIN_EMAIL;if(b)b.hidden=!owner;if(!owner&&d?.open)d.close()}
+  function init(){styles();compactPlans();loginTransition();pricingWatch();adminUi();refreshConfig();window.addEventListener('sitebrief:admin',adminUi);window.SiteBriefCloud?.subscribe?.(()=>queueMicrotask(adminUi))}
+  styles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
