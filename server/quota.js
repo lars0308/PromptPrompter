@@ -28,7 +28,8 @@ function metricResult(limit,used){return {limit,used,remaining:Math.max(0,limit-
 function nextResetText(value){return new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Europe/Berlin'}).format(new Date(value))}
 
 async function usageRows(userId,start,end){
-  const path=`/rest/v1/sitebrief_usage_events?select=action&user_id=eq.${encodeURIComponent(userId)}&success=eq.true&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=2000`;
+  const actions=Object.values(METRIC_ACTIONS).join(',');
+  const path=`/rest/v1/sitebrief_usage_events?select=action&user_id=eq.${encodeURIComponent(userId)}&success=eq.true&action=in.(${encodeURIComponent(actions).replace(/%2C/g,',')})&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=2000`;
   return (await serviceFetch(path)).data||[];
 }
 
