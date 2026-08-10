@@ -28,18 +28,20 @@ test('simple intake goes straight to references for guided and auto but not expe
   const src=await text('streamlined-project-flow.js');
   const start=await text('project-start-ui.js');
   assert.match(src,/START_KEY='prompt-ai-v1-simple-start'/);
+  assert.match(src,/PROMPT_START_FLOW_V2/);
   assert.match(src,/intended===\'expert\'/);
-  assert.match(src,/sessionStorage\.removeItem\(START_KEY\)/);
-  assert.match(src,/next\.click\(\)/);
+  assert.match(src,/clearSimpleStart/);
+  assert.match(src,/initialAdvanceInFlight/);
+  assert.match(src,/currentNext\.click\(\)/);
   assert.match(start,/sessionStorage\.setItem\(SIMPLE_START_KEY,'1'\)/);
 });
 
 test('new flow is cached and final polish loads last',async()=>{
-  const loader=await text('admin-console.js'),sw=await text('sw.js'),clean=await text('guided-clean-ui.js'),unified=await text('unified-ui-v1.js'),fix=await text('ux-stability-fix.js'),polish=await text('ui-polish-final.js');
-  const home=loader.indexOf('home-entry-ui.js'),stream=loader.indexOf('streamlined-project-flow.js'),guided=loader.indexOf('guided-clean-ui.js'),allUi=loader.indexOf('unified-ui-v1.js'),ux=loader.indexOf('ux-stability-fix.js'),final=loader.indexOf('ui-polish-final.js');
-  assert.ok(home>=0&&home<stream&&stream<guided&&guided<allUi&&allUi<ux&&ux<final);
-  assert.match(sw,/prompt-ai-shell-v33/);
-  for(const file of ['streamlined-project-flow.js','guided-clean-ui.js','unified-ui-v1.js','subscription-ui.js','ux-stability-fix.js','ui-polish-final.js'])assert.ok(sw.includes(file));
+  const loader=await text('admin-console.js'),sw=await text('sw.js'),clean=await text('guided-clean-ui.js'),unified=await text('unified-ui-v1.js'),fix=await text('ux-stability-fix.js'),polish=await text('ui-polish-final.js'),touch=await text('ui-final-touch.js');
+  const home=loader.indexOf('home-entry-ui.js'),stream=loader.indexOf('streamlined-project-flow.js'),guided=loader.indexOf('guided-clean-ui.js'),allUi=loader.indexOf('unified-ui-v1.js'),ux=loader.indexOf('ux-stability-fix.js'),final=loader.indexOf('ui-polish-final.js'),last=loader.indexOf('ui-final-touch.js');
+  assert.ok(home>=0&&home<stream&&stream<guided&&guided<allUi&&allUi<ux&&ux<final&&final<last);
+  assert.match(sw,/prompt-ai-shell-v34/);
+  for(const file of ['streamlined-project-flow.js','guided-clean-ui.js','unified-ui-v1.js','subscription-ui.js','ux-stability-fix.js','ui-polish-final.js','ui-final-touch.js'])assert.ok(sw.includes(file));
   assert.match(clean,/data-clean-project-flow/);
   assert.match(clean,/Hast du Referenzen/);
   assert.match(clean,/Dein Master-Prompt ist fertig/);
@@ -48,4 +50,5 @@ test('new flow is cached and final polish loads last',async()=>{
   assert.match(fix,/prompt-review-transition/);
   assert.match(polish,/promptMenuIn/);
   assert.match(polish,/free-prompt-generation-stage/);
+  assert.match(touch,/promptFinalMenuBackdrop/);
 });
