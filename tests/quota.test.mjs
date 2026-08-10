@@ -36,9 +36,9 @@ test('website generations are counted server-side only after a successful concep
 test('quota information is shown consistently in plan cards account and subscription management',async()=>{
   const ui=await text('usage-quota-ui.js'),loader=await text('admin-console.js'),sw=await text('sw.js');
   for(const token of ['Monatskontingent','Freie Prompt-Generierungen','Website-Generierungen','KI-Vorschauen','Dein verbleibendes Kontingent','quotaAccountMini','subscriptionQuotaSection','plan-quota-summary','quotaSummaryText'])assert.ok(ui.includes(token),token);
-  assert.match(ui,/100 Prompts/);
-  assert.match(ui,/25 Websites/);
-  assert.match(ui,/50 KI-Vorschauen/);
+  assert.match(ui,/\$\{q\.free_prompts\} Prompts/);
+  assert.match(ui,/\$\{q\.website_generations\} Websites/);
+  assert.match(ui,/\$\{q\.ai_previews\} KI-Vorschauen/);
   assert.match(loader,/usage-quota-ui\.js\?v=20260810-2/);
   assert.ok(sw.includes('usage-quota-ui.js'));
 });
