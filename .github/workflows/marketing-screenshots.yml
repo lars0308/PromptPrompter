@@ -3,7 +3,7 @@ name: Prompt.ai marketing screenshots
 on:
   push:
     paths:
-      - 'scripts/capture-real-ui-fast.mjs'
+      - 'scripts/capture-real-ui-final.mjs'
       - '.github/workflows/marketing-screenshots.yml'
   workflow_dispatch:
 
@@ -28,7 +28,7 @@ jobs:
           python3 -m http.server 4173 >/tmp/prompt-ai-http.log 2>&1 &
           sleep 2
       - name: Capture real UI screenshots
-        run: node scripts/capture-real-ui-fast.mjs
+        run: node scripts/capture-real-ui-final.mjs
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
         with:
