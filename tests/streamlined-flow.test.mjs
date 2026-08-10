@@ -26,15 +26,22 @@ test('auto still stops on a real preview before the prompt',async()=>{
 
 test('simple intake goes straight to references for guided and auto but not expert',async()=>{
   const src=await text('streamlined-project-flow.js');
+  const start=await text('project-start-ui.js');
   assert.match(src,/START_KEY='prompt-ai-v1-simple-start'/);
   assert.match(src,/intended===\'expert\'/);
   assert.match(src,/sessionStorage\.removeItem\(START_KEY\)/);
   assert.match(src,/next\.click\(\)/);
+  assert.match(start,/sessionStorage\.setItem\(SIMPLE_START_KEY,'1'\)/);
 });
 
 test('new flow is cached and loaded after the home entry',async()=>{
-  const loader=await text('admin-console.js'),sw=await text('sw.js');
-  assert.ok(loader.indexOf('home-entry-ui.js')<loader.indexOf('streamlined-project-flow.js'));
-  assert.match(sw,/prompt-ai-shell-v27/);
+  const loader=await text('admin-console.js'),sw=await text('sw.js'),clean=await text('guided-clean-ui.js');
+  const home=loader.indexOf('home-entry-ui.js'),stream=loader.indexOf('streamlined-project-flow.js'),guided=loader.indexOf('guided-clean-ui.js');
+  assert.ok(home>=0&&home<stream&&stream<guided);
+  assert.match(sw,/prompt-ai-shell-v28/);
   assert.match(sw,/streamlined-project-flow\.js/);
+  assert.match(sw,/guided-clean-ui\.js/);
+  assert.match(clean,/data-clean-project-flow/);
+  assert.match(clean,/Hast du Referenzen/);
+  assert.match(clean,/Dein Master-Prompt ist fertig/);
 });
