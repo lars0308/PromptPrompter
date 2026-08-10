@@ -36,15 +36,12 @@ jobs:
                   raise SystemExit(f'{label}: expected exactly 1 match, found {count}')
               return text.replace(old, new, 1)
 
-          # HTML: remove the superseded video onboarding dialog if an older copy is
-          # still present. Current production HTML already has this block removed.
           html = read('index.html')
           html, count = re.subn(r'\n\s*<dialog id="welcomeIntroDialog"\b.*?</dialog>\s*\n','\n',html,count=1,flags=re.S)
-          if count not in (0,1):
+          if count != 1:
               raise SystemExit(f'index.html: legacy welcome dialog matches={count}')
           write('index.html', html)
 
-          # Core JS: remove only references belonging to that deleted legacy dialog.
           app = read('app.js')
           app = replace_once(app, '  const ONBOARDING_KEY = "prompt-ai-welcome-seen-v1";\n', '', 'app onboarding constant')
           app = replace_once(app, ',"welcomeIntroDialog","closeWelcomeIntroBtn","confirmWelcomeIntroBtn"', '', 'app cached legacy intro ids')
@@ -56,8 +53,6 @@ jobs:
           app = replace_once(app,"    if(sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)){sessionStorage.removeItem(CONTINUE_WORKFLOW_KEY);showWorkflow(1);}\n    else setTimeout(showWelcomeIntroOnce,350);","    if(sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)){sessionStorage.removeItem(CONTINUE_WORKFLOW_KEY);showWorkflow(1);}",'app legacy intro init branch')
           write('app.js', app)
 
-          # Loader: keep the new boot intro, migrate the one still-useful route-shield
-          # observer from intro-flow-fix.js, and stop loading that obsolete file.
           admin = read('admin-console.js')
           admin = replace_once(admin, "  const ONBOARDING_KEY='prompt-ai-welcome-seen-v1';\n", '', 'admin onboarding constant')
           admin = replace_once(admin, "    try{localStorage.setItem(ONBOARDING_KEY,'1')}catch{}\n", '', 'admin onboarding write')
@@ -77,8 +72,6 @@ jobs:
           admin = replace_once(admin, '  mountBootIntro();\n', '  preserveInternalRouteReloads();\n  mountBootIntro();\n', 'admin route guard init')
           write('admin-console.js', admin)
 
-          # CSS: remove selectors that existed only for the deleted onboarding dialog,
-          # while preserving shared action and agent dialog declarations.
           css = read('styles.css')
           replacements = {
               '.welcome-intro-dialog,.app-action-dialog,.agent-launch-dialog{': '.app-action-dialog,.agent-launch-dialog{',
@@ -99,38 +92,29 @@ jobs:
           css = '\n'.join(css_lines) + ('\n' if css.endswith('\n') else '')
           write('styles.css', css)
 
-          # Final home layer: remove a proven unused bookkeeping variable only.
           home = read('promptai-home-final.js')
           home = home.replace("  let timer=0,lastTitle='';", "  let timer=0;")
           home = home.replace('    const desired=name?`Willkommen, ${name}.`:\'Willkommen.\';lastTitle=desired;\n', '    const desired=name?`Willkommen, ${name}.`:\'Willkommen.\';\n')
           write('promptai-home-final.js', home)
 
-          # Service worker must no longer cache the removed legacy JS file.
           sw = read('sw.js')
           sw = sw.replace(",'./intro-flow-fix.js'", '').replace(",'/intro-flow-fix.js'", '')
           write('sw.js', sw)
 
-          # Tests now verify the current background-loading intro rather than the old
-          # video/onboarding implementation.
           tests = read('tests/smoke.test.mjs')
           old_test = "test('intro is a logo splash and no longer depends on intro video playback',async()=>{const src=await text('intro-flow-fix.js');assert.match(src,/prompt-logo-splash/);assert.match(src,/sitebrief-logo\\.svg/);assert.match(src,/#278bc2/);assert.match(src,/removeAttribute\\('autoplay'\\)/)});"
           new_test = "test('app boot intro covers background loading without legacy media',async()=>{const src=await text('admin-console.js'),html=await text('index.html'),sw=await text('sw.js');assert.match(src,/promptAppBoot/);assert.match(src,/sitebrief-logo\\.svg/);assert.match(src,/releaseBootIntro/);assert.match(src,/preserveInternalRouteReloads/);assert.doesNotMatch(src,/intro-flow-fix\\.js|welcomeIntroDialog|ONBOARDING_KEY/);assert.doesNotMatch(html,/welcomeIntroDialog|welcome-intro-video|intro\\.(?:webm|mp4)/);assert.doesNotMatch(sw,/intro-flow-fix\\.js/)});"
           tests = replace_once(tests, old_test, new_test, 'legacy intro smoke test')
           write('tests/smoke.test.mjs', tests)
 
-          # Remove files that no longer have a runtime consumer.
           for path in ('intro-flow-fix.js','intro.mp4','intro.webm'):
               p=Path(path)
               if p.exists():
                   p.unlink()
-
-          # The temporary workflow removes itself in the cleanup commit.
           Path('.github/workflows/cleanup-legacy.yml').unlink(missing_ok=True)
 
-          # Safety assertions: legacy onboarding is gone, current intro and all plan /
-          # workflow cores remain.
           runtime = {'index.html':read('index.html'),'styles.css':read('styles.css'),'app.js':read('app.js'),'admin-console.js':read('admin-console.js'),'sw.js':read('sw.js')}
-          forbidden = re.compile(r'welcomeIntroDialog|welcome-intro-video|intro-flow-fix\\.js|intro\\.(?:webm|mp4)|ONBOARDING_KEY')
+          forbidden = re.compile(r'welcomeIntroDialog|welcome-intro-video|intro-flow-fix\.js|intro\.(?:webm|mp4)|ONBOARDING_KEY')
           for name, content in runtime.items():
               if forbidden.search(content):
                   raise SystemExit(f'{name}: legacy onboarding reference remains')
