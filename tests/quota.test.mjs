@@ -20,22 +20,35 @@ test('existing generate endpoint exposes and enforces quota actions without anot
   for(const action of ['quota-summary','quota-check','quota-consume'])assert.ok(router.includes(action));
   assert.match(router,/action==='free-prompt'.*free_prompts/s);
   assert.match(router,/action==='preview-image'.*ai_previews/s);
-  assert.match(router,/action==='concepts'.*website_generations/s);
+  assert.match(router,/action==='concepts'.*websiteConceptRoute/s);
 });
 
-test('website generations count only after a usable preview result',async()=>{
-  const ui=await text('usage-quota-ui.js');
+test('website generations are counted server-side only after a successful concept response',async()=>{
+  const router=await text('api/generate.js'),ui=await text('usage-quota-ui.js');
+  assert.match(router,/websiteConceptRoute/);
+  assert.match(router,/captured\.state\.status<400/);
+  assert.match(router,/consumeWebsiteGeneration\(req\)/);
   assert.match(ui,/watchWebsiteResult/);
   assert.match(ui,/concept-option/);
-  assert.match(ui,/quota-consume/);
-  assert.match(ui,/website_generations/);
+  assert.doesNotMatch(ui,/quotaApi\('quota-consume'/);
 });
 
-test('quota information is shown in plan cards account and subscription management',async()=>{
+test('quota information is shown consistently in plan cards account and subscription management',async()=>{
   const ui=await text('usage-quota-ui.js'),loader=await text('admin-console.js'),sw=await text('sw.js');
-  for(const token of ['Monatskontingent','Freie Prompt-Generierungen','Website-Generierungen','KI-Vorschauen','Dein verbleibendes Kontingent','quotaAccountMini','subscriptionQuotaSection'])assert.ok(ui.includes(token),token);
-  assert.ok(loader.includes('usage-quota-ui.js'));
+  for(const token of ['Monatskontingent','Freie Prompt-Generierungen','Website-Generierungen','KI-Vorschauen','Dein verbleibendes Kontingent','quotaAccountMini','subscriptionQuotaSection','plan-quota-summary','quotaSummaryText'])assert.ok(ui.includes(token),token);
+  assert.match(ui,/100 Prompts/);
+  assert.match(ui,/25 Websites/);
+  assert.match(ui,/50 KI-Vorschauen/);
+  assert.match(loader,/usage-quota-ui\.js\?v=20260810-2/);
   assert.ok(sw.includes('usage-quota-ui.js'));
+});
+
+test('quota queries only load relevant successful monthly usage events',async()=>{
+  const server=await text('server/quota.js');
+  assert.match(server,/success=eq\.true/);
+  assert.match(server,/action=in\.\(/);
+  assert.match(server,/created_at=gte/);
+  assert.match(server,/created_at=lt/);
 });
 
 test('administrators can test without being blocked while normal accounts are enforced',async()=>{
