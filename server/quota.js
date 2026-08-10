@@ -60,7 +60,7 @@ async function assertQuota(req,metric){
 
 async function consumeWebsiteGeneration(req){
   const checked=await assertQuota(req,'website_generations');
-  if(!checked.summary.authenticated||checked.summary.isAdmin||!checked.summary.available)return getQuotaSummary(req);
+  if(!checked.summary.authenticated||!checked.summary.available)return getQuotaSummary(req);
   const user=await authenticatedUser(req);
   await serviceFetch('/rest/v1/sitebrief_usage_events',{method:'POST',headers:{Prefer:'return=minimal'},body:{user_id:user.id,action:METRIC_ACTIONS.website_generations,provider:'prompt-ai',model:'',success:true,error_message:'',project_name:'Website-Projekt',project_type:'Website',project_goal:''}});
   return getQuotaSummary(req);
