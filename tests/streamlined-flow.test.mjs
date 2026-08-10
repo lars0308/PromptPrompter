@@ -8,8 +8,8 @@ const text=p=>readFile(path.join(root,p),'utf8');
 
 test('guided website flow keeps preview and hides technical middle steps',async()=>{
   const src=await text('streamlined-project-flow.js');
-  assert.match(src,/data-prompt-mode=\\"guided\\"/);
-  assert.match(src,/step-nav\[data-step=\\"5\\"\]/);
+  assert.ok(src.includes('data-prompt-mode="guided"'));
+  assert.ok(src.includes('step-nav[data-step="5"]'));
   assert.match(src,/So könnte deine Internetseite aussehen/);
   assert.match(src,/Weiter zur Vorschau/);
   assert.match(src,/Vorschau erstellen/);
@@ -17,7 +17,8 @@ test('guided website flow keeps preview and hides technical middle steps',async(
 
 test('auto still stops on a real preview before the prompt',async()=>{
   const src=await text('streamlined-project-flow.js');
-  assert.match(src,/data-prompt-mode=\\"auto\\".*data-step=\\"6\\"/s);
+  assert.ok(src.includes('data-prompt-mode="auto"'));
+  assert.ok(src.includes('step-nav[data-step="6"]'));
   assert.match(src,/mode\(\)===\'auto\'&&!e\.isTrusted/);
   assert.match(src,/ensureAutoPreview/);
   assert.match(src,/Diese Vorschau übernehmen/);
