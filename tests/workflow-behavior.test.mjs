@@ -85,6 +85,29 @@ test('only one full-screen workflow loader can ever exist; the legacy #flowTrans
   }
 });
 
+test('mode-handoff-fix.js advances step 1 to 2 even while the account/entitlement check is still pending', async () => {
+  const dom = await createWorkflowDom();
+  try {
+    const doc = dom.window.document;
+    doc.getElementById('workflowApp').hidden = false;
+    doc.getElementById('welcomePage').hidden = true;
+    // Simulate the realistic case: the backend access/plan check (Supabase) is still resolving,
+    // which is common on a slow connection and can take several seconds.
+    doc.documentElement.classList.add('prompt-access-pending');
+    doc.documentElement.classList.add('prompt-home-ready');
+    dom.window.sessionStorage.setItem('prompt-ai-mode-handoff-v1', JSON.stringify({
+      mode: 'guided',
+      brief: 'Moderne Internetseite fuer einen Handwerksbetrieb, Leistungen und Kontakt.',
+      createdAt: Date.now(),
+    }));
+    await loadScripts(dom, ['tests/fixtures/mini-engine.js', 'mode-handoff-fix.js']);
+    await wait(1500);
+    assert.equal(doc.querySelector('.step-panel.active').dataset.stepPanel, '2', 'the description-to-references advance must not be gated on the account/entitlement check finishing; that check can legitimately take longer than this on a real connection');
+  } finally {
+    dom.window.close();
+  }
+});
+
 test('mode-flow-ui.js route() never auto-clicks a step button while the user has already left the workflow', async () => {
   const dom = await createWorkflowDom();
   try {

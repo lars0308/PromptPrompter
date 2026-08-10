@@ -58,7 +58,7 @@
     if(!active||finishing)return;
     if(Date.now()-startedAt>FAIL_OPEN_MS){failOpen('Projekt wird geöffnet.');return}
     const workflow=$('#workflowApp');applyBrief(data);applyMode(data);const n=step();if(n>=2){finish(data);return}
-    if(workflow&&!workflow.hidden&&n===1&&!advanceStarted&&applyBrief(data)&&applyMode(data)){const next=$('#stepProject .next-btn');if(next&&!next.disabled){advanceStarted=true;allowAdvance=true;next.click();allowAdvance=false}}
+    if(workflow&&!workflow.hidden&&n===1&&!advanceStarted&&applyBrief(data)){const next=$('#stepProject .next-btn');if(next&&!next.disabled){advanceStarted=true;allowAdvance=true;next.click();allowAdvance=false}}
     if(advanceStarted&&n===1&&Date.now()-startedAt>5000&&retryCount<1){const next=$('#stepProject .next-btn');if(next&&!next.disabled){retryCount++;allowAdvance=true;next.click();allowAdvance=false}}
     timer=setTimeout(()=>tick(data),80)
   }
