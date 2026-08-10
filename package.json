@@ -1,0 +1,8 @@
+{
+  "name": "prompt-prompter",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@vercel/sandbox": "2.9.0"
+  }
+}
