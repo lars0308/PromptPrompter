@@ -104,7 +104,7 @@
   const el = {};
   function cacheElements(){
     [
-      "topbarMenuToggle","topbarMenu","topbarMenuBackdrop","upgradeMenuBtn","modeSwitch","modeDescription",
+      "topbarMenuToggle","topbarMenu","topbarMenuBackdrop","upgradeMenuBtn","subscriptionMenuBtn","modeSwitch","modeDescription",
       "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","clientName","clientType","clientWebsite","clientContact","importClientWebsiteBtn","clientImportStatus","clientSources","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
       "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences",
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
@@ -467,8 +467,8 @@
     if(el.openLibraryBtn)el.openLibraryBtn.hidden=!rules.modules;
     document.querySelectorAll('[data-open-library],[data-mobile-library]').forEach(button=>button.hidden=!rules.modules);
     if(el.workspaceLibraryBtn){el.workspaceLibraryBtn.disabled=!rules.modules;el.workspaceLibraryBtn.textContent=rules.modules?'Bibliothek öffnen':'Pro Variante benötigt';el.workspaceLibraryBtn.title=rules.modules?'':'Die Bibliothek ist ab Pro verfügbar.';el.workspaceLibraryBtn.classList.toggle('plan-disabled',!rules.modules)}
-    if(el.upgradeBtn){el.upgradeBtn.hidden=state.plan!=='free';el.upgradeBtn.textContent='Upgraden'}
-    if(el.upgradeMenuBtn)el.upgradeMenuBtn.hidden=state.plan==='ultimate';
+    if(el.upgradeBtn){el.upgradeBtn.hidden=state.plan!=='free'||state.isAdmin;el.upgradeBtn.textContent='Upgraden'}
+    if(el.upgradeMenuBtn)el.upgradeMenuBtn.hidden=state.plan==='ultimate'||state.isAdmin;
     if(el.buySingleReviewBtn)el.buySingleReviewBtn.hidden=state.plan!=="free"||state.isAdmin;
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
@@ -478,6 +478,7 @@
 
   function updateAccountUi(){
     if(!el.accountBtn) return;
+    if(el.subscriptionMenuBtn)el.subscriptionMenuBtn.hidden=!cloudReady();
     if(!state.cloud.configured){ el.accountBtn.textContent="Cloud nicht verbunden"; setSyncState("Lokal"); return; }
     if(state.cloud.user){
       if(el.openLibraryBtn){el.openLibraryBtn.disabled=false;el.openLibraryBtn.title=""}if(el.generatorEngine)el.generatorEngine.disabled=false;
@@ -1962,7 +1963,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     el.clarificationDialog.querySelector('.close-dialog')?.addEventListener("click",()=>{state.reviewDeferred=true;saveState();renderAiReviewCard();updateGuide();showWelcome()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
-    document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>{el.plansDialog?.close();showWorkflow(1)});el.workspaceNewProjectBtn?.addEventListener('click',startFreshProject);el.workspaceLastProjectBtn?.addEventListener('click',openLastProject);el.upgradeBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.upgradeMenuBtn?.addEventListener('click',()=>el.plansDialog?.showModal());document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
+    document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>{el.plansDialog?.close();showWorkflow(1)});el.workspaceNewProjectBtn?.addEventListener('click',startFreshProject);el.workspaceLastProjectBtn?.addEventListener('click',openLastProject);el.upgradeBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.upgradeMenuBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.subscriptionMenuBtn?.addEventListener('click',()=>window.PromptAiSubscriptionOverview?.open?.());document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
     [el.quickRevisionBtn,el.workspaceRevisionBtn].forEach(button=>button?.addEventListener('click',openQuickRevision));el.workspaceLibraryBtn?.addEventListener('click',()=>openLibrary('projects'));[el.quickRevisionProBlock,el.quickRevisionUltimateBlock].forEach(block=>block?.addEventListener('toggle',()=>{if(block.open&&block.classList.contains('locked')){block.open=false;el.quickRevisionDialog.close();el.plansDialog?.showModal()}}));
 el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBtn?.addEventListener('click',()=>el.agentLaunchDialog.close());el.agentLaunchDialog?.addEventListener('cancel',event=>{event.preventDefault();el.agentLaunchDialog.close()});
     el.scanQuickRevisionBtn?.addEventListener('click',scanAndBuildQuickRevision);el.copyQuickRevisionBtn?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(el.quickRevisionPrompt.value);el.quickRevisionStatus.textContent='Auftrag kopiert.'}catch{el.quickRevisionStatus.textContent='Kopieren war nicht möglich.'}});el.downloadQuickRevisionBtn?.addEventListener('click',()=>downloadText('prompt-ai-website-ueberarbeiten.md',el.quickRevisionPrompt.value,'text/markdown'));el.saveQuickRevisionVariantBtn?.addEventListener('click',saveQuickRevisionVariant);el.quickRevisionVariantSelect?.addEventListener('change',()=>loadQuickRevisionVariant(el.quickRevisionVariantSelect.value));el.deleteQuickRevisionVariantBtn?.addEventListener('click',deleteQuickRevisionVariant);

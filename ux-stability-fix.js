@@ -74,11 +74,11 @@
   function cleanMenu(){
     const menu=$('#topbarMenu');if(!menu)return;
     const reset=$('#resetBtn');if(reset&&!reset.hidden)reset.hidden=true;
-    const projects=$('#openLibraryBtn'),profile=$('#accountBtn'),admin=$('#adminBtn'),settings=$('#openSettingsBtn'),upgrade=$('#upgradeMenuBtn'),signout=$('#signOutBtn');
-    setText(projects,'Projekte');setText(profile,window.SiteBriefCloud?.user?'Profil':'Anmelden');setText(admin,'Verwaltung');setText(settings,'Einstellungen');setText(upgrade,'Upgraden');setText(signout,'Abmelden');
+    const projects=$('#openLibraryBtn'),profile=$('#accountBtn'),subscription=$('#subscriptionMenuBtn'),admin=$('#adminBtn'),settings=$('#openSettingsBtn'),upgrade=$('#upgradeMenuBtn'),signout=$('#signOutBtn');
+    setText(projects,'Projekte');setText(profile,window.SiteBriefCloud?.user?'Profil':'Anmelden');if(subscription)setText(subscription,'Abonnement');setText(admin,'Verwaltung');setText(settings,'Einstellungen');setText(upgrade,'Upgraden');setText(signout,'Abmelden');
     let libraries=$('#menuLibrariesBtn');if(!libraries){libraries=document.createElement('button');libraries.type='button';libraries.id='menuLibrariesBtn';libraries.className='text-btn';libraries.textContent='Bibliotheken';libraries.addEventListener('click',()=>{const source=$('#openLibraryBtn');if(!source||source.hidden)return;source.click();setTimeout(()=>document.querySelector('[data-library-tab="templates"]')?.click(),80)});menu.appendChild(libraries)}
     const hidden=!projects||projects.hidden;if(libraries.hidden!==hidden)libraries.hidden=hidden;
-    if(menu.dataset.promptStructured!=='1'){[$('#installAppBtn'),libraries,projects,profile,admin,settings,upgrade,signout].filter(Boolean).forEach(node=>menu.appendChild(node));menu.dataset.promptStructured='1'}
+    if(menu.dataset.promptStructured!=='1'){[$('#installAppBtn'),libraries,projects,profile,subscription,admin,settings,upgrade,signout].filter(Boolean).forEach(node=>menu.appendChild(node));menu.dataset.promptStructured='1'}
   }
 
   function themeQuick(){
