@@ -39,7 +39,8 @@ test('quota information is shown consistently in plan cards account and subscrip
   assert.match(ui,/\$\{q\.free_prompts\} Prompts/);
   assert.match(ui,/\$\{q\.website_generations\} Websites/);
   assert.match(ui,/\$\{q\.ai_previews\} KI-Vorschauen/);
-  assert.match(loader,/usage-quota-ui\.js\?v=20260810-2/);
+  assert.match(ui,/KI-Vorschauen nicht enthalten/);
+  assert.match(loader,/usage-quota-ui\.js\?v=20260810-3/);
   assert.ok(sw.includes('usage-quota-ui.js'));
 });
 
