@@ -9,6 +9,7 @@
 
   const plan=()=>window.PromptAiAccess?.plan||cache?.plan||'free';
   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const setHtml=(node,value)=>{if(node&&node.innerHTML!==value)node.innerHTML=value};
   const resetDate=value=>value?new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(value)):'zum nächsten Monatsanfang';
   const authHeaders=async()=>await window.SiteBriefCloud?.authHeaders?.()||{};
 
@@ -35,7 +36,7 @@
     return `<strong>Monatskontingent</strong><div class="plan-quota-lines"><div class="plan-quota-line"><span>Freie Prompt-Generierungen</span><b>${q.free_prompts} / Monat</b></div><div class="plan-quota-line"><span>Website-Generierungen</span><b>${q.website_generations} / Monat</b></div><div class="plan-quota-line"><span>KI-Vorschauen</span><b>${ai}</b></div></div><small>Gespeicherte Projekte und vorhandene Ergebnisse bleiben erhalten. Das Kontingent startet jeden Monat neu.</small>`;
   }
   function syncPlanCards(){
-    for(const p of ['free','pro','ultimate']){const detail=$(`[data-plan-card="${p}"] .plan-card-detail`);if(!detail)continue;let box=detail.querySelector('.plan-quota-box');if(!box){box=document.createElement('section');box.className='plan-quota-box';const button=detail.querySelector('#startFreeBtn,#startProCheckoutBtn,#startUltimateCheckoutBtn');button?detail.insertBefore(box,button):detail.appendChild(box)}box.innerHTML=planQuotaHtml(p)}
+    for(const p of ['free','pro','ultimate']){const detail=$(`[data-plan-card="${p}"] .plan-card-detail`);if(!detail)continue;let box=detail.querySelector('.plan-quota-box');if(!box){box=document.createElement('section');box.className='plan-quota-box';const button=detail.querySelector('#startFreeBtn,#startProCheckoutBtn,#startUltimateCheckoutBtn');button?detail.insertBefore(box,button):detail.appendChild(box)}setHtml(box,planQuotaHtml(p))}
   }
 
   function metricHtml(key,item,summary,compact=false){
@@ -47,12 +48,13 @@
     const reset=resetDate(summary.periodEnd);return `<div class="quota-mini-head"><strong>Monatskontingent</strong><small>Reset ${esc(reset)}</small></div><div class="quota-mini-grid">${ORDER.map(k=>metricHtml(k,summary.metrics?.[k],summary,true)).join('')}</div>`;
   }
   function syncAccount(){
-    const host=$('.plan-overview');if(!host)return;let box=$('#quotaAccountMini',host);if(!box){box=document.createElement('div');box.id='quotaAccountMini';box.className='quota-account-mini';host.appendChild(box)}const summary=cache||localSummary();box.innerHTML=accountSummaryHtml(summary);
+    const host=$('.plan-overview');if(!host)return;let box=$('#quotaAccountMini',host);if(!box){box=document.createElement('div');box.id='quotaAccountMini';box.className='quota-account-mini';host.appendChild(box)}const summary=cache||localSummary();setHtml(box,accountSummaryHtml(summary));
   }
   function syncSubscription(){
     const body=$('#subscriptionOverviewBody');if(!body||!body.childElementCount)return;let section=$('#subscriptionQuotaSection',body);if(!section){section=document.createElement('section');section.id='subscriptionQuotaSection';section.className='sub-quota-section';const after=body.querySelector('.sub-trial')||body.querySelector('.sub-hero');if(after)after.insertAdjacentElement('afterend',section);else body.prepend(section)}
     const summary=cache||localSummary(),reset=resetDate(summary.periodEnd),admin=summary.isAdmin?' Dein Administratorkonto wird zum Testen nicht gesperrt.':'';
-    section.innerHTML=`<div class="sub-section-head"><div><span>KI-NUTZUNG DIESEN MONAT</span><h4>Dein verbleibendes Kontingent</h4></div><small>Reset ${esc(reset)}</small></div><div class="sub-quota-card">${ORDER.map(k=>metricHtml(k,summary.metrics?.[k],summary,false)).join('')}</div><p class="sub-quota-note${summary.available===false?' warn':''}">${summary.authenticated===false?'Melde dich an, damit Prompt.ai dein Monatskontingent kontenübergreifend zählen kann.':summary.available===false?'Der Live-Zähler ist gerade nicht erreichbar. Deine Funktionen bleiben verfügbar.':`Am ${esc(reset)} werden die Zähler automatisch auf dein volles Monatskontingent zurückgesetzt.${admin}`}</p>`;
+    const html=`<div class="sub-section-head"><div><span>KI-NUTZUNG DIESEN MONAT</span><h4>Dein verbleibendes Kontingent</h4></div><small>Reset ${esc(reset)}</small></div><div class="sub-quota-card">${ORDER.map(k=>metricHtml(k,summary.metrics?.[k],summary,false)).join('')}</div><p class="sub-quota-note${summary.available===false?' warn':''}">${summary.authenticated===false?'Melde dich an, damit Prompt.ai dein Monatskontingent kontenübergreifend zählen kann.':summary.available===false?'Der Live-Zähler ist gerade nicht erreichbar. Deine Funktionen bleiben verfügbar.':`Am ${esc(reset)} werden die Zähler automatisch auf dein volles Monatskontingent zurückgesetzt.${admin}`}</p>`;
+    setHtml(section,html);
   }
   function renderAll(){syncPlanCards();syncAccount();syncSubscription()}
 
