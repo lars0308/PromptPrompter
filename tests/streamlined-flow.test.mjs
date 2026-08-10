@@ -49,6 +49,6 @@ test('new flow is cached and final polish loads last',async()=>{
   assert.match(fix,/FLOW_ORDER/);
   assert.doesNotMatch(fix,/prompt-review-transition/);
   assert.match(polish,/promptMenuIn/);
-  assert.match(polish,/free-prompt-generation-stage/);
+  assert.doesNotMatch(polish,/free-prompt-generation-stage/);
   assert.match(touch,/promptFinalMenuBackdrop/);
 });

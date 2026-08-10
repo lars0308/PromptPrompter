@@ -31,15 +31,9 @@
       body.prompt-unified-ui .outline-btn,.free-prompt-actions .outline-btn{background:var(--ui-card,var(--surface))!important;border:1px solid var(--prompt-v2-border)!important;color:var(--ink)!important}
       body.prompt-unified-ui .solid-btn:active:not(:disabled),body.prompt-unified-ui .outline-btn:active:not(:disabled),.free-prompt-actions button:active:not(:disabled){transform:scale(.982)!important}
 
-      .prompt-dialog-appbar{position:sticky!important;top:0!important;z-index:120!important;min-height:64px!important;padding:8px max(14px,calc((100vw - 920px)/2))!important;border-bottom:1px solid var(--prompt-v2-border)!important;background:color-mix(in srgb,var(--paper) 94%,transparent)!important;backdrop-filter:blur(18px)!important}
-      .prompt-dialog-brand{gap:9px!important;font-size:17px!important}.prompt-dialog-brand img{width:34px!important;height:34px!important}
-      .prompt-dialog-menu-toggle{width:44px!important;height:44px!important;border:1px solid var(--prompt-v2-border)!important;border-radius:12px!important;background:var(--ui-card,var(--surface))!important}
-      .prompt-dialog-menu-toggle b{height:1.7px!important}
-      .free-prompt-shell.has-prompt-appbar,.simple-intake-shell.has-prompt-appbar{grid-template-rows:auto auto minmax(0,1fr)!important}
       .free-prompt-head{min-height:72px!important;padding:14px max(18px,calc((100vw - 920px)/2))!important;background:var(--paper)!important;backdrop-filter:none!important}
       .free-prompt-head h2{font-size:clamp(23px,4vw,32px)!important}.free-prompt-close{width:42px!important;height:42px!important;border-color:var(--prompt-v2-border)!important}
       .free-prompt-body{padding-top:22px!important}.free-prompt-intro{max-width:760px!important;margin-bottom:18px!important}
-      .prompt-professional-note{display:flex;gap:9px;align-items:flex-start;margin:0 0 20px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--prompt-v2-blue) 20%,var(--prompt-v2-border));border-radius:12px;background:color-mix(in srgb,var(--prompt-v2-blue) 4%,var(--surface));color:var(--muted);font-size:11px;line-height:1.5}.prompt-professional-note b{color:var(--prompt-v2-blue-dark);font-size:12px}
       .free-prompt-result-head{align-items:center!important}.free-prompt-result-head>.free-prompt-actions{margin-top:0!important}.free-prompt-output{border-radius:12px!important;border-color:var(--prompt-v2-border)!important;box-shadow:none!important}
 
       @media(max-width:820px){
@@ -47,7 +41,7 @@
         body.prompt-unified-ui .welcome-hero h1{font-size:clamp(47px,14vw,70px)!important}
         body.prompt-unified-ui #workspaceNewProjectBtn.home-primary,body.prompt-unified-ui #workspaceFreePromptBtn.home-primary{min-height:91px!important;padding:16px 17px!important}
         body.prompt-unified-ui .welcome-quick-actions .home-secondary{min-height:74px!important;padding:14px 16px!important}
-        .prompt-dialog-appbar{padding:8px 12px!important}.free-prompt-head{padding:13px 14px!important}.free-prompt-head h2{font-size:24px!important}.free-prompt-result-head>.free-prompt-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;margin-top:12px!important}.free-prompt-result-head>.free-prompt-actions button{width:100%!important}
+        .free-prompt-head{padding:13px 14px!important}.free-prompt-head h2{font-size:24px!important}.free-prompt-result-head>.free-prompt-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;margin-top:12px!important}.free-prompt-result-head>.free-prompt-actions button{width:100%!important}
       }
     `;document.head.appendChild(s)
   }
@@ -69,19 +63,8 @@
     $$('*',hero).forEach(el=>{const t=(el.textContent||'').trim();if(el!==h1&&el!==kicker&&el!==intro&&(/^Was möchtest du erstellen\??$/i.test(t)||/^Willkommen( zurück)?[,.]?/i.test(t)))el.hidden=true})
   }
 
-  function ensureDialogBar(dialog){
-    const shell=dialog?.querySelector('.free-prompt-shell,.simple-intake-shell');if(!shell||shell.querySelector(':scope > .prompt-dialog-appbar'))return;
-    shell.classList.add('has-prompt-appbar');const bar=document.createElement('div');bar.className='prompt-dialog-appbar';bar.innerHTML='<button type="button" class="prompt-dialog-brand"><img src="./sitebrief-logo.svg?v=4" alt=""><span>Prompt.ai</span></button><button type="button" class="prompt-dialog-menu-toggle" aria-label="Menü öffnen" aria-expanded="false"><i aria-hidden="true"><b></b><b></b><b></b></i></button><div class="prompt-dialog-menu"><button type="button" data-v2-action="#brandHome">Startseite</button><button type="button" data-v2-action="#openLibraryBtn">Bibliotheken</button><button type="button" data-v2-action="#openSettingsBtn">Einstellungen</button><button type="button" data-v2-action="#accountBtn">Konto</button><button type="button" data-v2-action="#upgradeBtn">Tarife</button></div>';shell.prepend(bar);
-    const menu=$('.prompt-dialog-menu',bar),toggle=$('.prompt-dialog-menu-toggle',bar),closeTo=selector=>{try{dialog.close()}catch{}setTimeout(()=>$(selector)?.click(),25)};
-    $('.prompt-dialog-brand',bar).onclick=()=>closeTo('#brandHome');toggle.onclick=()=>{const open=!menu.classList.contains('open');menu.classList.toggle('open',open);toggle.setAttribute('aria-expanded',String(open))};$$('[data-v2-action]',menu).forEach(b=>b.onclick=()=>closeTo(b.dataset.v2Action))
-  }
-
-  function professionalNote(){
-    const body=$('#freePromptDialog .free-prompt-body');if(!body||$('#promptProfessionalNote'))return;const intro=$('.free-prompt-intro',body),note=document.createElement('div');note.id='promptProfessionalNote';note.className='prompt-professional-note';note.innerHTML='<b>✓</b><span>Schreib so, wie du es sagen würdest. Prompt.ai formuliert deine Beschreibung und alle weiteren Angaben fachlich, klar und passend für das gewählte Tool neu – ohne Inhalte hinzuzuerfinden.</span>';intro?.insertAdjacentElement('afterend',note)
-  }
-
   function cleanFreeStatus(){const status=$('#freePromptStatus');if(!status)return;const t=status.textContent||'';if(/Free-Basis-Prompt erstellt/i.test(t)){status.className='free-prompt-status good';status.textContent='Professionell aufbereiteter Free-Prompt erstellt.'}}
-  function settle(){installStyles();normalizeHome();ensureDialogBar($('#freePromptDialog'));ensureDialogBar($('#simpleIntakeDialog'));professionalNote();cleanFreeStatus()}
+  function settle(){installStyles();normalizeHome();cleanFreeStatus()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,20)}
   function bind(){
     document.addEventListener('pointerdown',()=>document.documentElement.classList.remove('prompt-keyboard-focus'),true);

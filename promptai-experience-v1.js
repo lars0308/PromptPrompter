@@ -30,15 +30,10 @@
       body.prompt-unified-ui .welcome-quick-actions>button small{font-size:12px!important;line-height:1.4!important}
       body.prompt-unified-ui #workspaceFreePromptBtn.home-primary:after{top:15px!important;right:16px!important;padding:4px 7px!important;border-radius:999px!important;background:color-mix(in srgb,var(--prompt-v11-blue) 8%,transparent)!important}
 
-      .prompt-dialog-appbar{position:relative;z-index:90;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:66px;padding:8px 14px;border-bottom:1px solid var(--prompt-v11-line);background:color-mix(in srgb,var(--paper) 97%,transparent);backdrop-filter:blur(16px)}
-      .prompt-dialog-brand{display:flex;align-items:center;gap:9px;border:0;background:transparent;color:var(--ink);padding:4px 5px;border-radius:10px;font:inherit;font-weight:800;font-size:17px}.prompt-dialog-brand img{width:34px;height:34px;object-fit:contain}
-      .prompt-dialog-menu-toggle{display:grid;place-items:center;width:46px;height:46px;padding:0;border:1px solid var(--prompt-v11-line);border-radius:12px;background:var(--surface);color:var(--ink)}.prompt-dialog-menu-toggle i{display:grid;gap:4px}.prompt-dialog-menu-toggle b{display:block;width:21px;height:2px;border-radius:99px;background:currentColor}
-      .prompt-dialog-menu{position:absolute;z-index:100;right:12px;top:60px;display:none;width:min(330px,calc(100vw - 24px));padding:9px;border:1px solid var(--prompt-v11-line);border-radius:15px;background:var(--surface);box-shadow:0 22px 60px rgba(15,23,31,.18)}.prompt-dialog-menu.open{display:grid;gap:4px}.prompt-dialog-menu:before{content:'MENÜ';padding:7px 9px 6px;color:var(--prompt-v11-blue);font-size:8px;font-weight:850;letter-spacing:.12em}.prompt-dialog-menu button{min-height:45px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--ink);text-align:left;font:inherit;font-size:13px;font-weight:720}.prompt-dialog-menu button:hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
-      .free-prompt-shell.has-prompt-appbar,.simple-intake-shell.has-prompt-appbar{grid-template-rows:auto auto minmax(0,1fr)!important;position:relative!important}
-      .simple-intake-shell.has-prompt-appbar .simple-intake-brand{display:none!important}
+      .free-prompt-shell,.simple-intake-shell{position:relative}
 
       #freePromptGenerationStage{display:none!important}
-      .prompt-thinking-stage{position:absolute;z-index:75;inset:66px 0 0;display:none;place-items:center;padding:30px 22px;background:var(--paper);color:var(--ink);text-align:center}.prompt-thinking-stage.show{display:grid}.prompt-thinking-stage>div{width:min(570px,100%)}.prompt-thinking-stage .kicker{display:block;color:var(--prompt-v11-blue);font-size:9px;font-weight:850;letter-spacing:.12em}.prompt-thinking-stage strong{display:block;margin-top:8px;font-size:clamp(31px,7vw,48px);line-height:1;letter-spacing:-.05em}.prompt-thinking-copy{margin:23px auto 0;text-align:left;display:grid;gap:13px;max-width:520px}.prompt-thinking-line{position:relative;font-size:clamp(15px,2.8vw,18px);font-weight:650;line-height:1.45;color:var(--ink)}.prompt-thinking-line .fill{position:absolute;inset:0;color:var(--prompt-v11-blue);clip-path:inset(0 100% 0 0);pointer-events:none}.prompt-thinking-stage.running .prompt-thinking-line .fill{animation:promptThinkingFill var(--line-duration) linear var(--line-delay) forwards}@keyframes promptThinkingFill{to{clip-path:inset(0 0 0 0)}}.prompt-thinking-wait{min-height:18px;margin-top:22px;color:var(--muted);font-size:10px;opacity:0;transition:opacity .25s ease}.prompt-thinking-wait.show{opacity:1}.prompt-thinking-stage.error .prompt-thinking-wait{color:var(--danger);opacity:1}
+      .prompt-thinking-stage{position:absolute;z-index:75;inset:0;display:none;place-items:center;padding:30px 22px;background:var(--paper);color:var(--ink);text-align:center}.prompt-thinking-stage.show{display:grid}.prompt-thinking-stage>div{width:min(570px,100%)}.prompt-thinking-stage .kicker{display:block;color:var(--prompt-v11-blue);font-size:9px;font-weight:850;letter-spacing:.12em}.prompt-thinking-stage strong{display:block;margin-top:8px;font-size:clamp(31px,7vw,48px);line-height:1;letter-spacing:-.05em}.prompt-thinking-copy{margin:23px auto 0;text-align:left;display:grid;gap:13px;max-width:520px}.prompt-thinking-line{position:relative;font-size:clamp(15px,2.8vw,18px);font-weight:650;line-height:1.45;color:var(--ink)}.prompt-thinking-line .fill{position:absolute;inset:0;color:var(--prompt-v11-blue);clip-path:inset(0 100% 0 0);pointer-events:none}.prompt-thinking-stage.running .prompt-thinking-line .fill{animation:promptThinkingFill var(--line-duration) linear var(--line-delay) forwards}@keyframes promptThinkingFill{to{clip-path:inset(0 0 0 0)}}.prompt-thinking-wait{min-height:18px;margin-top:22px;color:var(--muted);font-size:10px;opacity:0;transition:opacity .25s ease}.prompt-thinking-wait.show{opacity:1}.prompt-thinking-stage.error .prompt-thinking-wait{color:var(--danger);opacity:1}
       #freePromptDialog.prompt-ai-thinking-active .free-prompt-result{visibility:hidden!important}
 
       @media(max-width:820px){
@@ -51,7 +46,7 @@
         body.prompt-unified-ui .welcome-quick-actions{grid-template-columns:1fr!important}
         body.prompt-unified-ui #workspaceNewProjectBtn.home-primary,body.prompt-unified-ui #workspaceFreePromptBtn.home-primary{min-height:96px!important;padding:17px 18px!important}
         body.prompt-unified-ui .welcome-quick-actions .home-secondary{min-height:78px!important;padding:15px 17px!important}
-        .prompt-dialog-appbar{min-height:62px;padding:7px 12px}.prompt-dialog-brand img{width:32px;height:32px}.prompt-dialog-menu-toggle{width:44px;height:44px}.prompt-thinking-stage{inset:62px 0 0;padding:26px 18px}.prompt-thinking-copy{gap:12px;margin-top:21px}
+        .prompt-thinking-stage{padding:26px 18px}.prompt-thinking-copy{gap:12px;margin-top:21px}
       }
       @media(prefers-reduced-motion:reduce){.prompt-thinking-stage.running .prompt-thinking-line .fill{animation:none!important;clip-path:inset(0 0 0 0)!important}}
     `;document.head.appendChild(s);
@@ -76,21 +71,6 @@
     $$('*',hero).forEach(el=>{if(el!==h1&&el!==kicker&&el!==intro&&/^Willkommen zurück\.?$/i.test((el.textContent||'').trim()))el.hidden=true});
   }
 
-  function closeToAction(dialog,target){dialog?.close?.();setTimeout(()=>$(target)?.click(),30)}
-  function ensureDialogAppbar(dialog){
-    const shell=dialog?.querySelector('.free-prompt-shell,.simple-intake-shell');if(!shell||shell.querySelector(':scope > .prompt-dialog-appbar'))return;
-    shell.classList.add('has-prompt-appbar');
-    const bar=document.createElement('div');bar.className='prompt-dialog-appbar';bar.innerHTML='<button type="button" class="prompt-dialog-brand"><img src="./sitebrief-logo.svg?v=4" alt=""><span>Prompt.ai</span></button><button type="button" class="prompt-dialog-menu-toggle" aria-label="Menü öffnen" aria-expanded="false"><i aria-hidden="true"><b></b><b></b><b></b></i></button><div class="prompt-dialog-menu"><button type="button" data-prompt-action="#brandHome">Startseite</button><button type="button" data-prompt-action="#openLibraryBtn">Bibliotheken</button><button type="button" data-prompt-action="#openSettingsBtn">Einstellungen</button><button type="button" data-prompt-action="#accountBtn">Konto</button><button type="button" data-prompt-action="#upgradeBtn">Tarife</button></div>';
-    shell.prepend(bar);
-    const menu=$('.prompt-dialog-menu',bar),toggle=$('.prompt-dialog-menu-toggle',bar);
-    $('.prompt-dialog-brand',bar).onclick=()=>closeToAction(dialog,'#brandHome');
-    toggle.onclick=()=>{const open=!menu.classList.contains('open');menu.classList.toggle('open',open);toggle.setAttribute('aria-expanded',String(open))};
-    $$('[data-prompt-action]',menu).forEach(btn=>btn.onclick=()=>closeToAction(dialog,btn.dataset.promptAction));
-    dialog.addEventListener('click',e=>{if(!e.target.closest('.prompt-dialog-appbar')){menu.classList.remove('open');toggle.setAttribute('aria-expanded','false')}});
-  }
-
-  function dialogs(){ensureDialogAppbar($('#freePromptDialog'));ensureDialogAppbar($('#simpleIntakeDialog'))}
-
   function thinkingText(){
     return [
       'Ich ordne deine Angaben und erkenne das eigentliche Ziel.',
@@ -107,7 +87,7 @@
   }
   function startThinking(){
     const desc=String($('#freePromptDescription')?.value||'').trim();if(desc.length<12)return;
-    dialogs();const stage=ensureThinking();if(!stage)return;
+    const stage=ensureThinking();if(!stage)return;
     clearTimeout(thinkingTimer);clearTimeout(waitingTimer);thinkingDone=false;thinkingStartedAt=Date.now();thinkingMinMs=durationFor(totalInputLength());
     const lines=thinkingText(),copy=$('.prompt-thinking-copy',stage);copy.innerHTML='';const weights=[.23,.26,.25,.26];let elapsed=0;
     lines.forEach((text,i)=>{const row=document.createElement('div');row.className='prompt-thinking-line';const d=Math.max(650,Math.round(thinkingMinMs*weights[i])),delay=Math.round(elapsed);row.style.setProperty('--line-duration',`${d}ms`);row.style.setProperty('--line-delay',`${delay}ms`);row.innerHTML=`<span>${text}</span><span class="fill" aria-hidden="true">${text}</span>`;copy.appendChild(row);elapsed+=d});
@@ -126,10 +106,10 @@
 
   function bind(){
     if(document.documentElement.dataset.promptExperienceBound==='1')return;document.documentElement.dataset.promptExperienceBound='1';
-    document.addEventListener('click',e=>{if(e.target.closest?.('#freePromptGenerate'))startThinking();setTimeout(()=>{home();dialogs();watchGeneration()},0)},true);
-    window.addEventListener('promptai:access',()=>setTimeout(()=>{home();dialogs()},0));window.addEventListener('pageshow',()=>setTimeout(()=>{home();dialogs()},0));
+    document.addEventListener('click',e=>{if(e.target.closest?.('#freePromptGenerate'))startThinking();setTimeout(()=>{home();watchGeneration()},0)},true);
+    window.addEventListener('promptai:access',()=>setTimeout(home,0));window.addEventListener('pageshow',()=>setTimeout(home,0));
   }
-  function settle(){styles();home();dialogs();watchGeneration()}
+  function settle(){styles();home();watchGeneration()}
   function init(){settle();bind();let n=0;const t=setInterval(()=>{settle();if(++n>20)clearInterval(t)},180)}
   styles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
