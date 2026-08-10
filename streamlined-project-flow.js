@@ -4,6 +4,8 @@
   const PENDING_MODE_KEY='prompt-ai-new-project-mode-v2';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   let lastStep=-1,autoPreviewStarted=false;
+  const setText=(node,value)=>{if(node&&node.textContent!==value)node.textContent=value};
+  const setHtml=(node,value)=>{if(node&&node.innerHTML!==value)node.innerHTML=value};
 
   const mode=()=>$('.mode-switch button.active')?.dataset.mode||'guided';
   const step=()=>Number($('.step-panel.active')?.dataset.stepPanel||0);
@@ -42,22 +44,22 @@
   }
 
   function remember(el,key){if(el&&!el.dataset[key])el.dataset[key]=el.textContent}
-  function restore(el,key){if(el?.dataset[key])el.textContent=el.dataset[key]}
+  function restore(el,key){if(el?.dataset[key])setText(el,el.dataset[key])}
 
   function syncNav(){
     const m=mode(),items=$$('#stepNav .step-nav');for(const item of items){remember(item.querySelector('b'),'originalNumber');remember(item.querySelector('span'),'originalLabel')}
     if(m==='expert'){for(const item of items){restore(item.querySelector('b'),'originalNumber');restore(item.querySelector('span'),'originalLabel')}return}
     const mapping=m==='auto'?{1:['01','Beschreibung'],2:['02','Referenzen'],6:['03','Vorschau'],8:['04','Prompt']}:{1:['01','Beschreibung'],2:['02','Referenzen'],6:['03','Vorschau'],7:['04','Feinschliff'],8:['05','Prompt']};
-    for(const item of items){const v=mapping[Number(item.dataset.step)];if(v){item.querySelector('b').textContent=v[0];item.querySelector('span').textContent=v[1]}}
+    for(const item of items){const v=mapping[Number(item.dataset.step)];if(v){setText(item.querySelector('b'),v[0]);setText(item.querySelector('span'),v[1])}}
   }
 
   function syncCopy(){
     const m=mode(),expert=m==='expert',h2=$('#stepReferences h1'),h6=$('#stepPreviews h1'),h7=$('#stepRefine h1'),h8=$('#stepPrompt h1'),k6=$('#stepPreviews .section-kicker'),k7=$('#stepRefine .section-kicker'),k8=$('#stepPrompt .section-kicker'),next2=$('#stepReferences .next-btn'),back6=$('#stepPreviews .back-btn'),next6=$('#stepPreviews .next-btn'),generate=$('#generateConceptsBtn');
     for(const [el,key] of [[h2,'streamOriginal'],[h6,'streamOriginal'],[h7,'streamOriginal'],[h8,'streamOriginal'],[k6,'streamOriginal'],[k7,'streamOriginal'],[k8,'streamOriginal'],[next2,'streamOriginalHtml'],[back6,'streamOriginalHtml'],[next6,'streamOriginalHtml'],[generate,'streamOriginalHtml']])if(el&&!el.dataset[key])el.dataset[key]=key.endsWith('Html')?el.innerHTML:el.textContent;
-    if(expert){for(const el of [h2,h6,h7,h8,k6,k7,k8])if(el?.dataset.streamOriginal)el.textContent=el.dataset.streamOriginal;for(const el of [next2,back6,next6,generate])if(el?.dataset.streamOriginalHtml)el.innerHTML=el.dataset.streamOriginalHtml;return}
-    h2.textContent='Hast du Referenzen?';h6.textContent='So könnte deine Internetseite aussehen.';k6.textContent='03 — VORSCHAU';
-    if(m==='guided'){h7.textContent='Noch etwas ändern?';k7.textContent='04 — FEINSCHLIFF';h8.textContent='Dein Master-Prompt.';k8.textContent='05 — MASTER-PROMPT'}else{h8.textContent='Dein Master-Prompt.';k8.textContent='04 — MASTER-PROMPT'}
-    next2.innerHTML='Weiter zur Vorschau <i>→</i>';back6.innerHTML='← Referenzen';back6.dataset.back='2';next6.innerHTML=m==='auto'?'Diese Vorschau übernehmen <i>→</i>':'Auswahl verfeinern <i>→</i>';if(generate)generate.textContent='Vorschau erstellen';
+    if(expert){for(const el of [h2,h6,h7,h8,k6,k7,k8])if(el?.dataset.streamOriginal)setText(el,el.dataset.streamOriginal);for(const el of [next2,back6,next6,generate])if(el?.dataset.streamOriginalHtml)setHtml(el,el.dataset.streamOriginalHtml);return}
+    setText(h2,'Hast du Referenzen?');setText(h6,'So könnte deine Internetseite aussehen.');setText(k6,'03 — VORSCHAU');
+    if(m==='guided'){setText(h7,'Noch etwas ändern?');setText(k7,'04 — FEINSCHLIFF');setText(h8,'Dein Master-Prompt.');setText(k8,'05 — MASTER-PROMPT')}else{setText(h8,'Dein Master-Prompt.');setText(k8,'04 — MASTER-PROMPT')}
+    setHtml(next2,'Weiter zur Vorschau <i>→</i>');setHtml(back6,'← Referenzen');if(back6&&back6.dataset.back!=='2')back6.dataset.back='2';setHtml(next6,m==='auto'?'Diese Vorschau übernehmen <i>→</i>':'Auswahl verfeinern <i>→</i>');setText(generate,'Vorschau erstellen');
   }
 
   function maybeSkipInitial(){
@@ -84,7 +86,7 @@
     document.addEventListener('click',e=>{
       const next=e.target.closest?.('#stepPreviews .next-btn');if(!next||mode()==='expert')return;
       if(mode()==='auto'&&!e.isTrusted){e.preventDefault();e.stopImmediatePropagation();return}
-      if(!$$('#conceptGallery .concept-option').length){e.preventDefault();e.stopImmediatePropagation();const status=$('#generationStatus');if(status)status.textContent='Erstelle zuerst eine Vorschau. Ohne Vorschau geht Prompt.ai nicht zum finalen Prompt weiter.';return}
+      if(!$$('#conceptGallery .concept-option').length){e.preventDefault();e.stopImmediatePropagation();setText($('#generationStatus'),'Erstelle zuerst eine Vorschau. Ohne Vorschau geht Prompt.ai nicht zum finalen Prompt weiter.');return}
     },true);
   }
 
@@ -93,7 +95,7 @@
   }
 
   function observe(){
-    new MutationObserver(()=>{clearTimeout(observe._t);observe._t=setTimeout(onStep,40)}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','disabled']});
+    new MutationObserver(()=>{clearTimeout(observe._t);observe._t=setTimeout(onStep,40)}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','hidden','disabled']});
     const timer=setInterval(()=>{wrapSimpleStart();onStep()},120);setTimeout(()=>clearInterval(timer),7000);
     window.addEventListener('promptai:access',()=>setTimeout(onStep,0));window.addEventListener('pageshow',()=>setTimeout(onStep,0));
   }
