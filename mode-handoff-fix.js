@@ -6,9 +6,9 @@
   const PENDING_BRIEF_KEY='prompt-ai-new-project-brief-v1';
   const $=(s,r=document)=>r.querySelector(s);
   let active=false,allowAdvance=false,advanceStarted=false,retryCount=0,timer=0,startedAt=0,sentenceTimer=0,sentenceIndex=0,sentenceStartedAt=0,finishing=false;
-  const MIN_VISIBLE_MS=520;
-  const FAIL_OPEN_MS=6000;
-  const SENTENCE_MS=1020;
+  const MIN_VISIBLE_MS=600;
+  const FAIL_OPEN_MS=4000;
+  const SENTENCE_MS=1400;
   const sentences=['Beschreibung wird übernommen.','Projektweg wird vorbereitet.','Referenzen werden bereitgestellt.'];
 
   function read(){try{return JSON.parse(sessionStorage.getItem(HANDOFF_KEY)||'null')}catch{return null}}
@@ -49,8 +49,9 @@
   function release(box){active=false;clearTimeout(timer);clearInterval(sentenceTimer);clear();box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
   function finish(data){
     if(finishing)return;const elapsed=Date.now()-startedAt,box=$('#promptModeHandoff');if(elapsed<MIN_VISIBLE_MS||!uiReady()){timer=setTimeout(()=>tick(data),70);return}
-    finishing=true;clearInterval(sentenceTimer);const remaining=Math.max(0,Math.min(SENTENCE_MS,SENTENCE_MS-(Date.now()-sentenceStartedAt)));
-    setTimeout(()=>{if(!active)return;const host=$('#promptModeHandoff .prompt-mode-handoff-status'),base=$('.base',host||document),blue=$('.blue',host||document);if(base)base.textContent='Referenzen sind bereit.';if(blue){blue.textContent='Referenzen sind bereit.';blue.style.clipPath='inset(0)'}setTimeout(()=>release(box),240)},remaining)
+    finishing=true;clearInterval(sentenceTimer);
+    setSentence('Referenzen sind bereit.');
+    setTimeout(()=>release(box),SENTENCE_MS+320);
   }
   function failOpen(message){if(finishing)return;finishing=true;clearInterval(sentenceTimer);const box=$('#promptModeHandoff');setSentence(message||'Projekt wird geöffnet.',true);setTimeout(()=>release(box),520)}
 

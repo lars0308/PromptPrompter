@@ -3,7 +3,7 @@
   const $=(s,r=document)=>r.querySelector(s);
   let settleTimer=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false;
   const STEP_STABLE_MS=90;
-  const SENTENCE_MS=1080;
+  const SENTENCE_MS=1400;
 
   const mode=()=>$('.mode-switch button.active')?.dataset.mode||document.documentElement.dataset.promptMode||'guided';
   const currentStep=()=>Number($('.step-panel.active')?.dataset.stepPanel||0);
