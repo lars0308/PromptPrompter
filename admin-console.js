@@ -31,7 +31,7 @@
     bootVisible=true;document.documentElement.classList.add('prompt-app-booting');
     const style=document.createElement('style');style.id='promptAppBootStyle';style.textContent=`
       html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
-      #promptAppBoot{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f5f6f7);color:var(--ink,#171814);opacity:1;transition:opacity .28s ease}
+      #promptAppBoot{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f5f6f7);color:var(--ink,#171814);opacity:1;transition:opacity .28s ease;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       #promptAppBoot.is-leaving{opacity:0;pointer-events:none}
       #promptAppBoot>div{width:min(520px,100%);text-align:center}
       #promptAppBoot img{display:block;width:min(126px,31vw);height:min(126px,31vw);margin:0 auto;object-fit:contain;filter:drop-shadow(0 16px 32px rgba(20,88,129,.10))}

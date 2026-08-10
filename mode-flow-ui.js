@@ -71,7 +71,7 @@
   function activeNext(step){return $(`[data-step-panel="${step}"] .next-btn`)}
   function scheduleRoute(){clearTimeout(autoTimer);autoTimer=setTimeout(route,120)}
   async function route(){
-    const mode=currentMode(),step=currentStep();if(!step||mode==='expert')return;
+    const mode=currentMode(),step=currentStep(),workflow=$('#workflowApp');if(!step||mode==='expert'||!workflow||workflow.hidden)return;
     if(step!==lastStep){lastStep=step;if(step===1)setStatus(mode==='auto'?'Beschreibe dein Projekt':'Erster Schritt: Projekt beschreiben',mode==='auto'?'Danach kannst du optional Referenzen ergänzen. Alles Weitere übernimmt Prompt.ai.':'Danach kannst du Referenzen ergänzen; technische Entscheidungen werden für dich vorbereitet.',false);if(step===2)setStatus('Referenzen sind optional','Website, Screenshots, PDFs oder Hinweise hier ergänzen. Dann weiter – Prompt.ai übernimmt die Auswertung.',false)}
     if(step===3){
       await prepareIntake();setStatus(mode==='auto'?'Projekt wird automatisch geprüft':'KI prüft, ob noch etwas Wichtiges fehlt',mode==='auto'?'Nur bei einem echten Blocker unterbricht Prompt.ai den Ablauf.':'Falls eine Antwort das Ergebnis wirklich verändert, bekommst du eine konkrete Frage.',true);

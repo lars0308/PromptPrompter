@@ -171,13 +171,6 @@
     document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
   }
 
-  function enhanceDialogBackButtons(){
-    $$('.library-dialog .dialog-head').forEach(header=>{
-      if(header.querySelector('.dialog-back'))return;const close=header.querySelector('.close-dialog');if(!close)return;
-      const back=document.createElement('button');back.type='submit';back.className='dialog-back';back.setAttribute('aria-label','Zurück');back.textContent='← Zurück';header.insertBefore(back,close);
-    });
-  }
-
   function initPlanCards(){
     $$('[data-plan-card]').forEach(card=>card.addEventListener('toggle',()=>{if(!card.open)return;$$('[data-plan-card]').forEach(other=>{if(other!==card)other.open=false})}));
   }
@@ -1916,7 +1909,14 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     [el.originality,el.antiSlop,el.motion,el.density].forEach(r=>r.addEventListener("input",()=>{r.nextElementSibling.value=r.value;saveState();updateGuide()}));
     el.generateConceptsBtn.addEventListener("click",generateConcepts);[el.conceptCount,el.previewFormat].forEach(control=>control.addEventListener("change",()=>{saveState();updateGuide()}));
     $$('#quickRefinements button').forEach(b=>b.addEventListener("click",()=>{const t=b.textContent.trim();el.refinementInput.value=el.refinementInput.value.trim()?`${el.refinementInput.value.trim()}, ${t}`:t;el.refinementInput.focus()}));el.applyRefinementBtn.addEventListener("click",applyRefinement);el.clearRefinementsBtn.addEventListener("click",()=>{state.refinements=[];renderRefinementHistory();saveState();updateGuide()});
-    $$('.next-btn').forEach(b=>b.addEventListener("click",async()=>{const next=Number(b.dataset.next);if(state.currentStep===1&&!state.understanding){const ok=await analyzeProject();if(!ok)return;}if(state.currentStep===3&&next===4&&state.engine!=="local"&&state.settings.aiClarifications){const ok=await runProjectReview(false);if(!ok)return;}goStep(next)}));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
+    $$('.next-btn').forEach(b=>b.addEventListener("click",async()=>{
+      const next=Number(b.dataset.next);
+      try{
+        if(state.currentStep===1&&!state.understanding){const ok=await analyzeProject();if(!ok)return;}
+        if(state.currentStep===3&&next===4&&state.engine!=="local"&&state.settings.aiClarifications){const ok=await runProjectReview(false);if(!ok)return;}
+      }catch(err){el.projectValidation.textContent=err?.message||"Es gab ein Problem. Bitte versuch es erneut.";return}
+      goStep(next);
+    }));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
     el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1300)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
@@ -1938,6 +1938,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     el.themeToggleBtn.addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
     el.runAiReviewBtn.addEventListener("click",()=>{if(state.engine!=="local"&&!state.settings.aiClarifications){populateSettingsDialog();el.settingsDialog.showModal();return;}runProjectReview(true)});
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
+    el.clarificationDialog.querySelector('.close-dialog')?.addEventListener("click",()=>{state.reviewDeferred=true;saveState();renderAiReviewCard();updateGuide();showWelcome()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
     document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>{el.plansDialog?.close();showWorkflow(1)});el.workspaceNewProjectBtn?.addEventListener('click',startFreshProject);el.workspaceLastProjectBtn?.addEventListener('click',openLastProject);el.upgradeBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.upgradeMenuBtn?.addEventListener('click',()=>el.plansDialog?.showModal());document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
@@ -1951,7 +1952,6 @@ el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBt
   function init(){
     cacheElements();
     initDialogSystem();
-    enhanceDialogBackButtons();
     initPlanCards();
     initTopbarMenu();
     initPasswordToggles();

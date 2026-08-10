@@ -85,6 +85,28 @@ test('only one full-screen workflow loader can ever exist; the legacy #flowTrans
   }
 });
 
+test('mode-flow-ui.js route() never auto-clicks a step button while the user has already left the workflow', async () => {
+  const dom = await createWorkflowDom();
+  try {
+    const doc = dom.window.document;
+    doc.getElementById('workflowApp').hidden = true;
+    doc.getElementById('welcomePage').hidden = false;
+    setMode(dom, 'auto');
+    setStep(dom, 3);
+    let clicks = 0;
+    doc.querySelector('#stepAgent .next-btn').addEventListener('click', () => clicks++);
+    await loadScripts(dom, ['tests/fixtures/mini-engine.js', 'mode-flow-ui.js']);
+    const dialog = doc.getElementById('clarificationDialog');
+    dialog.setAttribute('open', '');
+    await wait(50);
+    dialog.removeAttribute('open');
+    await wait(500);
+    assert.equal(clicks, 0, 'closing the clarification dialog while #workflowApp is hidden must not resume the auto-advance route and silently push state forward');
+  } finally {
+    dom.window.close();
+  }
+});
+
 test('stability-ui.js restore() defers to an in-flight new-project mode handoff instead of racing it', async () => {
   const control = await createWorkflowDom();
   const guarded = await createWorkflowDom();

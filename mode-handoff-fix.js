@@ -7,7 +7,7 @@
   const $=(s,r=document)=>r.querySelector(s);
   let active=false,allowAdvance=false,advanceStarted=false,retryCount=0,timer=0,startedAt=0,sentenceTimer=0,sentenceIndex=0,sentenceStartedAt=0,finishing=false;
   const MIN_VISIBLE_MS=520;
-  const FAIL_OPEN_MS=16000;
+  const FAIL_OPEN_MS=6000;
   const SENTENCE_MS=1020;
   const sentences=['Beschreibung wird übernommen.','Projektweg wird vorbereitet.','Referenzen werden bereitgestellt.'];
 
@@ -23,7 +23,7 @@
     if($('#promptModeHandoffStyles'))return;
     const s=document.createElement('style');s.id='promptModeHandoffStyles';s.textContent=`
       html.prompt-mode-handoff-active,html.prompt-mode-handoff-active body{overflow:hidden!important}
-      .prompt-mode-handoff{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style}
+      .prompt-mode-handoff{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       .prompt-mode-handoff.is-leaving{opacity:0;pointer-events:none}
       .prompt-mode-handoff>div{width:min(560px,100%);text-align:center}.prompt-mode-handoff .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}.prompt-mode-handoff strong{display:block;margin-top:9px;font-size:clamp(31px,8vw,48px);line-height:1.02;letter-spacing:-.05em}
       .prompt-mode-handoff-status{position:relative;display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;overflow:hidden;transition:opacity .16s ease,transform .16s ease}.prompt-mode-handoff-status.is-changing{opacity:0;transform:translateY(4px)}
@@ -55,10 +55,12 @@
   function failOpen(message){if(finishing)return;finishing=true;clearInterval(sentenceTimer);const box=$('#promptModeHandoff');setSentence(message||'Projekt wird geöffnet.',true);setTimeout(()=>release(box),520)}
 
   function tick(data){
-    if(!active||finishing)return;const workflow=$('#workflowApp');applyBrief(data);applyMode(data);const n=step();if(n>=2){finish(data);return}
+    if(!active||finishing)return;
+    if(Date.now()-startedAt>FAIL_OPEN_MS){failOpen('Projekt wird geöffnet.');return}
+    const workflow=$('#workflowApp');applyBrief(data);applyMode(data);const n=step();if(n>=2){finish(data);return}
     if(workflow&&!workflow.hidden&&n===1&&!advanceStarted&&applyBrief(data)&&applyMode(data)){const next=$('#stepProject .next-btn');if(next&&!next.disabled){advanceStarted=true;allowAdvance=true;next.click();allowAdvance=false}}
     if(advanceStarted&&n===1&&Date.now()-startedAt>5000&&retryCount<1){const next=$('#stepProject .next-btn');if(next&&!next.disabled){retryCount++;allowAdvance=true;next.click();allowAdvance=false}}
-    if(Date.now()-startedAt>FAIL_OPEN_MS){failOpen('Projekt wird geöffnet.');return}timer=setTimeout(()=>tick(data),80)
+    timer=setTimeout(()=>tick(data),80)
   }
   function boot(){styles();const data=read();if(!data?.brief||!data?.mode){document.documentElement.classList.remove('prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();return}claimInitialAdvance();active=true;startedAt=Date.now();document.documentElement.classList.add('prompt-mode-handoff-active');overlay(data);tick(data)}
 

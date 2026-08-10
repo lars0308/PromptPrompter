@@ -49,7 +49,7 @@
       html[data-prompt-mode="auto"] #stepReferences .next-btn:after{content:'→';margin-left:18px;font-size:18px;font-weight:600;line-height:1}
       html.prompt-workflow-loading,html.prompt-workflow-loading body{overflow:hidden!important}
       html.prompt-workflow-loading #guidedCleanHead{visibility:hidden!important}
-      #promptWorkflowLoader{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style}
+      #promptWorkflowLoader{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       #promptWorkflowLoader.is-leaving{opacity:0;pointer-events:none}
       #promptWorkflowLoader>div{width:min(560px,100%);text-align:center}
       #promptWorkflowLoader .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}
