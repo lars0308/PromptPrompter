@@ -724,6 +724,8 @@
     document.getElementById('welcomePage').hidden=false;document.getElementById('workflowApp').hidden=true;if(el.modeSwitch)el.modeSwitch.hidden=true;window.scrollTo({top:0,behavior:'smooth'});renderCloudProjects();
   }
 
+  function workflowIsOpen(){const app=document.getElementById('workflowApp');return Boolean(app) && !app.hidden;}
+
   function quickRevisionVariants(){
     let local=[];try{const value=JSON.parse(localStorage.getItem(QUICK_REVISION_VARIANTS_KEY)||'[]');local=Array.isArray(value)?value:[]}catch{}
     const library=state.templates.filter(item=>item.quickRevision).map(item=>({id:item.id,name:item.name,prompt:item.prompt,url:item.url||'',updatedAt:item.updatedAt||''}));const merged=new Map([...local,...library].map(item=>[item.id,item]));return [...merged.values()].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
@@ -1071,7 +1073,7 @@
     if(!force && state.projectReview && state.reviewSignature===sig){
       const unanswered=(state.projectReview.questions||[]).filter(q=>q.required && !state.clarifications.some(a=>a.question===q.question && a.answer?.trim()));
       const hasAnyUnresolved=(state.projectReview.questions||[]).length && !state.reviewDeferred && !state.clarifications.some(a=>a.answer?.trim());
-      if(unanswered.length || hasAnyUnresolved){renderClarificationDialog(state.projectReview);return false;}
+      if(unanswered.length || hasAnyUnresolved){if(workflowIsOpen())renderClarificationDialog(state.projectReview);return false;}
       return !(state.settings.criticalBehavior==="block" && (state.projectReview.blockers||[]).length && !state.clarifications.some(a=>a.answer?.trim()));
     }
     el.aiReviewTitle.textContent="Projekt wird geprüft…";el.runAiReviewBtn.disabled=true;startTaskProgress("review",18);
@@ -1090,9 +1092,9 @@
         const blocker=review.blockers[0],blockerArea=(blocker.area||"").trim(),blockerMessage=(blocker.message||"").trim();
         review.questions.unshift({id:uid("q"),question:blockerArea?`Wie soll mit dem Punkt „${blockerArea}" umgegangen werden?`:"Wie soll mit dem offenen kritischen Punkt umgegangen werden?",reason:blockerMessage||(blockerArea?`Der Bereich „${blockerArea}" wurde als nicht umsetzbar markiert, ohne nähere Begründung. Bitte im Prüfergebnis oben nachsehen oder die Beschreibung ergänzen.`:"Ein kritischer Punkt wurde ohne nähere Begründung markiert. Bitte die Projektbeschreibung ergänzen und erneut prüfen."),suggestedAnswer:state.settings.suggestAlternatives?(blocker.alternative||""):"",required:true});
       }
-      state.projectReview=review;state.reviewSignature=sig;state.reviewDeferred=false;saveState();renderAiReviewCard();renderClarificationDialog(review);return review.questions.length===0 && !(state.settings.criticalBehavior==="block"&&review.blockers.length);
+      state.projectReview=review;state.reviewSignature=sig;state.reviewDeferred=false;saveState();renderAiReviewCard();if(!workflowIsOpen())return false;renderClarificationDialog(review);return review.questions.length===0 && !(state.settings.criticalBehavior==="block"&&review.blockers.length);
     }catch(err){
-      review=localProjectReview();state.projectReview=review;state.reviewSignature=sig;saveState();renderAiReviewCard();renderClarificationDialog(review);el.clarificationIntro.textContent=`Externe KI-Prüfung war nicht verfügbar (${err.message}). Prompt.ai zeigt deshalb die lokale Grundprüfung.`;return true;
+      review=localProjectReview();state.projectReview=review;state.reviewSignature=sig;saveState();renderAiReviewCard();if(!workflowIsOpen())return false;renderClarificationDialog(review);el.clarificationIntro.textContent=`Externe KI-Prüfung war nicht verfügbar (${err.message}). Prompt.ai zeigt deshalb die lokale Grundprüfung.`;return true;
     }finally{finishTaskProgress("review","Prüfung abgeschlossen");el.runAiReviewBtn.disabled=false;}
   }
 
@@ -1429,31 +1431,36 @@
     const {id,...rest}=c; return rest;
   }
 
+  let conceptsGenerating=false;
   async function generateConcepts(){
-    if(!cloudReady()&&guestRunsRemaining()===0){showAccountGate();return;}
-    if(state.engine!=="local" && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
-      const ready=await runProjectReview(false);
-      if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}
-    }
-    const count=clamp(el.conceptCount.value,3,planRules().concepts); el.generateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";startTaskProgress("preview",cloudReady()?Math.max(24,count*12):4);
-    let concepts=[];
+    if(conceptsGenerating)return;
+    conceptsGenerating=true;
     try{
-      if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
-      else{
-        const payload={action:"concepts",count,engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
-        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"Generator-Anfrage fehlgeschlagen"); concepts=(data.concepts||[]).slice(0,count).map(normalizedConcept);
-        if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
+      if(!cloudReady()&&guestRunsRemaining()===0){showAccountGate();return;}
+      if(state.engine!=="local" && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
+        const ready=await runProjectReview(false);
+        if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}
       }
-      state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
-      if(el.previewFormat.value.startsWith("image-")){
-        const imageProvider=el.previewFormat.value.replace('image-','');const providerLabel=imageProvider==='cloudflare'?'Cloudflare Workers AI':'Gemini';
-        if(cloudReady()&&aiConnection(imageProvider)){
-          const imageResult=await generateConceptImages(imageProvider);el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt; verfügbare ${providerLabel}-Bilder wurden eingesetzt.`:imageResult?.kind==="quota"?`${providerLabel} ist verbunden, aber das Tageskontingent reicht nicht. Die HTML-Vorschauen bleiben vollständig nutzbar.`:"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
-        }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für KI-Bilder muss ${providerLabel} unter Einstellungen → KI-Verbindungen verbunden sein. Bis dahin werden HTML-Vorschauen angezeigt.`;}
-      }else{el.generationStatus.className="generation-status";el.generationStatus.textContent=`${state.concepts.length} echte HTML/CSS-Vorschauen erstellt. Wähle die stärkste Richtung – ohne Bildkontingent und ohne zusätzliche Kosten.`;}
-    }catch(err){
-      state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent=`KI-Verbindung nicht verfügbar (${err.message}). Lokale Vorschauen wurden stattdessen erstellt.`;
-    }finally{finishTaskProgress("preview","Vorschauen fertig");consumeGuestRun();el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
+      const count=clamp(el.conceptCount.value,3,planRules().concepts); el.generateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";startTaskProgress("preview",cloudReady()?Math.max(24,count*12):4);
+      let concepts=[];
+      try{
+        if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
+        else{
+          const payload={action:"concepts",count,engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
+          const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"Generator-Anfrage fehlgeschlagen"); concepts=(data.concepts||[]).slice(0,count).map(normalizedConcept);
+          if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
+        }
+        state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
+        if(el.previewFormat.value.startsWith("image-")){
+          const imageProvider=el.previewFormat.value.replace('image-','');const providerLabel=imageProvider==='cloudflare'?'Cloudflare Workers AI':'Gemini';
+          if(cloudReady()&&aiConnection(imageProvider)){
+            const imageResult=await generateConceptImages(imageProvider);el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt; verfügbare ${providerLabel}-Bilder wurden eingesetzt.`:imageResult?.kind==="quota"?`${providerLabel} ist verbunden, aber das Tageskontingent reicht nicht. Die HTML-Vorschauen bleiben vollständig nutzbar.`:"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
+          }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für KI-Bilder muss ${providerLabel} unter Einstellungen → KI-Verbindungen verbunden sein. Bis dahin werden HTML-Vorschauen angezeigt.`;}
+        }else{el.generationStatus.className="generation-status";el.generationStatus.textContent=`${state.concepts.length} echte HTML/CSS-Vorschauen erstellt. Wähle die stärkste Richtung – ohne Bildkontingent und ohne zusätzliche Kosten.`;}
+      }catch(err){
+        state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent=`KI-Verbindung nicht verfügbar (${err.message}). Lokale Vorschauen wurden stattdessen erstellt.`;
+      }finally{finishTaskProgress("preview","Vorschauen fertig");consumeGuestRun();el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
+    }finally{conceptsGenerating=false;}
   }
 
   async function generateConceptImages(imageProvider="gemini"){

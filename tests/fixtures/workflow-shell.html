@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="de">
+<head><meta charset="utf-8"></head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" id="brandHome"><span class="brand-mark"></span></a>
+    <div class="mode-switch" id="modeSwitch">
+      <button type="button" data-mode="guided" class="active">Geführt</button>
+      <button type="button" data-mode="auto">Auto</button>
+      <button type="button" data-mode="expert">Experte</button>
+    </div>
+    <div class="top-actions">
+      <button type="button" id="upgradeBtn">Upgraden</button>
+      <button type="button" id="topbarMenuToggle" aria-expanded="false"></button>
+      <div class="topbar-menu" id="topbarMenu">
+        <button type="button" id="upgradeMenuBtn" hidden>Upgraden</button>
+        <button type="button" id="installAppBtn" hidden>App installieren</button>
+        <button type="button" id="themeToggleBtn"></button>
+        <button type="button" id="adminBtn" hidden>Verwaltung</button>
+        <button type="button" id="accountBtn">Anmelden</button>
+        <button type="button" id="openLibraryBtn">Bibliotheken</button>
+        <button type="button" id="openSettingsBtn">Einstellungen</button>
+        <button type="button" id="resetBtn">Projekt zurücksetzen</button>
+        <button type="button" id="signOutBtn" hidden>Abmelden</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="welcomePage" class="welcome-page">
+    <section class="welcome-hero"><div><h1></h1></div></section>
+    <section class="welcome-workspace">
+      <div class="welcome-quick-actions">
+        <button type="button" id="workspaceNewProjectBtn">Neues Projekt</button>
+        <button type="button" id="workspaceRevisionBtn">Webseite überarbeiten</button>
+        <button type="button" id="workspaceLastProjectBtn">Letztes Projekt öffnen</button>
+        <button type="button" id="workspaceLibraryBtn">Bibliothek öffnen</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="app-shell" id="workflowApp" hidden>
+    <aside class="progress-rail">
+      <strong id="progressText">1 / 8</strong>
+      <nav id="stepNav">
+        <button type="button" class="step-nav active" data-step="1"><b>01</b><span>Projekt</span></button>
+        <button type="button" class="step-nav" data-step="2"><b>02</b><span>Referenzen</span></button>
+        <button type="button" class="step-nav" data-step="3"><b>03</b><span>Agent</span></button>
+        <button type="button" class="step-nav" data-step="4"><b>04</b><span>Module & Skills</span></button>
+        <button type="button" class="step-nav" data-step="5"><b>05</b><span>Konzept</span></button>
+        <button type="button" class="step-nav" data-step="6"><b>06</b><span>Vorschauen</span></button>
+        <button type="button" class="step-nav" data-step="7"><b>07</b><span>Feinschliff</span></button>
+        <button type="button" class="step-nav" data-step="8"><b>08</b><span>Master-Prompt</span></button>
+      </nav>
+    </aside>
+    <main class="workspace">
+      <div class="mode-description" id="modeDescription"></div>
+      <section class="step-panel active" data-step-panel="1" id="stepProject">
+        <textarea id="projectDescription"></textarea>
+        <div class="step-actions"><button type="button" class="solid-btn next-btn" data-next="2">Referenzen hinzufügen</button></div>
+      </section>
+      <section class="step-panel" data-step-panel="2" id="stepReferences">
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="1">Zurück</button><button type="button" class="solid-btn next-btn" data-next="3">Agent auswählen</button></div>
+      </section>
+      <section class="step-panel" data-step-panel="3" id="stepAgent">
+        <div id="agentSelector"></div>
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="2">Zurück</button><button type="button" class="solid-btn next-btn" data-next="4">Weiter</button></div>
+      </section>
+      <section class="step-panel" data-step-panel="4" id="stepModules">
+        <div id="outputTargetSelector"></div>
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="3">Zurück</button><button type="button" class="solid-btn next-btn" data-next="5">Weiter</button></div>
+      </section>
+      <section class="step-panel" data-step-panel="5" id="stepBlueprint">
+        <div class="controls-strip"></div>
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="4">Zurück</button><button type="button" class="solid-btn next-btn" data-next="6">Weiter</button></div>
+      </section>
+      <section class="step-panel preview-step" data-step-panel="6" id="stepPreviews">
+        <div class="preview-step-head"><h1></h1></div>
+        <div class="preview-generation-controls"><select id="previewFormat"><option value="html">HTML</option></select><select id="conceptCount"><option value="3">3</option></select><button type="button" id="generateConceptsBtn">Vorschau erstellen</button></div>
+        <div id="previewProgress" hidden></div>
+        <div id="conceptGallery"></div>
+        <div id="generationStatus" class="generation-status"></div>
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="2">Zurück</button><button type="button" class="solid-btn next-btn" data-next="7">Weiter</button></div>
+      </section>
+      <section class="step-panel" data-step-panel="7" id="stepRefine">
+        <div id="quickRefinements"></div>
+        <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="6">Zurück</button><button type="button" class="solid-btn next-btn" data-next="8">Weiter</button></div>
+      </section>
+      <section class="step-panel" data-step-panel="8" id="stepPrompt">
+        <textarea id="masterPrompt"></textarea>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="clarificationDialog" class="library-dialog clarification-dialog">
+    <div class="dialog-frame">
+      <div class="dialog-head"><div><span></span><h2></h2></div><button type="button" class="close-dialog">×</button></div>
+      <p id="clarificationIntro"></p>
+      <div id="clarificationWarnings"></div>
+      <div id="clarificationQuestions"></div>
+      <div class="clarification-actions"><button type="button" id="deferClarificationsBtn">Ohne Antwort weiter</button><button type="button" id="saveClarificationsBtn">Weiter</button></div>
+    </div>
+  </dialog>
+</body>
+</html>

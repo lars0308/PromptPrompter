@@ -4,7 +4,7 @@
   const PENDING_MODE_KEY='prompt-ai-new-project-mode-v2';
   const START_FLOW_VERSION='PROMPT_START_FLOW_V2';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  let lastStep=-1,autoPreviewStarted=false,initialAdvanceInFlight=false;
+  let lastStep=-1,autoPreviewStarted=false,initialAdvanceInFlight=false,blueprintSkipTimer=0;
   const setText=(node,value)=>{if(node&&node.textContent!==value)node.textContent=value};
   const setHtml=(node,value)=>{if(node&&node.innerHTML!==value)node.innerHTML=value};
 
@@ -84,7 +84,8 @@
 
   function skipHiddenWork(){
     const m=mode(),n=step();if(m==='expert')return;
-    if(n===5){const next=$('#stepBlueprint .next-btn');if(next&&!next.disabled)setTimeout(()=>next.click(),170);return}
+    if(n!==5&&blueprintSkipTimer){clearTimeout(blueprintSkipTimer);blueprintSkipTimer=0}
+    if(n===5){const next=$('#stepBlueprint .next-btn');if(next&&!next.disabled&&!blueprintSkipTimer)blueprintSkipTimer=setTimeout(()=>{blueprintSkipTimer=0;next.click()},170);return}
     if(m==='auto'&&n===6)ensureAutoPreview();
   }
 

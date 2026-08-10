@@ -47,7 +47,7 @@ test('new flow is cached and final polish loads last',async()=>{
   assert.match(clean,/Dein Master-Prompt ist fertig/);
   assert.match(unified,/prompt-unified-ui/);
   assert.match(fix,/FLOW_ORDER/);
-  assert.match(fix,/prompt-review-transition/);
+  assert.doesNotMatch(fix,/prompt-review-transition/);
   assert.match(polish,/promptMenuIn/);
   assert.match(polish,/free-prompt-generation-stage/);
   assert.match(touch,/promptFinalMenuBackdrop/);

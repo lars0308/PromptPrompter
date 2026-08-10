@@ -80,17 +80,15 @@
     if(step===4){
       setStatus('Passende Regeln werden ausgewählt','Module und Skills werden aus deinem Projektkontext vorbereitet.',true);$('#recommendModulesBtn')?.click();const next=activeNext(4);if(next)setTimeout(()=>next.click(),180);return;
     }
-    if(mode==='auto'&&step===5){setStatus('Blueprint wird aufgebaut','Alle Eingaben, Quellen und automatisch gewählten Startwerte werden zusammengeführt.',true);const next=activeNext(5);if(next)setTimeout(()=>next.click(),180);return}
-    if(mode==='auto'&&step===6){setStatus('KI entwickelt die Richtungen','Die Richtungen werden erzeugt und die erste vollständige Richtung als Arbeitsbasis übernommen.',true);waitForConcepts();return}
+    if(mode==='auto'&&step===6){setStatus('KI entwickelt die Richtungen','Sobald die Richtungen fertig sind, entscheidest du mit einem Klick, ob die Vorschau übernommen wird.',true);waitForConcepts();return}
     if(mode==='auto'&&step===7){setStatus('Master-Prompt wird zusammengesetzt','Die automatisch gewählte Richtung wird mit allen Eingaben und Regeln verbunden.',true);const next=activeNext(7);if(next)setTimeout(()=>next.click(),160);return}
-    if(mode==='guided'&&step===5)setStatus('Prüfe die Zusammenfassung','Hier siehst du, was Prompt.ai aus deinen Angaben verstanden und vorbereitet hat.',false);
     if(mode==='guided'&&step===6)setStatus('Wähle eine Richtung','Prompt.ai erzeugt die Richtungen. Du entscheidest nur noch, welche davon weitergeführt wird.',false);
     if(mode==='guided'&&step===7)setStatus('Gezielt nachschärfen','Nur wenn du möchtest: eine konkrete Änderung ergänzen. Danach entsteht der Master-Prompt.',false);
     if(step===8){appendInputManifest();$('#modeFlowPanel')?.setAttribute('hidden','')}
   }
 
   function waitForConcepts(){
-    const start=Date.now();const check=()=>{if(currentMode()!=='auto'||currentStep()!==6)return;const cards=$$('#conceptGallery .concept-option'),button=$('#generateConceptsBtn'),progress=$('#previewProgress');if(cards.length&&button&&!button.disabled&&(!progress||progress.hidden)){const next=activeNext(6);if(next)setTimeout(()=>next.click(),180);return}if(Date.now()-start<120000)setTimeout(check,450)};check();
+    const start=Date.now();const check=()=>{if(currentMode()!=='auto'||currentStep()!==6)return;const cards=$$('#conceptGallery .concept-option'),button=$('#generateConceptsBtn'),progress=$('#previewProgress');if(cards.length&&button&&!button.disabled&&(!progress||progress.hidden)){setStatus('Vorschau ist bereit','Prüfe die Richtung und übernimm sie mit einem Klick.',false);return}if(Date.now()-start<120000)setTimeout(check,450)};check();
   }
 
   function clarificationWatch(){
