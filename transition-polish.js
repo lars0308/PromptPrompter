@@ -75,36 +75,12 @@
   let fillRaf=0,fillStartedAt=0;
   const reduceMotion=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}};
   function fillProgress(elapsed){const tau=2600;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
-  function pct(v,total){return `${Math.max(0,Math.min(100,total?(v/total)*100:0)).toFixed(2)}%`}
-  function syncOverlayBox(base,overlay){
-    const parent=overlay.offsetParent;if(!base||!overlay||!parent)return;
-    const baseRect=base.getBoundingClientRect(),parentRect=parent.getBoundingClientRect();
-    overlay.style.top=`${baseRect.top-parentRect.top}px`;overlay.style.left=`${baseRect.left-parentRect.left}px`;
-    overlay.style.width=`${baseRect.width}px`;overlay.style.height=`${baseRect.height}px`;
+  function applyFill(progress){
+    const box=$('#promptWorkflowLoader');if(!box)return;
+    const clip=`inset(0 ${((1-progress)*100).toFixed(2)}% 0 0)`;
+    const titleBlue=$('strong .blue',box);if(titleBlue)titleBlue.style.clipPath=clip;
+    const sentenceBlue=$('.prompt-loader-sentence .blue',box);if(sentenceBlue)sentenceBlue.style.clipPath=clip;
   }
-  function readingOrderClip(base,progress){
-    const simple=`inset(0 ${(1-progress)*100}% 0 0)`;
-    if(!base||!base.firstChild)return simple;
-    let rects;try{const range=document.createRange();range.selectNodeContents(base);rects=[...range.getClientRects()]}catch{rects=[]}
-    if(rects.length<=1)return simple;
-    const box=base.getBoundingClientRect();if(!box.width||!box.height)return simple;
-    const lines=rects.map(r=>({left:r.left-box.left,top:r.top-box.top,right:r.right-box.left,bottom:r.bottom-box.top,width:r.width})).filter(l=>l.width>0);
-    if(!lines.length)return simple;
-    const totalWidth=lines.reduce((s,l)=>s+l.width,0);
-    let target=progress*totalWidth;
-    const points=[`0% ${pct(lines[0].top,box.height)}`];
-    for(const line of lines){
-      const w=Math.max(0,Math.min(line.width,target));target-=w;
-      const rightX=line.left+w;
-      points.push(`${pct(rightX,box.width)} ${pct(line.top,box.height)}`);
-      points.push(`${pct(rightX,box.width)} ${pct(line.bottom,box.height)}`);
-      if(w<line.width-.5)break;
-    }
-    const last=points[points.length-1].split(' ');
-    points.push(`0% ${last[1]}`);
-    return `polygon(${points.join(',')})`;
-  }
-  function applyFill(progress){const box=$('#promptWorkflowLoader');if(!box)return;const titleBase=$('strong .base',box),titleBlue=$('strong .blue',box);if(titleBase&&titleBlue){syncOverlayBox(titleBase,titleBlue);titleBlue.style.clipPath=readingOrderClip(titleBase,progress)}const sentenceBase=$('.prompt-loader-sentence .base',box),sentenceBlue=$('.prompt-loader-sentence .blue',box);if(sentenceBase&&sentenceBlue){syncOverlayBox(sentenceBase,sentenceBlue);sentenceBlue.style.clipPath=readingOrderClip(sentenceBase,progress)}}
   function forceRecover(){
     clearInterval(cycleTimer);cycleTimer=0;
     const box=$('#promptWorkflowLoader');if(!box)return;

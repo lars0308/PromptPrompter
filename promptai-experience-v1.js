@@ -92,46 +92,17 @@
     stage=document.createElement('section');stage.id='promptAiThinkingStage';stage.className='prompt-thinking-stage';stage.setAttribute('aria-live','polite');stage.innerHTML='<button type="button" class="prompt-thinking-close" aria-label="Abbrechen">×</button><div><span class="kicker">PROMPT.AI</span><strong><span class="base">Dein Prompt entsteht</span><span class="blue" aria-hidden="true">Dein Prompt entsteht</span></strong><div class="prompt-thinking-status"><span class="base"></span><span class="blue" aria-hidden="true"></span></div><div class="prompt-thinking-wait">Letzter Feinschliff …</div></div>';shell.appendChild(stage);$('.prompt-thinking-close',stage).onclick=cancelThinking;return stage;
   }
   let thinkingFillRaf=0,titleFillRaf=0;
-  function fillPct(v,total){return `${Math.max(0,Math.min(100,total?(v/total)*100:0)).toFixed(2)}%`}
-  function syncOverlayBox(base,overlay){
-    const parent=overlay.offsetParent;if(!base||!overlay||!parent)return;
-    const baseRect=base.getBoundingClientRect(),parentRect=parent.getBoundingClientRect();
-    overlay.style.top=`${baseRect.top-parentRect.top}px`;overlay.style.left=`${baseRect.left-parentRect.left}px`;
-    overlay.style.width=`${baseRect.width}px`;overlay.style.height=`${baseRect.height}px`;
-  }
-  function thinkingReadingOrderClip(base,progress){
-    const simple=`inset(0 ${(1-progress)*100}% 0 0)`;
-    if(!base||!base.firstChild)return simple;
-    let rects;try{const range=document.createRange();range.selectNodeContents(base);rects=[...range.getClientRects()]}catch{rects=[]}
-    if(rects.length<=1)return simple;
-    const box=base.getBoundingClientRect();if(!box.width||!box.height)return simple;
-    const lines=rects.map(r=>({left:r.left-box.left,top:r.top-box.top,bottom:r.bottom-box.top,width:r.width})).filter(l=>l.width>0);
-    if(!lines.length)return simple;
-    const totalWidth=lines.reduce((s,l)=>s+l.width,0);
-    let target=progress*totalWidth;
-    const points=[`0% ${fillPct(lines[0].top,box.height)}`];
-    for(const line of lines){
-      const w=Math.max(0,Math.min(line.width,target));target-=w;
-      const rightX=line.left+w;
-      points.push(`${fillPct(rightX,box.width)} ${fillPct(line.top,box.height)}`);
-      points.push(`${fillPct(rightX,box.width)} ${fillPct(line.bottom,box.height)}`);
-      if(w<line.width-.5)break;
-    }
-    const last=points[points.length-1].split(' ');
-    points.push(`0% ${last[1]}`);
-    return `polygon(${points.join(',')})`;
-  }
   function stopThinkingFillLoop(){cancelAnimationFrame(thinkingFillRaf);thinkingFillRaf=0}
   function startThinkingFillLoop(host,durationMs){
     stopThinkingFillLoop();
-    const base=$('.base',host),blue=$('.blue',host);if(!base||!blue)return;
+    const blue=$('.blue',host);if(!blue)return;
     let reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch{}
-    if(reduce){syncOverlayBox(base,blue);blue.style.clipPath=thinkingReadingOrderClip(base,1);return}
+    if(reduce){blue.style.clipPath='inset(0)';return}
     const startedAt=performance.now(),ease=t=>1-Math.pow(1-t,3);
     const tick=()=>{
       if(!host.isConnected){thinkingFillRaf=0;return}
       const t=Math.min(1,(performance.now()-startedAt)/durationMs);
-      syncOverlayBox(base,blue);blue.style.clipPath=thinkingReadingOrderClip(base,ease(t));
+      blue.style.clipPath=`inset(0 ${((1-ease(t))*100).toFixed(2)}% 0 0)`;
       thinkingFillRaf=t<1?requestAnimationFrame(tick):0;
     };
     thinkingFillRaf=requestAnimationFrame(tick);
@@ -139,14 +110,14 @@
   function stopTitleFillLoop(){cancelAnimationFrame(titleFillRaf);titleFillRaf=0}
   function startTitleFillLoop(stage,durationMs){
     stopTitleFillLoop();
-    const strong=$('strong',stage),base=strong&&$('.base',strong),blue=strong&&$('.blue',strong);if(!base||!blue)return;
+    const blue=$('strong .blue',stage);if(!blue)return;
     let reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch{}
-    if(reduce){syncOverlayBox(base,blue);blue.style.clipPath=thinkingReadingOrderClip(base,1);return}
+    if(reduce){blue.style.clipPath='inset(0)';return}
     const startedAt=performance.now(),ease=t=>1-Math.pow(1-t,3);
     const tick=()=>{
       if(!stage.isConnected){titleFillRaf=0;return}
       const t=Math.min(1,(performance.now()-startedAt)/durationMs);
-      syncOverlayBox(base,blue);blue.style.clipPath=thinkingReadingOrderClip(base,ease(t));
+      blue.style.clipPath=`inset(0 ${((1-ease(t))*100).toFixed(2)}% 0 0)`;
       titleFillRaf=t<1?requestAnimationFrame(tick):0;
     };
     titleFillRaf=requestAnimationFrame(tick);

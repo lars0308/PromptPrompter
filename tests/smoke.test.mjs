@@ -262,3 +262,15 @@ test('the "Projekt wird vorbereitet" mode-handoff loader title gets a blue-fill 
   assert.match(src,/function release\(box\)\{active=false;clearTimeout\(timer\);clearInterval\(sentenceTimer\);stopTitleFillLoop\(true\);/,'release (called once the real handoff work is done) must snap the title fill to 100% instead of leaving it mid-fill');
   assert.match(src,/\.prompt-mode-handoff strong \.blue\{position:absolute;inset:0;color:var\(--ui-blue,var\(--accent,#1689c7\)\);clip-path:inset\(0 100% 0 0\);pointer-events:none\}/);
 });
+test('the review/preview loader and the free-prompt thinking loader no longer use the fragile getBoundingClientRect + multi-line polygon clip-path technique for their blue text fill, replaced by a plain percentage clip-path that cannot desync from the underlying text box',async()=>{
+  for(const file of ['transition-polish.js','promptai-experience-v1.js']){
+    const src=await text(file);
+    assert.doesNotMatch(src,/getClientRects/,`${file} must not measure per-line text rects for the fill anymore - this was reported live as rendering garbled/offset blue text even after an earlier defensive fix`);
+    assert.doesNotMatch(src,/getBoundingClientRect/,`${file} must not sync overlay position/size via getBoundingClientRect anymore`);
+    assert.doesNotMatch(src,/polygon\(/,`${file} must not build a reading-order polygon clip-path anymore`);
+  }
+  const transition=await text('transition-polish.js');
+  assert.match(transition,/function applyFill\(progress\)\{\s*const box=\$\('#promptWorkflowLoader'\);if\(!box\)return;\s*const clip=`inset\(0 \$\{\(\(1-progress\)\*100\)\.toFixed\(2\)\}% 0 0\)`;/);
+  const v1=await text('promptai-experience-v1.js');
+  assert.match(v1,/blue\.style\.clipPath=`inset\(0 \$\{\(\(1-ease\(t\)\)\*100\)\.toFixed\(2\)\}% 0 0\)`;/);
+});
