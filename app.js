@@ -1443,7 +1443,8 @@
     {name:"Image Poster",variant:"poster",mood:"Bildstark und plakativ. Der erste Eindruck kommt aus Motiv, Maßstab und knapper Typografie.",type:"Kräftige Grotesk + kleine technische Labels",layout:"Vollflächiger visueller Einstieg, Inhalte danach in harten Kapiteln",hero:"Großes Motiv als Fläche, Text bewusst darüber oder daneben",display:"Arial Black, Arial, sans-serif"},
     {name:"Field Ledger",variant:"ledger",mood:"Sachlich, glaubwürdig und fast dokumentarisch. Wie ein gut geführtes Arbeitsbuch.",type:"Utility-Sans + nummerierte Mikrotypografie",layout:"Raster, Nummerierung und klare Informationszonen statt Karten",hero:"Projekt-/Leistungslogik direkt im ersten Bildschirm",display:"Arial, Helvetica, sans-serif"},
     {name:"Stacked Narrative",variant:"stacked",mood:"Ruhiger Seitenrhythmus mit deutlichen Bild- und Textkapiteln. Weniger Werbefläche, mehr Erzählung.",type:"Ruhige Serif + kleine Sans",layout:"Große horizontale Abschnitte, wechselnde Bild-/Textgewichte",hero:"Breites Bild mit kompakter Aussage als zweiter Takt",display:"Georgia, serif"},
-    {name:"Offset Magazine",variant:"editorial",mood:"Eigenständiger und etwas experimenteller. Überlagerung und Versatz ersetzen typische Zentrierung.",type:"Große Editorial-Serif + kleine Grotesk",layout:"Versetzte Bildfläche, überlappende Typografie, bewusster Weißraum",hero:"Headline und Bild überschneiden sich kontrolliert",display:"Georgia, serif"}
+    {name:"Offset Magazine",variant:"editorial",mood:"Eigenständiger und etwas experimenteller. Überlagerung und Versatz ersetzen typische Zentrierung.",type:"Große Editorial-Serif + kleine Grotesk",layout:"Versetzte Bildfläche, überlappende Typografie, bewusster Weißraum",hero:"Headline und Bild überschneiden sich kontrolliert",display:"Georgia, serif"},
+    {name:"Minimal Statement",variant:"minimal",mood:"Auf das Nötigste reduziert. Ein einziges großes Bild trägt die ganze Seite, der Text bleibt kurz und zurückhaltend.",type:"Eine zurückhaltende Sans für eine kurze Zeile",layout:"Vollflächiges Bild ohne Navigation, Kapitel oder Fußzeile — nur eine kleine Überschrift darauf",hero:"Das Bild ist die gesamte Seite; keine weiteren Abschnitte",display:"Arial, Helvetica, sans-serif"}
   ];
 
   function brandName(){
@@ -1457,7 +1458,7 @@
     const cta=ctaForGoal(p.goal);
     return VARIANTS.slice(0,count).map((v,i)=>{
       const palette=theme.palette[i%theme.palette.length]; const headline=theme.headline[i%theme.headline.length];
-      return {id:uid("concept"),name:v.name,mood:v.mood,palette,accent:palette[2],bg:palette[0],text:palette[1],soft:palette[3],type:v.type,layout:v.layout,hero:v.hero,display:v.display,layoutVariant:v.variant,headline:String(headline).slice(0,58),subline:audience,service:p.type,nav:theme.nav,services:theme.services,cta,source:"local"};
+      return {id:uid("concept"),name:v.name,mood:v.mood,palette,accent:palette[2],bg:palette[0],text:palette[1],soft:palette[3],type:v.type,layout:v.layout,hero:v.hero,display:v.display,layoutVariant:v.variant,navStyle:"full",mirror:false,headline:String(headline).slice(0,58),subline:audience,service:p.type,nav:theme.nav,services:theme.services,cta,source:"local"};
     });
   }
 
@@ -1468,13 +1469,13 @@
     const fallback=localConcepts(5)[index%5];
     const rawPalette=Array.isArray(raw?.palette)&&raw.palette.length>=4?raw.palette.slice(0,4):fallback.palette;
     const palette=rawPalette.map((v,i)=>safeHex(v,fallback.palette[i]));
-    const allowed=["split","poster","ledger","stacked","editorial"];
+    const allowed=["split","poster","ledger","stacked","editorial","minimal"];
     const nav=Array.isArray(raw?.nav)&&raw.nav.length>=2?raw.nav.slice(0,3).map(String):fallback.nav;
     const services=Array.isArray(raw?.services)&&raw.services.length>=2?raw.services.slice(0,2).map((s,i)=>({title:String(s?.title||fallback.services[i].title),desc:String(s?.desc||fallback.services[i].desc)})):fallback.services;
     return {
       id:raw?.id||uid("concept"),name:String(raw?.name||fallback.name),mood:String(raw?.mood||fallback.mood),palette,
       accent:safeHex(raw?.accent,palette[2]||fallback.accent),bg:safeHex(raw?.bg,palette[0]||fallback.bg),text:safeHex(raw?.text,palette[1]||fallback.text),soft:safeHex(raw?.soft,palette[3]||fallback.soft),
-      type:String(raw?.type||fallback.type),layout:String(raw?.layout||fallback.layout),hero:String(raw?.hero||fallback.hero),display:safeDisplay(raw?.display,fallback.display),layoutVariant:allowed.includes(raw?.layoutVariant)?raw.layoutVariant:fallback.layoutVariant,
+      type:String(raw?.type||fallback.type),layout:String(raw?.layout||fallback.layout),hero:String(raw?.hero||fallback.hero),display:safeDisplay(raw?.display,fallback.display),layoutVariant:allowed.includes(raw?.layoutVariant)?raw.layoutVariant:fallback.layoutVariant,navStyle:raw?.navStyle==="logo-hamburger"?"logo-hamburger":"full",mirror:raw?.mirror===true,
       headline:String(raw?.headline||fallback.headline),subline:String(raw?.subline||fallback.subline),service:String(raw?.service||project().type),nav,services,cta:String(raw?.cta||fallback.cta),source:String(raw?.source||state.engine)
     };
   }
@@ -1531,13 +1532,21 @@
   function firstReferenceImage(){ return state.images.find(x=>x.dataUrl)?.dataUrl || ""; }
 
   function createConceptScreen(c){
-    const screen=document.createElement("div");screen.className=`concept-screen ${c.layoutVariant}${c.previewImage?" generated-preview":""}`;
+    const mirrorClass=c.mirror?" mirror":"";
+    const screen=document.createElement("div");screen.className=`concept-screen ${c.layoutVariant}${mirrorClass}${c.previewImage?" generated-preview":""}`;
     screen.style.setProperty("--c-bg",c.bg);screen.style.setProperty("--c-text",c.text);screen.style.setProperty("--c-accent",c.accent);screen.style.setProperty("--c-soft",c.soft);screen.style.setProperty("--c-display",c.display||"Georgia, serif");
     if(c.previewImage){screen.innerHTML=`<img src="${escapeHtml(c.previewImage)}" alt="Fertiger Website-Entwurf: ${escapeHtml(c.name)}">`;return screen;}
-    const nav=(Array.isArray(c.nav)&&c.nav.length?c.nav:["Projekte","Leistungen","Über uns"]).map(x=>escapeHtml(String(x).toUpperCase())).join(" &nbsp; ");
+    if(c.layoutVariant==="minimal"){
+      screen.innerHTML=`<div class="screen-minimal"><div class="screen-photo screen-photo-full"></div><span class="screen-minimal-headline">${escapeHtml(c.headline)}</span></div>`;
+      const photo=screen.querySelector(".screen-photo"); const ref=firstReferenceImage(); if(ref) photo.style.backgroundImage=`url(${JSON.stringify(ref).slice(1,-1)})`;
+      return screen;
+    }
+    const navHtml=c.navStyle==="logo-hamburger"
+      ? `<strong>${escapeHtml(brandName())}</strong><span class="screen-nav-spacer"></span><i>≡</i>`
+      : `<strong>${escapeHtml(brandName())}</strong><span>${(Array.isArray(c.nav)&&c.nav.length?c.nav:["Projekte","Leistungen","Über uns"]).map(x=>escapeHtml(String(x).toUpperCase())).join(" &nbsp; ")}</span><i>KONTAKT</i>`;
     const services=Array.isArray(c.services)&&c.services.length?c.services:[{title:"Konzeption und Gestaltung",desc:"Präzise geplant und passend zum Projekt umgesetzt."},{title:"Inhalte mit Charakter",desc:"Klar strukturiert, glaubwürdig und leicht zu bedienen."}];
     const cta=escapeHtml(c.cta||"MEHR ERFAHREN");
-    screen.innerHTML=`<div class="screen-nav"><strong>${escapeHtml(brandName())}</strong><span>${nav}</span><i>KONTAKT</i></div><div class="screen-page"><div class="screen-body"><div class="screen-copy"><span class="screen-micro">${escapeHtml(project().type)} / ${escapeHtml(project().goal)}</span><h3>${escapeHtml(c.headline)}</h3><p>${escapeHtml(c.subline)}</p><span class="screen-cta">${cta}</span></div><div class="screen-photo"></div><span class="screen-micro screen-direction">${escapeHtml(c.name)}</span></div><div class="screen-proof"><span>Ausgewählte Arbeiten</span><b>01</b><b>02</b><b>03</b></div><div class="screen-sections">${services.map((s,i)=>`<article><small>LEISTUNG ${String(i+1).padStart(2,"0")}</small><strong>${escapeHtml(s.title)}</strong><p>${escapeHtml(s.desc)}</p></article>`).join("")}<div class="screen-feature"><span>AKTUELLES PROJEKT</span><strong>${escapeHtml(c.service||project().type)}</strong></div></div><div class="screen-footer"><strong>${escapeHtml(brandName())}</strong><span>IMPRESSUM &nbsp; DATENSCHUTZ &nbsp; KONTAKT</span></div></div>`;
+    screen.innerHTML=`<div class="screen-nav${c.navStyle==="logo-hamburger"?" nav-logo-hamburger":""}">${navHtml}</div><div class="screen-page"><div class="screen-body"><div class="screen-copy"><span class="screen-micro">${escapeHtml(project().type)} / ${escapeHtml(project().goal)}</span><h3>${escapeHtml(c.headline)}</h3><p>${escapeHtml(c.subline)}</p><span class="screen-cta">${cta}</span></div><div class="screen-photo"></div><span class="screen-micro screen-direction">${escapeHtml(c.name)}</span></div><div class="screen-proof"><span>Ausgewählte Arbeiten</span><b>01</b><b>02</b><b>03</b></div><div class="screen-sections">${services.map((s,i)=>`<article><small>LEISTUNG ${String(i+1).padStart(2,"0")}</small><strong>${escapeHtml(s.title)}</strong><p>${escapeHtml(s.desc)}</p></article>`).join("")}<div class="screen-feature"><span>AKTUELLES PROJEKT</span><strong>${escapeHtml(c.service||project().type)}</strong></div></div><div class="screen-footer"><strong>${escapeHtml(brandName())}</strong><span>IMPRESSUM &nbsp; DATENSCHUTZ &nbsp; KONTAKT</span></div></div>`;
     const photo=screen.querySelector(".screen-photo"); const ref=firstReferenceImage(); if(ref) photo.style.backgroundImage=`url(${JSON.stringify(ref).slice(1,-1)})`;
     return screen;
   }

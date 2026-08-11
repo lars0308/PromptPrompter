@@ -93,7 +93,7 @@ test('AI preview images are framed as a flat UI screenshot, not a photo of a dev
   assert.match(src,/Do not depict any monitor, laptop, phone, tablet, desk, room, hand, wall, browser window, browser chrome, url bar, camera angle, perspective/);
   assert.match(src,/Reminder: output only the flat webpage design itself, filling the full 16:9 frame — never a photo, mockup, or device of any kind\./);
   assert.doesNotMatch(src,/If text cannot be rendered perfectly, render no text\./,'this escape hatch let models skip real brand/headline text instead of attempting it');
-  assert.match(src,/TYPOGRAPHY \(required\): render the brand name "\$\{brand\}" in the navigation or header, and render the headline "\$\{headline\}" as the large hero text/);
+  assert.match(src,/TYPOGRAPHY \(required\): render the brand name "\$\{brand\}" in the navigation or header \(unless the header instruction above says to omit it\), and render the headline "\$\{headline\}" as the large hero text/);
 });
 test('AI-generated concept copy is required to use real industry vocabulary from the project, not a generic tagline',async()=>{
   const src=await text('server/generate-core.js');
@@ -123,4 +123,37 @@ test('Datenschutzerklärung names the real integrated subprocessors and covers t
   for(const processor of ['Vercel AI Gateway','OpenAI','Google (Gemini)','Cloudflare Workers AI','Supabase','Stripe'])assert.ok(src.includes(processor),processor);
   assert.match(src,/Kundeninformationen.*fremde Webseiten/);
   assert.match(src,/können auch personenbezogene Daten Dritter enthalten sein/);
+});
+test('a sixth "minimal" layout variant (full-bleed image, no nav/sections/footer) exists alongside a navStyle field for logo+hamburger-only headers',async()=>{
+  const app=await text('app.js'),core=await text('server/generate-core.js');
+  assert.match(app,/\{name:"Minimal Statement",variant:"minimal",[^}]*layout:"Vollflächiges Bild ohne Navigation, Kapitel oder Fußzeile — nur eine kleine Überschrift darauf"/);
+  assert.match(app,/navStyle:"full",mirror:false,headline:String\(headline\)/,'localConcepts must default every generated concept to a normal nav and non-mirrored layout');
+  assert.match(app,/const allowed=\["split","poster","ledger","stacked","editorial","minimal"\];/);
+  assert.match(app,/navStyle:raw\?\.navStyle==="logo-hamburger"\?"logo-hamburger":"full",mirror:raw\?\.mirror===true,/);
+  assert.match(core,/const VARIANTS = \["split","poster","ledger","stacked","editorial","minimal"\];/);
+  assert.match(core,/navStyle:\{type:"string",enum:\["full","logo-hamburger"\]\}, mirror:\{type:"boolean"\}/);
+});
+test('createConceptScreen renders the minimal variant as a bare full-bleed image with only a small headline, and honors navStyle/mirror on the other variants',async()=>{
+  const src=await text('app.js');
+  assert.match(src,/if\(c\.layoutVariant==="minimal"\)\{\s*screen\.innerHTML=`<div class="screen-minimal"><div class="screen-photo screen-photo-full"><\/div><span class="screen-minimal-headline">\$\{escapeHtml\(c\.headline\)\}<\/span><\/div>`;/);
+  assert.match(src,/const navHtml=c\.navStyle==="logo-hamburger"/);
+  assert.match(src,/<i>≡<\/i>`/,'logo-hamburger navStyle must render a hamburger icon instead of the full menu item list');
+  assert.match(src,/const mirrorClass=c\.mirror\?" mirror":"";/);
+});
+test('literal user layout instructions (e.g. logo+hamburger-only header, image-left/text-right, single image with small headline) override the fixed one-of-each-variant rotation',async()=>{
+  const core=await text('server/generate-core.js'),img=await text('server/preview-image.js');
+  assert.match(core,/LAYOUT INSTRUCTION PRIORITY: check the project's special wish and description for an explicit, literal layout or header instruction/);
+  assert.match(core,/EVERY direction must honor it literally — pick the closest matching layoutVariant and set navStyle\/mirror to match instead of forcing artificial variety\./);
+  assert.match(core,/If no explicit layout instruction is given, instead maximize structural variety/);
+  assert.match(img,/function headerInstruction\(p=\{\},c=\{\}\)\{/);
+  assert.match(img,/if\(c\.layoutVariant==='minimal'\)return'This design has NO navigation bar, NO header, NO footer and NO separate sections/);
+  assert.match(img,/const nav=c\.navStyle==='logo-hamburger'\?'The header\/top bar contains ONLY a small logo or brand name/);
+  assert.match(img,/Special wish \(if this literally describes the header, navigation or overall composition, treat it as the authoritative instruction and follow it exactly/);
+  assert.match(img,/HEADER \/ STRUCTURE \(required, follow exactly\): \$\{header\}/);
+});
+test('CSS provides matching styles for the minimal variant, logo-hamburger nav and mirrored split/ledger layouts',async()=>{
+  const css=await text('styles.css');
+  assert.match(css,/\.concept-screen\.minimal \.screen-minimal\{position:absolute;inset:0\}/);
+  assert.match(css,/\.screen-nav\.nav-logo-hamburger\{justify-content:flex-start\}/);
+  assert.match(css,/\.concept-screen\.split\.mirror \.screen-body\{grid-template-columns:46% 54%\}\.concept-screen\.split\.mirror \.screen-photo\{order:-1\}/);
 });

@@ -1,12 +1,12 @@
 const { resolveProviderKey } = require('../server/provider-key');
 const { getEntitlements } = require('../server/entitlements');
 const { rateLimit } = require('../server/rate-limit');
-const VARIANTS = ["split","poster","ledger","stacked","editorial"];
+const VARIANTS = ["split","poster","ledger","stacked","editorial","minimal"];
 
 const conceptProperties = {
   name:{type:"string"}, mood:{type:"string"}, palette:{type:"array",minItems:4,maxItems:4,items:{type:"string",pattern:"^#[0-9A-Fa-f]{6}$"}},
   type:{type:"string"}, layout:{type:"string"}, hero:{type:"string"}, accent:{type:"string",pattern:"^#[0-9A-Fa-f]{6}$"}, bg:{type:"string",pattern:"^#[0-9A-Fa-f]{6}$"}, text:{type:"string",pattern:"^#[0-9A-Fa-f]{6}$"}, soft:{type:"string",pattern:"^#[0-9A-Fa-f]{6}$"},
-  display:{type:"string"}, layoutVariant:{type:"string",enum:VARIANTS}, headline:{type:"string"}, subline:{type:"string"}, service:{type:"string"}
+  display:{type:"string"}, layoutVariant:{type:"string",enum:VARIANTS}, navStyle:{type:"string",enum:["full","logo-hamburger"]}, mirror:{type:"boolean"}, headline:{type:"string"}, subline:{type:"string"}, service:{type:"string"}
 };
 const conceptRequired = Object.keys(conceptProperties);
 
@@ -108,7 +108,9 @@ function reviewText(projectReview={}){
 
 function makeConceptPrompt({count,project,references,documents,controls,template,modules,settings,clarifications,projectReview,tier='free'}){
   const variants=VARIANTS.slice(0,count);
-  return `You are a senior web art director designing a real project, not a generic AI landing page. Create exactly ${count} visual directions. They must be structurally different, not color variations of one layout. Use these layoutVariant values exactly once and in this order: ${variants.join(", ")}.
+  return `You are a senior web art director designing a real project, not a generic AI landing page. Create exactly ${count} visual directions. They must be structurally different, not color variations of one layout.
+
+LAYOUT INSTRUCTION PRIORITY: check the project's special wish and description for an explicit, literal layout or header instruction, for example "large hero with one image and no normal nav bar, only a logo and a hamburger menu on the right", "image on the left, big wide text on the right, a completely normal header on top", or "nothing else, just one image with a small headline inside it". If such an instruction is present, EVERY direction must honor it literally — pick the closest matching layoutVariant and set navStyle/mirror to match instead of forcing artificial variety. Available layoutVariant values: ${VARIANTS.join(", ")}. "minimal" means one full-bleed image and a small headline only — no navigation bar, no sections, no footer. Set navStyle to "logo-hamburger" when the instruction wants a header with only a logo plus a hamburger/burger menu instead of a normal nav bar with menu items; otherwise use "full". Set mirror to true when the instruction explicitly wants the image on the left and the text on the right (or another mirrored order) inside a two-column layout like "split". If no explicit layout instruction is given, instead maximize structural variety: use each of these layoutVariant values once, in this order, across the ${count} directions, and use navStyle "full" with mirror false: ${variants.join(", ")}.
 
 CUSTOM MASTER TEMPLATE
 ${templateText(template)}
