@@ -1763,7 +1763,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   function validateStep(next){
     if(next>1 && project().description.length<20){el.projectValidation.textContent="Bitte zuerst das Projekt kurz beschreiben.";goStep(1,true);return false}
     if(next===7 && !selectedConcept()){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst mindestens eine Vorschau erzeugen und auswählen.";return false}
-    if(next===8 && !selectedConcept()) return false;
+    if(next===8 && !selectedConcept()){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst mindestens eine Vorschau erzeugen und auswählen.";goStep(7,true);return false}
     return true;
   }
 
