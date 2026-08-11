@@ -1,7 +1,8 @@
 (()=>{
   'use strict';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  let thinkingStartedAt=0,thinkingMinMs=0,thinkingDone=false,thinkingTimer=0,waitingTimer=0;
+  let thinkingStartedAt=0,thinkingMinMs=0,thinkingDone=false,thinkingTimer=0,waitingTimer=0,sentenceTimer=0,sentenceIndex=0;
+  const SENTENCE_MS=1400;
 
   function styles(){
     if($('#promptExperienceV1Styles'))return;
@@ -33,7 +34,10 @@
       .free-prompt-shell,.simple-intake-shell{position:relative}
 
       #freePromptGenerationStage{display:none!important}
-      .prompt-thinking-stage{position:absolute;z-index:75;inset:0;display:none;place-items:center;padding:30px 22px;background:var(--paper);color:var(--ink);text-align:center}.prompt-thinking-stage.show{display:grid}.prompt-thinking-stage>div{width:min(570px,100%)}.prompt-thinking-stage .kicker{display:block;color:var(--prompt-v11-blue);font-size:9px;font-weight:850;letter-spacing:.12em}.prompt-thinking-stage strong{display:block;margin-top:8px;font-size:clamp(31px,7vw,48px);line-height:1;letter-spacing:-.05em}.prompt-thinking-copy{margin:23px auto 0;text-align:left;display:grid;gap:13px;max-width:520px}.prompt-thinking-line{position:relative;font-size:clamp(15px,2.8vw,18px);font-weight:650;line-height:1.45;color:var(--ink)}.prompt-thinking-line .fill{position:absolute;inset:0;color:var(--prompt-v11-blue);clip-path:inset(0 100% 0 0);pointer-events:none}.prompt-thinking-stage.running .prompt-thinking-line .fill{animation:promptThinkingFill var(--line-duration) linear var(--line-delay) forwards}@keyframes promptThinkingFill{to{clip-path:inset(0 0 0 0)}}.prompt-thinking-wait{min-height:18px;margin-top:22px;color:var(--muted);font-size:10px;opacity:0;transition:opacity .25s ease}.prompt-thinking-wait.show{opacity:1}.prompt-thinking-stage.error .prompt-thinking-wait{color:var(--danger);opacity:1}
+      .prompt-thinking-stage{position:absolute;z-index:75;inset:0;display:none;place-items:center;padding:30px 22px;background:var(--paper);color:var(--ink);text-align:center}.prompt-thinking-stage.show{display:grid}.prompt-thinking-stage>div{width:min(570px,100%)}.prompt-thinking-stage .kicker{display:block;color:var(--prompt-v11-blue);font-size:9px;font-weight:850;letter-spacing:.12em}.prompt-thinking-stage strong{display:block;margin-top:8px;font-size:clamp(31px,7vw,48px);line-height:1;letter-spacing:-.05em}
+      .prompt-thinking-status{position:relative;display:block;max-width:520px;min-height:29px;margin:23px auto 0;color:var(--ink);font-size:clamp(15px,2.8vw,18px);font-weight:650;line-height:1.45;overflow:hidden;transition:opacity .16s ease,transform .16s ease}.prompt-thinking-status.is-changing{opacity:0;transform:translateY(4px)}
+      .prompt-thinking-status .blue{position:absolute;inset:0;color:var(--prompt-v11-blue);clip-path:inset(0 100% 0 0);pointer-events:none}.prompt-thinking-status.running .blue{animation:promptThinkingSentenceFill var(--line-duration,1400ms) cubic-bezier(.22,.68,.24,1) forwards}@keyframes promptThinkingSentenceFill{to{clip-path:inset(0)}}
+      .prompt-thinking-wait{min-height:18px;margin-top:22px;color:var(--muted);font-size:10px;opacity:0;transition:opacity .25s ease}.prompt-thinking-wait.show{opacity:1}.prompt-thinking-stage.error .prompt-thinking-wait{color:var(--danger);opacity:1}
       #freePromptDialog.prompt-ai-thinking-active .free-prompt-result{visibility:hidden!important}
 
       @media(max-width:820px){
@@ -46,9 +50,9 @@
         body.prompt-unified-ui .welcome-quick-actions{grid-template-columns:1fr!important}
         body.prompt-unified-ui #workspaceNewProjectBtn.home-primary,body.prompt-unified-ui #workspaceFreePromptBtn.home-primary{min-height:96px!important;padding:17px 18px!important}
         body.prompt-unified-ui .welcome-quick-actions .home-secondary{min-height:78px!important;padding:15px 17px!important}
-        .prompt-thinking-stage{padding:26px 18px}.prompt-thinking-copy{gap:12px;margin-top:21px}
+        .prompt-thinking-stage{padding:26px 18px}.prompt-thinking-status{margin-top:21px}
       }
-      @media(prefers-reduced-motion:reduce){.prompt-thinking-stage.running .prompt-thinking-line .fill{animation:none!important;clip-path:inset(0 0 0 0)!important}}
+      @media(prefers-reduced-motion:reduce){.prompt-thinking-status.running .blue{animation:none!important;clip-path:inset(0)!important}}
     `;document.head.appendChild(s);
   }
 
@@ -83,19 +87,29 @@
   function durationFor(len){if(len<=120)return Math.round(3200+len*9);if(len<=420)return Math.round(4280+(len-120)*11);return Math.min(12000,Math.round(7580+(len-420)*6))}
   function ensureThinking(){
     const shell=$('#freePromptDialog .free-prompt-shell');if(!shell)return null;let stage=$('#promptAiThinkingStage');if(stage)return stage;
-    stage=document.createElement('section');stage.id='promptAiThinkingStage';stage.className='prompt-thinking-stage';stage.setAttribute('aria-live','polite');stage.innerHTML='<div><span class="kicker">PROMPT.AI</span><strong>Dein Prompt entsteht</strong><div class="prompt-thinking-copy"></div><div class="prompt-thinking-wait">Letzter Feinschliff …</div></div>';shell.appendChild(stage);return stage;
+    stage=document.createElement('section');stage.id='promptAiThinkingStage';stage.className='prompt-thinking-stage';stage.setAttribute('aria-live','polite');stage.innerHTML='<div><span class="kicker">PROMPT.AI</span><strong>Dein Prompt entsteht</strong><div class="prompt-thinking-status"><span class="base"></span><span class="blue" aria-hidden="true"></span></div><div class="prompt-thinking-wait">Letzter Feinschliff …</div></div>';shell.appendChild(stage);return stage;
+  }
+  function setThinkingSentence(stage,text,immediate=false){
+    const host=$('.prompt-thinking-status',stage),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;
+    const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('running');void host.offsetWidth;host.classList.add('running');host.classList.remove('is-changing')};
+    if(immediate){apply();return}
+    host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160);
+  }
+  function startSentenceCycle(stage){
+    clearInterval(sentenceTimer);const lines=thinkingText();sentenceIndex=0;
+    setThinkingSentence(stage,lines[0],true);
+    sentenceTimer=setInterval(()=>{sentenceIndex=(sentenceIndex+1)%lines.length;setThinkingSentence(stage,lines[sentenceIndex])},SENTENCE_MS+230);
   }
   function startThinking(){
     const desc=String($('#freePromptDescription')?.value||'').trim();if(desc.length<12)return;
     const stage=ensureThinking();if(!stage)return;
     clearTimeout(thinkingTimer);clearTimeout(waitingTimer);thinkingDone=false;thinkingStartedAt=Date.now();thinkingMinMs=durationFor(totalInputLength());
-    const lines=thinkingText(),copy=$('.prompt-thinking-copy',stage);copy.innerHTML='';const weights=[.23,.26,.25,.26];let elapsed=0;
-    lines.forEach((text,i)=>{const row=document.createElement('div');row.className='prompt-thinking-line';const d=Math.max(650,Math.round(thinkingMinMs*weights[i])),delay=Math.round(elapsed);row.style.setProperty('--line-duration',`${d}ms`);row.style.setProperty('--line-delay',`${delay}ms`);row.innerHTML=`<span>${text}</span><span class="fill" aria-hidden="true">${text}</span>`;copy.appendChild(row);elapsed+=d});
-    $('.prompt-thinking-wait',stage)?.classList.remove('show');stage.classList.remove('error','running');stage.classList.add('show');$('#freePromptDialog')?.classList.add('prompt-ai-thinking-active');void stage.offsetWidth;stage.classList.add('running');
+    startSentenceCycle(stage);
+    $('.prompt-thinking-wait',stage)?.classList.remove('show');stage.classList.remove('error');stage.classList.add('show');$('#freePromptDialog')?.classList.add('prompt-ai-thinking-active');
     waitingTimer=setTimeout(()=>{if(!thinkingDone)$('.prompt-thinking-wait',stage)?.classList.add('show')},thinkingMinMs+250);
   }
   function releaseThinking(error=false){
-    const stage=$('#promptAiThinkingStage');if(!stage?.classList.contains('show'))return;thinkingDone=true;clearTimeout(waitingTimer);
+    const stage=$('#promptAiThinkingStage');if(!stage?.classList.contains('show'))return;thinkingDone=true;clearTimeout(waitingTimer);clearInterval(sentenceTimer);
     if(error){stage.classList.add('error');const wait=$('.prompt-thinking-wait',stage);if(wait){wait.textContent='Der Prompt konnte nicht fertiggestellt werden.';wait.classList.add('show')}}
     const elapsed=Date.now()-thinkingStartedAt,wait=error?Math.max(0,550-elapsed):Math.max(0,thinkingMinMs-elapsed);clearTimeout(thinkingTimer);thinkingTimer=setTimeout(()=>{stage.classList.remove('show','running','error');$('#freePromptDialog')?.classList.remove('prompt-ai-thinking-active');const w=$('.prompt-thinking-wait',stage);if(w){w.textContent='Letzter Feinschliff …';w.classList.remove('show')}if(!error&&!$('#freePromptResult')?.hidden)setTimeout(()=>$('#freePromptResult')?.scrollIntoView({behavior:'smooth',block:'start'}),60)},wait);
   }
