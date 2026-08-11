@@ -639,6 +639,7 @@
       state.systemProfiles=(result?.systemProfiles?.length?result.systemProfiles:LOCAL_SYSTEM_PROFILES).map(x=>({...x,config:x.config||{}}));
       window.SiteBriefCloud?.subscribe?.(async(event,payload)=>{
         if(event==='password-recovery'){state.cloud.user=payload.user||null;el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;el.passwordRecoveryPanel.hidden=false;el.accountDialogKicker.textContent='PASSWORT ZURÜCKSETZEN';el.accountDialogTitle.textContent='Neues Passwort festlegen';if(!el.accountDialog.open)el.accountDialog.showModal();return}
+        if(event==='email-confirmed'){setTimeout(()=>customAlert('Deine E-Mail-Adresse ist bestätigt. Danke, dass du dabei bist – leg direkt los!',{title:'Konto bestätigt',kicker:'WILLKOMMEN'}),400);return}
         if(event==="auth"){
           const previousUserId=state.cloud.user?.id||null;
           state.cloud.user=payload.user||null;const nextUserId=state.cloud.user?.id||null;

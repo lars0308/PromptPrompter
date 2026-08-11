@@ -104,6 +104,12 @@ module.exports=async function(req,res){
       await audit(admin.id,action,null,{plans:rows.map(r=>r.plan)});
       return res.status(200).json({ok:true});
     }
+    if(action==='save-maintenance'){
+      const row={id:'main',enabled:Boolean(body.enabled),reason:String(body.reason||'').trim().slice(0,500),eta:String(body.eta||'').trim().slice(0,200),updated_by:admin.id,updated_at:new Date().toISOString()};
+      await serviceFetch('/rest/v1/sitebrief_maintenance?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:row});
+      await audit(admin.id,action,null,{enabled:row.enabled});
+      return res.status(200).json({ok:true});
+    }
     return res.status(400).json({error:'Unbekannte Admin-Aktion.'});
   }catch(error){return res.status(error.status||500).json({error:error.message||'Admin-Aktion fehlgeschlagen.'})}
 };

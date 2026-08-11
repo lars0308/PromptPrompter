@@ -38,6 +38,8 @@ const Cloud = {
     }
     this.config = config;
 
+    const justConfirmedSignup = /(?:^|[?&#])type=signup\b/.test(location.hash) || /(?:^|[?&])type=signup\b/.test(location.search);
+
     const { createClient } = await import(`https://esm.sh/@supabase/supabase-js@${SUPABASE_JS_VERSION}?bundle`);
     this.client = createClient(config.supabaseUrl, config.supabasePublishableKey, {
       auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, storageKey: 'sitebrief-auth-session' }
@@ -46,6 +48,7 @@ const Cloud = {
 
     const { data } = await this.client.auth.getSession();
     this.user = data?.session?.user || null;
+    if (justConfirmedSignup && this.user) this.emit('email-confirmed', { user: this.user });
     this.client.auth.onAuthStateChange((_event, session) => {
       this.user = session?.user || null;
       this.emit(_event === 'PASSWORD_RECOVERY' ? 'password-recovery' : 'auth', { user: this.user, authEvent: _event });
