@@ -56,3 +56,15 @@ test('subscription management shows live Stripe billing details without a new fu
 test('prompt history and learning controls remain user-owned',async()=>{const history=await text('project-history.js'),learning=await text('learning-controls.js');assert.match(history,/sitebrief_prompt_versions/);assert.match(history,/user_id/);assert.match(learning,/sitebrief_learning_examples/);assert.match(learning,/\.eq\('user_id',cloud\.user\.id\)/)});
 test('package is frozen as Prompt.ai v1.0',async()=>{const pkg=JSON.parse(await text('package.json'));assert.equal(pkg.version,'1.0.0');const version=await text('VERSION.md');assert.match(version,/Feature Freeze/);assert.match(version,/Bugfix/)});
 test('Impressum and Datenschutz stay reachable even on the pre-login guest gate, not only from the hamburger menu',async()=>{const src=await text('legal-pages.js');assert.match(src,/function ensureGateFooter\(\)\{/);assert.match(src,/const body=\$\('#accountDialog \.account-body'\);if\(!body\|\|\$\('#gateLegalRow'\)\)return;/);assert.match(src,/ensureGateFooter\(\);/);assert.match(src,/\.gate-legal-row\{/)});
+test('own GitHub connection is a self-service Pro+ feature, independent of the paid own-API-keys add-on',async()=>{
+  const app=await text('app.js'),html=await text('index.html'),css=await text('styles.css');
+  assert.match(app,/const githubAvailable=cloudReady\(\)&&\(state\.plan!=="free"\|\|state\.isAdmin\);/);
+  assert.match(app,/el\.githubConnectionGrid\.hidden=!githubAvailable;/);
+  assert.doesNotMatch(html,/ULTIMATE · EXPORT[\s\S]{0,40}GitHub/,'GitHub must no longer be labeled as an Ultimate-only feature in the markup');
+  assert.match(html,/PRO · EXPORT[\s\S]{0,40}GitHub/);
+  assert.match(html,/id="githubConnectionGrid" hidden/);
+  // admin-ai-ui.js forces `#settingsDialog .ai-connection-grid{display:grid!important}` which, being ID-scoped,
+  // would otherwise always beat the plain [hidden] attribute on any element sharing that class (same specificity
+  // trap fixed for .plan-overview earlier) - this override must stay in place so the gate actually hides it.
+  assert.match(css,/#settingsDialog #githubConnectionGrid\[hidden\]\{display:none!important\}/);
+});

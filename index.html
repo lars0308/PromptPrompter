@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
   <script src="./theme-init.js?v=2"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260811-2" />
+  <link rel="stylesheet" href="./styles.css?v=20260811-3" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
     html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
@@ -559,8 +559,12 @@
               </div>
               <small class="connection-message" id="cloudflareConnectionMessage"></small>
             </article>
+          </div>
+          <div class="connection-login-row" id="githubLoginRow" hidden><span>Zum Verbinden von GitHub zuerst anmelden.</span><button type="button" class="outline-btn mini" id="githubSettingsLoginBtn">Zum Speichern anmelden</button></div>
+          <div class="connection-login-row" id="githubUpgradeRow" hidden><span>Die eigene GitHub-Verbindung ist ab Pro enthalten.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
+          <div class="ai-connection-grid" id="githubConnectionGrid" hidden>
             <article class="ai-connection-card">
-              <div class="ai-connection-head"><div><span>ULTIMATE · EXPORT</span><strong>GitHub</strong></div><span class="connection-status" id="githubConnectionStatus">Nicht verbunden</span></div>
+              <div class="ai-connection-head"><div><span>PRO · EXPORT</span><strong>GitHub</strong></div><span class="connection-status" id="githubConnectionStatus">Nicht verbunden</span></div>
               <label class="field"><span>GitHub Personal Access Token</span><input id="githubToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_… oder ghp_…" /></label>
               <div class="connection-actions"><button type="button" class="solid-btn mini" id="githubConnectBtn">Speichern & verbinden</button><button type="button" class="outline-btn mini" id="githubTestBtn">Testen</button><button type="button" class="text-btn" id="githubDisconnectBtn" hidden>Trennen</button></div>
               <small class="connection-message" id="githubConnectionMessage">Token benötigt Berechtigung zum Erstellen und Schreiben von Repositories.</small>
@@ -738,7 +742,7 @@
   <script type="module" src="./cloud.js?v=20260810-2"></script>
   <script src="./entry-gate-ui.js?v=20260811-3" defer></script>
   <script src="./legal-pages.js?v=20260811-2" defer></script>
-  <script src="./app.js?v=20260811-11" defer></script>
+  <script src="./app.js?v=20260811-12" defer></script>
   <script src="./admin-console.js?v=20260812-2" defer></script>
 </body>
 </html>
