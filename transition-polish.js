@@ -52,6 +52,8 @@
       #promptWorkflowLoader{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       #promptWorkflowLoader.is-leaving{opacity:0;pointer-events:none}
       #promptWorkflowLoader>div{width:min(560px,100%);text-align:center}
+      #promptWorkflowLoaderClose{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--ui-line,var(--line));border-radius:50%;background:var(--ui-card,var(--surface));color:var(--ink);font:700 21px/1 Arial,sans-serif;box-shadow:none}
+      #promptWorkflowLoaderClose:hover{background:var(--ui-soft,var(--surface-soft));border-color:color-mix(in srgb,var(--ui-blue,var(--accent)) 45%,var(--ui-line,var(--line)))}
       #promptWorkflowLoader .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}
       #promptWorkflowLoader strong{position:relative;display:block;margin-top:9px;font-size:clamp(31px,8vw,47px);line-height:1.02;letter-spacing:-.05em}
       #promptWorkflowLoader strong .blue{position:absolute;inset:0;color:var(--ui-blue,var(--accent,#1689c7));clip-path:inset(0 100% 0 0);pointer-events:none}
@@ -104,7 +106,7 @@
   }
   function stopFillLoop(complete=false){cancelAnimationFrame(fillRaf);fillRaf=0;if(complete)applyFill(1)}
 
-  function loader(){let box=$('#promptWorkflowLoader');if(box)return box;box=document.createElement('section');box.id='promptWorkflowLoader';box.setAttribute('aria-live','polite');box.innerHTML='<div><span class="kicker"></span><strong><span class="base"></span><span class="blue" aria-hidden="true"></span></strong><div class="prompt-loader-sentence"><span class="base"></span><span class="blue" aria-hidden="true"></span></div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>';document.body.appendChild(box);return box}
+  function loader(){let box=$('#promptWorkflowLoader');if(box)return box;box=document.createElement('section');box.id='promptWorkflowLoader';box.setAttribute('aria-live','polite');box.innerHTML='<button type="button" id="promptWorkflowLoaderClose" aria-label="Abbrechen">×</button><div><span class="kicker"></span><strong><span class="base"></span><span class="blue" aria-hidden="true"></span></strong><div class="prompt-loader-sentence"><span class="base"></span><span class="blue" aria-hidden="true"></span></div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>';document.body.appendChild(box);return box}
   function setTitle(box,text){const host=$('strong',box),base=$('.base',host||document),blue=$('.blue',host||document);if(!base||!blue)return;if(base.textContent===text)return;base.textContent=text;blue.textContent=text}
   function setSentence(text,immediate=false){const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('is-changing')};if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)}
   function startCycle(kind){const data=copy[kind];if(!data)return;clearInterval(cycleTimer);let index=0;setSentence(data.sentences[index],true);cycleTimer=setInterval(()=>{const box=$('#promptWorkflowLoader');if(!box||activeKind!==kind){clearInterval(cycleTimer);return}index=(index+1)%data.sentences.length;setSentence(data.sentences[index])},SENTENCE_MS+240)}
@@ -118,6 +120,7 @@
 
   function onClick(event){
     const refNext=event.target.closest?.('#stepReferences .next-btn');if(refNext&&workflowVisible()&&cleanMode()){userExited=false;pendingFromReferences=true;show('review');schedule(180);return}
+    if(event.target.closest?.('#promptWorkflowLoaderClose')){userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();$('#brandHome')?.click();return}
     if(event.target.closest?.('#brandHome,.guided-clean-exit')){userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}
     if(event.target.closest?.('#clarificationDialog .close-dialog')){pendingFromReferences=false;hide();return}
   }
