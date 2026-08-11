@@ -8,7 +8,7 @@
   const clamp = (n, min, max) => Math.min(max, Math.max(min, Number(n) || 0));
   const AGENT_NAMES = {claude:"Claude Code",codex:"Codex",gemini:"Gemini",chatgpt:"ChatGPT",cursor:"Cursor",v0:"v0",universal:"Universal"};
   const OUTPUT_TARGETS = {"next-vercel":"Next.js + TypeScript + Vercel","next-only":"Next.js + TypeScript","html":"Statisches HTML / CSS / JavaScript","react":"React + Vite","astro":"Astro","existing":"Bestehenden Projekt-Stack weiterführen"};
-  const ASPECTS = ["Layout","Farben","Typografie","Bildsprache","Hero","Struktur","Stimmung","Nur Inspiration"];
+  const ASPECTS = ["Kundeninfo","Layout","Farben","Typografie","Bildsprache","Hero","Struktur","Stimmung","Nur Inspiration"];
   if(typeof HTMLDialogElement!=="undefined"){
     const nativeShowModal=HTMLDialogElement.prototype.showModal;
     HTMLDialogElement.prototype.showModal=function(){
@@ -1131,13 +1131,17 @@
   function referenceCount(){ return state.urls.length + state.images.length + state.documents.length + state.sourceUrls.length; }
 
   function addUrl(){
-    let value = el.referenceUrl.value.trim();
-    if(!value) return;
+    const raw = el.referenceUrl.value.trim();
+    if(!raw) return;
+    const found = raw.match(/https?:\/\/\S+/i);
+    let value = found ? found[0].replace(/[),.;!?]+$/,"") : raw;
+    const label = found ? raw.slice(0,found.index).trim() + " " + raw.slice(found.index+found[0].length).trim() : "";
+    if(/\s/.test(value)){ el.referenceUrl.setCustomValidity("Bitte nur eine Adresse ohne Leerzeichen eingeben, z. B. https://beispiel.de."); el.referenceUrl.reportValidity(); return; }
     if(!/^https?:\/\//i.test(value)) value = `https://${value}`;
     try{ new URL(value); }catch{ el.referenceUrl.setCustomValidity("Bitte eine gültige URL eingeben."); el.referenceUrl.reportValidity(); return; }
     el.referenceUrl.setCustomValidity("");
     if(state.urls.some(x => x.url === value)){ el.referenceUrl.value=""; return; }
-    state.urls.push({id:uid("url"),url:value,aspects:["Layout","Stimmung"],like:"",dislike:""});
+    state.urls.push({id:uid("url"),url:value,label:label.trim(),aspects:["Layout","Stimmung"],like:"",dislike:""});
     el.referenceUrl.value=""; renderReferences(); saveState(); updateGuide();
   }
 
@@ -1162,7 +1166,10 @@
     state.urls.forEach(item => {
       const card=document.createElement("div"); card.className="reference-item";
       const host = (()=>{try{return new URL(item.url).hostname.replace(/^www\./,"")}catch{return item.url}})();
-      card.innerHTML=`<div class="reference-main"><span class="reference-mark">URL</span><div><strong>${escapeHtml(host)}</strong><small>${escapeHtml(item.url)}</small></div><button type="button" class="remove-btn" aria-label="Referenz entfernen">×</button></div><div class="aspect-row"></div><div class="ref-notes"><input type="text" class="like-note" placeholder="Was gefällt dir daran?" value="${escapeHtml(item.like||"")}"><input type="text" class="dislike-note" placeholder="Was gefällt dir NICHT?" value="${escapeHtml(item.dislike||"")}"></div>`;
+      const isInfo=item.aspects?.includes("Kundeninfo");
+      const likePlaceholder=isInfo?"Was soll daraus übernommen werden? (z. B. Adresse, Öffnungszeiten, Leistungen)":"Was gefällt dir daran?";
+      const dislikePlaceholder=isInfo?"Was soll NICHT übernommen werden?":"Was gefällt dir NICHT?";
+      card.innerHTML=`<div class="reference-main"><span class="reference-mark">URL</span><div><strong>${escapeHtml(item.label||host)}</strong><small>${escapeHtml(item.url)}</small></div><button type="button" class="remove-btn" aria-label="Referenz entfernen">×</button></div><div class="aspect-row"></div><div class="ref-notes"><input type="text" class="like-note" placeholder="${escapeHtml(likePlaceholder)}" value="${escapeHtml(item.like||"")}"><input type="text" class="dislike-note" placeholder="${escapeHtml(dislikePlaceholder)}" value="${escapeHtml(item.dislike||"")}"></div>`;
       card.querySelector(".remove-btn").addEventListener("click",()=>{state.urls=state.urls.filter(x=>x.id!==item.id);renderReferences();saveState();updateGuide();});
       renderAspectChips(card.querySelector(".aspect-row"), item);
       card.querySelector(".like-note").addEventListener("input",e=>{item.like=e.target.value;saveState()});
