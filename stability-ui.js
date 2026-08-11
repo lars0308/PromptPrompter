@@ -24,8 +24,8 @@
     restoreDone=true;ready();checkpoint()
   }
   function adminChrome(){const b=$('#adminBtn'),d=$('#adminDialog'),isAdmin=effective().isAdmin;if(b)b.hidden=!isAdmin;if(!isAdmin&&d?.open)d.close()}
-  function sessionChrome(){const b=$('#signOutBtn');if(b)b.hidden=!window.SiteBriefCloud?.user;adminChrome()}
-  function moveSignOut(){const b=$('#signOutBtn'),menu=$('#topbarMenu');if(!b||!menu)return;if(b.parentElement!==menu)menu.appendChild(b);b.className='text-btn menu-signout';b.textContent='Abmelden';sessionChrome()}
+  function sessionChrome(){adminChrome()}
+  function moveSignOut(){const b=$('#signOutBtn'),menu=$('#topbarMenu');if(!b||!menu)return;if(b.parentElement!==menu){menu.appendChild(b);if(b.hidden===false&&!window.SiteBriefCloud?.user)b.hidden=true}b.className='text-btn menu-signout';b.textContent='Abmelden';sessionChrome()}
   function closeMenu(){const m=$('#topbarMenu'),t=$('#topbarMenuToggle');m?.classList.remove('open');t?.setAttribute('aria-expanded','false')}
   function loginAfterLogout(){setTimeout(()=>{document.querySelectorAll('dialog[open]').forEach(d=>{if(d.id!=='accountDialog')try{d.close()}catch{}});const d=$('#accountDialog');if(!d)return;d.classList.remove('guest-gate','auth-transitioning');if($('#accountLoggedOut'))$('#accountLoggedOut').hidden=false;if($('#accountLoggedIn'))$('#accountLoggedIn').hidden=true;if($('#accountDialogKicker'))$('#accountDialogKicker').textContent='KONTO';if($('#accountDialogTitle'))$('#accountDialogTitle').textContent='Anmelden';try{if(!d.open)d.showModal()}catch{}},80)}
   function bindLogout(){const b=$('#signOutBtn');if(b)b.addEventListener('click',()=>{logoutRequested=true;forceSave();closeMenu();setTimeout(()=>{if(logoutRequested&&!window.SiteBriefCloud?.user){logoutRequested=false;loginAfterLogout()}},900)});window.SiteBriefCloud?.subscribe?.((event,payload)=>{if(event!=='auth')return;sessionChrome();if(!payload?.user&&logoutRequested){logoutRequested=false;loginAfterLogout()}})}

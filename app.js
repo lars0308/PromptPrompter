@@ -500,6 +500,7 @@
 
   function updateAccountUi(){
     if(!el.accountBtn) return;
+    if(el.signOutBtn)el.signOutBtn.hidden=!state.cloud.user;
     if(el.subscriptionMenuBtn)el.subscriptionMenuBtn.hidden=!cloudReady();
     if(!state.cloud.configured){ el.accountBtn.textContent="Cloud nicht verbunden"; setSyncState("Lokal"); return; }
     if(state.cloud.user){
@@ -668,7 +669,7 @@
   async function signIn(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||!password)return;
-    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await withTimeout(window.SiteBriefCloud.signIn(email,password));if(el.rememberEmail?.checked)localStorage.setItem(REMEMBERED_EMAIL_KEY,email);else localStorage.removeItem(REMEMBERED_EMAIL_KEY);state.cloud.user=data.user;el.authPassword.value="";el.authMessage.textContent="Angemeldet. Die Sitzung bleibt auf diesem Gerät erhalten.";el.authMessage.className="auth-message good";}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
+    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await withTimeout(window.SiteBriefCloud.signIn(email,password));if(el.rememberEmail?.checked)localStorage.setItem(REMEMBERED_EMAIL_KEY,email);else localStorage.removeItem(REMEMBERED_EMAIL_KEY);state.cloud.user=data.user;el.authPassword.value="";el.authMessage.textContent="Angemeldet. Die Sitzung bleibt auf diesem Gerät erhalten.";el.authMessage.className="auth-message good";updateAccountUi();closeAccountGate();showWelcome();continuePendingAuthPlan();maybePromptBiometric();try{await loadCloudBundle()}catch{}}catch(err){el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
   }
 
   async function signUp(){
