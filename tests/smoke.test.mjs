@@ -237,10 +237,10 @@ test('loading-screen sentences stay on screen ~1.6s longer than before across ev
     assert.match(src,/const SENTENCE_MS=3000;/,`${file} must use the extended sentence duration`);
   }
 });
-test('the blue-fill text overlay resets to fully hidden the instant new text is set, so a stale clip-path/position from the previous sentence can never be visible even for one frame',async()=>{
+test('the loader title/sentence text updates instantly and cleanly, with no stale per-character fill overlay that could desync from the text',async()=>{
   const transition=await text('transition-polish.js'),v1=await text('promptai-experience-v1.js');
-  assert.match(transition,/function setTitle\(box,text\)\{[\s\S]{0,200}blue\.style\.clipPath='inset\(0 100% 0 0\)';base\.textContent=text;blue\.textContent=text\}/);
-  assert.match(transition,/const apply=\(\)=>\{blue\.style\.clipPath='inset\(0 100% 0 0\)';base\.textContent=text;blue\.textContent=text;host\.classList\.remove\('is-changing'\)\};/);
+  assert.match(transition,/function setTitle\(box,text\)\{const host=\$\('strong',box\);if\(!host\|\|host\.textContent===text\)return;host\.textContent=text\}/);
+  assert.match(transition,/const apply=\(\)=>\{host\.textContent=text;host\.classList\.remove\('is-changing'\)\};/);
   assert.match(v1,/const apply=\(\)=>\{blue\.style\.clipPath='inset\(0 100% 0 0\)';base\.textContent=text;blue\.textContent=text;/);
 });
 test('the "Prompt genauer einstellen" free-prompt settings step is consolidated into 3 broad fields instead of 9 narrow ones',async()=>{
@@ -262,7 +262,7 @@ test('the "Projekt wird vorbereitet" mode-handoff loader title gets a blue-fill 
   assert.match(src,/function release\(box\)\{active=false;clearTimeout\(timer\);clearInterval\(sentenceTimer\);stopTitleFillLoop\(true\);/,'release (called once the real handoff work is done) must snap the title fill to 100% instead of leaving it mid-fill');
   assert.match(src,/\.prompt-mode-handoff strong \.blue\{position:absolute;inset:0;color:var\(--ui-blue,var\(--accent,#1689c7\)\);clip-path:inset\(0 100% 0 0\);pointer-events:none\}/);
 });
-test('the review/preview loader and the free-prompt thinking loader no longer use the fragile getBoundingClientRect + multi-line polygon clip-path technique for their blue text fill, replaced by a plain percentage clip-path that cannot desync from the underlying text box',async()=>{
+test('the review/preview loader and the free-prompt thinking loader no longer use the fragile getBoundingClientRect + multi-line polygon clip-path technique for their fill, and the review/preview loader uses a plain progress bar instead of a text-color overlay (which rendered incompletely on ascenders/descenders like g, t, f) that cannot desync from the underlying text box',async()=>{
   for(const file of ['transition-polish.js','promptai-experience-v1.js']){
     const src=await text(file);
     assert.doesNotMatch(src,/getClientRects/,`${file} must not measure per-line text rects for the fill anymore - this was reported live as rendering garbled/offset blue text even after an earlier defensive fix`);
@@ -270,7 +270,8 @@ test('the review/preview loader and the free-prompt thinking loader no longer us
     assert.doesNotMatch(src,/polygon\(/,`${file} must not build a reading-order polygon clip-path anymore`);
   }
   const transition=await text('transition-polish.js');
-  assert.match(transition,/function applyFill\(progress\)\{\s*const box=\$\('#promptWorkflowLoader'\);if\(!box\)return;\s*const clip=`inset\(0 \$\{\(\(1-progress\)\*100\)\.toFixed\(2\)\}% 0 0\)`;/);
+  assert.doesNotMatch(transition,/clip-path/,'the review/preview loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
+  assert.match(transition,/function applyFill\(progress\)\{\s*const box=\$\('#promptWorkflowLoader'\);if\(!box\)return;\s*const bar=\$\('\.prompt-loader-bar i',box\);if\(bar\)bar\.style\.width=`\$\{\(progress\*100\)\.toFixed\(2\)\}%`;/);
   const v1=await text('promptai-experience-v1.js');
   assert.match(v1,/blue\.style\.clipPath=`inset\(0 \$\{\(\(1-ease\(t\)\)\*100\)\.toFixed\(2\)\}% 0 0\)`;/);
 });

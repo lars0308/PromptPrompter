@@ -42,7 +42,7 @@ test('loader blue-fill tracks real elapsed time instead of a fixed guessed durat
   assert.match(src,/function startFillLoop\(\)/);
   assert.match(src,/function stopFillLoop\(complete=false\)/);
   assert.doesNotMatch(src,/animation:promptSentenceFill/);
-  assert.match(src,/strong \.blue/);
+  assert.match(src,/\.prompt-loader-bar i\{/,'must render progress as a plain width-based bar, not a text-color clip-path fill (which rendered incompletely on letters with ascenders/descenders like g, t, f)');
 });
 
 test('leaving the workflow cannot reopen late review UI',async()=>{

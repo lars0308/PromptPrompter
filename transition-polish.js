@@ -20,6 +20,8 @@
       html[data-clean-project-flow="1"] .streamline-working,
       html[data-clean-project-flow="1"] #modeFlowPanel,
       html[data-clean-project-flow="1"] #promptCompletionFlash,
+      html[data-clean-project-flow="1"] #promptAiThinkingStage,
+      html[data-clean-project-flow="1"] #promptModeHandoff,
       html[data-prompt-mode="guided"] #promptBriefHandoff,
       html[data-prompt-mode="auto"] #promptBriefHandoff,
       html[data-prompt-mode="guided"] #flowTransitionCompact,
@@ -29,7 +31,11 @@
       html[data-prompt-mode="guided"] #modeFlowPanel,
       html[data-prompt-mode="auto"] #modeFlowPanel,
       html[data-prompt-mode="guided"] #promptCompletionFlash,
-      html[data-prompt-mode="auto"] #promptCompletionFlash{display:none!important}
+      html[data-prompt-mode="auto"] #promptCompletionFlash,
+      html[data-prompt-mode="guided"] #promptAiThinkingStage,
+      html[data-prompt-mode="auto"] #promptAiThinkingStage,
+      html[data-prompt-mode="guided"] #promptModeHandoff,
+      html[data-prompt-mode="auto"] #promptModeHandoff{display:none!important}
       html[data-clean-project-flow="1"].prompt-review-transition #workflowApp .step-panel.active,
       html[data-prompt-mode="guided"].prompt-review-transition #workflowApp .step-panel.active,
       html[data-prompt-mode="auto"].prompt-review-transition #workflowApp .step-panel.active{display:flex!important;visibility:visible!important;pointer-events:auto!important}
@@ -56,14 +62,14 @@
       #promptWorkflowLoaderClose{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--ui-line,var(--line));border-radius:50%;background:var(--ui-card,var(--surface));color:var(--ink);font:700 21px/1 Arial,sans-serif;box-shadow:none}
       #promptWorkflowLoaderClose:hover{background:var(--ui-soft,var(--surface-soft));border-color:color-mix(in srgb,var(--ui-blue,var(--accent)) 45%,var(--ui-line,var(--line)))}
       #promptWorkflowLoader .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}
-      #promptWorkflowLoader strong{position:relative;display:block;margin-top:9px;font-size:clamp(31px,8vw,47px);line-height:1.02;letter-spacing:-.05em}
-      #promptWorkflowLoader strong .blue{position:absolute;inset:0;color:var(--ui-blue,var(--accent,#1689c7));clip-path:inset(0 100% 0 0);pointer-events:none}
-      .prompt-loader-sentence{position:relative;display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;overflow:hidden;transition:opacity .16s ease,transform .16s ease}
+      #promptWorkflowLoader strong{display:block;margin-top:9px;font-size:clamp(31px,8vw,47px);line-height:1.02;letter-spacing:-.05em}
+      .prompt-loader-sentence{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}
       .prompt-loader-sentence.is-changing{opacity:0;transform:translateY(4px)}
-      .prompt-loader-sentence .blue{position:absolute;inset:0;color:var(--ui-blue,var(--accent,#1689c7));clip-path:inset(0 100% 0 0);pointer-events:none}
+      .prompt-loader-bar{width:min(280px,80%);height:4px;margin:26px auto 0;border-radius:99px;background:var(--ui-line,var(--line));overflow:hidden}
+      .prompt-loader-bar i{display:block;height:100%;width:0%;border-radius:99px;background:var(--ui-blue,var(--accent,#1689c7));transition:width .3s ease}
       .prompt-loader-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-loader-pulse[hidden]{display:none}.prompt-loader-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptLoaderPulse 1.05s ease-in-out infinite}.prompt-loader-pulse i:nth-child(2){animation-delay:.13s}.prompt-loader-pulse i:nth-child(3){animation-delay:.26s}
       @keyframes promptLoaderPulse{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
-      @media(prefers-reduced-motion:reduce){#promptWorkflowLoader,.prompt-loader-sentence{transition:none!important}.prompt-loader-pulse i{animation:none!important;opacity:.7!important}}
+      @media(prefers-reduced-motion:reduce){#promptWorkflowLoader,.prompt-loader-sentence{transition:none!important}.prompt-loader-pulse i{animation:none!important;opacity:.7!important}.prompt-loader-bar i{transition:none!important}}
     `;document.head.appendChild(s)
   }
 
@@ -77,9 +83,7 @@
   function fillProgress(elapsed){const tau=15000;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
   function applyFill(progress){
     const box=$('#promptWorkflowLoader');if(!box)return;
-    const clip=`inset(0 ${((1-progress)*100).toFixed(2)}% 0 0)`;
-    const titleBlue=$('strong .blue',box);if(titleBlue)titleBlue.style.clipPath=clip;
-    const sentenceBlue=$('.prompt-loader-sentence .blue',box);if(sentenceBlue)sentenceBlue.style.clipPath=clip;
+    const bar=$('.prompt-loader-bar i',box);if(bar)bar.style.width=`${(progress*100).toFixed(2)}%`;
   }
   function forceRecover(){
     clearInterval(cycleTimer);cycleTimer=0;
@@ -102,9 +106,9 @@
   }
   function stopFillLoop(complete=false){cancelAnimationFrame(fillRaf);fillRaf=0;if(complete)applyFill(1)}
 
-  function loader(){let box=$('#promptWorkflowLoader');if(box)return box;box=document.createElement('section');box.id='promptWorkflowLoader';box.setAttribute('aria-live','polite');box.innerHTML='<button type="button" id="promptWorkflowLoaderClose" aria-label="Abbrechen">×</button><div><span class="kicker"></span><strong><span class="base"></span><span class="blue" aria-hidden="true"></span></strong><div class="prompt-loader-sentence"><span class="base"></span><span class="blue" aria-hidden="true"></span></div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>';document.body.appendChild(box);return box}
-  function setTitle(box,text){const host=$('strong',box),base=$('.base',host||document),blue=$('.blue',host||document);if(!base||!blue)return;if(base.textContent===text)return;blue.style.clipPath='inset(0 100% 0 0)';base.textContent=text;blue.textContent=text}
-  function setSentence(text,immediate=false){const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;const apply=()=>{blue.style.clipPath='inset(0 100% 0 0)';base.textContent=text;blue.textContent=text;host.classList.remove('is-changing')};if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)}
+  function loader(){let box=$('#promptWorkflowLoader');if(box)return box;box=document.createElement('section');box.id='promptWorkflowLoader';box.setAttribute('aria-live','polite');box.innerHTML='<button type="button" id="promptWorkflowLoaderClose" aria-label="Abbrechen">×</button><div><span class="kicker"></span><strong></strong><div class="prompt-loader-sentence"></div><div class="prompt-loader-bar"><i></i></div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>';document.body.appendChild(box);return box}
+  function setTitle(box,text){const host=$('strong',box);if(!host||host.textContent===text)return;host.textContent=text}
+  function setSentence(text,immediate=false){const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document);if(!host)return;const apply=()=>{host.textContent=text;host.classList.remove('is-changing')};if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)}
   function startCycle(kind){const data=copy[kind];if(!data)return;clearInterval(cycleTimer);let index=0;setSentence(data.sentences[index],true);cycleTimer=setInterval(()=>{const box=$('#promptWorkflowLoader');if(!box||activeKind!==kind){clearInterval(cycleTimer);return}index=(index+1)%data.sentences.length;setSentence(data.sentences[index])},SENTENCE_MS+240)}
   function show(kind){if(userExited||!workflowVisible()||!cleanMode())return;const data=copy[kind];if(!data)return;const box=loader();box.classList.remove('is-leaving');document.documentElement.classList.add('prompt-workflow-loading');const kicker=$('.kicker',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;setTitle(box,data.title);if(activeKind!==kind){activeKind=kind;startCycle(kind);startFillLoop()}}
   function hide(immediate=false){clearInterval(cycleTimer);cycleTimer=0;activeKind='';const box=$('#promptWorkflowLoader');document.documentElement.classList.remove('prompt-workflow-loading');if(!box){stopFillLoop();return}stopFillLoop(true);if(immediate){box.remove();return}box.classList.add('is-leaving');setTimeout(()=>box.remove(),250)}
