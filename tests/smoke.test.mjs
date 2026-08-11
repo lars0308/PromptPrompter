@@ -255,12 +255,13 @@ test('opening the hamburger menu re-syncs plan UI from window.PromptAiAccess, so
   const src=await text('app.js');
   assert.match(src,/const access=window\.PromptAiAccess;if\(access\)\{if\(access\.plan\)state\.plan=access\.plan;state\.isAdmin=Boolean\(access\.isAdmin\)\|\|isOwnerAccount\(\);if\(access\.ownApiKeys\)state\.ownApiKeys=true;\}applyPlanUi\(\);/);
 });
-test('the "Projekt wird vorbereitet" mode-handoff loader title gets a blue-fill that tracks real elapsed time and snaps to 100% the instant the real work finishes',async()=>{
+test('the "Projekt wird vorbereitet" mode-handoff loader shows progress as a plain width-based bar (not a text-color clip-path fill, which rendered incompletely on letters with ascenders/descenders like g, t, f) that tracks real elapsed time and snaps to 100% the instant the real work finishes',async()=>{
   const src=await text('mode-handoff-fix.js');
-  assert.match(src,/<strong><span class="base">Projekt wird vorbereitet<\/span><span class="blue" aria-hidden="true">Projekt wird vorbereitet<\/span><\/strong>/);
-  assert.match(src,/function titleProgress\(elapsed\)\{const tau=2600;return Math\.min\(\.94,\.94\*\(1-Math\.exp\(-elapsed\/tau\)\)\)\}/,'must track real elapsed time asymptotically, not a fixed guessed duration');
+  assert.doesNotMatch(src,/clip-path/,'the mode-handoff loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
+  assert.match(src,/<strong>Projekt wird vorbereitet<\/strong>/);
+  assert.match(src,/\.prompt-mode-handoff-bar i\{/);
+  assert.match(src,/function titleProgress\(elapsed\)\{const tau=1500;return Math\.min\(\.94,\.94\*\(1-Math\.exp\(-elapsed\/tau\)\)\)\}/,'must track real elapsed time asymptotically, not a fixed guessed duration');
   assert.match(src,/function release\(box\)\{active=false;clearTimeout\(timer\);clearInterval\(sentenceTimer\);stopTitleFillLoop\(true\);/,'release (called once the real handoff work is done) must snap the title fill to 100% instead of leaving it mid-fill');
-  assert.match(src,/\.prompt-mode-handoff strong \.blue\{position:absolute;inset:0;color:var\(--ui-blue,var\(--accent,#1689c7\)\);clip-path:inset\(0 100% 0 0\);pointer-events:none\}/);
 });
 test('the review/preview loader and the free-prompt thinking loader no longer use the fragile getBoundingClientRect + multi-line polygon clip-path technique for their fill, and the review/preview loader uses a plain progress bar instead of a text-color overlay (which rendered incompletely on ascenders/descenders like g, t, f) that cannot desync from the underlying text box',async()=>{
   for(const file of ['transition-polish.js','promptai-experience-v1.js']){

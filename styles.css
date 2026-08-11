@@ -202,7 +202,8 @@ body{background:radial-gradient(circle at 9% 12%,color-mix(in srgb,var(--accent)
 }
 
 /* 7.2 — dedicated account entrance */
-.account-dialog{width:min(1120px,calc(100vw - 28px));max-height:min(920px,calc(100dvh - 28px));color:var(--ink)}
+.account-dialog{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;color:var(--ink)}
+.account-dialog .dialog-frame{width:100%;height:100%;max-height:none;border-radius:0}
 .account-dialog .dialog-frame{position:relative;background:radial-gradient(circle at 4% 3%,rgba(45,147,201,.12),transparent 29rem),radial-gradient(circle at 94% 92%,rgba(91,145,102,.12),transparent 32rem),var(--glass-strong);overflow:hidden}
 .account-dialog .dialog-frame:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.045),transparent 34%,transparent 70%,rgba(255,255,255,.025))}
 .account-dialog.guest-gate .dialog-head{display:none}.account-dialog.guest-gate .dialog-frame{max-width:none}
