@@ -2,7 +2,7 @@ const { resolveProviderKey } = require('../server/provider-key');
 const { getEntitlements } = require('../server/entitlements');
 const { rateLimit } = require('../server/rate-limit');
 const VARIANTS = ["split","poster","ledger","stacked","editorial","minimal"];
-const PROVIDER_TIMEOUT_MS = 20000;
+const PROVIDER_TIMEOUT_MS = 35000;
 async function fetchWithTimeout(url,options={},timeoutMs=PROVIDER_TIMEOUT_MS){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{return await fetch(url,{...options,signal:controller.signal})}

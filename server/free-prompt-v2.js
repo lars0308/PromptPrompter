@@ -5,7 +5,7 @@ const {rateLimit}=require('./rate-limit');
 const {logUsage}=require('./usage');
 
 const MAX_BODY=120000;
-const PROVIDER_TIMEOUT_MS=20000;
+const PROVIDER_TIMEOUT_MS=35000;
 async function fetchWithTimeout(url,options={},timeoutMs=PROVIDER_TIMEOUT_MS){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{return await fetch(url,{...options,signal:controller.signal})}
