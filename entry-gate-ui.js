@@ -14,6 +14,14 @@
       .gate-primary-actions button{min-height:54px;padding:0 14px;border-radius:14px;font-size:15px;font-weight:750}
       .gate-guest-btn{min-height:64px;padding:0 18px;border:1px solid var(--accent);border-radius:16px;background:var(--accent);color:#fff;font-size:17px;font-weight:800;box-shadow:0 16px 34px rgba(45,147,201,.24)}
       .gate-guest-note{margin:0;color:var(--muted);font-size:9px;text-align:center}
+      .gate-plans-pick{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;margin-top:4px;padding:14px 16px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:14px;background:color-mix(in srgb,var(--accent) 6%,var(--surface));text-align:left}
+      .gate-plans-pick span,.gate-plans-pick strong,.gate-plans-pick small{display:block}
+      .gate-plans-pick span{font-size:8px;font-weight:800;letter-spacing:.12em;color:var(--accent)}
+      .gate-plans-pick strong{margin:3px 0;font-size:13px}
+      .gate-plans-pick small{color:var(--muted);font-size:9px;line-height:1.4}
+      .gate-plans-pick:after{content:"→";grid-row:1/3;align-self:center;color:var(--accent);font-size:16px}
+      .gate-theme-pick{justify-self:center;margin-top:2px;display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--muted);font-size:9px}
+      .gate-theme-pick:hover{color:var(--ink)}
       @media(max-width:360px){.gate-primary-actions{grid-template-columns:1fr}}
     `;document.head.appendChild(s);
   }
@@ -21,12 +29,14 @@
   function ensureGateActions(){
     const hero=$('#accountLoggedOut .auth-hero');if(!hero||$('#gateActions'))return;
     const box=document.createElement('div');box.id='gateActions';
-    box.innerHTML='<div class="gate-primary-actions"><button type="button" class="outline-btn" id="gateSignInPick">Anmelden</button><button type="button" class="outline-btn" id="gateSignUpPick">Registrieren</button></div><button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen</button><p class="gate-guest-note">Ohne Konto, jederzeit später upgradebar.</p>';
+    box.innerHTML='<div class="gate-primary-actions"><button type="button" class="outline-btn" id="gateSignInPick">Anmelden</button><button type="button" class="outline-btn" id="gateSignUpPick">Registrieren</button></div><button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen</button><p class="gate-guest-note">Ohne Konto, jederzeit später upgradebar.</p><button type="button" class="gate-plans-pick" id="gatePlansPick"><span>MEHR FUNKTIONEN</span><strong>Lieber direkt mit einem Abo starten?</strong><small>Pro und Ultimate im Vergleich ansehen.</small></button><button type="button" class="gate-theme-pick" id="gateThemePick">Anderes Farbschema verwenden</button>';
     hero.insertAdjacentElement('afterend',box);
     const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
     $('#gateSignInPick',box).addEventListener('click',reveal);
     $('#gateSignUpPick',box).addEventListener('click',reveal);
     $('#gateGuestBtn',box).addEventListener('click',()=>$('#guestContinueBtn')?.click());
+    $('#gatePlansPick',box).addEventListener('click',()=>$('#plansDialog')?.showModal());
+    $('#gateThemePick',box).addEventListener('click',()=>$('#themeToggleBtn')?.click());
   }
 
   function resetExpansion(){
