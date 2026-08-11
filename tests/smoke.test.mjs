@@ -157,3 +157,32 @@ test('CSS provides matching styles for the minimal variant, logo-hamburger nav a
   assert.match(css,/\.screen-nav\.nav-logo-hamburger\{justify-content:flex-start\}/);
   assert.match(css,/\.concept-screen\.split\.mirror \.screen-body\{grid-template-columns:46% 54%\}\.concept-screen\.split\.mirror \.screen-photo\{order:-1\}/);
 });
+test('GitHub API can list a user\'s own repositories and publish into an existing one, not just create a brand-new repo, all still Ultimate-gated',async()=>{
+  const src=await text('api/github-publish.js');
+  assert.match(src,/if\(!entitlement\.isAdmin&&entitlement\.plan!=='ultimate'\)return res\.status\(403\)\.json\(\{error:'GitHub-Repository-Zugriff ist in Ultimate verfügbar\.'\}\);/);
+  assert.match(src,/async function listRepos\(token\)\{const repos=await github\('\/user\/repos\?sort=updated&per_page=100&affiliation=owner,collaborator',token\);/);
+  assert.match(src,/async function publishExisting\(token,targetRepoInput,branchInput,files\)\{/);
+  assert.match(src,/if\(action==='list-repos'\)return res\.status\(200\)\.json\(\{repos:await listRepos\(token\)\}\);/);
+  assert.match(src,/if\(action==='publish-existing'\)return res\.status\(200\)\.json\(await publishExisting\(token,req\.body\?\.targetRepo,req\.body\?\.branch,req\.body\?\.files\|\|\{\}\)\);/);
+});
+test('GitHub-repo sandbox pull requires Ultimate, while plain ZIP-upload sandbox builds stay Pro+',async()=>{
+  const src=await text('server/sandbox-build.js');
+  assert.match(src,/if\(githubRepo\)\{if\(!\(ent\.isAdmin\|\|ent\.plan==='ultimate'\)\)return res\.status\(403\)\.json\(\{error:'Der GitHub-Repository-Import in die Sandbox ist in Ultimate verfügbar\.'\}\)\}else if\(!\(ent\.isAdmin\|\|\['pro','ultimate'\]\.includes\(ent\.plan\)\)\)return res\.status\(403\)\.json\(\{error:'Der isolierte Quellcode-Build ist ab Pro verfügbar\.'\}\);/);
+  const ui=await text('github-sandbox.js'),zipUi=await text('sandbox-preview.js');
+  assert.match(ui,/function canBuild\(\)\{const a=access\(\);return a\.isAdmin\|\|a\.plan==='ultimate'\}/);
+  assert.match(zipUi,/ab Pro verfügbar/,'the unrelated ZIP-upload sandbox feature must stay Pro+, untouched by the GitHub-only Ultimate change');
+});
+test('publishing to GitHub offers a picker of the user\'s existing repos (via the shared select-mode dialog) instead of only creating new ones',async()=>{
+  const app=await text('app.js'),html=await text('index.html');
+  assert.match(app,/async function fetchGithubRepos\(\)\{/);
+  assert.match(app,/const choice=await customSelect\('Wohin soll veröffentlicht werden\?',\[\{value:'__new__',label:'Neues Repository anlegen'\},\.\.\.repos\.map/);
+  assert.match(app,/const body=targetRepo\?\{action:'publish-existing',targetRepo,files\}:\{repoName,files\};/);
+  assert.match(app,/const customSelect=\(message,selectOptions,selectValue='',options=\{\}\)=>showAppAction\(\{\.\.\.options,message,selectOptions,selectValue\}\);/);
+  assert.match(html,/<select id="appActionSelect" hidden><\/select>/);
+});
+test('the GitHub sandbox card offers a picker populated from the user\'s own repos when connected',async()=>{
+  const src=await text('github-sandbox.js');
+  assert.match(src,/async function loadRepoPicker\(\)\{/);
+  assert.match(src,/body:JSON\.stringify\(\{action:'list-repos'\}\)/);
+  assert.match(src,/id="githubSandboxPicker" hidden/);
+});

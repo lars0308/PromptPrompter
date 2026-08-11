@@ -123,7 +123,7 @@
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
       "resetBtn","startNewBtn","brandHome","installAppBtn","upgradeBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","buySingleReviewBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
-      "workspaceNewProjectBtn","workspaceLastProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionUpgradeNote","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn","appActionDialog","appActionKicker","appActionTitle","appActionMessage","appActionInputWrap","appActionInputLabel","appActionInput","appActionCancelBtn","appActionConfirmBtn","openAgentBtn","agentLaunchDialog","closeAgentLaunchBtn","agentLaunchTitle","agentLaunchText","openAgentWebBtn","openAgentDesktopBtn","agentLaunchHint"
+      "workspaceNewProjectBtn","workspaceLastProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionUpgradeNote","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn","appActionDialog","appActionKicker","appActionTitle","appActionMessage","appActionInputWrap","appActionInputLabel","appActionInput","appActionSelect","appActionCancelBtn","appActionConfirmBtn","openAgentBtn","agentLaunchDialog","closeAgentLaunchBtn","agentLaunchTitle","agentLaunchText","openAgentWebBtn","openAgentDesktopBtn","agentLaunchHint"
     ].forEach(id => el[id] = document.getElementById(id));
   }
 
@@ -133,16 +133,22 @@
   }
   function initDialogSystem(){
     const observer=new MutationObserver(syncDialogScrollLock);$$('dialog').forEach(dialog=>observer.observe(dialog,{attributes:true,attributeFilter:['open']}));
-    el.appActionCancelBtn.addEventListener('click',()=>finishAppAction(null));el.appActionConfirmBtn.addEventListener('click',()=>finishAppAction(el.appActionInputWrap.hidden?true:el.appActionInput.value));el.appActionDialog.addEventListener('cancel',event=>{event.preventDefault();finishAppAction(null)});
+    el.appActionCancelBtn.addEventListener('click',()=>finishAppAction(null));el.appActionConfirmBtn.addEventListener('click',()=>finishAppAction(el.appActionInputWrap.hidden?true:!el.appActionSelect.hidden?el.appActionSelect.value:el.appActionInput.value));el.appActionDialog.addEventListener('cancel',event=>{event.preventDefault();finishAppAction(null)});
     window.PromptAiDialog={confirm:(message,options={})=>showAppAction({...options,message}),prompt:(message,value='',options={})=>showAppAction({...options,message,input:true,value}),alert:(message,options={})=>showAppAction({...options,message,cancelLabel:'',confirmLabel:'Verstanden'})};
   }
-  function showAppAction({title='Bitte bestätigen',message='',kicker='PROMPT.AI',confirmLabel='Bestätigen',cancelLabel='Abbrechen',danger=false,input=false,value='',inputLabel='Eingabe'}={}){
-    if(actionDialogResolve)actionDialogResolve(null);el.appActionKicker.textContent=kicker;el.appActionTitle.textContent=title;el.appActionMessage.textContent=message;el.appActionConfirmBtn.textContent=confirmLabel;el.appActionConfirmBtn.classList.toggle('danger',danger);el.appActionCancelBtn.textContent=cancelLabel;el.appActionCancelBtn.hidden=!cancelLabel;el.appActionInputWrap.hidden=!input;el.appActionInputLabel.textContent=inputLabel;el.appActionInput.value=value;el.appActionDialog.showModal();if(input)setTimeout(()=>{el.appActionInput.focus();el.appActionInput.select()},50);return new Promise(resolve=>{actionDialogResolve=resolve});
+  function showAppAction({title='Bitte bestätigen',message='',kicker='PROMPT.AI',confirmLabel='Bestätigen',cancelLabel='Abbrechen',danger=false,input=false,value='',inputLabel='Eingabe',selectOptions=null,selectValue=''}={}){
+    if(actionDialogResolve)actionDialogResolve(null);el.appActionKicker.textContent=kicker;el.appActionTitle.textContent=title;el.appActionMessage.textContent=message;el.appActionConfirmBtn.textContent=confirmLabel;el.appActionConfirmBtn.classList.toggle('danger',danger);el.appActionCancelBtn.textContent=cancelLabel;el.appActionCancelBtn.hidden=!cancelLabel;el.appActionInputLabel.textContent=inputLabel;
+    const useSelect=Array.isArray(selectOptions)&&selectOptions.length>0;
+    el.appActionInputWrap.hidden=!(input||useSelect);el.appActionSelect.hidden=!useSelect;el.appActionInput.hidden=useSelect;
+    if(useSelect){el.appActionSelect.innerHTML=selectOptions.map(o=>`<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join('');el.appActionSelect.value=selectValue}
+    else el.appActionInput.value=value;
+    el.appActionDialog.showModal();if(input&&!useSelect)setTimeout(()=>{el.appActionInput.focus();el.appActionInput.select()},50);return new Promise(resolve=>{actionDialogResolve=resolve});
   }
   function finishAppAction(value){if(el.appActionDialog.open)el.appActionDialog.close();const resolve=actionDialogResolve;actionDialogResolve=null;if(resolve)resolve(value)}
   const customConfirm=(message,options={})=>showAppAction({...options,message});
   const customPrompt=(message,value='',options={})=>showAppAction({...options,message,input:true,value});
   const customAlert=(message,options={})=>showAppAction({...options,message,cancelLabel:'',confirmLabel:'Verstanden'});
+  const customSelect=(message,selectOptions,selectValue='',options={})=>showAppAction({...options,message,selectOptions,selectValue});
 
 
   function initPasswordToggles(){
@@ -1918,7 +1924,30 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   }
   async function beginCheckout(plan){if(!cloudReady()){showAccountGate();return}try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');location.href=data.url}catch(err){await customAlert(err.message,{title:'Zahlung nicht möglich'})}}
   async function openBillingPortal(){try{const response=await sitebriefApiFetch('/api/portal',{method:'POST'}),data=await response.json();if(!response.ok)throw new Error(data.error||'Aboverwaltung nicht verfügbar');location.href=data.url}catch(err){await customAlert(err.message,{title:'Aboverwaltung nicht erreichbar'})}}
-  async function publishToGithub(){if(!planRules().github){el.plansDialog?.showModal();return}const repoName=await customPrompt('Wie soll das neue GitHub-Repository heißen?',(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9-]+/g,'-'),{title:'GitHub-Repository anlegen',inputLabel:'Repository-Name',confirmLabel:'Veröffentlichen'});if(!repoName)return;try{el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='GitHub-Veröffentlichung wird vorbereitet…';const files=state.generatedWebsite?.files||exportedWebsiteFiles(),response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repoName,files})}),data=await response.json();if(!response.ok)throw new Error(data.error||'GitHub-Veröffentlichung nicht möglich');el.exportResultHint.innerHTML=`Veröffentlicht: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>`}catch(err){el.exportResultHint.textContent=err.message}finally{el.publishGithubBtn.disabled=false}}
+  async function fetchGithubRepos(){try{const response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list-repos'})}),data=await response.json();if(!response.ok)return null;return Array.isArray(data.repos)?data.repos:[]}catch{return null}}
+  async function publishToGithub(){
+    if(!planRules().github){el.plansDialog?.showModal();return}
+    const repos=await fetchGithubRepos();
+    let targetRepo="",repoName="";
+    if(repos&&repos.length){
+      const choice=await customSelect('Wohin soll veröffentlicht werden?',[{value:'__new__',label:'Neues Repository anlegen'},...repos.map(r=>({value:r.fullName,label:`${r.fullName}${r.private?' (privat)':''}`}))],'__new__',{title:'GitHub-Ziel wählen',confirmLabel:'Weiter',inputLabel:'Ziel-Repository'});
+      if(choice===null)return;
+      if(choice&&choice!=='__new__')targetRepo=choice;
+    }
+    if(!targetRepo){
+      repoName=await customPrompt('Wie soll das neue GitHub-Repository heißen?',(project().name||'sitebrief-website').toLowerCase().replace(/[^a-z0-9-]+/g,'-'),{title:'GitHub-Repository anlegen',inputLabel:'Repository-Name',confirmLabel:'Veröffentlichen'});
+      if(!repoName)return;
+    }
+    try{
+      el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='GitHub-Veröffentlichung wird vorbereitet…';
+      const files=state.generatedWebsite?.files||exportedWebsiteFiles();
+      const body=targetRepo?{action:'publish-existing',targetRepo,files}:{repoName,files};
+      const response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await response.json();
+      if(!response.ok)throw new Error(data.error||'GitHub-Veröffentlichung nicht möglich');
+      el.exportResultHint.innerHTML=`Veröffentlicht: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>`;
+    }catch(err){el.exportResultHint.textContent=err.message}
+    finally{el.publishGithubBtn.disabled=false}
+  }
   async function saveUserProfile(){if(!cloudReady())return;const profile={displayName:el.userDisplayName.value.trim(),companyName:el.userCompanyName.value.trim(),website:el.userWebsite.value.trim(),defaultClientType:el.userDefaultClientType.value};try{el.saveUserProfileBtn.disabled=true;await window.SiteBriefCloud.saveUserProfile(profile);state.userProfile=profile;el.userProfileMessage.textContent='Profil gespeichert ✓'}catch(err){el.userProfileMessage.textContent=err.message||'Profil konnte nicht gespeichert werden'}finally{el.saveUserProfileBtn.disabled=false}}
   function biometricRecord(){try{const row=JSON.parse(localStorage.getItem(BIOMETRIC_KEY)||'null');return row?.userId===state.cloud.user?.id?row:null}catch{return null}}
   let lastBiometricPromptAt=0,biometricPrompting=false;
