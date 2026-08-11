@@ -266,7 +266,7 @@
       images:state.images.map(({dataUrl,previewUrl,...rest}) => rest),
       documents:state.documents.map(({pageImages,previewUrl,...rest})=>rest),
       targetAgent:state.targetAgent,engine:state.engine,model:state.model,outputTarget:state.outputTarget,templateId:state.templateId,selectedModuleIds:state.selectedModuleIds,selectedSkillIds:state.selectedSkillIds,
-      concepts:state.concepts,selectedConceptId:state.selectedConceptId,refinements:state.refinements,clarifications:state.clarifications,projectReview:state.projectReview,reviewSignature:state.reviewSignature,reviewDeferred:state.reviewDeferred,
+      concepts:state.concepts.map(({previewImage,...rest})=>rest),selectedConceptId:state.selectedConceptId,refinements:state.refinements,clarifications:state.clarifications,projectReview:state.projectReview,reviewSignature:state.reviewSignature,reviewDeferred:state.reviewDeferred,
       project:project(),controls:controls(),conceptCount:Number(el.conceptCount?.value || 5),previewFormat:el.previewFormat?.value||"html"
     };
   }

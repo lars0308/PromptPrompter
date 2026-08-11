@@ -68,3 +68,21 @@ test('own GitHub connection is a self-service Pro+ feature, independent of the p
   // trap fixed for .plan-overview earlier) - this override must stay in place so the gate actually hides it.
   assert.match(css,/#settingsDialog #githubConnectionGrid\[hidden\]\{display:none!important\}/);
 });
+test('generated concept preview images are never written into persisted project state',async()=>{
+  const src=await text('app.js');
+  // images.dataUrl and documents.pageImages are already stripped before persisting (they can be several MB of
+  // base64 each); concepts.previewImage is the exact same kind of AI-generated base64 image data but was missing
+  // the same treatment, so localStorage.setItem/JSON.stringify kept doing multi-MB work on every saveState() call
+  // - including the 15s auto-save interval - which is consistent with reports of the app becoming unresponsive
+  // after image concepts were generated, and staying unresponsive across a reload since the bloated blob is what
+  // gets restored and re-saved again immediately.
+  assert.match(src,/images:state\.images\.map\(\(\{dataUrl,previewUrl,\.\.\.rest\}\) => rest\),/);
+  assert.match(src,/documents:state\.documents\.map\(\(\{pageImages,previewUrl,\.\.\.rest\}\)=>rest\),/);
+  assert.match(src,/concepts:state\.concepts\.map\(\(\{previewImage,\.\.\.rest\}\)=>rest\),/);
+});
+test('the full-screen workflow loader cannot stay stuck forever regardless of cause',async()=>{
+  const src=await text('transition-polish.js');
+  assert.match(src,/const LOADER_TIMEOUT_MS=45000;/);
+  assert.match(src,/function forceRecover\(\)\{/);
+  assert.match(src,/if\(elapsed>LOADER_TIMEOUT_MS\)\{fillRaf=0;forceRecover\(\);return\}/);
+});

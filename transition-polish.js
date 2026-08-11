@@ -4,6 +4,7 @@
   let settleTimer=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false;
   const STEP_STABLE_MS=90;
   const SENTENCE_MS=1400;
+  const LOADER_TIMEOUT_MS=45000;
 
   const mode=()=>$('.mode-switch button.active')?.dataset.mode||document.documentElement.dataset.promptMode||'guided';
   const currentStep=()=>Number($('.step-panel.active')?.dataset.stepPanel||0);
@@ -104,10 +105,20 @@
     return `polygon(${points.join(',')})`;
   }
   function applyFill(progress){const box=$('#promptWorkflowLoader');if(!box)return;const titleBase=$('strong .base',box),titleBlue=$('strong .blue',box);if(titleBase&&titleBlue){syncOverlayBox(titleBase,titleBlue);titleBlue.style.clipPath=readingOrderClip(titleBase,progress)}const sentenceBase=$('.prompt-loader-sentence .base',box),sentenceBlue=$('.prompt-loader-sentence .blue',box);if(sentenceBase&&sentenceBlue){syncOverlayBox(sentenceBase,sentenceBlue);sentenceBlue.style.clipPath=readingOrderClip(sentenceBase,progress)}}
+  function forceRecover(){
+    userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();
+    try{$('#brandHome')?.click()}catch{}
+    try{window.alert('Das hat zu lange gedauert und wurde abgebrochen. Bitte versuch es erneut.')}catch{}
+  }
   function startFillLoop(){
     cancelAnimationFrame(fillRaf);fillStartedAt=performance.now();
     if(reduceMotion()){applyFill(.94);return}
-    const tick=()=>{if(!$('#promptWorkflowLoader')){fillRaf=0;return}applyFill(fillProgress(performance.now()-fillStartedAt));fillRaf=requestAnimationFrame(tick)};
+    const tick=()=>{
+      if(!$('#promptWorkflowLoader')){fillRaf=0;return}
+      const elapsed=performance.now()-fillStartedAt;
+      if(elapsed>LOADER_TIMEOUT_MS){fillRaf=0;forceRecover();return}
+      applyFill(fillProgress(elapsed));fillRaf=requestAnimationFrame(tick);
+    };
     fillRaf=requestAnimationFrame(tick);
   }
   function stopFillLoop(complete=false){cancelAnimationFrame(fillRaf);fillRaf=0;if(complete)applyFill(1)}
