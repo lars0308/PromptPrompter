@@ -204,6 +204,10 @@ body{background:radial-gradient(circle at 9% 12%,color-mix(in srgb,var(--accent)
 /* 7.2 — dedicated account entrance */
 .account-dialog{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;color:var(--ink)}
 .account-dialog .dialog-frame{width:100%;height:100%;max-height:none;border-radius:0}
+
+/* these were only ever sized via the shared .library-dialog base (min(1000px,100vw-40px)), never given their own override, so at anything less than a very wide window they needed horizontal scrolling to reach cut-off content - matches .account-dialog to a real full-viewport size instead */
+.admin-dialog,#libraryDialog,.settings-dialog,.profile-dialog,.clarification-dialog,.subscription-overview-dialog{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:0!important}
+.admin-dialog .dialog-frame,#libraryDialog .dialog-frame,.settings-dialog .dialog-frame,.profile-dialog .dialog-frame,.clarification-dialog .dialog-frame,.subscription-overview-dialog .dialog-frame{width:100%!important;height:100%!important;max-height:none!important;border-radius:0!important}
 .account-dialog .dialog-frame{position:relative;background:radial-gradient(circle at 4% 3%,rgba(45,147,201,.12),transparent 29rem),radial-gradient(circle at 94% 92%,rgba(91,145,102,.12),transparent 32rem),var(--glass-strong);overflow:hidden}
 .account-dialog .dialog-frame:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.045),transparent 34%,transparent 70%,rgba(255,255,255,.025))}
 .account-dialog.guest-gate .dialog-head{display:none}.account-dialog.guest-gate .dialog-frame{max-width:none}
