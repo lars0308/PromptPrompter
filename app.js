@@ -479,8 +479,9 @@
     if(el.openLibraryBtn)el.openLibraryBtn.hidden=!rules.modules;
     document.querySelectorAll('[data-open-library],[data-mobile-library]').forEach(button=>button.hidden=!rules.modules);
     if(el.workspaceLibraryBtn){el.workspaceLibraryBtn.disabled=!rules.modules;el.workspaceLibraryBtn.textContent=rules.modules?'Bibliothek öffnen':'Pro Variante benötigt';el.workspaceLibraryBtn.title=rules.modules?'':'Die Bibliothek ist ab Pro verfügbar.';el.workspaceLibraryBtn.classList.toggle('plan-disabled',!rules.modules)}
-    if(el.upgradeBtn){el.upgradeBtn.hidden=state.plan!=='free'||state.isAdmin;el.upgradeBtn.textContent='Upgraden'}
-    if(el.upgradeMenuBtn)el.upgradeMenuBtn.hidden=state.plan==='ultimate'||state.isAdmin;
+    const nextTier=state.plan==='pro'?'Ultimate':'Pro';
+    if(el.upgradeBtn){el.upgradeBtn.hidden=state.plan!=='free'||state.isAdmin;el.upgradeBtn.innerHTML=`Upgrade auf <span class="upgrade-target">${nextTier}</span>`}
+    if(el.upgradeMenuBtn){el.upgradeMenuBtn.hidden=state.plan==='ultimate'||state.isAdmin;el.upgradeMenuBtn.innerHTML=`Upgrade auf <span class="upgrade-target">${nextTier}</span>`}
     if(el.buySingleReviewBtn)el.buySingleReviewBtn.hidden=state.plan!=="free"||state.isAdmin;
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
