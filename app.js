@@ -329,7 +329,12 @@
     let alreadyShown=false;try{alreadyShown=sessionStorage.getItem(ENTRY_GATE_KEY)==='1'}catch{}
     if(alreadyShown)return;
     try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}
-    showAccountGate();
+    const consent=window.PromptAiCookieConsent;
+    if(consent&&typeof consent.then==="function"){
+      Promise.race([consent,new Promise(resolve=>setTimeout(resolve,4000))]).then(showAccountGate);
+    }else{
+      showAccountGate();
+    }
   }
   function closeAccountGate(){el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
   let pendingAuthPlan=null;

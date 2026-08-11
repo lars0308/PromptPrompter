@@ -2,6 +2,8 @@
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
   const CONSENT_KEY='prompt-ai-cookie-consent-v1';
+  let resolveConsent;
+  window.PromptAiCookieConsent=new Promise(resolve=>{resolveConsent=resolve});
 
   const IMPRINT_HTML=`
     <h3>Angaben gemäß § 5 TMG / § 18 Abs. 2 MStV</h3>
@@ -92,16 +94,16 @@
   }
 
   function initCookieBanner(){
-    const banner=$('#cookieBanner');if(!banner)return;
+    const banner=$('#cookieBanner');if(!banner){resolveConsent();return}
     bindCookieBannerLink();
     let consent=null;
     try{consent=localStorage.getItem(CONSENT_KEY)}catch{}
-    if(consent){banner.hidden=true;return}
+    if(consent){banner.hidden=true;resolveConsent();return}
     const essential=$('#cookieBannerEssentialBtn'),accept=$('#cookieBannerAcceptBtn');
-    const dismiss=value=>{try{localStorage.setItem(CONSENT_KEY,value)}catch{}banner.hidden=true};
+    const dismiss=value=>{try{localStorage.setItem(CONSENT_KEY,value)}catch{}banner.hidden=true;resolveConsent()};
     if(essential&&!essential.__legalBound){essential.__legalBound=true;essential.addEventListener('click',()=>dismiss('essential'))}
     if(accept&&!accept.__legalBound){accept.__legalBound=true;accept.addEventListener('click',()=>dismiss('all'))}
-    setTimeout(()=>{banner.hidden=false},900);
+    banner.hidden=false;
   }
 
   function init(){
