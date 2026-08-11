@@ -7,6 +7,7 @@
   function styles(){
     if($('#promptAiHomeFinalStyles'))return;
     const s=document.createElement('style');s.id='promptAiHomeFinalStyles';s.textContent=`
+      .welcome-hero .section-kicker{display:none!important}
       /* Nur auf der echten Startseite: alte Workflow-Regeln dürfen die Navigation nicht verstecken. */
       html.prompt-home-surface.prompt-home-surface body.prompt-unified-ui>.topbar,
       html.prompt-home-surface.prompt-home-surface body>.topbar{
