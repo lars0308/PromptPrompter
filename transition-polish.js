@@ -3,8 +3,8 @@
   const $=(s,r=document)=>r.querySelector(s);
   let settleTimer=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false;
   const STEP_STABLE_MS=90;
-  const SENTENCE_MS=1400;
-  const LOADER_TIMEOUT_MS=45000;
+  const SENTENCE_MS=3000;
+  const LOADER_TIMEOUT_MS=75000;
 
   const mode=()=>$('.mode-switch button.active')?.dataset.mode||document.documentElement.dataset.promptMode||'guided';
   const currentStep=()=>Number($('.step-panel.active')?.dataset.stepPanel||0);
@@ -61,7 +61,7 @@
       .prompt-loader-sentence{position:relative;display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;overflow:hidden;transition:opacity .16s ease,transform .16s ease}
       .prompt-loader-sentence.is-changing{opacity:0;transform:translateY(4px)}
       .prompt-loader-sentence .blue{position:absolute;inset:0;color:var(--ui-blue,var(--accent,#1689c7));clip-path:inset(0 100% 0 0);pointer-events:none}
-      .prompt-loader-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-loader-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptLoaderPulse 1.05s ease-in-out infinite}.prompt-loader-pulse i:nth-child(2){animation-delay:.13s}.prompt-loader-pulse i:nth-child(3){animation-delay:.26s}
+      .prompt-loader-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-loader-pulse[hidden]{display:none}.prompt-loader-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptLoaderPulse 1.05s ease-in-out infinite}.prompt-loader-pulse i:nth-child(2){animation-delay:.13s}.prompt-loader-pulse i:nth-child(3){animation-delay:.26s}
       @keyframes promptLoaderPulse{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
       @media(prefers-reduced-motion:reduce){#promptWorkflowLoader,.prompt-loader-sentence{transition:none!important}.prompt-loader-pulse i{animation:none!important;opacity:.7!important}}
     `;document.head.appendChild(s)
@@ -106,9 +106,12 @@
   }
   function applyFill(progress){const box=$('#promptWorkflowLoader');if(!box)return;const titleBase=$('strong .base',box),titleBlue=$('strong .blue',box);if(titleBase&&titleBlue){syncOverlayBox(titleBase,titleBlue);titleBlue.style.clipPath=readingOrderClip(titleBase,progress)}const sentenceBase=$('.prompt-loader-sentence .base',box),sentenceBlue=$('.prompt-loader-sentence .blue',box);if(sentenceBase&&sentenceBlue){syncOverlayBox(sentenceBase,sentenceBlue);sentenceBlue.style.clipPath=readingOrderClip(sentenceBase,progress)}}
   function forceRecover(){
-    userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();
-    try{$('#brandHome')?.click()}catch{}
-    try{window.alert('Das hat zu lange gedauert und wurde abgebrochen. Bitte versuch es erneut.')}catch{}
+    clearInterval(cycleTimer);cycleTimer=0;
+    const box=$('#promptWorkflowLoader');if(!box)return;
+    const pulse=$('.prompt-loader-pulse',box);if(pulse)pulse.hidden=true;
+    const kicker=$('.kicker',box);if(kicker)kicker.textContent='ZEITÜBERSCHREITUNG';
+    setTitle(box,'Das dauert länger als erwartet');
+    setSentence('Bitte schließe das Fenster und versuche es erneut.',true);
   }
   function startFillLoop(){
     cancelAnimationFrame(fillRaf);fillStartedAt=performance.now();
@@ -124,8 +127,8 @@
   function stopFillLoop(complete=false){cancelAnimationFrame(fillRaf);fillRaf=0;if(complete)applyFill(1)}
 
   function loader(){let box=$('#promptWorkflowLoader');if(box)return box;box=document.createElement('section');box.id='promptWorkflowLoader';box.setAttribute('aria-live','polite');box.innerHTML='<button type="button" id="promptWorkflowLoaderClose" aria-label="Abbrechen">×</button><div><span class="kicker"></span><strong><span class="base"></span><span class="blue" aria-hidden="true"></span></strong><div class="prompt-loader-sentence"><span class="base"></span><span class="blue" aria-hidden="true"></span></div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>';document.body.appendChild(box);return box}
-  function setTitle(box,text){const host=$('strong',box),base=$('.base',host||document),blue=$('.blue',host||document);if(!base||!blue)return;if(base.textContent===text)return;base.textContent=text;blue.textContent=text}
-  function setSentence(text,immediate=false){const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('is-changing')};if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)}
+  function setTitle(box,text){const host=$('strong',box),base=$('.base',host||document),blue=$('.blue',host||document);if(!base||!blue)return;if(base.textContent===text)return;blue.style.clipPath='inset(0 100% 0 0)';base.textContent=text;blue.textContent=text}
+  function setSentence(text,immediate=false){const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;const apply=()=>{blue.style.clipPath='inset(0 100% 0 0)';base.textContent=text;blue.textContent=text;host.classList.remove('is-changing')};if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)}
   function startCycle(kind){const data=copy[kind];if(!data)return;clearInterval(cycleTimer);let index=0;setSentence(data.sentences[index],true);cycleTimer=setInterval(()=>{const box=$('#promptWorkflowLoader');if(!box||activeKind!==kind){clearInterval(cycleTimer);return}index=(index+1)%data.sentences.length;setSentence(data.sentences[index])},SENTENCE_MS+240)}
   function show(kind){if(userExited||!workflowVisible()||!cleanMode())return;const data=copy[kind];if(!data)return;const box=loader();box.classList.remove('is-leaving');document.documentElement.classList.add('prompt-workflow-loading');const kicker=$('.kicker',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;setTitle(box,data.title);if(activeKind!==kind){activeKind=kind;startCycle(kind);startFillLoop()}}
   function hide(immediate=false){clearInterval(cycleTimer);cycleTimer=0;activeKind='';const box=$('#promptWorkflowLoader');document.documentElement.classList.remove('prompt-workflow-loading');if(!box){stopFillLoop();return}stopFillLoop(true);if(immediate){box.remove();return}box.classList.add('is-leaving');setTimeout(()=>box.remove(),250)}

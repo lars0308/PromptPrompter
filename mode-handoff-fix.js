@@ -8,7 +8,7 @@
   let active=false,allowAdvance=false,advanceStarted=false,retryCount=0,timer=0,startedAt=0,sentenceTimer=0,sentenceIndex=0,sentenceStartedAt=0,finishing=false;
   const MIN_VISIBLE_MS=600;
   const FAIL_OPEN_MS=4000;
-  const SENTENCE_MS=1400;
+  const SENTENCE_MS=3000;
   const sentences=['Beschreibung wird übernommen.','Projektweg wird vorbereitet.','Referenzen werden bereitgestellt.'];
 
   function read(){try{return JSON.parse(sessionStorage.getItem(HANDOFF_KEY)||'null')}catch{return null}}

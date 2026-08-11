@@ -1187,7 +1187,7 @@
   }
 
   function renderReferences(){
-    const rules=planRules(),urlLimit=rules.maxRefUrls,imageLimit=state.isAdmin?8:rules.maxRefImages;
+    const rules=planRules(),urlLimit=rules.maxRefUrls,imageLimit=rules.maxRefImages;
     if(el.referenceUrlLimitNote){const atLimit=!state.isAdmin&&state.urls.length>=urlLimit;el.referenceUrlLimitNote.textContent=`${state.urls.length} / ${urlLimit} Referenz-Links (${rules.label})${atLimit?' · Limit erreicht':''}`;el.referenceUrlLimitNote.classList.toggle('limit-reached',atLimit);if(el.referenceUrl)el.referenceUrl.disabled=atLimit;if(el.addUrlBtn)el.addUrlBtn.disabled=atLimit;}
     if(el.referenceImageLimitNote){const atLimit=!state.isAdmin&&state.images.length>=imageLimit;el.referenceImageLimitNote.textContent=imageLimit?`${state.images.length} / ${imageLimit} Referenzbilder (${rules.label})${atLimit?' · Limit erreicht':''}`:`Referenzbilder sind ab Pro verfügbar (aktuell ${rules.label}).`;el.referenceImageLimitNote.classList.toggle('limit-reached',!imageLimit||atLimit);}
     el.urlReferences.innerHTML="";
@@ -1245,7 +1245,7 @@
   }
 
   async function addImages(files){
-    const imageLimit=state.isAdmin?8:planRules().maxRefImages;
+    const imageLimit=planRules().maxRefImages;
     if(state.images.length>=imageLimit && [...files].some(f=>/^image\/(png|jpeg|webp)$/i.test(f.type))){ el.plansDialog?.showModal(); }
     const incoming=[...files].slice(0,Math.max(0,12-state.images.length-state.documents.length));
     const valid=incoming.filter(f=>/^image\/(png|jpeg|webp)$/i.test(f.type)).slice(0,Math.max(0,imageLimit-state.images.length));

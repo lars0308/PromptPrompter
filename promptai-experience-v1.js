@@ -2,7 +2,7 @@
   'use strict';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   let thinkingStartedAt=0,thinkingMinMs=0,thinkingDone=false,thinkingTimer=0,waitingTimer=0,sentenceTimer=0,sentenceIndex=0;
-  const SENTENCE_MS=1400;
+  const SENTENCE_MS=3000;
 
   function styles(){
     if($('#promptExperienceV1Styles'))return;
@@ -85,7 +85,7 @@
       'Ich baue daraus den Prompt für dein gewähltes Tool.'
     ];
   }
-  function totalInputLength(){return ['freePromptDescription','freePromptGoal','freePromptAudience','freePromptContext','freePromptStyle','freePromptMust','freePromptAvoid','freePromptFormat','freePromptConstraints'].map(id=>String($(`#${id}`)?.value||'')).join(' ').trim().length}
+  function totalInputLength(){return ['freePromptDescription','freePromptContext','freePromptStyle','freePromptFormat'].map(id=>String($(`#${id}`)?.value||'')).join(' ').trim().length}
   function durationFor(len){if(len<=120)return Math.round(3200+len*9);if(len<=420)return Math.round(4280+(len-120)*11);return Math.min(12000,Math.round(7580+(len-420)*6))}
   function ensureThinking(){
     const shell=$('#freePromptDialog .free-prompt-shell');if(!shell)return null;let stage=$('#promptAiThinkingStage');if(stage)return stage;
@@ -153,7 +153,7 @@
   }
   function setThinkingSentence(stage,text,immediate=false){
     const host=$('.prompt-thinking-status',stage),base=$('.base',host||document),blue=$('.blue',host||document);if(!host||!base||!blue)return;
-    const apply=()=>{base.textContent=text;blue.textContent=text;host.classList.remove('running');void host.offsetWidth;host.classList.add('running');host.classList.remove('is-changing');startThinkingFillLoop(host,SENTENCE_MS)};
+    const apply=()=>{blue.style.clipPath='inset(0 100% 0 0)';base.textContent=text;blue.textContent=text;host.classList.remove('running');void host.offsetWidth;host.classList.add('running');host.classList.remove('is-changing');startThinkingFillLoop(host,SENTENCE_MS)};
     if(immediate){apply();return}
     host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160);
   }

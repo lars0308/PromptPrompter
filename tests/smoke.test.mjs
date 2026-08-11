@@ -82,7 +82,7 @@ test('generated concept preview images are never written into persisted project 
 });
 test('the full-screen workflow loader cannot stay stuck forever regardless of cause',async()=>{
   const src=await text('transition-polish.js');
-  assert.match(src,/const LOADER_TIMEOUT_MS=45000;/);
+  assert.match(src,/const LOADER_TIMEOUT_MS=75000;/);
   assert.match(src,/function forceRecover\(\)\{/);
   assert.match(src,/if\(elapsed>LOADER_TIMEOUT_MS\)\{fillRaf=0;forceRecover\(\);return\}/);
 });
@@ -105,7 +105,7 @@ test('reference links and images are capped per plan tier (Free 1/0, Pro 3/3, Ul
   assert.match(src,/pro:\{label:"Pro",[^}]*maxRefUrls:3,maxRefImages:3\}/);
   assert.match(src,/ultimate:\{label:"Ultimate",[^}]*maxRefUrls:5,maxRefImages:5\}/);
   assert.match(src,/if\(state\.urls\.length>=planRules\(\)\.maxRefUrls && !state\.isAdmin\)\{ el\.plansDialog\?\.showModal\(\); return; \}/);
-  assert.match(src,/const imageLimit=state\.isAdmin\?8:planRules\(\)\.maxRefImages;/);
+  assert.match(src,/const imageLimit=planRules\(\)\.maxRefImages;/);
 });
 test('customer info (real facts) is a distinct section from style references, not a chip mixed into the style-aspect list',async()=>{
   const app=await text('app.js'),html=await text('index.html');
@@ -219,4 +219,35 @@ test('the ".ai" suffix on the Prompt.ai wordmark is statically blue everywhere i
 test('a broad prompt-unified-ui dialog reset does not strip the cookie banner\'s padding with !important',async()=>{
   const src=await text('unified-ui-v1.js');
   assert.match(src,/dialog:not\(#previewLightbox\):not\(#welcomeIntroDialog\):not\(#cookieBanner\)\{border:0!important;background:transparent!important;color:var\(--ink\)!important;padding:0!important\}/);
+});
+test('a stuck review/preview loader recovers in place instead of firing a native alert() and forcibly navigating the user home',async()=>{
+  const src=await text('transition-polish.js');
+  assert.doesNotMatch(src,/window\.alert\(/,'a native browser alert() is jarring and was reported as kicking the user out of the workflow mid-loading');
+  const body=src.match(/function forceRecover\(\)\{([\s\S]*?)\n  \}/)?.[1]||'';
+  assert.ok(body,'forceRecover function body must be found');
+  assert.doesNotMatch(body,/brandHome/,'forceRecover must not forcibly navigate the user away from the loader on a timeout');
+  assert.doesNotMatch(body,/window\.alert/);
+  assert.match(src,/const LOADER_TIMEOUT_MS=75000;/);
+  assert.match(src,/setTitle\(box,'Das dauert länger als erwartet'\);/);
+  assert.match(src,/\.prompt-loader-pulse\[hidden\]\{display:none\}/,'the pulse dots use a plain class rule elsewhere that would otherwise beat the UA [hidden] rule, the same CSS specificity trap fixed repeatedly this session');
+});
+test('loading-screen sentences stay on screen ~1.6s longer than before across every loader that cycles them',async()=>{
+  for(const file of ['transition-polish.js','promptai-experience-v1.js','mode-handoff-fix.js']){
+    const src=await text(file);
+    assert.match(src,/const SENTENCE_MS=3000;/,`${file} must use the extended sentence duration`);
+  }
+});
+test('the blue-fill text overlay resets to fully hidden the instant new text is set, so a stale clip-path/position from the previous sentence can never be visible even for one frame',async()=>{
+  const transition=await text('transition-polish.js'),v1=await text('promptai-experience-v1.js');
+  assert.match(transition,/function setTitle\(box,text\)\{[\s\S]{0,200}blue\.style\.clipPath='inset\(0 100% 0 0\)';base\.textContent=text;blue\.textContent=text\}/);
+  assert.match(transition,/const apply=\(\)=>\{blue\.style\.clipPath='inset\(0 100% 0 0\)';base\.textContent=text;blue\.textContent=text;host\.classList\.remove\('is-changing'\)\};/);
+  assert.match(v1,/const apply=\(\)=>\{blue\.style\.clipPath='inset\(0 100% 0 0\)';base\.textContent=text;blue\.textContent=text;/);
+});
+test('the "Prompt genauer einstellen" free-prompt settings step is consolidated into 3 broad fields instead of 9 narrow ones',async()=>{
+  const src=await text('free-prompt-ui.js');
+  for(const removed of ['freePromptGoal','freePromptAudience','freePromptMust','freePromptAvoid','freePromptLanguage','freePromptConstraints'])assert.doesNotMatch(src,new RegExp(`id="${removed}"`),`${removed} should be folded into a consolidated field`);
+  assert.match(src,/<span>Ziel, Zielgruppe &amp; Kontext<\/span><textarea id="freePromptContext"/);
+  assert.match(src,/<span>Stil, Muss enthalten &amp; Vermeiden<\/span><textarea id="freePromptStyle"/);
+  assert.match(src,/<span>Ausgabeformat, Sprache &amp; Grenzen<\/span><textarea id="freePromptFormat"/);
+  assert.match(src,/function payload\(\)\{return \{action:'free-prompt',category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:\$\('#freePromptDescription'\)\.value,context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
 });
