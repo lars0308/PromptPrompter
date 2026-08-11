@@ -23,7 +23,7 @@
     const box=document.createElement('div');box.id='gateActions';
     box.innerHTML='<div class="gate-primary-actions"><button type="button" class="outline-btn" id="gateSignInPick">Anmelden</button><button type="button" class="outline-btn" id="gateSignUpPick">Registrieren</button></div><button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen</button><p class="gate-guest-note">Ohne Konto, jederzeit später upgradebar.</p>';
     hero.insertAdjacentElement('afterend',box);
-    const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('#authEmail')?.focus();$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
+    const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
     $('#gateSignInPick',box).addEventListener('click',reveal);
     $('#gateSignUpPick',box).addEventListener('click',reveal);
     $('#gateGuestBtn',box).addEventListener('click',()=>$('#guestContinueBtn')?.click());

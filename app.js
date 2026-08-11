@@ -784,7 +784,7 @@
     renderQuickRevisionVariants();
   }
 
-  function openQuickRevision(){applyQuickRevisionPlanUi();el.quickRevisionDialog.showModal();setTimeout(()=>el.quickRevisionUrl.focus(),50)}
+  function openQuickRevision(){applyQuickRevisionPlanUi();el.quickRevisionDialog.showModal()}
 
   async function analyzeQuickRevisionInputs(context,url){
     const rules=planRules(),payload={action:'revision-brief',engine:'gateway',revisionInput:{changeRequest:el.quickRevisionDescription.value.trim(),preserve:rules.existing?el.quickRevisionPreserve.value.trim():'',scope:rules.existing?el.quickRevisionScope.value.trim():'',reference:rules.existing?el.quickRevisionReference.value.trim():'',technical:rules.advanced?el.quickRevisionTechnical.value.trim():'',designRules:rules.advanced?el.quickRevisionDesignRules.value.trim():'',acceptance:rules.advanced?el.quickRevisionAcceptance.value.trim():'',checks:rules.advanced?el.quickRevisionChecks.value.trim():''},siteContext:{url,siteName:context?.siteName||context?.title||'',description:context?.description||'',pages:Array.isArray(context?.pages)?context.pages.slice(0,20):[]}};
