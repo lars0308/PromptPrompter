@@ -55,6 +55,8 @@
       .legal-placeholder-note{margin:0 0 18px;padding:11px 14px;border-radius:10px;border:1px solid var(--warn);background:rgba(154,109,31,.12);color:var(--warn);font-size:11px;line-height:1.5;font-weight:600}
       .menu-legal-row{display:flex;gap:14px;padding-top:10px;margin-top:4px;border-top:1px solid var(--line)}
       .menu-legal-row .text-btn{font-size:9px}
+      .gate-legal-row{display:flex;justify-content:center;gap:16px;padding:14px 26px 20px;margin-top:2px;border-top:1px solid var(--line)}
+      .gate-legal-row .text-btn{font-size:9px;color:var(--muted)}
       .link-btn{border:0;background:none;padding:0;margin:0;color:var(--accent);text-decoration:underline;text-underline-offset:2px;font:inherit;cursor:pointer}
       .cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:2147483200;max-width:640px;margin:0 auto;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:var(--paper-2);box-shadow:0 18px 50px rgba(0,0,0,.28);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
       .cookie-banner[hidden]{display:none}
@@ -88,6 +90,21 @@
     menu.appendChild(row);
   }
 
+  function ensureGateFooter(){
+    const body=$('#accountDialog .account-body');if(!body||$('#gateLegalRow'))return;
+    const row=document.createElement('div');
+    row.className='gate-legal-row';
+    row.id='gateLegalRow';
+    const imprint=document.createElement('button');
+    imprint.type='button';imprint.className='text-btn';imprint.textContent='Impressum';
+    imprint.addEventListener('click',()=>openLegal('imprint'));
+    const privacy=document.createElement('button');
+    privacy.type='button';privacy.className='text-btn';privacy.textContent='Datenschutz';
+    privacy.addEventListener('click',()=>openLegal('privacy'));
+    row.appendChild(imprint);row.appendChild(privacy);
+    body.appendChild(row);
+  }
+
   function bindCookieBannerLink(){
     const link=$('#cookieBannerPrivacyLink');
     if(link&&!link.__legalBound){link.__legalBound=true;link.addEventListener('click',()=>openLegal('privacy'))}
@@ -109,6 +126,7 @@
   function init(){
     ensureStyle();
     ensureMenuLinks();
+    ensureGateFooter();
     initCookieBanner();
   }
 
