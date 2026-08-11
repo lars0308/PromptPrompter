@@ -11,10 +11,27 @@
   <link rel="icon" href="./sitebrief-logo.svg?v=4" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
-  <script src="./theme-init.js?v=1"></script>
+  <script src="./theme-init.js?v=2"></script>
   <link rel="stylesheet" href="./styles.css?v=20260811-1" />
+  <style id="promptBootShieldStyle">
+    html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
+    html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
+    #promptAppBoot{display:none;position:fixed;z-index:2147483647;inset:0;place-items:center;padding:28px 22px;background:var(--paper,#f5f6f7);color:var(--ink,#171814);opacity:1;transition:opacity .28s ease;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+    html.prompt-app-booting #promptAppBoot{display:grid}
+    #promptAppBoot.is-leaving{opacity:0;pointer-events:none}
+    #promptAppBoot>div{width:min(520px,100%);text-align:center}
+    #promptAppBoot img{display:block;width:min(126px,31vw);height:min(126px,31vw);margin:0 auto;object-fit:contain;filter:drop-shadow(0 16px 32px rgba(20,88,129,.10))}
+    #promptAppBoot strong{display:block;margin-top:17px;font-size:clamp(28px,7vw,42px);line-height:1;letter-spacing:-.045em}
+    #promptAppBoot p{margin:10px auto 0;color:var(--muted,#6e6c64);font-size:13px;line-height:1.5}
+    #promptAppBoot .boot-track{position:relative;width:min(260px,70vw);height:3px;margin:25px auto 0;overflow:hidden;border-radius:99px;background:color-mix(in srgb,#1689c7 13%,var(--line,#d8dcdf))}
+    #promptAppBoot .boot-track i{position:absolute;inset:0 auto 0 0;width:42%;border-radius:99px;background:#1689c7;animation:promptAppBootTrack 1.05s cubic-bezier(.4,0,.2,1) infinite}
+    #promptAppBoot small{display:block;margin-top:11px;color:var(--muted,#6e6c64);font-size:9px;letter-spacing:.04em}
+    @keyframes promptAppBootTrack{0%{transform:translateX(-115%)}60%{transform:translateX(175%)}100%{transform:translateX(300%)}}
+    @media(prefers-reduced-motion:reduce){#promptAppBoot .boot-track i{animation-duration:1.8s}}
+  </style>
 </head>
 <body>
+  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo.svg?v=4" alt="Prompt.ai"><strong>Prompt.ai</strong><p>Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div></section>
   <div id="publicNotices" class="public-notices" aria-live="polite"></div>
   <aside id="offerBanner" class="offer-banner" hidden>
     <div><span id="offerEyebrow">AKTION</span><strong id="offerTitle"></strong><p id="offerDescription"></p></div>
@@ -726,7 +743,7 @@
   <script src="./entry-gate-ui.js?v=20260811-2" defer></script>
   <script src="./legal-pages.js?v=20260811-1" defer></script>
   <script src="./app.js?v=20260811-5" defer></script>
-  <script src="./admin-console.js?v=20260810-2" defer></script>
+  <script src="./admin-console.js?v=20260811-1" defer></script>
 </body>
 </html>
 

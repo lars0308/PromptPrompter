@@ -14,7 +14,6 @@
       if(simple&&brief.trim())sessionStorage.setItem(MODE_HANDOFF_KEY,JSON.stringify({mode,brief:brief.trim(),createdAt:Date.now()}));
     }catch{}
   }
-  function internalReload(){try{return sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)==='1'||Boolean(sessionStorage.getItem(MODE_HANDOFF_KEY))}catch{return false}}
   function preparePendingRoute(){
     let pending=false;try{pending=Boolean(sessionStorage.getItem(MODE_HANDOFF_KEY))}catch{}if(!pending)return;
     document.documentElement.classList.add('prompt-route-pending');
@@ -27,27 +26,12 @@
   }
 
   function mountBootIntro(){
-    if(internalReload()||document.getElementById('promptAppBoot'))return;
-    bootVisible=true;document.documentElement.classList.add('prompt-app-booting');
-    const style=document.createElement('style');style.id='promptAppBootStyle';style.textContent=`
-      html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
-      #promptAppBoot{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f5f6f7);color:var(--ink,#171814);opacity:1;transition:opacity .28s ease;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-      #promptAppBoot.is-leaving{opacity:0;pointer-events:none}
-      #promptAppBoot>div{width:min(520px,100%);text-align:center}
-      #promptAppBoot img{display:block;width:min(126px,31vw);height:min(126px,31vw);margin:0 auto;object-fit:contain;filter:drop-shadow(0 16px 32px rgba(20,88,129,.10))}
-      #promptAppBoot strong{display:block;margin-top:17px;font-size:clamp(28px,7vw,42px);line-height:1;letter-spacing:-.045em}
-      #promptAppBoot p{margin:10px auto 0;color:var(--muted,#6e6c64);font-size:13px;line-height:1.5}
-      #promptAppBoot .boot-track{position:relative;width:min(260px,70vw);height:3px;margin:25px auto 0;overflow:hidden;border-radius:99px;background:color-mix(in srgb,#1689c7 13%,var(--line,#d8dcdf))}
-      #promptAppBoot .boot-track i{position:absolute;inset:0 auto 0 0;width:42%;border-radius:99px;background:#1689c7;animation:promptAppBootTrack 1.05s cubic-bezier(.4,0,.2,1) infinite}
-      #promptAppBoot small{display:block;margin-top:11px;color:var(--muted,#6e6c64);font-size:9px;letter-spacing:.04em}
-      @keyframes promptAppBootTrack{0%{transform:translateX(-115%)}60%{transform:translateX(175%)}100%{transform:translateX(300%)}}
-      @media(prefers-reduced-motion:reduce){#promptAppBoot .boot-track i{animation-duration:1.8s}}
-    `;document.head.appendChild(style);
-    const boot=document.createElement('section');boot.id='promptAppBoot';boot.setAttribute('aria-live','polite');boot.innerHTML='<div><img src="./sitebrief-logo.svg?v=4" alt="Prompt.ai"><strong>Prompt.ai</strong><p>Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div>';document.body.appendChild(boot)
+    bootVisible=document.documentElement.classList.contains('prompt-app-booting');
+    if(!bootVisible)return;
     setTimeout(releaseBootIntro,7000)
   }
   function releaseBootIntro(){
-    if(!bootVisible)return;clearTimeout(bootReleaseTimer);const tick=()=>{const elapsed=Date.now()-bootStartedAt,ready=document.documentElement.classList.contains('prompt-home-ready')&&!document.documentElement.classList.contains('prompt-access-pending');if((ready&&elapsed>=1050)||elapsed>=5200){const boot=document.getElementById('promptAppBoot');boot?.classList.add('is-leaving');setTimeout(()=>{boot?.remove();document.getElementById('promptAppBootStyle')?.remove();document.documentElement.classList.remove('prompt-app-booting');bootVisible=false},300);return}bootReleaseTimer=setTimeout(tick,80)};tick()
+    if(!bootVisible)return;clearTimeout(bootReleaseTimer);const tick=()=>{const elapsed=Date.now()-bootStartedAt,ready=document.documentElement.classList.contains('prompt-home-ready')&&!document.documentElement.classList.contains('prompt-access-pending');if((ready&&elapsed>=1050)||elapsed>=5200){const boot=document.getElementById('promptAppBoot');boot?.classList.add('is-leaving');setTimeout(()=>{document.documentElement.classList.remove('prompt-app-booting');boot?.classList.remove('is-leaving');bootVisible=false},300);return}bootReleaseTimer=setTimeout(tick,80)};tick()
   }
 
   seedModeHandoff();
