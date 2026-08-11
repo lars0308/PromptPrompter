@@ -72,7 +72,30 @@
   let fillRaf=0,fillStartedAt=0;
   const reduceMotion=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}};
   function fillProgress(elapsed){const tau=2600;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
-  function applyFill(progress){const box=$('#promptWorkflowLoader');if(!box)return;const pct=`${(1-progress)*100}%`;const titleBlue=$('strong .blue',box);if(titleBlue)titleBlue.style.clipPath=`inset(0 ${pct} 0 0)`;const sentenceBlue=$('.prompt-loader-sentence .blue',box);if(sentenceBlue)sentenceBlue.style.clipPath=`inset(0 ${pct} 0 0)`}
+  function pct(v,total){return `${Math.max(0,Math.min(100,total?(v/total)*100:0)).toFixed(2)}%`}
+  function readingOrderClip(base,progress){
+    const simple=`inset(0 ${(1-progress)*100}% 0 0)`;
+    if(!base||!base.firstChild)return simple;
+    let rects;try{const range=document.createRange();range.selectNodeContents(base);rects=[...range.getClientRects()]}catch{rects=[]}
+    if(rects.length<=1)return simple;
+    const box=base.getBoundingClientRect();if(!box.width||!box.height)return simple;
+    const lines=rects.map(r=>({left:r.left-box.left,top:r.top-box.top,right:r.right-box.left,bottom:r.bottom-box.top,width:r.width})).filter(l=>l.width>0);
+    if(!lines.length)return simple;
+    const totalWidth=lines.reduce((s,l)=>s+l.width,0);
+    let target=progress*totalWidth;
+    const points=[`0% ${pct(lines[0].top,box.height)}`];
+    for(const line of lines){
+      const w=Math.max(0,Math.min(line.width,target));target-=w;
+      const rightX=line.left+w;
+      points.push(`${pct(rightX,box.width)} ${pct(line.top,box.height)}`);
+      points.push(`${pct(rightX,box.width)} ${pct(line.bottom,box.height)}`);
+      if(w<line.width-.5)break;
+    }
+    const last=points[points.length-1].split(' ');
+    points.push(`0% ${last[1]}`);
+    return `polygon(${points.join(',')})`;
+  }
+  function applyFill(progress){const box=$('#promptWorkflowLoader');if(!box)return;const titleBase=$('strong .base',box),titleBlue=$('strong .blue',box);if(titleBase&&titleBlue)titleBlue.style.clipPath=readingOrderClip(titleBase,progress);const sentenceBase=$('.prompt-loader-sentence .base',box),sentenceBlue=$('.prompt-loader-sentence .blue',box);if(sentenceBase&&sentenceBlue)sentenceBlue.style.clipPath=readingOrderClip(sentenceBase,progress)}
   function startFillLoop(){
     cancelAnimationFrame(fillRaf);fillStartedAt=performance.now();
     if(reduceMotion()){applyFill(.94);return}
