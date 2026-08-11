@@ -173,7 +173,7 @@
     const toggle=(event)=>{
       event.stopPropagation();
       const willOpen=!el.topbarMenu.classList.contains('open');
-      if(willOpen){const rect=el.topbarMenuToggle.getBoundingClientRect();el.topbarMenu.style.top=`${Math.round(rect.bottom+8)}px`;el.topbarMenu.style.right=`${Math.round(window.innerWidth-rect.right)}px`;}
+      if(willOpen){const rect=el.topbarMenuToggle.getBoundingClientRect();el.topbarMenu.style.top=`${Math.round(rect.bottom+8)}px`;el.topbarMenu.style.right=`${Math.round(window.innerWidth-rect.right)}px`;const access=window.PromptAiAccess;if(access){if(access.plan)state.plan=access.plan;state.isAdmin=Boolean(access.isAdmin);if(access.ownApiKeys)state.ownApiKeys=true;}applyPlanUi();}
       el.topbarMenu.classList.toggle('open',willOpen);el.topbarMenuToggle.setAttribute('aria-expanded',String(willOpen));
     };
     el.topbarMenuToggle.addEventListener('click',toggle);

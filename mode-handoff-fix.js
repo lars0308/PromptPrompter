@@ -25,7 +25,7 @@
       html.prompt-mode-handoff-active,html.prompt-mode-handoff-active body{overflow:hidden!important}
       .prompt-mode-handoff{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       .prompt-mode-handoff.is-leaving{opacity:0;pointer-events:none}
-      .prompt-mode-handoff>div{width:min(560px,100%);text-align:center}.prompt-mode-handoff .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}.prompt-mode-handoff strong{display:block;margin-top:9px;font-size:clamp(31px,8vw,48px);line-height:1.02;letter-spacing:-.05em}
+      .prompt-mode-handoff>div{width:min(560px,100%);text-align:center}.prompt-mode-handoff .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}.prompt-mode-handoff strong{position:relative;display:block;margin-top:9px;font-size:clamp(31px,8vw,48px);line-height:1.02;letter-spacing:-.05em}.prompt-mode-handoff strong .blue{position:absolute;inset:0;color:var(--ui-blue,var(--accent,#1689c7));clip-path:inset(0 100% 0 0);pointer-events:none}
       .prompt-mode-handoff-status{position:relative;display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;overflow:hidden;transition:opacity .16s ease,transform .16s ease}.prompt-mode-handoff-status.is-changing{opacity:0;transform:translateY(4px)}
       .prompt-mode-handoff-status .blue{position:absolute;inset:0;color:var(--ui-blue,var(--accent,#1689c7));clip-path:inset(0 100% 0 0);pointer-events:none}.prompt-mode-handoff-status.run .blue{animation:promptModeSentenceFill ${SENTENCE_MS}ms cubic-bezier(.22,.68,.24,1) forwards}@keyframes promptModeSentenceFill{to{clip-path:inset(0)}}
       .prompt-mode-handoff-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-mode-handoff-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptModeDot 1.05s ease-in-out infinite}.prompt-mode-handoff-pulse i:nth-child(2){animation-delay:.13s}.prompt-mode-handoff-pulse i:nth-child(3){animation-delay:.26s}@keyframes promptModeDot{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
@@ -40,13 +40,28 @@
     if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)
   }
   function startSentences(){clearInterval(sentenceTimer);sentenceIndex=0;setSentence(sentences[0],true);sentenceTimer=setInterval(()=>{if(!active||finishing){clearInterval(sentenceTimer);return}sentenceIndex=(sentenceIndex+1)%sentences.length;setSentence(sentences[sentenceIndex])},SENTENCE_MS+230)}
-  function overlay(data){let box=$('#promptModeHandoff');if(box)return box;box=document.createElement('section');box.id='promptModeHandoff';box.className='prompt-mode-handoff';box.setAttribute('aria-live','polite');box.innerHTML=`<div><span class="kicker">PROMPT.AI · ${modeLabel(data.mode)}</span><strong>Projekt wird vorbereitet</strong><div class="prompt-mode-handoff-status"><span class="base">Beschreibung wird übernommen.</span><span class="blue" aria-hidden="true">Beschreibung wird übernommen.</span></div><div class="prompt-mode-handoff-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>`;document.body.appendChild(box);startSentences();return box}
+  function overlay(data){let box=$('#promptModeHandoff');if(box)return box;box=document.createElement('section');box.id='promptModeHandoff';box.className='prompt-mode-handoff';box.setAttribute('aria-live','polite');box.innerHTML=`<div><span class="kicker">PROMPT.AI · ${modeLabel(data.mode)}</span><strong><span class="base">Projekt wird vorbereitet</span><span class="blue" aria-hidden="true">Projekt wird vorbereitet</span></strong><div class="prompt-mode-handoff-status"><span class="base">Beschreibung wird übernommen.</span><span class="blue" aria-hidden="true">Beschreibung wird übernommen.</span></div><div class="prompt-mode-handoff-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>`;document.body.appendChild(box);startSentences();startTitleFillLoop();return box}
+  let titleFillRaf=0;
+  function titleProgress(elapsed){const tau=2600;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
+  function applyTitleFill(progress){const blue=$('#promptModeHandoff strong .blue');if(blue)blue.style.clipPath=`inset(0 ${(1-progress)*100}% 0 0)`}
+  function stopTitleFillLoop(complete=false){cancelAnimationFrame(titleFillRaf);titleFillRaf=0;if(complete)applyTitleFill(1)}
+  function startTitleFillLoop(){
+    stopTitleFillLoop();
+    let reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch{}
+    if(reduce){applyTitleFill(.94);return}
+    const tick=()=>{
+      if(!$('#promptModeHandoff')){titleFillRaf=0;return}
+      applyTitleFill(titleProgress(Date.now()-startedAt));
+      titleFillRaf=requestAnimationFrame(tick);
+    };
+    titleFillRaf=requestAnimationFrame(tick);
+  }
 
   function guardClicks(event){if(!active||allowAdvance)return;if(event.target.closest?.('#stepProject .next-btn')){event.preventDefault();event.stopImmediatePropagation()}}
   function applyBrief(data){const field=$('#projectDescription');if(!field)return false;if(field.value.trim()!==data.brief.trim()){field.value=data.brief.trim();field.dispatchEvent(new Event('input',{bubbles:true}));field.dispatchEvent(new Event('change',{bubbles:true}))}return field.value.trim().length>=8}
   function applyMode(data){const button=$(`.mode-switch button[data-mode="${data.mode}"]`);if(!button)return false;if(document.documentElement.classList.contains('prompt-access-pending'))return false;if(button.disabled||button.classList.contains('locked'))return false;if(!button.classList.contains('active'))button.click();document.documentElement.dataset.promptMode=data.mode;return button.classList.contains('active')}
 
-  function release(box){active=false;clearTimeout(timer);clearInterval(sentenceTimer);clear();box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
+  function release(box){active=false;clearTimeout(timer);clearInterval(sentenceTimer);stopTitleFillLoop(true);clear();box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
   function finish(data){
     if(finishing)return;const elapsed=Date.now()-startedAt,box=$('#promptModeHandoff');if(elapsed<MIN_VISIBLE_MS||!uiReady()){timer=setTimeout(()=>tick(data),70);return}
     finishing=true;clearInterval(sentenceTimer);

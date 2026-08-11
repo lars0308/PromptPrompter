@@ -251,3 +251,14 @@ test('the "Prompt genauer einstellen" free-prompt settings step is consolidated 
   assert.match(src,/<span>Ausgabeformat, Sprache &amp; Grenzen<\/span><textarea id="freePromptFormat"/);
   assert.match(src,/function payload\(\)\{return \{action:'free-prompt',category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:\$\('#freePromptDescription'\)\.value,context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
 });
+test('opening the hamburger menu re-syncs plan UI from window.PromptAiAccess, so a stale Upgrade button can never survive a menu open even if a promptai:access event was missed',async()=>{
+  const src=await text('app.js');
+  assert.match(src,/const access=window\.PromptAiAccess;if\(access\)\{if\(access\.plan\)state\.plan=access\.plan;state\.isAdmin=Boolean\(access\.isAdmin\);if\(access\.ownApiKeys\)state\.ownApiKeys=true;\}applyPlanUi\(\);/);
+});
+test('the "Projekt wird vorbereitet" mode-handoff loader title gets a blue-fill that tracks real elapsed time and snaps to 100% the instant the real work finishes',async()=>{
+  const src=await text('mode-handoff-fix.js');
+  assert.match(src,/<strong><span class="base">Projekt wird vorbereitet<\/span><span class="blue" aria-hidden="true">Projekt wird vorbereitet<\/span><\/strong>/);
+  assert.match(src,/function titleProgress\(elapsed\)\{const tau=2600;return Math\.min\(\.94,\.94\*\(1-Math\.exp\(-elapsed\/tau\)\)\)\}/,'must track real elapsed time asymptotically, not a fixed guessed duration');
+  assert.match(src,/function release\(box\)\{active=false;clearTimeout\(timer\);clearInterval\(sentenceTimer\);stopTitleFillLoop\(true\);/,'release (called once the real handoff work is done) must snap the title fill to 100% instead of leaving it mid-fill');
+  assert.match(src,/\.prompt-mode-handoff strong \.blue\{position:absolute;inset:0;color:var\(--ui-blue,var\(--accent,#1689c7\)\);clip-path:inset\(0 100% 0 0\);pointer-events:none\}/);
+});
