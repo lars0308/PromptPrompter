@@ -32,7 +32,17 @@ test('guided and auto flows expose only the unified loader',async()=>{
   assert.match(src,/Angaben werden geprüft\./);
   assert.match(src,/Offene Punkte werden erkannt\./);
   assert.match(src,/Rückfragen werden vorbereitet\./);
-  assert.match(src,/promptSentenceFill/);
+  assert.match(src,/fillProgress/);
+});
+
+test('loader blue-fill tracks real elapsed time instead of a fixed guessed duration',async()=>{
+  const src=await text('transition-polish.js');
+  assert.match(src,/function fillProgress\(elapsed\)/);
+  assert.match(src,/requestAnimationFrame/);
+  assert.match(src,/function startFillLoop\(\)/);
+  assert.match(src,/function stopFillLoop\(complete=false\)/);
+  assert.doesNotMatch(src,/animation:promptSentenceFill/);
+  assert.match(src,/strong \.blue/);
 });
 
 test('leaving the workflow cannot reopen late review UI',async()=>{
