@@ -86,3 +86,16 @@ test('the full-screen workflow loader cannot stay stuck forever regardless of ca
   assert.match(src,/function forceRecover\(\)\{/);
   assert.match(src,/if\(elapsed>LOADER_TIMEOUT_MS\)\{fillRaf=0;forceRecover\(\);return\}/);
 });
+test('AI preview images are framed as a flat UI screenshot, not a photo of a device on a desk, and must render the real brand/headline text',async()=>{
+  const src=await text('server/preview-image.js');
+  assert.match(src,/UI SCREENSHOT\./);
+  assert.match(src,/Fill the entire 16:9 frame edge to edge with the webpage itself\./);
+  assert.match(src,/Do not depict any monitor, laptop, phone, tablet, desk, room, hand, wall, browser window, browser chrome, url bar, camera angle, perspective/);
+  assert.match(src,/Reminder: output only the flat webpage design itself, filling the full 16:9 frame — never a photo, mockup, or device of any kind\./);
+  assert.doesNotMatch(src,/If text cannot be rendered perfectly, render no text\./,'this escape hatch let models skip real brand/headline text instead of attempting it');
+  assert.match(src,/TYPOGRAPHY \(required\): render the brand name "\$\{brand\}" in the navigation or header, and render the headline "\$\{headline\}" as the large hero text/);
+});
+test('AI-generated concept copy is required to use real industry vocabulary from the project, not a generic tagline',async()=>{
+  const src=await text('server/generate-core.js');
+  assert.match(src,/a döner shop's headline should reference döner\/food, a landscaping business should reference gardens\/outdoor work/);
+});
