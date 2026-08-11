@@ -169,8 +169,8 @@
       el.topbarMenu.classList.toggle('open',willOpen);el.topbarMenuToggle.setAttribute('aria-expanded',String(willOpen));
     };
     el.topbarMenuToggle.addEventListener('click',toggle);
-    el.topbarMenu.addEventListener('click',event=>{if(event.target.closest('button,a'))close()});
-    document.addEventListener('click',event=>{if(el.topbarMenu.classList.contains('open')&&!el.topbarMenu.contains(event.target)&&event.target!==el.topbarMenuToggle&&!el.topbarMenuToggle.contains(event.target))close()});
+    el.topbarMenu.addEventListener('click',event=>{if(event.target.closest('#themeToggleBtn'))return;if(event.target.closest('button,a'))close()});
+    document.addEventListener('click',event=>{if(event.target.closest('#menuThemeQuick'))return;if(el.topbarMenu.classList.contains('open')&&!el.topbarMenu.contains(event.target)&&event.target!==el.topbarMenuToggle&&!el.topbarMenuToggle.contains(event.target))close()});
     document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
   }
 
@@ -306,7 +306,13 @@
   function cloudReady(){ return Boolean(state.cloud.configured && state.cloud.user && window.SiteBriefCloud?.client); }
 
   function applyTheme(theme,{remember=true}={}){
-    const resolved=theme==="dark"?"dark":"light";document.documentElement.dataset.theme=resolved;if(remember)localStorage.setItem(THEME_KEY,resolved);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',resolved==='dark'?'#111410':'#ece9e1');if(el.themeToggleBtn){const dark=resolved==="dark";el.themeToggleBtn.querySelector("b").textContent=dark?"Hell":"Dunkel";el.themeToggleBtn.setAttribute("aria-label",dark?"Hellmodus aktivieren":"Dunkelmodus aktivieren");}
+    const resolved=theme==="dark"?"dark":"light";
+    const apply=()=>{
+      document.documentElement.dataset.theme=resolved;if(remember)localStorage.setItem(THEME_KEY,resolved);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',resolved==='dark'?'#111410':'#ece9e1');if(el.themeToggleBtn){const dark=resolved==="dark";el.themeToggleBtn.querySelector("b").textContent=dark?"Hell":"Dunkel";el.themeToggleBtn.setAttribute("aria-label",dark?"Hellmodus aktivieren":"Dunkelmodus aktivieren");}
+    };
+    const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!reduceMotion&&document.documentElement.dataset.theme&&document.documentElement.dataset.theme!==resolved&&document.startViewTransition){document.startViewTransition(apply);return}
+    apply();
   }
   function initTheme(){const saved=localStorage.getItem(THEME_KEY),media=matchMedia('(prefers-color-scheme: dark)');applyTheme(saved||(media.matches?'dark':'light'),{remember:Boolean(saved)});media.addEventListener?.('change',event=>{if(!localStorage.getItem(THEME_KEY))applyTheme(event.matches?'dark':'light',{remember:false})})}
 
