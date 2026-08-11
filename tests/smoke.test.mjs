@@ -118,3 +118,9 @@ test('adding a reference link or file carries a visible liability notice',async(
   const html=await text('index.html');
   assert.match(html,/Prompt\.ai übernimmt keine Haftung für Inhalte Dritter, die du hier hinterlegst — die Verantwortung dafür liegt bei dir\./);
 });
+test('Datenschutzerklärung names the real integrated subprocessors and covers third-party customer-website scraping, not just generic placeholders',async()=>{
+  const src=await text('legal-pages.js');
+  for(const processor of ['Vercel AI Gateway','OpenAI','Google (Gemini)','Cloudflare Workers AI','Supabase','Stripe'])assert.ok(src.includes(processor),processor);
+  assert.match(src,/Kundeninformationen.*fremde Webseiten/);
+  assert.match(src,/können auch personenbezogene Daten Dritter enthalten sein/);
+});

@@ -28,18 +28,22 @@
     <h3>2. Übersicht der Verarbeitungen</h3>
     <p>Prompt.ai verarbeitet Daten, die du beim Anlegen eines Kontos, beim Erstellen von Projekten und Prompts sowie bei einem Abo-Abschluss angibst. Dazu zählen insbesondere E-Mail-Adresse, Konto- und Nutzungsdaten sowie die von dir eingegebenen Projektinhalte.</p>
     <h3>3. Hosting</h3>
-    <p>Diese Anwendung wird über Vercel gehostet. [Details zum Auftragsverarbeitungsvertrag, Serverstandort und Rechtsgrundlage ergänzen.]</p>
+    <p>Diese Anwendung wird über Vercel (Vercel Inc.) gehostet. [Details zum Auftragsverarbeitungsvertrag, Serverstandort und Rechtsgrundlage ergänzen.]</p>
     <h3>4. Konten, Authentifizierung &amp; Datenbank</h3>
-    <p>Für Registrierung, Anmeldung und die Speicherung deiner Projekte nutzen wir Supabase als Auftragsverarbeiter. [Details zum Auftragsverarbeitungsvertrag, Serverstandort und Speicherdauer ergänzen.]</p>
+    <p>Für Registrierung, Anmeldung und die Speicherung deiner Projekte, Referenzbilder und Unterlagen nutzen wir Supabase (Supabase Inc.) als Auftragsverarbeiter. [Details zum Auftragsverarbeitungsvertrag, Serverstandort und Speicherdauer ergänzen.]</p>
     <h3>5. Zahlungsabwicklung</h3>
-    <p>Zahlungen für Pro- und Ultimate-Tarife werden über Stripe abgewickelt. Dabei werden Zahlungsdaten direkt an Stripe übermittelt. [Details zur Rechtsgrundlage, Datenweitergabe und Stripe-Datenschutzerklärung verlinken.]</p>
+    <p>Zahlungen für Pro- und Ultimate-Tarife werden über Stripe (Stripe, Inc.) abgewickelt. Dabei werden Zahlungsdaten direkt an Stripe übermittelt. [Details zur Rechtsgrundlage, Datenweitergabe und Stripe-Datenschutzerklärung verlinken.]</p>
     <h3>6. Cookies &amp; lokale Speicherung</h3>
     <p>Wir setzen technisch notwendige Cookies bzw. lokale Speicherung (localStorage/sessionStorage) ein, um Anmeldung, Sitzung und Einstellungen (z.&nbsp;B. Dunkelmodus) zu ermöglichen. [Falls Analyse-/Marketing-Cookies eingesetzt werden, hier ergänzen und Einwilligungslogik entsprechend erweitern.]</p>
     <h3>7. KI-Verarbeitung deiner Eingaben</h3>
-    <p>Deine Projektangaben werden zur Erstellung von Prompts durch angebundene KI-Dienste verarbeitet. [Konkrete(n) KI-Anbieter, Rechtsgrundlage und Speicherdauer ergänzen.]</p>
-    <h3>8. Deine Rechte</h3>
+    <p>Deine Projektangaben, Referenztexte, hochgeladenen Bilder/PDFs und ausgewählten Antworten werden zur Erstellung von Prompts, Vorschauen und Bildvorschauen an angebundene KI-Anbieter übermittelt. Je nach gewählter Verbindung und Funktion sind das: Vercel AI Gateway, OpenAI, Google (Gemini) und Cloudflare Workers AI. Wenn du eigene API-Keys hinterlegst, verarbeitet ausschließlich der jeweils gewählte Anbieter deine Anfrage; ohne eigene Keys nutzen wir eine von uns zentral bereitgestellte Verbindung zu einem dieser Anbieter. [Rechtsgrundlage, Auftragsverarbeitungsverträge und Speicherdauer bei den jeweiligen Anbietern ergänzen.]</p>
+    <h3>8. Eigene Verbindungen (API-Keys, GitHub)</h3>
+    <p>Ab Pro kannst du eigene API-Keys (u.&nbsp;a. für GitHub) unter Einstellungen hinterlegen. Diese werden verschlüsselt in Supabase Vault gespeichert und ausschließlich für die von dir ausgelösten Aktionen verwendet (z.&nbsp;B. GitHub-Veröffentlichung oder eigene KI-Anfragen).</p>
+    <h3>9. Kundeninformationen &amp; fremde Webseiten</h3>
+    <p>Wenn du unter „Kundeninformationen" die Website oder einen Google-Eintrag deines Auftraggebers hinterlegst, ruft Prompt.ai diese öffentlich erreichbare Seite ab und liest Inhalte, Links und Bilder aus, um sie in dein Projekt zu übernehmen. Dabei können auch personenbezogene Daten Dritter enthalten sein (z.&nbsp;B. Namen oder Kontaktdaten auf einer „Über uns"-Seite). Du bist dafür verantwortlich, dass du zur Angabe dieser Quelle berechtigt bist; Prompt.ai übernimmt keine Haftung für Inhalte, die auf diesem Weg verarbeitet werden. Gleiches gilt für Referenz-Links und -Bilder, die du unter „Referenzen" hinterlegst.</p>
+    <h3>10. Deine Rechte</h3>
     <p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch gemäß Art. 15–21 DSGVO sowie ein Beschwerderecht bei einer Aufsichtsbehörde. [Kontaktweg für Anfragen ergänzen.]</p>
-    <h3>9. Speicherdauer</h3>
+    <h3>11. Speicherdauer</h3>
     <p>[Konkrete Speicher- und Löschfristen für Konto- und Projektdaten ergänzen.]</p>
   `;
 
