@@ -56,7 +56,6 @@
 
   function cleanHints(){
     setText($('.home-intro-copy'),'Wähle, was du erstellen möchtest.');
-    setText($('#stepReferences .guided-clean-lead'),'Optional: Link, Screenshot, PDF oder andere Unterlage hinzufügen.');
     setText($('#freePromptDialog .free-prompt-intro'),'Wähle jetzt Typ und Ziel-Tool. Weitere Angaben sind optional.');
     setText($('#freePromptUpgrade small'),'Pro ergänzt Zielgruppe, Referenzen, Stil, Pflichtpunkte, Verbote und Ausgabeformat.');
     setText($('#accountIntro'),'Anmelden, um Projekte und Einstellungen zu synchronisieren.');

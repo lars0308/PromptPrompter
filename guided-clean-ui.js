@@ -88,7 +88,7 @@
 
   const copy={
     1:['INTERNETSEITE','Beschreib deine Internetseite.','Deine erste Beschreibung reicht. Prompt.ai übernimmt sie und fragt nur weiter, wenn eine Angabe das Ergebnis wirklich verändert.'],
-    2:['REFERENZEN','Hast du Referenzen?','Optional: Schick einen Link, Screenshots, PDFs oder andere Unterlagen mit. Wenn du nichts hast, gehst du einfach weiter.'],
+    2:['REFERENZEN','Hast du Referenzen?','Optional: Link, Screenshot, PDF oder andere Unterlage hinzufügen.'],
     3:['PROMPT.AI','Briefing wird verstanden','Prompt.ai übernimmt die wichtigen Angaben und bereitet die nächsten Entscheidungen im Hintergrund vor.'],
     4:['PROMPT.AI','Passende Regeln werden gesetzt','Technik, Qualitätsregeln und sinnvolle Module werden im Hintergrund vorbereitet.'],
     5:['PROMPT.AI','Vorschau wird vorbereitet','Beschreibung und Referenzen werden zu einer klaren Richtung zusammengeführt.'],
