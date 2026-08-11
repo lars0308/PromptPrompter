@@ -35,12 +35,13 @@ test('website generations are counted server-side only after a successful concep
 
 test('quota information is shown consistently in plan cards account and subscription management',async()=>{
   const ui=await text('usage-quota-ui.js'),loader=await text('admin-console.js'),sw=await text('sw.js');
-  for(const token of ['Monatskontingent','Freie Prompt-Generierungen','Website-Generierungen','KI-Vorschauen','Dein verbleibendes Kontingent','quotaAccountMini','subscriptionQuotaSection','plan-quota-summary','quotaSummaryText'])assert.ok(ui.includes(token),token);
+  for(const token of ['Monatskontingent','Freie Prompt-Generierungen','Website-Generierungen','KI-Vorschauen','Dein verbleibendes Kontingent','subscriptionQuotaSection','plan-quota-summary','quotaSummaryText'])assert.ok(ui.includes(token),token);
+  assert.doesNotMatch(ui,/quotaAccountMini/,'the Settings-dialog quota mini-card was removed along with the redundant Tarif & Funktionen section; quota now lives only in the plan cards and the Abonnement dialog');
   assert.match(ui,/\$\{q\.free_prompts\} Prompts/);
   assert.match(ui,/\$\{q\.website_generations\} Websites/);
   assert.match(ui,/\$\{q\.ai_previews\} KI-Vorschauen/);
   assert.match(ui,/KI-Vorschauen nicht enthalten/);
-  assert.match(loader,/usage-quota-ui\.js\?v=20260810-3/);
+  assert.match(loader,/usage-quota-ui\.js\?v=20260811-1/);
   assert.ok(sw.includes('usage-quota-ui.js'));
 });
 

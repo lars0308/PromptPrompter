@@ -16,9 +16,8 @@
   function styles(){
     if($('#quotaUiStyles'))return;const s=document.createElement('style');s.id='quotaUiStyles';s.textContent=`
       .plan-quota-summary{display:block!important;margin-top:4px!important;color:var(--ui-blue,var(--accent))!important;font-size:8px!important;font-weight:800!important;letter-spacing:.01em!important;line-height:1.35!important;text-transform:none!important}.plan-quota-box{margin:14px 0;padding:13px 14px;border:1px solid var(--ui-line,var(--line));border-radius:12px;background:var(--ui-soft,var(--surface-soft))}.plan-quota-box>strong{display:block;margin-bottom:8px;font-size:10px;letter-spacing:.03em}.plan-quota-lines{display:grid;gap:6px}.plan-quota-line{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:9px;line-height:1.35}.plan-quota-line b{color:var(--ink);font-size:9px;text-align:right}.plan-quota-box>small{display:block;margin-top:9px;color:var(--muted);font-size:8px;line-height:1.4}
-      .quota-account-mini{margin-top:10px;padding:12px 13px;border:1px solid var(--ui-line,var(--line));border-radius:12px;background:var(--ui-soft,var(--surface-soft))}.quota-mini-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:9px}.quota-mini-head strong{font-size:10px}.quota-mini-head small{color:var(--muted);font-size:8px}.quota-mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.quota-mini-item{padding:9px;border:1px solid var(--ui-line,var(--line));border-radius:9px;background:var(--ui-card,var(--surface))}.quota-mini-item span{display:block;color:var(--muted);font-size:7px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}.quota-mini-item b{display:block;margin-top:4px;font-size:12px}.quota-mini-item small{display:block;margin-top:2px;color:var(--muted);font-size:7px}
       .sub-quota-section{margin-top:22px}.sub-quota-card{border:1px solid var(--ui-line,var(--line));border-radius:14px;overflow:hidden;background:var(--ui-card,var(--surface))}.sub-quota-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:15px 16px;border-bottom:1px solid var(--ui-line,var(--line));align-items:center}.sub-quota-row:last-child{border-bottom:0}.sub-quota-copy strong{display:block;font-size:12px}.sub-quota-copy small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.35}.sub-quota-count{text-align:right}.sub-quota-count b{display:block;font-size:15px}.sub-quota-count small{display:block;margin-top:2px;color:var(--muted);font-size:8px}.sub-quota-track{grid-column:1/-1;height:4px;border-radius:99px;background:var(--ui-soft,var(--surface-soft));overflow:hidden}.sub-quota-track i{display:block;height:100%;background:var(--ui-blue,var(--accent));border-radius:inherit;transition:width .35s ease}.sub-quota-note{margin:9px 2px 0;color:var(--muted);font-size:8px;line-height:1.45}.sub-quota-note.warn{color:var(--warn)}
-      @media(max-width:680px){.quota-mini-grid{grid-template-columns:1fr}.quota-mini-item{display:grid;grid-template-columns:1fr auto;align-items:center}.quota-mini-item b{margin:0}.quota-mini-item small{grid-column:1/-1}.sub-quota-row{padding:14px}.plan-quota-line{font-size:9px}}
+      @media(max-width:680px){.sub-quota-row{padding:14px}.plan-quota-line{font-size:9px}}
     `;document.head.appendChild(s)}
 
   async function quotaApi(action,extra={}){
@@ -44,24 +43,17 @@
     }
   }
 
-  function metricHtml(key,item,summary,compact=false){
+  function metricHtml(key,item,summary){
     const limit=Number(item?.limit??0),used=Number(item?.used??0),remaining=Math.max(0,Number(item?.remaining??limit-used)),pct=limit>0?Math.min(100,Math.round(used/limit*100)):100;
-    if(compact)return `<div class="quota-mini-item"><span>${esc(LABELS[key])}</span><b>${limit===0?'—':`${remaining}/${limit}`}</b><small>${limit===0?'Nicht enthalten':`${used} genutzt`}</small></div>`;
     return `<div class="sub-quota-row"><div class="sub-quota-copy"><strong>${esc(LABELS[key])}</strong><small>${esc(DESCRIPTIONS[key])}</small></div><div class="sub-quota-count"><b>${limit===0?'Nicht enthalten':`${remaining} / ${limit} übrig`}</b><small>${limit===0?'In diesem Tarif nicht enthalten':`${used} genutzt`}</small></div>${limit>0?`<div class="sub-quota-track" aria-hidden="true"><i style="width:${pct}%"></i></div>`:''}</div>`;
-  }
-  function accountSummaryHtml(summary){
-    const reset=resetDate(summary.periodEnd);return `<div class="quota-mini-head"><strong>Monatskontingent</strong><small>Reset ${esc(reset)}</small></div><div class="quota-mini-grid">${ORDER.map(k=>metricHtml(k,summary.metrics?.[k],summary,true)).join('')}</div>`;
-  }
-  function syncAccount(){
-    const host=$('.plan-overview');if(!host)return;let box=$('#quotaAccountMini',host);if(!box){box=document.createElement('div');box.id='quotaAccountMini';box.className='quota-account-mini';host.appendChild(box)}const summary=cache||localSummary();setHtml(box,accountSummaryHtml(summary));
   }
   function syncSubscription(){
     const body=$('#subscriptionOverviewBody');if(!body||!body.childElementCount)return;let section=$('#subscriptionQuotaSection',body);if(!section){section=document.createElement('section');section.id='subscriptionQuotaSection';section.className='sub-quota-section';const after=body.querySelector('.sub-trial')||body.querySelector('.sub-hero');if(after)after.insertAdjacentElement('afterend',section);else body.prepend(section)}
     const summary=cache||localSummary(),reset=resetDate(summary.periodEnd),admin=summary.isAdmin?' Dein Administratorkonto wird zum Testen nicht gesperrt.':'';
-    const html=`<div class="sub-section-head"><div><span>KI-NUTZUNG DIESEN MONAT</span><h4>Dein verbleibendes Kontingent</h4></div><small>Reset ${esc(reset)}</small></div><div class="sub-quota-card">${ORDER.map(k=>metricHtml(k,summary.metrics?.[k],summary,false)).join('')}</div><p class="sub-quota-note${summary.available===false?' warn':''}">${summary.authenticated===false?'Melde dich an, damit Prompt.ai dein Monatskontingent kontenübergreifend zählen kann.':summary.available===false?'Der Live-Zähler ist gerade nicht erreichbar. Deine Funktionen bleiben verfügbar.':`Am ${esc(reset)} werden die Zähler automatisch auf dein volles Monatskontingent zurückgesetzt.${admin}`}</p>`;
+    const html=`<div class="sub-section-head"><div><span>KI-NUTZUNG DIESEN MONAT</span><h4>Dein verbleibendes Kontingent</h4></div><small>Reset ${esc(reset)}</small></div><div class="sub-quota-card">${ORDER.map(k=>metricHtml(k,summary.metrics?.[k],summary)).join('')}</div><p class="sub-quota-note${summary.available===false?' warn':''}">${summary.authenticated===false?'Melde dich an, damit Prompt.ai dein Monatskontingent kontenübergreifend zählen kann.':summary.available===false?'Der Live-Zähler ist gerade nicht erreichbar. Deine Funktionen bleiben verfügbar.':`Am ${esc(reset)} werden die Zähler automatisch auf dein volles Monatskontingent zurückgesetzt.${admin}`}</p>`;
     setHtml(section,html);
   }
-  function renderAll(){syncPlanCards();syncAccount();syncSubscription()}
+  function renderAll(){syncPlanCards();syncSubscription()}
 
   function quotaMessage(metric,summary){const item=summary?.metrics?.[metric],reset=resetDate(summary?.periodEnd);return `Dein Monatskontingent für ${LABELS[metric]||'diese Funktion'} ist aufgebraucht. Am ${reset} wird es automatisch zurückgesetzt.${item?.limit?` Dein Tarif enthält ${item.limit} pro Monat.`:''}`}
   async function checkWebsite(){
@@ -98,6 +90,6 @@
     document.addEventListener('click',e=>{if(e.target.closest?.('#showPlansBtn,#upgradeBtn,#upgradeMenuBtn'))setTimeout(syncPlanCards,40);if(e.target.closest?.('#manageSubscriptionBtn'))setTimeout(()=>loadSummary(true),80)},true);
     window.addEventListener('promptai:access',()=>{cache=null;cacheAt=0;setTimeout(()=>loadSummary(true),100)});window.addEventListener('pageshow',()=>setTimeout(()=>loadSummary(false),120));
   }
-  function init(){styles();syncPlanCards();syncAccount();patchFetch();bindWebsiteQuota();observe();setTimeout(()=>loadSummary(false),350)}
+  function init(){styles();syncPlanCards();patchFetch();bindWebsiteQuota();observe();setTimeout(()=>loadSummary(false),350)}
   styles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
