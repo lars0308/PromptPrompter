@@ -111,7 +111,7 @@
     [
       "topbarMenuToggle","topbarMenu","topbarMenuBackdrop","upgradeMenuBtn","subscriptionMenuBtn","modeSwitch","modeDescription",
       "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","clientName","clientType","clientWebsite","clientContact","importClientWebsiteBtn","clientImportStatus","clientSources","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
-      "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences","referenceUrlLimitNote","referenceImageLimitNote","skipReferencesBtn",
+      "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences","referenceUrlLimitNote","referenceImageLimitNote","skipReferencesBtn","clientContextCard",
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
@@ -1194,6 +1194,12 @@
     const rules=planRules(),urlLimit=rules.maxRefUrls,imageLimit=rules.maxRefImages;
     if(el.referenceUrlLimitNote){const atLimit=!state.isAdmin&&state.urls.length>=urlLimit;el.referenceUrlLimitNote.textContent=`${state.urls.length} / ${urlLimit} Referenz-Links (${rules.label})${atLimit?' · Limit erreicht':''}`;el.referenceUrlLimitNote.classList.toggle('limit-reached',atLimit);if(el.referenceUrl)el.referenceUrl.disabled=atLimit;if(el.addUrlBtn)el.addUrlBtn.disabled=atLimit;}
     if(el.referenceImageLimitNote){const atLimit=!state.isAdmin&&state.images.length>=imageLimit;el.referenceImageLimitNote.textContent=imageLimit?`${state.images.length} / ${imageLimit} Referenzbilder (${rules.label})${atLimit?' · Limit erreicht':''}`:`Referenzbilder sind ab Pro verfügbar (aktuell ${rules.label}).`;el.referenceImageLimitNote.classList.toggle('limit-reached',!imageLimit||atLimit);}
+    const imagesAllowed=Boolean(imageLimit)||state.isAdmin;
+    if(el.uploadZone)el.uploadZone.hidden=!imagesAllowed;
+    if(el.referenceImageLimitNote)el.referenceImageLimitNote.hidden=!imagesAllowed;
+    if(el.imageReferences)el.imageReferences.hidden=!imagesAllowed;
+    if(el.documentReferences)el.documentReferences.hidden=!imagesAllowed;
+    if(el.clientContextCard)el.clientContextCard.hidden=!rules.clientDocs&&!state.isAdmin;
     el.urlReferences.innerHTML="";
     state.urls.forEach(item => {
       const card=document.createElement("div"); card.className="reference-item";

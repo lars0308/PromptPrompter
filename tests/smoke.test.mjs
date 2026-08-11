@@ -112,7 +112,7 @@ test('customer info (real facts) is a distinct section from style references, no
   assert.doesNotMatch(app,/const ASPECTS = \["Kundeninfo"/,'Kundeninfo must not be a togglable style aspect anymore - it has its own dedicated section');
   assert.match(app,/const ASPECTS = \["Layout","Farben","Typografie","Bildsprache","Hero","Struktur","Stimmung","Nur Inspiration"\];/);
   assert.doesNotMatch(html,/<section class="step-panel active" data-step-panel="1" id="stepProject">[\s\S]{0,60}<section class="client-context-card"/,'customer info must not live inside the References-adjacent style step 1 anymore');
-  assert.match(html,/<section class="step-panel" data-step-panel="2" id="stepReferences">[\s\S]*<section class="client-context-card"><div class="selection-head"><div><span>KUNDENINFORMATIONEN<\/span>/);
+  assert.match(html,/<section class="step-panel" data-step-panel="2" id="stepReferences">[\s\S]*<section class="client-context-card" id="clientContextCard"><div class="selection-head"><div><span>KUNDENINFORMATIONEN<\/span>/);
 });
 test('adding a reference link or file carries a visible liability notice',async()=>{
   const html=await text('index.html');

@@ -167,7 +167,7 @@
 
         <div class="no-references-note"><span>Keine Referenzen zur Hand? Kein Problem — einfach weiter.</span><button type="button" class="text-btn" id="skipReferencesBtn">Nein, weiter ohne Referenzen <i>→</i></button></div>
 
-        <section class="client-context-card"><div class="selection-head"><div><span>KUNDENINFORMATIONEN</span></div></div><p class="client-context-lead">Hier geht es um echte Fakten, nicht um Stil: die eigene Website deines Kunden, ein Google-Eintrag oder eine andere Datenquelle, aus der Prompt.ai Adresse, Öffnungszeiten oder Leistungen übernehmen darf.</p><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" type="text" placeholder="z. B. Prompt.ai Studio" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Website, Google-Link oder Datenquelle</span><input id="clientWebsite" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Quelle hinzufügen & auslesen</button><small id="clientImportStatus"></small></div><div id="clientSources" class="source-list"></div></section>
+        <section class="client-context-card" id="clientContextCard"><div class="selection-head"><div><span>KUNDENINFORMATIONEN</span></div></div><p class="client-context-lead">Hier geht es um echte Fakten, nicht um Stil: die eigene Website deines Kunden, ein Google-Eintrag oder eine andere Datenquelle, aus der Prompt.ai Adresse, Öffnungszeiten oder Leistungen übernehmen darf.</p><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" type="text" placeholder="z. B. Prompt.ai Studio" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Website, Google-Link oder Datenquelle</span><input id="clientWebsite" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Quelle hinzufügen & auslesen</button><small id="clientImportStatus"></small></div><div id="clientSources" class="source-list"></div></section>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="1">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="3">Agent auswählen <i>→</i></button></div>
       </section>
@@ -755,7 +755,7 @@
   <script src="./maintenance-mode.js?v=20260813-2" defer></script>
   <script src="./entry-gate-ui.js?v=20260813-2" defer></script>
   <script src="./legal-pages.js?v=20260813-2" defer></script>
-  <script src="./app.js?v=20260813-2" defer></script>
+  <script src="./app.js?v=20260813-3" defer></script>
   <script src="./admin-console.js?v=20260813-2" defer></script>
 </body>
 </html>
