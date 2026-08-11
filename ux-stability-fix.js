@@ -25,6 +25,7 @@
       html[data-clean-project-flow="1"] body.prompt-unified-ui>.topbar,html.prompt-intake-open body.prompt-unified-ui>.topbar{display:none!important}
       #themeToggleBtn{display:none!important}.menu-theme-quick{display:none!important;flex:0 0 auto;width:44px;height:44px;padding:0;border:1px solid var(--ui-line,var(--line));border-radius:12px;background:var(--ui-card,var(--surface));color:var(--ink);font-size:19px;place-items:center}.menu-theme-quick.show{display:grid!important}
       .topbar-menu:before{content:'PROMPT.AI'!important}.topbar-menu #resetBtn{display:none!important}.topbar-menu #signOutBtn{margin-top:4px!important;border-top:1px solid var(--ui-line,var(--line))!important;border-radius:0!important;padding-top:10px!important}.topbar-menu #upgradeMenuBtn{font-weight:850!important}.upgrade-target{color:var(--ui-blue,var(--accent,#1689c7))!important}#upgradeBtn .upgrade-target{color:#fff!important}
+      .topbar-menu #accountBtn,.topbar-menu #openSettingsBtn{margin-top:4px!important;border-top:1px solid var(--ui-line,var(--line))!important;border-radius:0!important;padding-top:10px!important}
       .home-welcome{margin:0 0 9px 4px;color:var(--muted);font-size:11px;font-weight:700}.home-intro-copy{max-width:520px!important;margin-top:12px!important;font-size:13px!important;line-height:1.4!important}.welcome-quick-actions>button small{line-height:1.3!important}.home-tier-note{font-size:9px!important}
       .project-mode-head p{max-width:520px!important;font-size:12px!important;line-height:1.4!important}.project-mode-card small{font-size:11px!important;line-height:1.4!important}.project-mode-foot{font-size:9px!important}
       .simple-intake-body>p{max-width:600px!important;margin:13px 0 20px!important;font-size:12px!important;line-height:1.45!important}.simple-intake-example{font-size:9px!important}.simple-intake-field textarea{min-height:220px!important}
@@ -76,7 +77,8 @@
     setText(projects,'Projekte');setText(profile,window.SiteBriefCloud?.user?'Profil':'Anmelden');if(subscription)setText(subscription,'Abonnement');setText(admin,'Verwaltung');setText(settings,'Einstellungen');setText(signout,'Abmelden');
     let libraries=$('#menuLibrariesBtn');if(!libraries){libraries=document.createElement('button');libraries.type='button';libraries.id='menuLibrariesBtn';libraries.className='text-btn';libraries.textContent='Bibliotheken';libraries.addEventListener('click',()=>{const source=$('#openLibraryBtn');if(!source||source.hidden)return;source.click();setTimeout(()=>document.querySelector('[data-library-tab="templates"]')?.click(),80)});menu.appendChild(libraries)}
     const hidden=!projects||projects.hidden;if(libraries.hidden!==hidden)libraries.hidden=hidden;
-    if(menu.dataset.promptStructured!=='1'){[$('#installAppBtn'),libraries,projects,profile,subscription,admin,settings,upgrade,signout].filter(Boolean).forEach(node=>menu.appendChild(node));menu.dataset.promptStructured='1'}
+    const history=$('#projectHistoryBtn'),legalRow=$('#menuLegalRow'),installApp=$('#installAppBtn');
+    [libraries,projects,history,profile,subscription,admin,settings,installApp,legalRow,upgrade,signout].filter(Boolean).forEach(node=>menu.appendChild(node));
   }
 
   function themeQuick(){
