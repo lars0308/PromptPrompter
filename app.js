@@ -2030,6 +2030,7 @@ el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBt
     initCloudIntegration();
     if(sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)){sessionStorage.removeItem(CONTINUE_WORKFLOW_KEY);showWorkflow(1);}
     window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.installPrompt=event;if(el.installAppBtn)el.installAppBtn.hidden=false});window.addEventListener('appinstalled',()=>{state.installPrompt=null;if(el.installAppBtn)el.installAppBtn.hidden=true});
+    window.addEventListener('promptai:access',event=>{const access=event.detail||window.PromptAiAccess;if(!access)return;if(access.plan)state.plan=access.plan;state.isAdmin=Boolean(access.isAdmin);if(access.ownApiKeys)state.ownApiKeys=true;applyPlanUi();updateAccountUi();});
     if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
     setInterval(()=>saveState({cloud:false}),15000);
   }
