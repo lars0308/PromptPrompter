@@ -241,7 +241,7 @@ test('the loader title/sentence text updates instantly and cleanly, with no stal
   const transition=await text('transition-polish.js'),v1=await text('promptai-experience-v1.js');
   assert.match(transition,/function setTitle\(box,text\)\{const host=\$\('strong',box\);if\(!host\|\|host\.textContent===text\)return;host\.textContent=text\}/);
   assert.match(transition,/const apply=\(\)=>\{host\.textContent=text;host\.classList\.remove\('is-changing'\)\};/);
-  assert.match(v1,/const apply=\(\)=>\{blue\.style\.clipPath='inset\(0 100% 0 0\)';base\.textContent=text;blue\.textContent=text;/);
+  assert.match(v1,/const apply=\(\)=>\{host\.textContent=text;host\.classList\.remove\('is-changing'\)\};/);
 });
 test('the "Prompt genauer einstellen" free-prompt settings step is consolidated into 3 broad fields instead of 9 narrow ones',async()=>{
   const src=await text('free-prompt-ui.js');
@@ -274,7 +274,8 @@ test('the review/preview loader and the free-prompt thinking loader no longer us
   assert.doesNotMatch(transition,/clip-path/,'the review/preview loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
   assert.match(transition,/function applyFill\(progress\)\{\s*const box=\$\('#promptWorkflowLoader'\);if\(!box\)return;\s*const bar=\$\('\.prompt-loader-bar i',box\);if\(bar\)bar\.style\.width=`\$\{\(progress\*100\)\.toFixed\(2\)\}%`;/);
   const v1=await text('promptai-experience-v1.js');
-  assert.match(v1,/blue\.style\.clipPath=`inset\(0 \$\{\(\(1-ease\(t\)\)\*100\)\.toFixed\(2\)\}% 0 0\)`;/);
+  assert.doesNotMatch(v1,/clip-path/,'the free-prompt thinking loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
+  assert.match(v1,/function applyTitleFill\(stage,progress\)\{const bar=\$\('\.prompt-thinking-bar i',stage\);if\(bar\)bar\.style\.width=`\$\{\(progress\*100\)\.toFixed\(2\)\}%`\}/);
 });
 test('every AI provider call in the review/questions and free-prompt chains has a bounded timeout so a hanging provider fails fast instead of stalling the whole fallback chain',async()=>{
   const core=await text('server/generate-core.js');
