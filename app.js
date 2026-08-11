@@ -9,6 +9,7 @@
   const AGENT_NAMES = {claude:"Claude Code",codex:"Codex",gemini:"Gemini",chatgpt:"ChatGPT",cursor:"Cursor",v0:"v0",universal:"Universal"};
   const OUTPUT_TARGETS = {"next-vercel":"Next.js + TypeScript + Vercel","next-only":"Next.js + TypeScript","html":"Statisches HTML / CSS / JavaScript","react":"React + Vite","astro":"Astro","existing":"Bestehenden Projekt-Stack weiterführen"};
   const ASPECTS = ["Kundeninfo","Layout","Farben","Typografie","Bildsprache","Hero","Struktur","Stimmung","Nur Inspiration"];
+  let autoEngineApplied=false;
   if(typeof HTMLDialogElement!=="undefined"){
     const nativeShowModal=HTMLDialogElement.prototype.showModal;
     HTMLDialogElement.prototype.showModal=function(){
@@ -565,6 +566,10 @@
       state.cloudProjects=bundle.projects||[];
       state.aiConnections=bundle.aiConnections||[];
       window.SiteBriefCloud.aiConnections=[...state.aiConnections];
+      if(!autoEngineApplied&&["pro","ultimate"].includes(state.plan)&&state.engine==="local"&&el.generatorEngine){
+        const preferred=["gateway","openai","gemini"].find(p=>state.aiConnections.some(x=>x.provider===p));
+        if(preferred){autoEngineApplied=true;el.generatorEngine.value=preferred;updateEngineUi();}
+      }
       if(pushLocalIfEmpty){
         const missing=(local,remote)=>local.filter(item=>!(remote||[]).some(saved=>saved.id===item.id));
         for(const item of missing(localLibrary.templates,bundle.templates))await window.SiteBriefCloud.saveLibraryItem("template",item);
