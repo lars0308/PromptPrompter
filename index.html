@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
   <script src="./theme-init.js?v=2"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260811-5" />
+  <link rel="stylesheet" href="./styles.css?v=20260811-6" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
     html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
@@ -22,6 +22,7 @@
     #promptAppBoot>div{width:min(520px,100%);text-align:center}
     #promptAppBoot img{display:block;width:min(126px,31vw);height:min(126px,31vw);margin:0 auto;object-fit:contain;filter:drop-shadow(0 16px 32px rgba(20,88,129,.10))}
     #promptAppBoot strong{display:block;margin-top:17px;font-size:clamp(28px,7vw,42px);line-height:1;letter-spacing:-.045em}
+    .brand-ai-suffix{color:var(--accent,#1b76aa)}
     #promptAppBoot p{margin:10px auto 0;color:var(--muted,#6e6c64);font-size:13px;line-height:1.5}
     #promptAppBoot .boot-track{position:relative;width:min(260px,70vw);height:3px;margin:25px auto 0;overflow:hidden;border-radius:99px;background:color-mix(in srgb,#1689c7 13%,var(--line,#d8dcdf))}
     #promptAppBoot .boot-track i{position:absolute;inset:0 auto 0 0;width:42%;border-radius:99px;background:#1689c7;animation:promptAppBootTrack 1.05s cubic-bezier(.4,0,.2,1) infinite}
@@ -31,7 +32,7 @@
   </style>
 </head>
 <body>
-  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo.svg?v=4" alt="Prompt.ai"><strong>Prompt.ai</strong><p>Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div></section>
+  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo.svg?v=4" alt="Prompt.ai"><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><p>Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div></section>
   <div id="publicNotices" class="public-notices" aria-live="polite"></div>
   <aside id="offerBanner" class="offer-banner" hidden>
     <div><span id="offerEyebrow">AKTION</span><strong id="offerTitle"></strong><p id="offerDescription"></p></div>
@@ -40,7 +41,7 @@
   <header class="topbar">
     <a class="brand" href="#" id="brandHome" aria-label="Prompt.ai Start">
       <span class="brand-mark"><img src="./sitebrief-logo.svg?v=4" alt="" /></span>
-      <span class="brand-copy"><strong>Prompt.ai</strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT</small></span>
+      <span class="brand-copy"><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT</small></span>
     </a>
 
     <div class="mode-switch" id="modeSwitch" aria-label="Arbeitsmodus" hidden>
@@ -621,14 +622,13 @@
       <div class="account-body">
         <div id="accountLoggedOut">
           <section class="auth-hero">
-            <div class="auth-brand"><img src="sitebrief-logo.svg?v=4" alt="" /><div><strong>Prompt.ai</strong><span>Aus Ideen wird ein klares Projekt</span></div></div>
+            <div class="auth-brand"><img src="sitebrief-logo.svg?v=4" alt="" /><div><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><span>Aus Ideen wird ein klares Projekt</span></div></div>
             <span class="auth-kicker">DEIN PROJEKT BEGINNT HIER</span>
             <h1>Von der ersten Idee zum klaren Auftrag.</h1>
-            <p class="account-intro" id="accountIntro">Melde dich an und arbeite auf jedem Gerät an deinen Projekten weiter.</p>
           </section>
           <div class="auth-layout">
             <section class="auth-form-card">
-              <div class="auth-form-heading"><span>SICHER ANMELDEN</span><strong>Willkommen zurück</strong><small>Deine Projekte und Einstellungen werden direkt geladen.</small></div>
+              <div class="auth-form-heading"><span>SICHER ANMELDEN</span><strong>Willkommen zurück</strong></div>
               <label class="field"><span>E-Mail</span><input id="authEmail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="name@beispiel.de" /></label>
               <label class="field"><span>Passwort</span><input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="8" /></label>
               <div class="auth-form-meta"><label class="remember-login"><input id="rememberEmail" type="checkbox" checked /><span>E-Mail merken</span></label><button type="button" class="text-btn" id="forgotPasswordBtn">Passwort vergessen?</button></div>
@@ -736,16 +736,22 @@
     </form>
   </dialog>
 
-  <div class="cookie-banner" id="cookieBanner" hidden role="dialog" aria-live="polite" aria-label="Cookie-Hinweis">
-    <p>Wir verwenden technisch notwendige Cookies, damit Anmeldung und Sitzung funktionieren. Optionale Cookies (z.&nbsp;B. Analyse) setzen wir aktuell nicht ohne deine Zustimmung ein. Mehr dazu in unserer <button type="button" class="link-btn" id="cookieBannerPrivacyLink">Datenschutzerklärung</button>.</p>
-    <div class="cookie-banner-actions"><button type="button" class="outline-btn" id="cookieBannerEssentialBtn">Nur notwendige</button><button type="button" class="solid-btn" id="cookieBannerAcceptBtn">Alle akzeptieren</button></div>
-  </div>
+  <dialog class="cookie-banner" id="cookieBanner" aria-label="Cookie-Hinweis">
+    <div class="cookie-banner-box">
+      <p>Wir verwenden technisch notwendige Cookies, damit Anmeldung und Sitzung funktionieren. Optionale Cookies (z.&nbsp;B. Analyse) setzen wir aktuell nicht ohne deine Zustimmung ein. Mehr dazu in unserer <button type="button" class="link-btn" id="cookieBannerPrivacyLink">Datenschutzerklärung</button>.</p>
+      <div class="cookie-banner-settings" id="cookieBannerSettings" hidden>
+        <label class="cookie-category"><input type="checkbox" checked disabled /><span><strong>Technisch notwendig</strong><small>Anmeldung, Sitzung, Sicherheit und deine Cookie-Auswahl selbst. Immer aktiv, da die App sonst nicht funktioniert.</small></span></label>
+        <label class="cookie-category disabled"><input type="checkbox" disabled /><span><strong>Analyse &amp; Marketing</strong><small>Setzen wir aktuell nicht ein. Es gibt daher nichts zu aktivieren.</small></span></label>
+      </div>
+      <div class="cookie-banner-actions"><button type="button" class="text-btn" id="cookieBannerSettingsBtn">Einstellungen</button><button type="button" class="outline-btn" id="cookieBannerEssentialBtn">Nur notwendige</button><button type="button" class="solid-btn" id="cookieBannerAcceptBtn">Alle akzeptieren</button></div>
+    </div>
+  </dialog>
 
   <script type="module" src="./cloud.js?v=20260810-2"></script>
   <script src="./entry-gate-ui.js?v=20260811-3" defer></script>
-  <script src="./legal-pages.js?v=20260811-3" defer></script>
-  <script src="./app.js?v=20260811-16" defer></script>
-  <script src="./admin-console.js?v=20260812-3" defer></script>
+  <script src="./legal-pages.js?v=20260811-7" defer></script>
+  <script src="./app.js?v=20260811-19" defer></script>
+  <script src="./admin-console.js?v=20260812-4" defer></script>
 </body>
 </html>
 

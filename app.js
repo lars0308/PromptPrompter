@@ -13,8 +13,10 @@
   if(typeof HTMLDialogElement!=="undefined"){
     const nativeShowModal=HTMLDialogElement.prototype.showModal;
     HTMLDialogElement.prototype.showModal=function(){
-      if(this.id!=="appActionDialog")document.querySelectorAll("dialog[open]").forEach(dialog=>{if(dialog!==this&&dialog.id!=="appActionDialog")dialog.close()});
-      return nativeShowModal.call(this);
+      if(this.id!=="appActionDialog"&&this.id!=="cookieBanner")document.querySelectorAll("dialog[open]").forEach(dialog=>{if(dialog!==this&&dialog.id!=="appActionDialog"&&dialog.id!=="cookieBanner")dialog.close()});
+      const result=nativeShowModal.call(this);
+      if(this.id!=="cookieBanner"){const banner=document.getElementById("cookieBanner");if(banner&&banner.open){banner.close();nativeShowModal.call(banner)}}
+      return result;
     };
   }
   const STORAGE_KEY = "sitebrief-v6-state";
@@ -115,7 +117,7 @@
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
       "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadProjectSourcesBtn","downloadHandoffPackageBtn","downloadBriefBtn","promptHandoff","promptHandoffText","promptHandoffPreview","downloadProjectReportBtn","downloadClientBriefBtn","downloadHandoverBtn","downloadWebsiteZipBtn","buildWebsiteBtn","downloadGeneratedWebsiteBtn","websiteBuildStatus","websiteBuildProgress","websiteBuildStage","websiteBuildPercent","websiteBuildFill","websiteBuildStages","websiteBuildPreview","websiteBuildTruthNote","websiteRequirements","publishGithubBtn","clientResultHint","exportResultHint",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
-      "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","accountIntro","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","libraryProjectList","faceIdBtn","faceIdMessage","supportCategory","supportSubject","supportMessage","sendSupportBtn","supportStatus",
+      "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","libraryProjectList","faceIdBtn","faceIdMessage","supportCategory","supportSubject","supportMessage","sendSupportBtn","supportStatus",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
       "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","connectionUpgradeRow","aiConnectionGrid","settingsLoginBtn","githubLoginRow","githubUpgradeRow","githubConnectionGrid","githubSettingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","cloudflareConnectionStatus","cloudflareAccountId","cloudflareApiToken","cloudflareConnectBtn","cloudflareTestBtn","cloudflareDisconnectBtn","cloudflareConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
       "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","buyReviewInlineBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
@@ -332,7 +334,7 @@
   }
   function showAccountGate(){
     if(cloudReady()||!el.accountDialog)return;updateAccountUi();renderGuestLimit();el.accountDialog.classList.add("guest-gate");el.accountDialogKicker.textContent="WILLKOMMEN BEI PROMPT.AI";el.accountDialogTitle.textContent=guestRunsRemaining()?"Anmelden oder kostenlos testen":"Zum Weitermachen anmelden";
-    el.accountIntro.textContent="Melde dich an und arbeite auf jedem Gerät an deinen Projekten weiter.";if(!el.accountDialog.open)el.accountDialog.showModal();
+    if(!el.accountDialog.open)el.accountDialog.showModal();
   }
   function maybeShowEntryGate(){
     if(cloudReady())return;
@@ -341,12 +343,7 @@
     let alreadyShown=false;try{alreadyShown=sessionStorage.getItem(ENTRY_GATE_KEY)==='1'}catch{}
     if(alreadyShown)return;
     try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}
-    const consent=window.PromptAiCookieConsent;
-    if(consent&&typeof consent.then==="function"){
-      Promise.race([consent,new Promise(resolve=>setTimeout(resolve,4000))]).then(showAccountGate);
-    }else{
-      showAccountGate();
-    }
+    showAccountGate();
   }
   function closeAccountGate(){el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
   let pendingAuthPlan=null;

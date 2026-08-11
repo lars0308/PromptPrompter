@@ -2,7 +2,7 @@
   'use strict';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   const cleanAuth=()=>{const m=$('#authMessage');if(!m)return;const t=(m.textContent||'').trim();if(/invalid login credentials|invalid credentials|email or password|wrong password|user not found/i.test(t)&&t!=='E-Mail oder Passwort stimmt nicht.')m.textContent='E-Mail oder Passwort stimmt nicht.'};
-  const brandAi=()=>{$$('.brand-copy strong,.auth-brand strong,.guided-clean-brand strong,.simple-intake-brand strong').forEach(el=>{if(el.dataset.brandAi==='1')return;if(el.textContent.trim()==='Prompt.ai'){el.innerHTML='Prompt<span class="brand-ai-suffix">.ai</span>';el.dataset.brandAi='1'}})};
+  const brandAi=()=>{$$('.brand-copy strong,.auth-brand strong,.guided-clean-brand strong,.simple-intake-brand strong,#promptAppBoot strong').forEach(el=>{if(el.dataset.brandAi==='1')return;if(el.textContent.trim()==='Prompt.ai'){el.innerHTML='Prompt<span class="brand-ai-suffix">.ai</span>';el.dataset.brandAi='1'}})};
   const cleanFreeStatus=()=>{const m=$('#freePromptStatus');if(!m||!m.classList.contains('good'))return;const t=(m.textContent||'').trim();if(/Free-Basis-Prompt erstellt|Professioneller Prompt erstellt/i.test(t)&&t!=='Prompt erstellt.')m.textContent='Prompt erstellt.'};
   function style(){if($('#promptFinalTouchStyles'))return;const s=document.createElement('style');s.id='promptFinalTouchStyles';s.textContent=`
     .prompt-menu-shield{position:fixed;top:68px;right:0;bottom:0;left:0;z-index:2147483000;background:rgba(12,17,22,.66);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .2s ease}

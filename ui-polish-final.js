@@ -58,7 +58,6 @@
     setText($('.home-intro-copy'),'Wähle, was du erstellen möchtest.');
     setText($('#freePromptDialog .free-prompt-intro'),'Wähle jetzt Typ und Ziel-Tool. Weitere Angaben sind optional.');
     setText($('#freePromptUpgrade small'),'Pro ergänzt Zielgruppe, Referenzen, Stil, Pflichtpunkte, Verbote und Ausgabeformat.');
-    setText($('#accountIntro'),'Anmelden, um Projekte und Einstellungen zu synchronisieren.');
     $$('.reference-note-block').forEach(note=>{if(!(note.textContent||'').trim()&&!note.hidden)note.hidden=true});
   }
 

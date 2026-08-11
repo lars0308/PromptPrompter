@@ -186,3 +186,37 @@ test('the GitHub sandbox card offers a picker populated from the user\'s own rep
   assert.match(src,/body:JSON\.stringify\(\{action:'list-repos'\}\)/);
   assert.match(src,/id="githubSandboxPicker" hidden/);
 });
+test('the entry gate opens immediately and no longer waits on cookie consent to appear',async()=>{
+  const src=await text('app.js');
+  assert.doesNotMatch(src,/Promise\.race\(\[consent,new Promise\(resolve=>setTimeout\(resolve,4000\)\)\]\)\.then\(showAccountGate\)/,'the account gate must not be delayed behind cookie-banner consent resolution');
+  assert.match(src,/function maybeShowEntryGate\(\)\{[\s\S]{0,400}showAccountGate\(\);\s*\}/);
+});
+test('the cookie banner is a modal dialog that re-promotes itself above any later-opened dialog (e.g. the login gate) instead of being hidden behind it',async()=>{
+  const app=await text('app.js'),legal=await text('legal-pages.js'),html=await text('index.html');
+  assert.match(html,/<dialog class="cookie-banner" id="cookieBanner"/);
+  assert.match(legal,/if\(!banner\.open\)banner\.showModal\(\);/);
+  assert.match(app,/if\(this\.id!=="cookieBanner"\)\{const banner=document\.getElementById\("cookieBanner"\);if\(banner&&banner\.open\)\{banner\.close\(\);nativeShowModal\.call\(banner\)\}\}/,'every other dialog opening must re-promote the still-open cookie banner back to the top of the native dialog stack');
+  assert.match(app,/if\(this\.id!=="appActionDialog"&&this\.id!=="cookieBanner"\)document\.querySelectorAll\("dialog\[open\]"\)\.forEach/,'the cookie banner must be exempted from the auto-close-other-dialogs behavior');
+});
+test('the cookie banner offers a real settings panel (essential-only by default) instead of just two opaque buttons',async()=>{
+  const html=await text('index.html');
+  assert.match(html,/id="cookieBannerSettingsBtn">Einstellungen/);
+  assert.match(html,/Technisch notwendig<\/strong><small>Anmeldung, Sitzung, Sicherheit/);
+  assert.match(html,/checked disabled/);
+});
+test('the login/entry gate has no leftover small hint texts (accountIntro paragraph, auth-form-heading small)',async()=>{
+  const html=await text('index.html'),app=await text('app.js');
+  assert.doesNotMatch(html,/id="accountIntro"/);
+  assert.doesNotMatch(html,/Deine Projekte und Einstellungen werden direkt geladen\./);
+  assert.doesNotMatch(app,/el\.accountIntro/);
+});
+test('the ".ai" suffix on the Prompt.ai wordmark is statically blue everywhere it ships in the HTML (topbar, boot screen, login gate), not only once a late-loading polish script runs',async()=>{
+  const html=await text('index.html'),css=await text('styles.css');
+  const spots=[/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT/,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><p>Dein Arbeitsbereich wird vorbereitet\./,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><span>Aus Ideen wird ein klares Projekt/];
+  for(const pattern of spots)assert.match(html,pattern);
+  assert.match(css,/\.auth-brand \.brand-ai-suffix\{color:var\(--accent\)\}/,'a plain .auth-brand span{color:muted} rule beats the single-class .brand-ai-suffix rule on specificity, so a targeted override is required');
+});
+test('a broad prompt-unified-ui dialog reset does not strip the cookie banner\'s padding with !important',async()=>{
+  const src=await text('unified-ui-v1.js');
+  assert.match(src,/dialog:not\(#previewLightbox\):not\(#welcomeIntroDialog\):not\(#cookieBanner\)\{border:0!important;background:transparent!important;color:var\(--ink\)!important;padding:0!important\}/);
+});

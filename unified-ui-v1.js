@@ -41,7 +41,7 @@
       body.prompt-unified-ui .welcome-quick-actions>button:hover:not(:disabled):not(.home-plan-locked){transform:translateY(-1px)!important;border-color:color-mix(in srgb,var(--ui-blue) 55%,var(--ui-line))!important}
 
       /* Shared dialogs and sub pages */
-      body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog){border:0!important;background:transparent!important;color:var(--ink)!important;padding:0!important}
+      body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#cookieBanner){border:0!important;background:transparent!important;color:var(--ink)!important;padding:0!important}
       body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog)::backdrop{background:rgba(18,24,29,.40)!important;backdrop-filter:blur(8px)!important}
       body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog) .dialog-frame{width:min(900px,calc(100vw - 28px))!important;max-width:900px!important;max-height:calc(100dvh - 28px)!important;margin:auto!important;border:1px solid var(--ui-line)!important;border-radius:22px!important;background:var(--ui-card)!important;box-shadow:var(--ui-shadow)!important;overflow:hidden!important}
       body.prompt-unified-ui .dialog-head{position:sticky!important;z-index:7!important;top:0!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:15px!important;padding:18px 22px!important;border-bottom:1px solid var(--ui-line)!important;background:color-mix(in srgb,var(--ui-card) 96%,transparent)!important;backdrop-filter:blur(16px)!important}
