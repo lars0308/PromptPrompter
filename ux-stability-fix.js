@@ -51,10 +51,8 @@
 
   function shortModeChoice(){
     const dialog=$('#projectModeDialog');if(!dialog)return;
-    setText($('.project-mode-head p',dialog),'Wähle, wie viel Prompt.ai für dich übernehmen soll.');
     const copy={guided:'Nur wichtige Rückfragen. Die Vorschau bleibt deine Entscheidung.',auto:'Prompt.ai entscheidet die Details und führt dich schnell zur Vorschau.',expert:'Alle Einstellungen selbst steuern.'};
     $$('[data-project-mode]',dialog).forEach(button=>setText($('small',button),copy[button.dataset.projectMode]||''));
-    setText($('.project-mode-foot',dialog),'Geführt: Free · Auto: Pro · Experte: Ultimate');
   }
 
   function shortIntake(){

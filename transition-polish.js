@@ -61,8 +61,7 @@
       @keyframes promptSentenceFill{to{clip-path:inset(0 0 0 0)}}
       .prompt-loader-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-loader-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptLoaderPulse 1.05s ease-in-out infinite}.prompt-loader-pulse i:nth-child(2){animation-delay:.13s}.prompt-loader-pulse i:nth-child(3){animation-delay:.26s}
       @keyframes promptLoaderPulse{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
-      .project-mode-transition{background:var(--paper,#f4f5f6)!important;animation:none!important;transition:opacity .2s ease!important}.project-mode-transition>div{width:min(560px,100%)!important;padding:0 22px!important}.project-mode-transition strong{font-size:clamp(31px,8vw,47px)!important;line-height:1.02!important;letter-spacing:-.05em!important}.project-mode-transition small{position:relative!important;display:block!important;max-width:440px!important;margin:22px auto 0!important;color:var(--ink,#171814)!important;font-size:clamp(15px,3.8vw,18px)!important;font-weight:650!important;line-height:1.45!important;overflow:hidden!important}.project-mode-transition small:after{content:'Beschreibung wird übernommen.';position:absolute;inset:0;color:var(--ui-blue,var(--accent,#1689c7));clip-path:inset(0 100% 0 0);animation:promptPreRouteFill 1.02s cubic-bezier(.22,.68,.24,1) forwards}.project-mode-transition>div>i{display:none!important}@keyframes promptPreRouteFill{to{clip-path:inset(0)}}
-      @media(prefers-reduced-motion:reduce){#promptWorkflowLoader,.prompt-loader-sentence{transition:none!important}.prompt-loader-sentence .blue,.project-mode-transition small:after{animation:none!important;clip-path:inset(0)!important}.prompt-loader-pulse i{animation:none!important;opacity:.7!important}}
+      @media(prefers-reduced-motion:reduce){#promptWorkflowLoader,.prompt-loader-sentence{transition:none!important}.prompt-loader-sentence .blue{animation:none!important;clip-path:inset(0)!important}.prompt-loader-pulse i{animation:none!important;opacity:.7!important}}
     `;document.head.appendChild(s)
   }
 
@@ -77,7 +76,6 @@
   function show(kind){if(userExited||!workflowVisible()||!cleanMode())return;const data=copy[kind];if(!data)return;const box=loader();box.classList.remove('is-leaving');document.documentElement.classList.add('prompt-workflow-loading');const kicker=$('.kicker',box),title=$('strong',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;if(title.textContent!==data.title)title.textContent=data.title;if(activeKind!==kind){activeKind=kind;startCycle(kind)}}
   function hide(immediate=false){clearInterval(cycleTimer);cycleTimer=0;activeKind='';const box=$('#promptWorkflowLoader');document.documentElement.classList.remove('prompt-workflow-loading');if(!box)return;if(immediate){box.remove();return}box.classList.add('is-leaving');setTimeout(()=>box.remove(),250)}
 
-  function normalizePreReload(){const box=$('.project-mode-transition');if(!box)return;const strong=$('strong',box),small=$('small',box);if(strong)strong.textContent='Projekt wird vorbereitet';if(small)small.textContent='Beschreibung wird übernommen.'}
   function closeLateWorkflowUi(){const dialog=$('#clarificationDialog');if(dialog?.open){try{dialog.close('cancel')}catch{dialog.removeAttribute('open')}}$('#promptCompletionFlash')?.remove();document.documentElement.classList.remove('prompt-review-transition','prompt-clarification-exit')}
 
   function sync(){installStyles();const visible=workflowVisible(),step=currentStep();if(!visible){pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}if(userExited)return;if(clarificationOpen()){pendingFromReferences=false;hide();return}if(step===2){if(!pendingFromReferences)hide();return}if(step===3||step===4){pendingFromReferences=false;show('review');return}if(step===5){pendingFromReferences=false;show('preview');return}if(step>=6||step===1){pendingFromReferences=false;hide();return}}
@@ -85,7 +83,6 @@
 
   function onClick(event){
     const refNext=event.target.closest?.('#stepReferences .next-btn');if(refNext&&workflowVisible()&&cleanMode()){userExited=false;pendingFromReferences=true;show('review');schedule(180);return}
-    if(event.target.closest?.('#workspaceNewProjectBtn,#workspaceLastProjectBtn,#startNewBtn,[data-project-mode]')){userExited=false;setTimeout(normalizePreReload,0);return}
     if(event.target.closest?.('#brandHome,.guided-clean-exit')){userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}
     if(event.target.closest?.('#clarificationDialog .close-dialog')){pendingFromReferences=false;hide();return}
   }

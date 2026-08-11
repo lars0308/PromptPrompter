@@ -20,8 +20,6 @@
     if(mode==='auto')return plan==='pro'||plan==='ultimate';
     return plan==='ultimate';
   }
-  function label(mode){return mode==='auto'?'Auto':mode==='expert'?'Experte':'Geführt'}
-
   function installStyles(){
     if($('#projectStartStyles'))return;
     const style=document.createElement('style');style.id='projectStartStyles';style.textContent=`
@@ -30,10 +28,9 @@
       .project-mode-dialog::backdrop{background:rgba(8,12,10,.70);backdrop-filter:blur(12px)}
       .project-mode-frame{position:relative;max-height:calc(100dvh - 20px);overflow:auto;padding:30px;border:1px solid var(--line);border-radius:22px;background:var(--paper);box-shadow:0 28px 90px rgba(0,0,0,.28)}
       .project-mode-close{position:absolute;right:18px;top:18px;width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink);font-size:22px}
-      .project-mode-head span{display:block;color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}.project-mode-head h2{margin:8px 54px 8px 0;font-size:clamp(30px,6vw,48px);line-height:1;letter-spacing:-.045em}.project-mode-head p{margin:0;color:var(--muted);line-height:1.55;max-width:620px}
+      .project-mode-head span{display:block;color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}.project-mode-head h2{margin:8px 54px 0 0;font-size:clamp(30px,6vw,48px);line-height:1;letter-spacing:-.045em}.project-mode-head p{display:none}
       .project-mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:24px}.project-mode-card{display:flex;min-height:210px;padding:18px;align-items:flex-start;flex-direction:column;text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink)}.project-mode-card:hover:not(:disabled){border-color:var(--accent);transform:translateY(-1px)}.project-mode-card b{display:block;font-size:19px}.project-mode-card small{display:block;margin-top:8px;color:var(--muted);line-height:1.5}.project-mode-card i{display:block;margin-top:auto;padding-top:18px;color:var(--accent);font-style:normal;font-size:10px;font-weight:800;letter-spacing:.06em}.project-mode-card:disabled{opacity:.55;cursor:not-allowed}.project-mode-card:disabled i{color:var(--muted)}
-      .project-mode-foot{margin:18px 0 0;color:var(--muted);font-size:10px;line-height:1.5}
-      .project-mode-transition{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;background:var(--paper);color:var(--ink);animation:projectModeFade .22s ease both;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.project-mode-transition div{text-align:center}.project-mode-transition strong{display:block;font-size:22px}.project-mode-transition small{display:block;margin-top:7px;color:var(--muted)}.project-mode-transition i{display:block;width:120px;height:3px;margin:20px auto 0;overflow:hidden;border-radius:99px;background:var(--line)}.project-mode-transition i:after{content:'';display:block;width:40%;height:100%;background:#278bc2;animation:projectModeTrack 1s ease-in-out infinite}@keyframes projectModeFade{from{opacity:0}to{opacity:1}}@keyframes projectModeTrack{from{transform:translateX(-120%)}to{transform:translateX(320%)}}
+      .project-mode-foot{display:none}
       @media(max-width:720px){.project-mode-dialog{width:100vw;height:100dvh;max-width:none;max-height:none;margin:0}.project-mode-frame{min-height:100dvh;max-height:none;border:0;border-radius:0;padding:26px 16px 40px}.project-mode-grid{grid-template-columns:1fr}.project-mode-card{min-height:0}.project-mode-card i{margin-top:14px;padding-top:0}}
     `;document.head.appendChild(style);
   }
@@ -65,7 +62,6 @@
     if(window.PromptAiDialog?.confirm)return Boolean(await window.PromptAiDialog.confirm(text,{title:reset?'Projekt zurücksetzen':'Neue Internetseite',confirmLabel:reset?'Zurücksetzen':'Neu beginnen',danger:true}));
     return window.confirm(text);
   }
-  function transition(mode){const shield=document.createElement('div');shield.className='project-mode-transition';shield.innerHTML=`<div><strong>${label(mode)} wird vorbereitet</strong><small>Deine Beschreibung wird übernommen.</small><i></i></div>`;document.body.appendChild(shield)}
   function persistNewProject(mode,brief=''){
     try{
       localStorage.removeItem(STORAGE_KEY);
@@ -81,7 +77,7 @@
   async function startNew(trigger,brief=''){
     const reset=trigger?.id==='resetBtn';if(!await confirmReplace(reset))return;
     const mode=await chooseMode();if(!mode)return;
-    persistNewProject(mode,brief);transition(mode);setTimeout(()=>location.reload(),260);
+    persistNewProject(mode,brief);location.reload();
   }
   function interceptNewProject(){
     document.addEventListener('click',event=>{

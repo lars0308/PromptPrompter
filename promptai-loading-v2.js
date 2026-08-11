@@ -20,7 +20,6 @@
       .prompt-process-lines.running .prompt-process-fill{animation:promptLoadFill var(--prompt-line-duration,900ms) linear var(--prompt-line-delay,0ms) forwards}.prompt-process-lines.complete .prompt-process-fill{clip-path:inset(0)!important;animation:promptLoadFinish .48s ease both!important}
       @keyframes promptLoadFill{to{clip-path:inset(0)}}@keyframes promptLoadFinish{0%,100%{filter:none;text-shadow:none}45%{filter:brightness(1.18);text-shadow:0 0 18px color-mix(in srgb,var(--prompt-load-blue) 38%,transparent)}}
       .flow-transition-compact i{display:none!important}.flow-transition-compact .prompt-process-lines{margin-top:22px!important;text-align:left!important}.flow-transition-compact .prompt-process-line{font-size:clamp(14px,2.6vw,17px)!important}
-      .project-mode-transition i{display:none!important}.project-mode-transition .prompt-process-lines{margin-top:20px;text-align:left}.project-mode-transition>div{width:min(560px,calc(100vw - 36px))}
       #reviewProgress.prompt-process-enhanced,#previewProgress.prompt-process-enhanced,#websiteBuildProgress.prompt-process-enhanced{height:auto!important;max-height:none!important;overflow:visible!important}
       #reviewProgress .prompt-process-lines,#previewProgress .prompt-process-lines,#websiteBuildProgress .prompt-process-lines{margin-top:14px;text-align:left}
       .prompt-completion-flash{position:fixed;z-index:2147483646;inset:0;display:grid;place-items:center;padding:28px 20px;background:color-mix(in srgb,var(--paper) 97%,transparent);backdrop-filter:blur(10px);animation:promptFlashIn .14s ease both;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.prompt-completion-flash>div{width:min(580px,100%);text-align:center}.prompt-completion-flash .prompt-process-lines{margin-top:22px;text-align:left}.prompt-completion-flash .prompt-process-fill{clip-path:inset(0)!important;color:var(--prompt-load-blue);animation:promptLoadFinish .48s ease both!important}
@@ -95,8 +94,6 @@
     const host=$('#flowTransitionCompact');if(!host?.classList.contains('show'))return;const strong=$('strong',host),kind=/Vorschau/i.test(strong?.textContent||'')?'preview':'review';const textLength=inputLength();if(host.dataset.promptProcessKind!==kind){host.dataset.promptProcessKind=kind;renderLines(host,lineSet(kind),durationFor(textLength))}
   }
 
-  function decorateModeTransition(){const host=$('.project-mode-transition');if(!host||host.dataset.promptProcess==='1')return;host.dataset.promptProcess='1';renderLines(host,lineSet('briefing'),Math.max(3000,durationFor(inputLength())))}
-
   function enhanceProgress(id,kind){
     const host=$(id);if(!host)return;host.classList.add('prompt-process-enhanced');const visible=!host.hidden&&getComputedStyle(host).display!=='none';
     if(visible&&host.dataset.promptProcessVisible!=='1'){host.dataset.promptProcessVisible='1';renderLines(host,lineSet(kind),durationFor(inputLength()))}
@@ -125,7 +122,7 @@
   }
 
   function settle(){
-    installStyles();ensureHandoff();decorateFlowTransition();decorateModeTransition();enhanceProgress('#reviewProgress','review');enhanceProgress('#previewProgress','preview');enhanceProgress('#websiteBuildProgress','build');freePromptCompletion();clarificationState()
+    installStyles();ensureHandoff();decorateFlowTransition();enhanceProgress('#reviewProgress','review');enhanceProgress('#previewProgress','preview');enhanceProgress('#websiteBuildProgress','build');freePromptCompletion();clarificationState()
   }
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
   function bind(){
