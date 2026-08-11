@@ -342,9 +342,18 @@
   }
   function consumeGuestRun(){if(cloudReady())return;localStorage.setItem(GUEST_USAGE_KEY,String(Math.min(GUEST_RUN_LIMIT,guestRunCount()+1)));renderGuestLimit()}
 
-  async function sitebriefApiFetch(url, options={}){
+  async function sitebriefApiFetch(url, options={}, timeoutMs=45000){
     const auth = await window.SiteBriefCloud?.authHeaders?.().catch?.(()=>({})) || {};
-    return fetch(url,{...options,headers:{...(options.headers||{}),...auth}});
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    try{
+      return await fetch(url,{...options,headers:{...(options.headers||{}),...auth},signal:options.signal||controller.signal});
+    }catch(err){
+      if(err?.name==="AbortError") throw new Error("Zeitüberschreitung – der Server hat zu lange nicht geantwortet.");
+      throw err;
+    }finally{
+      clearTimeout(timer);
+    }
   }
 
   function aiConnection(provider){ return state.aiConnections.find(x=>x.provider===provider)||null; }
@@ -1542,14 +1551,18 @@
   async function applyRefinement(){
     const instruction=el.refinementInput.value.trim(); const c=selectedConcept(); if(!instruction||!c)return;
     el.applyRefinementBtn.disabled=true;
-    let refined;
     try{
-      if(state.engine!=="local"){
-        const payload={action:"refine",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),concept:conceptForExport(c),refinement:instruction,references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
-        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Refinement failed");refined=normalizedConcept(data.concept||data.concepts?.[0],0);refined.id=c.id;
-      }else refined=localRefine(c,instruction);
-    }catch{refined=localRefine(c,instruction)}
-    state.concepts=state.concepts.map(x=>x.id===c.id?refined:x);state.refinements.push({id:uid("ref"),text:instruction,at:new Date().toISOString()});el.refinementInput.value="";renderSelectedPreview();renderConcepts();saveState();updateGuide();el.applyRefinementBtn.disabled=false;
+      let refined;
+      try{
+        if(state.engine!=="local"){
+          const payload={action:"refine",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),concept:conceptForExport(c),refinement:instruction,references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
+          const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Refinement failed");refined=normalizedConcept(data.concept||data.concepts?.[0],0);refined.id=c.id;
+        }else refined=localRefine(c,instruction);
+      }catch{refined=localRefine(c,instruction)}
+      state.concepts=state.concepts.map(x=>x.id===c.id?refined:x);state.refinements.push({id:uid("ref"),text:instruction,at:new Date().toISOString()});el.refinementInput.value="";renderSelectedPreview();renderConcepts();saveState();updateGuide();
+    }finally{
+      el.applyRefinementBtn.disabled=false;
+    }
   }
 
   function renderRefinementHistory(){
