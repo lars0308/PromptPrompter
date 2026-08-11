@@ -96,6 +96,14 @@ module.exports=async function(req,res){
       const trialDays=Math.max(0,Math.min(365,Number(body.trialDays)||0)),discountPercent=Math.max(0,Math.min(100,Number(body.discountPercent)||0)),row={id:'main',enabled:Boolean(body.enabled),eyebrow:String(body.eyebrow||(trialDays?'KOSTENLOS TESTEN':'AKTION')).slice(0,80),title:String(body.title||(trialDays?`Pro ${trialDays} Tage kostenlos testen`:discountPercent?`Aktuell ${discountPercent} % Rabatt`:'' )).slice(0,160),description:String(body.description||(trialDays?'Danach monatlich kündbar.':discountPercent?'Der Rabatt wird im Checkout automatisch abgezogen.':'')).slice(0,500),cta_label:String(body.ctaLabel||(trialDays?'Kostenlos testen':'Rabatt sichern')).slice(0,80),trial_days:trialDays,discount_percent:discountPercent,stripe_coupon_id:String(body.stripeCouponId||'').trim().slice(0,120)||null,ends_at:body.endsAt||null,updated_by:admin.id,updated_at:new Date().toISOString()};
       await serviceFetch('/rest/v1/sitebrief_public_offers?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:row});await audit(admin.id,action,null,{trialDays:row.trial_days,discountPercent:row.discount_percent});return res.status(200).json({ok:true});
     }
+    if(action==='save-quota-limits'){
+      const plans=body.plans&&typeof body.plans==='object'?body.plans:{};
+      const rows=['free','pro','ultimate'].filter(plan=>plans[plan]).map(plan=>({plan,free_prompts:Math.max(0,Math.min(100000,Number(plans[plan].free_prompts)||0)),website_generations:Math.max(0,Math.min(100000,Number(plans[plan].website_generations)||0)),ai_previews:Math.max(0,Math.min(100000,Number(plans[plan].ai_previews)||0)),updated_by:admin.id,updated_at:new Date().toISOString()}));
+      if(!rows.length)return res.status(400).json({error:'Keine gültigen Tarifkontingente übergeben.'});
+      await serviceFetch('/rest/v1/sitebrief_quota_limits?on_conflict=plan',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:rows});
+      await audit(admin.id,action,null,{plans:rows.map(r=>r.plan)});
+      return res.status(200).json({ok:true});
+    }
     return res.status(400).json({error:'Unbekannte Admin-Aktion.'});
   }catch(error){return res.status(error.status||500).json({error:error.message||'Admin-Aktion fehlgeschlagen.'})}
 };

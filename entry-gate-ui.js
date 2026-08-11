@@ -23,6 +23,19 @@
       .gate-theme-pick{justify-self:center;margin-top:2px;display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--muted);font-size:9px}
       .gate-theme-pick:hover{color:var(--ink)}
       @media(max-width:360px){.gate-primary-actions{grid-template-columns:1fr}}
+      @media(min-width:821px){
+        .account-dialog.guest-gate:not(.gate-expanded) #gateActions{max-width:560px;gap:18px;margin-top:10px}
+        .gate-primary-actions{gap:14px}
+        .gate-primary-actions button{min-height:64px;font-size:17px;border-radius:16px}
+        .gate-guest-btn{min-height:74px;font-size:19px;border-radius:18px}
+        .gate-guest-note{font-size:11px}
+        .gate-plans-pick{padding:20px 22px;border-radius:18px}
+        .gate-plans-pick span{font-size:9px}
+        .gate-plans-pick strong{font-size:17px;margin:5px 0}
+        .gate-plans-pick small{font-size:11px}
+        .gate-plans-pick:after{font-size:20px}
+        .gate-theme-pick{font-size:11px}
+      }
     `;document.head.appendChild(s);
   }
 

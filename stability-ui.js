@@ -33,5 +33,6 @@
   function tracking(){document.addEventListener('click',scheduleCheckpoint,true);document.addEventListener('input',scheduleCheckpoint,true);document.addEventListener('change',scheduleCheckpoint,true);window.addEventListener('pagehide',forceSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')forceSave()})}
   function events(){window.addEventListener('promptai:access',()=>{accessResolved=true;sessionChrome();setTimeout(restore,40)});window.addEventListener('sitebrief:admin',sessionChrome);window.addEventListener('promptai:system-ai-ready',()=>{restoreDone=false;if(window.SiteBriefCloud?.user)window.SiteBriefCloud.loadUserBundle?.().catch?.(()=>{})})}
   function init(){style();wrapBundle();moveSignOut();bindLogout();bindAdmin();tracking();events();sessionChrome();if(!window.SiteBriefCloud?.user&&window.SiteBriefCloud?.configured)ready()}
+  window.PromptAiForceCheckpoint=forceSave;
   pending();style();resolveBoot();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

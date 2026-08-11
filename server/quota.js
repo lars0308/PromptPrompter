@@ -7,6 +7,17 @@ const PLAN_LIMITS=Object.freeze({
   pro:{free_prompts:100,website_generations:25,ai_previews:50},
   ultimate:{free_prompts:500,website_generations:100,ai_previews:250}
 });
+let limitsCache=null,limitsCacheAt=0;
+const LIMITS_CACHE_MS=30000;
+async function loadPlanLimits(){
+  if(limitsCache&&Date.now()-limitsCacheAt<LIMITS_CACHE_MS)return limitsCache;
+  try{
+    const rows=(await serviceFetch('/rest/v1/sitebrief_quota_limits?select=plan,free_prompts,website_generations,ai_previews')).data||[];
+    const merged={free:{...PLAN_LIMITS.free},pro:{...PLAN_LIMITS.pro},ultimate:{...PLAN_LIMITS.ultimate}};
+    for(const row of rows){if(merged[row.plan])merged[row.plan]={free_prompts:Number(row.free_prompts)||0,website_generations:Number(row.website_generations)||0,ai_previews:Number(row.ai_previews)||0}}
+    limitsCache=merged;limitsCacheAt=Date.now();return merged;
+  }catch{return limitsCache||PLAN_LIMITS}
+}
 const METRIC_ACTIONS=Object.freeze({
   free_prompts:'free-prompt',
   website_generations:'website-generation',
@@ -23,7 +34,7 @@ function monthWindow(now=new Date()){
   const end=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()+1,1));
   return {start,end};
 }
-function limitsFor(plan){return {...(PLAN_LIMITS[plan]||PLAN_LIMITS.free)}}
+async function limitsFor(plan){const limits=await loadPlanLimits();return {...(limits[plan]||limits.free)}}
 function metricResult(limit,used){return {limit,used,remaining:Math.max(0,limit-used)}}
 function nextResetText(value){return new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Europe/Berlin'}).format(new Date(value))}
 
@@ -34,7 +45,7 @@ async function usageRows(userId,start,end){
 }
 
 async function getQuotaSummary(req){
-  const entitlement=await getEntitlements(req),plan=entitlement.plan||'free',limits=limitsFor(plan),{start,end}=monthWindow();
+  const entitlement=await getEntitlements(req),plan=entitlement.plan||'free',limits=await limitsFor(plan),{start,end}=monthWindow();
   let user=null;try{user=await authenticatedUser(req)}catch{}
   let available=true,rows=[];
   if(user){try{rows=await usageRows(user.id,start,end)}catch{available=false}}
