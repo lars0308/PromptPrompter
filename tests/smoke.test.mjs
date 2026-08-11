@@ -82,7 +82,7 @@ test('generated concept preview images are never written into persisted project 
 });
 test('the full-screen workflow loader cannot stay stuck forever regardless of cause',async()=>{
   const src=await text('transition-polish.js');
-  assert.match(src,/const LOADER_TIMEOUT_MS=75000;/);
+  assert.match(src,/const LOADER_TIMEOUT_MS=95000;/);
   assert.match(src,/function forceRecover\(\)\{/);
   assert.match(src,/if\(elapsed>LOADER_TIMEOUT_MS\)\{fillRaf=0;forceRecover\(\);return\}/);
 });
@@ -227,7 +227,7 @@ test('a stuck review/preview loader recovers in place instead of firing a native
   assert.ok(body,'forceRecover function body must be found');
   assert.doesNotMatch(body,/brandHome/,'forceRecover must not forcibly navigate the user away from the loader on a timeout');
   assert.doesNotMatch(body,/window\.alert/);
-  assert.match(src,/const LOADER_TIMEOUT_MS=75000;/);
+  assert.match(src,/const LOADER_TIMEOUT_MS=95000;/);
   assert.match(src,/setTitle\(box,'Das dauert länger als erwartet'\);/);
   assert.match(src,/\.prompt-loader-pulse\[hidden\]\{display:none\}/,'the pulse dots use a plain class rule elsewhere that would otherwise beat the UA [hidden] rule, the same CSS specificity trap fixed repeatedly this session');
 });

@@ -302,6 +302,7 @@ body.dialog-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}.libra
 /* the .plan-card accordion styles above were written mobile-first (single narrow column) and never got a desktop counterpart, so on wide viewports the plans dialog stayed pinned at 760px/1 column and needed horizontal scrolling */
 @media(min-width:821px){
   .plans-dialog{width:min(1200px,calc(100vw - 32px))}
+  .plans-dialog .dialog-frame{width:100%;max-width:100%;overflow-x:hidden}
   .plans-dialog .plans-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:26px 28px;align-items:start}
   .plans-dialog .plan-card{display:flex;flex-direction:column}
   .plans-dialog .plan-card-detail{display:block!important;flex:1}

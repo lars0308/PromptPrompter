@@ -4,7 +4,7 @@
   let settleTimer=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false;
   const STEP_STABLE_MS=90;
   const SENTENCE_MS=3000;
-  const LOADER_TIMEOUT_MS=75000;
+  const LOADER_TIMEOUT_MS=95000;
 
   const mode=()=>$('.mode-switch button.active')?.dataset.mode||document.documentElement.dataset.promptMode||'guided';
   const currentStep=()=>Number($('.step-panel.active')?.dataset.stepPanel||0);
@@ -91,7 +91,7 @@
     const pulse=$('.prompt-loader-pulse',box);if(pulse)pulse.hidden=true;
     const kicker=$('.kicker',box);if(kicker)kicker.textContent='ZEITÜBERSCHREITUNG';
     setTitle(box,'Das dauert länger als erwartet');
-    setSentence('Bitte schließe das Fenster und versuche es erneut.',true);
+    setSentence('Tippe oben rechts auf ×, um zurückzukehren und es erneut zu versuchen. Dein Projekt bleibt dabei erhalten.',true);
   }
   function startFillLoop(){
     cancelAnimationFrame(fillRaf);fillStartedAt=performance.now();
