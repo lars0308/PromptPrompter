@@ -642,8 +642,9 @@
         if(event==="auth"){
           const previousUserId=state.cloud.user?.id||null;
           state.cloud.user=payload.user||null;const nextUserId=state.cloud.user?.id||null;
-          if(!state.cloud.user){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}updateAccountUi();
           const realTransition=previousUserId!==nextUserId;
+          if(realTransition){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;window.PromptAiAccess={plan:'free',isAdmin:false,ownApiKeys:false};window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}
+          updateAccountUi();
           if(realTransition&&payload.authEvent==='SIGNED_IN'&&nextUserId){closeAccountGate();showWelcome();continuePendingAuthPlan();maybePromptBiometric();}
           else if(realTransition&&payload.authEvent==='SIGNED_OUT'&&!nextUserId){showWelcome();}
           if(state.cloud.user){try{await loadCloudBundle()}catch{}closeAccountGate();}
@@ -1764,8 +1765,8 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
 
   function validateStep(next){
     if(next>1 && project().description.length<20){el.projectValidation.textContent="Bitte zuerst das Projekt kurz beschreiben.";goStep(1,true);return false}
-    if(next===7 && !selectedConcept()){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst mindestens eine Vorschau erzeugen und auswählen.";return false}
-    if(next===8 && !selectedConcept()){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst mindestens eine Vorschau erzeugen und auswählen.";goStep(7,true);return false}
+    if(next===7 && !selectedConcept()){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst mindestens eine Vorschau erzeugen und auswählen.";showCheckoutNotice("Bitte zuerst eine Vorschau-Richtung auswählen.","error");return false}
+    if(next===8 && !selectedConcept()){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst mindestens eine Vorschau erzeugen und auswählen.";showCheckoutNotice("Bitte zuerst eine Vorschau-Richtung auswählen, bevor der Master-Prompt erstellt werden kann.","error");goStep(7,true);return false}
     return true;
   }
 
