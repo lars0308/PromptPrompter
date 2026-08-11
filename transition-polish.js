@@ -74,7 +74,7 @@
 
   let fillRaf=0,fillStartedAt=0;
   const reduceMotion=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}};
-  function fillProgress(elapsed){const tau=2600;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
+  function fillProgress(elapsed){const tau=15000;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
   function applyFill(progress){
     const box=$('#promptWorkflowLoader');if(!box)return;
     const clip=`inset(0 ${((1-progress)*100).toFixed(2)}% 0 0)`;

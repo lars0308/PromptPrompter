@@ -109,7 +109,7 @@
     [
       "topbarMenuToggle","topbarMenu","topbarMenuBackdrop","upgradeMenuBtn","subscriptionMenuBtn","modeSwitch","modeDescription",
       "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","clientName","clientType","clientWebsite","clientContact","importClientWebsiteBtn","clientImportStatus","clientSources","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
-      "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences","referenceUrlLimitNote","referenceImageLimitNote",
+      "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences","referenceUrlLimitNote","referenceImageLimitNote","skipReferencesBtn",
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
@@ -2016,6 +2016,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
         goStep(next);
       }catch(err){el.projectValidation.textContent=err?.message||"Es gab ein Problem. Bitte versuch es erneut.";}
     }));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
+    el.skipReferencesBtn?.addEventListener("click",()=>goStep(3));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
     el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1300)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
