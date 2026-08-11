@@ -115,7 +115,7 @@
   function schedule(delay=STEP_STABLE_MS){clearTimeout(settleTimer);settleTimer=setTimeout(sync,delay)}
 
   function onClick(event){
-    const refNext=event.target.closest?.('#stepReferences .next-btn');if(refNext&&workflowVisible()&&cleanMode()){userExited=false;pendingFromReferences=true;show('review');schedule(180);return}
+    const refNext=event.target.closest?.('#stepReferences .next-btn,#skipReferencesBtn');if(refNext&&workflowVisible()&&cleanMode()){userExited=false;pendingFromReferences=true;show('review');schedule(180);return}
     if(event.target.closest?.('#promptWorkflowLoaderClose')){userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();$('#brandHome')?.click();return}
     if(event.target.closest?.('#brandHome,.guided-clean-exit')){userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}
     if(event.target.closest?.('#clarificationDialog .close-dialog')){pendingFromReferences=false;hide();return}

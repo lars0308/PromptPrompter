@@ -72,6 +72,7 @@
       html[data-theme="dark"][data-clean-project-flow="1"] .step-actions{border-color:var(--line)!important}
       html[data-theme="dark"][data-clean-project-flow="1"] #stepReferences .dropzone{border-color:var(--line);background:var(--surface-soft)}
       html[data-theme="dark"][data-clean-project-flow="1"] #stepReferences .reference-note-block{border-color:var(--line)}
+      html[data-theme="dark"][data-clean-project-flow="1"] #stepReferences .client-context-card{border-color:var(--line)!important;background:var(--surface-soft)!important}
       html[data-theme="dark"][data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{border-color:var(--line)!important;background:var(--surface-soft)!important}
       html[data-theme="dark"][data-clean-project-flow="1"] #stepPreviews .generation-status{color:var(--muted)}
       html[data-theme="dark"][data-clean-project-flow="1"] #stepPreviews .concept-option{border-color:var(--line)!important;background:var(--surface)!important}

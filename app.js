@@ -30,6 +30,8 @@
   const QUICK_REVISION_VARIANTS_KEY = "sitebrief-v6-revision-variants";
   const BIOMETRIC_KEY = "prompt-ai-biometric-v1";
   const ENTRY_GATE_KEY = "prompt-ai-entry-gate-shown-v1";
+  const OWNER_EMAIL = "service.battermann@gmx.de";
+  function isOwnerAccount(){return String(state.cloud.user?.email||"").trim().toLowerCase()===OWNER_EMAIL}
   const MODE_HANDOFF_KEY = "prompt-ai-mode-handoff-v1";
   const GUEST_RUN_LIMIT = 3;
   const PROJECT_OPTIONS = {
@@ -173,7 +175,7 @@
     const toggle=(event)=>{
       event.stopPropagation();
       const willOpen=!el.topbarMenu.classList.contains('open');
-      if(willOpen){const rect=el.topbarMenuToggle.getBoundingClientRect();el.topbarMenu.style.top=`${Math.round(rect.bottom+8)}px`;el.topbarMenu.style.right=`${Math.round(window.innerWidth-rect.right)}px`;const access=window.PromptAiAccess;if(access){if(access.plan)state.plan=access.plan;state.isAdmin=Boolean(access.isAdmin);if(access.ownApiKeys)state.ownApiKeys=true;}applyPlanUi();}
+      if(willOpen){const rect=el.topbarMenuToggle.getBoundingClientRect();el.topbarMenu.style.top=`${Math.round(rect.bottom+8)}px`;el.topbarMenu.style.right=`${Math.round(window.innerWidth-rect.right)}px`;const access=window.PromptAiAccess;if(access){if(access.plan)state.plan=access.plan;state.isAdmin=Boolean(access.isAdmin)||isOwnerAccount();if(access.ownApiKeys)state.ownApiKeys=true;}applyPlanUi();}
       el.topbarMenu.classList.toggle('open',willOpen);el.topbarMenuToggle.setAttribute('aria-expanded',String(willOpen));
     };
     el.topbarMenuToggle.addEventListener('click',toggle);
@@ -2078,7 +2080,7 @@ el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBt
     initCloudIntegration();
     if(sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)){sessionStorage.removeItem(CONTINUE_WORKFLOW_KEY);showWorkflow(1);}
     window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.installPrompt=event;if(el.installAppBtn)el.installAppBtn.hidden=false});window.addEventListener('appinstalled',()=>{state.installPrompt=null;if(el.installAppBtn)el.installAppBtn.hidden=true});
-    window.addEventListener('promptai:access',event=>{const access=event.detail||window.PromptAiAccess;if(!access)return;if(access.plan)state.plan=access.plan;state.isAdmin=Boolean(access.isAdmin);if(access.ownApiKeys)state.ownApiKeys=true;applyPlanUi();updateAccountUi();});
+    window.addEventListener('promptai:access',event=>{const access=event.detail||window.PromptAiAccess;if(!access)return;if(access.plan)state.plan=access.plan;state.isAdmin=Boolean(access.isAdmin)||isOwnerAccount();if(access.ownApiKeys)state.ownApiKeys=true;applyPlanUi();updateAccountUi();});
     if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
     setInterval(()=>saveState({cloud:false}),15000);
   }
