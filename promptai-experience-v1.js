@@ -152,7 +152,7 @@
   function releaseThinking(error=false){
     const stage=$('#promptAiThinkingStage');if(!stage?.classList.contains('show'))return;thinkingDone=true;clearTimeout(waitingTimer);clearInterval(sentenceTimer);stopThinkingFillLoop();
     if(error){stage.classList.add('error');const wait=$('.prompt-thinking-wait',stage);if(wait){wait.textContent='Der Prompt konnte nicht fertiggestellt werden.';wait.classList.add('show')}}
-    const elapsed=Date.now()-thinkingStartedAt,wait=error?Math.max(0,550-elapsed):Math.max(0,thinkingMinMs-elapsed);clearTimeout(thinkingTimer);thinkingTimer=setTimeout(()=>{stage.classList.remove('show','running','error');$('#freePromptDialog')?.classList.remove('prompt-ai-thinking-active');const w=$('.prompt-thinking-wait',stage);if(w){w.textContent='Letzter Feinschliff …';w.classList.remove('show')}if(!error&&!$('#freePromptResult')?.hidden)setTimeout(()=>$('#freePromptResult')?.scrollIntoView({behavior:'smooth',block:'start'}),60)},wait);
+    const elapsed=Date.now()-thinkingStartedAt,wait=error?Math.max(0,550-elapsed):Math.max(0,thinkingMinMs-elapsed);clearTimeout(thinkingTimer);thinkingTimer=setTimeout(()=>{stage.classList.remove('show','running','error');$('#freePromptDialog')?.classList.remove('prompt-ai-thinking-active');const w=$('.prompt-thinking-wait',stage);if(w){w.textContent='Letzter Feinschliff …';w.classList.remove('show')}},wait);
   }
   function cancelThinking(){
     const stage=$('#promptAiThinkingStage');if(!stage)return;
@@ -163,7 +163,6 @@
   }
   function watchGeneration(){
     const status=$('#freePromptStatus');if(status&&!status.__promptExperienceWatch){status.__promptExperienceWatch=true;new MutationObserver(()=>{if(status.classList.contains('error'))releaseThinking(true);else if(status.classList.contains('good'))releaseThinking(false)}).observe(status,{attributes:true,attributeFilter:['class'],childList:true,subtree:true})}
-    const result=$('#freePromptResult');if(result&&!result.__promptExperienceWatch){result.__promptExperienceWatch=true;new MutationObserver(()=>{if(!result.hidden)releaseThinking(false)}).observe(result,{attributes:true,attributeFilter:['hidden']})}
   }
 
   function bind(){

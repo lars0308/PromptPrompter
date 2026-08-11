@@ -101,7 +101,7 @@
   }
 
   function freePromptCompletion(){
-    const stage=$('#promptAiThinkingStage'),result=$('#freePromptResult'),status=$('#freePromptStatus');if(!stage)return;const done=Boolean(result&&!result.hidden)||Boolean(status?.classList.contains('good'));
+    const stage=$('#promptAiThinkingStage'),status=$('#freePromptStatus');if(!stage)return;const done=Boolean(status?.classList.contains('good'));
     if(done&&stage.classList.contains('show')&&!stage.classList.contains('prompt-v2-complete')){stage.classList.add('prompt-v2-complete');setTimeout(()=>{flashCompletion('Prompt ist bereit',[
       'Deine Angaben wurden professionell formuliert.',
       'Die Regeln wurden auf den gewählten Bereich zugeschnitten.',
