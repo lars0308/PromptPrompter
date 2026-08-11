@@ -1780,7 +1780,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     if(step===5) renderBlueprint();
     if(step===6 && state.mode==="auto" && !state.concepts.length) setTimeout(generateConcepts,100);
     if(step===7) renderSelectedPreview();
-    if(step===8){try{updateMasterPrompt();renderCompletionSummary()}catch(err){el.projectValidation.textContent=err?.message||"Der Master-Prompt konnte nicht zusammengestellt werden. Bitte versuch es erneut."}}
+    if(step===8){try{updateMasterPrompt();renderCompletionSummary()}catch(err){const message=err?.message||"Der Master-Prompt konnte nicht zusammengestellt werden. Bitte versuch es erneut.";el.projectValidation.textContent=message;if(el.masterPrompt)el.masterPrompt.value=`Der Master-Prompt konnte nicht erstellt werden: ${message}\n\nBitte versuch es erneut oder ändere zuletzt getroffene Auswahl (z. B. Feinschliff-Änderungen) und komm zu diesem Schritt zurück.`}}
     updateGuide();saveState();window.scrollTo({top:0,behavior:"smooth"});
   }
 

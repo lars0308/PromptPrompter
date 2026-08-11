@@ -43,7 +43,7 @@ test('invalid credentials cannot create a local app session',async()=>{const clo
 test('Stripe checkout returns to the app and keeps add-on gated to Pro',async()=>{const src=await text('api/checkout.js');assert.match(src,/checkout=success/);assert.match(src,/plan!=='pro'/);assert.match(src,/new URL\(normalized\)\.origin/)});
 test('a step-8 master-prompt build failure surfaces an error instead of leaving the UI silently stuck',async()=>{
   const src=await text('app.js');
-  assert.match(src,/if\(step===8\)\{try\{updateMasterPrompt\(\);renderCompletionSummary\(\)\}catch\(err\)\{el\.projectValidation\.textContent=err\?\.message\|\|"Der Master-Prompt konnte nicht zusammengestellt werden\. Bitte versuch es erneut\."\}\}/);
+  assert.match(src,/if\(step===8\)\{try\{updateMasterPrompt\(\);renderCompletionSummary\(\)\}catch\(err\)\{const message=err\?\.message\|\|"Der Master-Prompt konnte nicht zusammengestellt werden\. Bitte versuch es erneut\.";el\.projectValidation\.textContent=message;if\(el\.masterPrompt\)el\.masterPrompt\.value=/);
   assert.match(src,/goStep\(next\);\s*\}catch\(err\)\{el\.projectValidation\.textContent=err\?\.message\|\|"Es gab ein Problem\. Bitte versuch es erneut\.";\}/);
 });
 test('submitting the clarification dialog with only optional questions left blank does not reopen it forever',async()=>{
