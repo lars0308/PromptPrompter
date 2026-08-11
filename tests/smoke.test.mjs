@@ -99,3 +99,22 @@ test('AI-generated concept copy is required to use real industry vocabulary from
   const src=await text('server/generate-core.js');
   assert.match(src,/a döner shop's headline should reference döner\/food, a landscaping business should reference gardens\/outdoor work/);
 });
+test('reference links and images are capped per plan tier (Free 1/0, Pro 3/3, Ultimate 5/5), independent of the paid own-API-keys add-on',async()=>{
+  const src=await text('app.js');
+  assert.match(src,/free:\{label:"Free",[^}]*maxRefUrls:1,maxRefImages:0\}/);
+  assert.match(src,/pro:\{label:"Pro",[^}]*maxRefUrls:3,maxRefImages:3\}/);
+  assert.match(src,/ultimate:\{label:"Ultimate",[^}]*maxRefUrls:5,maxRefImages:5\}/);
+  assert.match(src,/if\(state\.urls\.length>=planRules\(\)\.maxRefUrls && !state\.isAdmin\)\{ el\.plansDialog\?\.showModal\(\); return; \}/);
+  assert.match(src,/const imageLimit=state\.isAdmin\?8:planRules\(\)\.maxRefImages;/);
+});
+test('customer info (real facts) is a distinct section from style references, not a chip mixed into the style-aspect list',async()=>{
+  const app=await text('app.js'),html=await text('index.html');
+  assert.doesNotMatch(app,/const ASPECTS = \["Kundeninfo"/,'Kundeninfo must not be a togglable style aspect anymore - it has its own dedicated section');
+  assert.match(app,/const ASPECTS = \["Layout","Farben","Typografie","Bildsprache","Hero","Struktur","Stimmung","Nur Inspiration"\];/);
+  assert.doesNotMatch(html,/<section class="step-panel active" data-step-panel="1" id="stepProject">[\s\S]{0,60}<section class="client-context-card"/,'customer info must not live inside the References-adjacent style step 1 anymore');
+  assert.match(html,/<section class="step-panel" data-step-panel="2" id="stepReferences">[\s\S]*<section class="client-context-card"><div class="selection-head"><div><span>KUNDENINFORMATIONEN<\/span>/);
+});
+test('adding a reference link or file carries a visible liability notice',async()=>{
+  const html=await text('index.html');
+  assert.match(html,/Prompt\.ai übernimmt keine Haftung für Inhalte Dritter, die du hier hinterlegst — die Verantwortung dafür liegt bei dir\./);
+});

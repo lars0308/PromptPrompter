@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
   <script src="./theme-init.js?v=2"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260811-3" />
+  <link rel="stylesheet" href="./styles.css?v=20260811-4" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
     html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
@@ -106,8 +106,6 @@
       <section class="step-panel active" data-step-panel="1" id="stepProject">
         <div class="section-kicker">01 — PROJEKT</div>
         <h1>Was soll entstehen?</h1>
-        
-        <section class="client-context-card"><div class="selection-head"><div><span>FÜR WEN ENTSTEHT DAS PROJEKT?</span></div></div><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" type="text" placeholder="z. B. Prompt.ai Studio" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Website, Google-Link oder Datenquelle</span><input id="clientWebsite" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Quelle hinzufügen & auslesen</button><small id="clientImportStatus"></small></div><div id="clientSources" class="source-list"></div></section>
 
         <label class="field field-large">
           <span>Kurzbeschreibung</span>
@@ -142,12 +140,13 @@
       <section class="step-panel" data-step-panel="2" id="stepReferences">
         <div class="section-kicker">02 — REFERENZEN</div>
         <h1>Zeig, was du meinst.</h1>
-        
+        <p class="reference-lead">Referenzen sind reine Stil-Inspiration — Layout, Farben, Typografie, Bildsprache. Für echte Fakten über deinen Kunden nutze weiter unten die Kundeninformationen.</p>
 
         <div class="reference-url-add">
-          <label class="field"><span>Website, Google-Link oder andere Quelle</span><input id="referenceUrl" type="url" placeholder="https://beispiel.de oder Google-Maps-Link" /></label>
+          <label class="field"><span>Website, Google-Link oder andere Stil-Referenz</span><input id="referenceUrl" type="url" placeholder="https://beispiel.de oder Google-Maps-Link" /></label>
           <button type="button" class="outline-btn" id="addUrlBtn">URL hinzufügen</button>
         </div>
+        <small class="reference-limit-note" id="referenceUrlLimitNote"></small>
         <div id="urlReferences" class="reference-list"></div>
 
         <div class="dropzone" id="uploadZone" tabindex="0" role="button" aria-label="Referenzbilder auswählen">
@@ -156,13 +155,16 @@
           <div><strong>Bilder, PDFs und Projektunterlagen</strong><small>Speisekarten, Sitzpläne, Preislisten, Logos, Screenshots · PDF, PNG, JPG, WebP, TXT, MD, CSV oder JSON · max. 12 MB</small></div>
           <button type="button" class="outline-btn mini">Dateien wählen</button>
         </div>
+        <small class="reference-limit-note" id="referenceImageLimitNote"></small>
         <div id="imageReferences" class="image-reference-grid"></div>
         <div id="documentReferences" class="document-reference-list"></div>
 
         <div class="reference-note-block">
           <span>HINWEIS</span>
-          
+          <p>Verlinke oder lade hier nur Inhalte hoch, an denen du die nötigen Rechte hast. Prompt.ai übernimmt keine Haftung für Inhalte Dritter, die du hier hinterlegst — die Verantwortung dafür liegt bei dir.</p>
         </div>
+
+        <section class="client-context-card"><div class="selection-head"><div><span>KUNDENINFORMATIONEN</span></div></div><p class="client-context-lead">Hier geht es um echte Fakten, nicht um Stil: die eigene Website deines Kunden, ein Google-Eintrag oder eine andere Datenquelle, aus der Prompt.ai Adresse, Öffnungszeiten oder Leistungen übernehmen darf.</p><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" type="text" placeholder="z. B. Prompt.ai Studio" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Website, Google-Link oder Datenquelle</span><input id="clientWebsite" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Quelle hinzufügen & auslesen</button><small id="clientImportStatus"></small></div><div id="clientSources" class="source-list"></div></section>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="1">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="3">Agent auswählen <i>→</i></button></div>
       </section>
@@ -742,7 +744,7 @@
   <script type="module" src="./cloud.js?v=20260810-2"></script>
   <script src="./entry-gate-ui.js?v=20260811-3" defer></script>
   <script src="./legal-pages.js?v=20260811-2" defer></script>
-  <script src="./app.js?v=20260811-13" defer></script>
+  <script src="./app.js?v=20260811-14" defer></script>
   <script src="./admin-console.js?v=20260812-2" defer></script>
 </body>
 </html>

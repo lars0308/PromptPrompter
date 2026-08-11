@@ -28,11 +28,13 @@
       html[data-clean-project-flow="1"] .outline-btn{border-color:#c7cdd2!important;background:#fff!important;color:#20252b!important}
       html[data-clean-project-flow="1"] .text-btn{font-size:11px;text-decoration:none;color:#626c75}
       html[data-clean-project-flow="1"] .step-actions{margin-top:auto!important;padding-top:22px!important;border-top:1px solid #e4e7e9!important;gap:12px}
-      html[data-clean-project-flow="1"] #stepProject .client-context-card,html[data-clean-project-flow="1"] #stepProject>.field-grid,html[data-clean-project-flow="1"] #stepProject .understanding{display:none!important}
+      html[data-clean-project-flow="1"] #stepProject>.field-grid,html[data-clean-project-flow="1"] #stepProject .understanding{display:none!important}
       html[data-clean-project-flow="1"] #stepProject .field-large{margin:0 0 18px}html[data-clean-project-flow="1"] #stepProject .field-large>span{display:none}
       html[data-clean-project-flow="1"] #stepReferences .reference-url-add{grid-template-columns:1fr!important;gap:8px;margin-top:0}html[data-clean-project-flow="1"] #stepReferences #addUrlBtn{width:100%}
       html[data-clean-project-flow="1"] #stepReferences .dropzone{grid-template-columns:42px 1fr!important;gap:12px;min-height:100px;margin-top:14px;padding:15px;border-color:#cfd5da;border-radius:10px;background:#f8f9fa}html[data-clean-project-flow="1"] #stepReferences .dropzone button{grid-column:1/-1;width:100%}
       html[data-clean-project-flow="1"] #stepReferences .reference-note-block{margin-top:18px;padding-top:13px;border-color:#e2e5e8;grid-template-columns:62px 1fr}
+      html[data-clean-project-flow="1"] #stepReferences .client-context-card{margin:26px 0 0;padding:18px;border:1px solid #e0e4e7!important;border-radius:12px!important;background:#f8f9fa!important;box-shadow:none!important}
+      html[data-clean-project-flow="1"] #stepReferences .client-context-card .selection-head{border-top:0;padding-top:0}
       html[data-clean-project-flow="1"] .streamline-working{min-height:430px!important;margin:auto 0;padding:32px 18px!important}
       html[data-clean-project-flow="1"] .streamline-working strong{font-size:30px!important}.streamline-working small{font-size:12px!important}
       html[data-clean-project-flow="1"] #stepPreviews .preview-step-head{display:block!important}.guided-clean-project-flow #stepPreviews .preview-generation-controls{margin-top:18px}

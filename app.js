@@ -8,7 +8,7 @@
   const clamp = (n, min, max) => Math.min(max, Math.max(min, Number(n) || 0));
   const AGENT_NAMES = {claude:"Claude Code",codex:"Codex",gemini:"Gemini",chatgpt:"ChatGPT",cursor:"Cursor",v0:"v0",universal:"Universal"};
   const OUTPUT_TARGETS = {"next-vercel":"Next.js + TypeScript + Vercel","next-only":"Next.js + TypeScript","html":"Statisches HTML / CSS / JavaScript","react":"React + Vite","astro":"Astro","existing":"Bestehenden Projekt-Stack weiterführen"};
-  const ASPECTS = ["Kundeninfo","Layout","Farben","Typografie","Bildsprache","Hero","Struktur","Stimmung","Nur Inspiration"];
+  const ASPECTS = ["Layout","Farben","Typografie","Bildsprache","Hero","Struktur","Stimmung","Nur Inspiration"];
   let autoEngineApplied=false;
   if(typeof HTMLDialogElement!=="undefined"){
     const nativeShowModal=HTMLDialogElement.prototype.showModal;
@@ -36,9 +36,9 @@
     ultimate:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Marktplatz","SaaS-Anwendung","Kundenportal","Buchungsplattform","Mitgliederbereich","Community","Magazin oder Blog","Dokumentation","Dashboard","Interne Fachanwendung","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Direkt verkaufen","Abonnements verkaufen","Termine oder Buchungen","Marke positionieren","Registrierungen gewinnen","Aktive Nutzung steigern","Kunden binden","Community aufbauen","Inhalte veröffentlichen","Interne Abläufe automatisieren","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]}
   };
   const PLAN_RULES = {
-    free:{label:"Free",modes:["guided"],concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false},
-    pro:{label:"Pro",modes:["guided","auto"],concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false,existing:true},
-    ultimate:{label:"Ultimate",modes:["guided","auto","expert"],concepts:5,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true,existing:true}
+    free:{label:"Free",modes:["guided"],concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,maxRefUrls:1,maxRefImages:0},
+    pro:{label:"Pro",modes:["guided","auto"],concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false,existing:true,maxRefUrls:3,maxRefImages:3},
+    ultimate:{label:"Ultimate",modes:["guided","auto","expert"],concepts:5,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true,existing:true,maxRefUrls:5,maxRefImages:5}
   };
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
@@ -107,7 +107,7 @@
     [
       "topbarMenuToggle","topbarMenu","topbarMenuBackdrop","upgradeMenuBtn","subscriptionMenuBtn","modeSwitch","modeDescription",
       "projectDescription","descriptionCount","projectName","projectType","projectGoal","projectAudience","projectSpecial","clientName","clientType","clientWebsite","clientContact","importClientWebsiteBtn","clientImportStatus","clientSources","projectUnderstanding","understandingSummary","understandingPoints","reanalyzeProjectBtn","confirmUnderstandingBtn","editUnderstandingBtn","projectValidation",
-      "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences",
+      "referenceUrl","addUrlBtn","urlReferences","uploadZone","imageInput","imageReferences","documentReferences","referenceUrlLimitNote","referenceImageLimitNote",
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
@@ -490,7 +490,7 @@
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
     renderProjectOptions();
-    renderProfileUi();renderModuleSelection();renderSkillSelection();applyQuickRevisionPlanUi();renderCloudProjects();renderAiReviewCard();
+    renderProfileUi();renderModuleSelection();renderSkillSelection();applyQuickRevisionPlanUi();renderCloudProjects();renderAiReviewCard();renderReferences();
   }
 
   function updateAccountUi(){
@@ -1154,6 +1154,7 @@
   function addUrl(){
     const raw = el.referenceUrl.value.trim();
     if(!raw) return;
+    if(state.urls.length>=planRules().maxRefUrls && !state.isAdmin){ el.plansDialog?.showModal(); return; }
     const found = raw.match(/https?:\/\/\S+/i);
     let value = found ? found[0].replace(/[),.;!?]+$/,"") : raw;
     const label = found ? raw.slice(0,found.index).trim() + " " + raw.slice(found.index+found[0].length).trim() : "";
@@ -1183,14 +1184,14 @@
   }
 
   function renderReferences(){
+    const rules=planRules(),urlLimit=rules.maxRefUrls,imageLimit=state.isAdmin?8:rules.maxRefImages;
+    if(el.referenceUrlLimitNote){const atLimit=!state.isAdmin&&state.urls.length>=urlLimit;el.referenceUrlLimitNote.textContent=`${state.urls.length} / ${urlLimit} Referenz-Links (${rules.label})${atLimit?' · Limit erreicht':''}`;el.referenceUrlLimitNote.classList.toggle('limit-reached',atLimit);if(el.referenceUrl)el.referenceUrl.disabled=atLimit;if(el.addUrlBtn)el.addUrlBtn.disabled=atLimit;}
+    if(el.referenceImageLimitNote){const atLimit=!state.isAdmin&&state.images.length>=imageLimit;el.referenceImageLimitNote.textContent=imageLimit?`${state.images.length} / ${imageLimit} Referenzbilder (${rules.label})${atLimit?' · Limit erreicht':''}`:`Referenzbilder sind ab Pro verfügbar (aktuell ${rules.label}).`;el.referenceImageLimitNote.classList.toggle('limit-reached',!imageLimit||atLimit);}
     el.urlReferences.innerHTML="";
     state.urls.forEach(item => {
       const card=document.createElement("div"); card.className="reference-item";
       const host = (()=>{try{return new URL(item.url).hostname.replace(/^www\./,"")}catch{return item.url}})();
-      const isInfo=item.aspects?.includes("Kundeninfo");
-      const likePlaceholder=isInfo?"Was soll daraus übernommen werden? (z. B. Adresse, Öffnungszeiten, Leistungen)":"Was gefällt dir daran?";
-      const dislikePlaceholder=isInfo?"Was soll NICHT übernommen werden?":"Was gefällt dir NICHT?";
-      card.innerHTML=`<div class="reference-main"><span class="reference-mark">URL</span><div><strong>${escapeHtml(item.label||host)}</strong><small>${escapeHtml(item.url)}</small></div><button type="button" class="remove-btn" aria-label="Referenz entfernen">×</button></div><div class="aspect-row"></div><div class="ref-notes"><input type="text" class="like-note" placeholder="${escapeHtml(likePlaceholder)}" value="${escapeHtml(item.like||"")}"><input type="text" class="dislike-note" placeholder="${escapeHtml(dislikePlaceholder)}" value="${escapeHtml(item.dislike||"")}"></div>`;
+      card.innerHTML=`<div class="reference-main"><span class="reference-mark">URL</span><div><strong>${escapeHtml(item.label||host)}</strong><small>${escapeHtml(item.url)}</small></div><button type="button" class="remove-btn" aria-label="Referenz entfernen">×</button></div><div class="aspect-row"></div><div class="ref-notes"><input type="text" class="like-note" placeholder="Was gefällt dir daran?" value="${escapeHtml(item.like||"")}"><input type="text" class="dislike-note" placeholder="Was gefällt dir NICHT?" value="${escapeHtml(item.dislike||"")}"></div>`;
       card.querySelector(".remove-btn").addEventListener("click",()=>{state.urls=state.urls.filter(x=>x.id!==item.id);renderReferences();saveState();updateGuide();});
       renderAspectChips(card.querySelector(".aspect-row"), item);
       card.querySelector(".like-note").addEventListener("input",e=>{item.like=e.target.value;saveState()});
@@ -1241,8 +1242,10 @@
   }
 
   async function addImages(files){
+    const imageLimit=state.isAdmin?8:planRules().maxRefImages;
+    if(state.images.length>=imageLimit && [...files].some(f=>/^image\/(png|jpeg|webp)$/i.test(f.type))){ el.plansDialog?.showModal(); }
     const incoming=[...files].slice(0,Math.max(0,12-state.images.length-state.documents.length));
-    const valid=incoming.filter(f=>/^image\/(png|jpeg|webp)$/i.test(f.type)).slice(0,Math.max(0,8-state.images.length));
+    const valid=incoming.filter(f=>/^image\/(png|jpeg|webp)$/i.test(f.type)).slice(0,Math.max(0,imageLimit-state.images.length));
     for(const file of valid){
       try{
         const dataUrl=await compressImage(file);const item={id:uid("img"),name:file.name,dataUrl,aspects:["Bildsprache","Stimmung"],like:"",dislike:"",storagePath:""};state.images.push(item);
