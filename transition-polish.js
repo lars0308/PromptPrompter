@@ -75,6 +75,12 @@
   const reduceMotion=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}};
   function fillProgress(elapsed){const tau=2600;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
   function pct(v,total){return `${Math.max(0,Math.min(100,total?(v/total)*100:0)).toFixed(2)}%`}
+  function syncOverlayBox(base,overlay){
+    const parent=overlay.offsetParent;if(!base||!overlay||!parent)return;
+    const baseRect=base.getBoundingClientRect(),parentRect=parent.getBoundingClientRect();
+    overlay.style.top=`${baseRect.top-parentRect.top}px`;overlay.style.left=`${baseRect.left-parentRect.left}px`;
+    overlay.style.width=`${baseRect.width}px`;overlay.style.height=`${baseRect.height}px`;
+  }
   function readingOrderClip(base,progress){
     const simple=`inset(0 ${(1-progress)*100}% 0 0)`;
     if(!base||!base.firstChild)return simple;
@@ -97,7 +103,7 @@
     points.push(`0% ${last[1]}`);
     return `polygon(${points.join(',')})`;
   }
-  function applyFill(progress){const box=$('#promptWorkflowLoader');if(!box)return;const titleBase=$('strong .base',box),titleBlue=$('strong .blue',box);if(titleBase&&titleBlue)titleBlue.style.clipPath=readingOrderClip(titleBase,progress);const sentenceBase=$('.prompt-loader-sentence .base',box),sentenceBlue=$('.prompt-loader-sentence .blue',box);if(sentenceBase&&sentenceBlue)sentenceBlue.style.clipPath=readingOrderClip(sentenceBase,progress)}
+  function applyFill(progress){const box=$('#promptWorkflowLoader');if(!box)return;const titleBase=$('strong .base',box),titleBlue=$('strong .blue',box);if(titleBase&&titleBlue){syncOverlayBox(titleBase,titleBlue);titleBlue.style.clipPath=readingOrderClip(titleBase,progress)}const sentenceBase=$('.prompt-loader-sentence .base',box),sentenceBlue=$('.prompt-loader-sentence .blue',box);if(sentenceBase&&sentenceBlue){syncOverlayBox(sentenceBase,sentenceBlue);sentenceBlue.style.clipPath=readingOrderClip(sentenceBase,progress)}}
   function startFillLoop(){
     cancelAnimationFrame(fillRaf);fillStartedAt=performance.now();
     if(reduceMotion()){applyFill(.94);return}

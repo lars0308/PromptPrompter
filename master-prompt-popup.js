@@ -6,16 +6,16 @@
   function styles(){
     if($('#masterPromptPopupStyles'))return;
     const s=document.createElement('style');s.id='masterPromptPopupStyles';s.textContent=`
-      .master-prompt-result-dialog{width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 40px);border:0;border-radius:20px;padding:0;background:var(--paper);color:var(--ink)}
+      .master-prompt-result-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0;padding:0;background:var(--paper);color:var(--ink)}
       .master-prompt-result-dialog::backdrop{background:rgba(8,12,10,.6);backdrop-filter:blur(10px)}
-      .master-prompt-result-frame{padding:24px}
+      .master-prompt-result-frame{width:min(920px,100%);margin:0 auto;padding:28px 22px;display:flex;flex-direction:column;height:100%}
       .master-prompt-result-head{display:flex;justify-content:space-between;gap:14px;align-items:start;margin-bottom:16px}
       .master-prompt-result-head span{display:block;color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}
-      .master-prompt-result-head h2{margin:6px 0 0;font-size:clamp(23px,4vw,30px);letter-spacing:-.03em}
+      .master-prompt-result-head h2{margin:6px 0 0;font-size:clamp(23px,4vw,30px);letter-spacing:-.03em;color:var(--accent)}
       .master-prompt-result-close{width:42px;height:42px;min-width:42px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink);font:700 21px/1 Arial,sans-serif}
-      .master-prompt-result-output{width:100%;min-height:340px;max-height:52dvh;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:16px;font:500 12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
+      .master-prompt-result-output{width:100%;flex:1 1 auto;min-height:200px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:16px;font:500 12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
       .master-prompt-result-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
-      @media(max-width:700px){.master-prompt-result-dialog{width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;border-radius:0}.master-prompt-result-frame{padding:18px 16px}.master-prompt-result-head{display:block}.master-prompt-result-output{min-height:0;max-height:none;flex:1 1 auto}}
+      @media(max-width:700px){.master-prompt-result-frame{padding:18px 16px}.master-prompt-result-output{min-height:0;max-height:none;flex:1 1 auto}}
     `;document.head.appendChild(s);
   }
 
