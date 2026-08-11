@@ -8,7 +8,7 @@
   function applyConfig(data){if(!window.SiteBriefCloud?.config||!data)return;Object.assign(window.SiteBriefCloud.config,data);applyPricing(data.pricing)}
   async function refreshConfig(){try{const existing=window.SiteBriefCloud?.config;if(existing?.pricing)applyPricing(existing.pricing);const r=await fetch('/api/config',{cache:'no-store'}),data=await r.json();applyConfig(data)}catch{}}
   function pricingWatch(){applyPricing(window.SiteBriefCloud?.config?.pricing);['plansDialog','settingsDialog','accountDialog'].forEach(id=>{const d=$(`#${id}`);if(d)new MutationObserver(()=>{if(d.open)refreshConfig()}).observe(d,{attributes:true,attributeFilter:['open']})})}
-  function adminUi(){const b=$('#adminBtn'),d=$('#adminDialog'),owner=String(window.SiteBriefCloud?.user?.email||'').trim().toLowerCase()===ADMIN_EMAIL;if(b)b.hidden=!owner;if(!owner&&d?.open)d.close()}
+  function adminUi(){const b=$('#adminBtn'),d=$('#adminDialog'),owner=String(window.SiteBriefCloud?.user?.email||'').trim().toLowerCase()===ADMIN_EMAIL,isAdmin=owner||Boolean(window.PromptAiAccess?.isAdmin);if(b)b.hidden=!isAdmin;if(!isAdmin&&d?.open)d.close()}
   function init(){styles();compactPlans();loginTransition();pricingWatch();adminUi();refreshConfig();window.addEventListener('sitebrief:admin',adminUi);window.SiteBriefCloud?.subscribe?.(()=>queueMicrotask(adminUi))}
   styles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

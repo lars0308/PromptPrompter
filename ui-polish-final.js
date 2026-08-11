@@ -63,7 +63,7 @@
 
   function freeFlow(){
     const d=$('#freePromptDialog');if(!d)return;
-    const headKicker=$('.free-prompt-head span',d),headTitle=$('.free-prompt-head h2',d);setText(headKicker,'SCHRITT 2 · EINSTELLUNGEN');setText(headTitle,'Prompt genauer einstellen');
+    const headKicker=$('.free-prompt-head span',d),headTitle=$('.free-prompt-head h2',d);setText(headKicker,'EINSTELLUNGEN');setText(headTitle,'Prompt genauer einstellen');
     const desc=$('#freePromptDescription'),label=desc?.closest('label');if(!desc||!label)return;
     let card=$('#freePromptBriefCard');if(!card){card=document.createElement('section');card.id='freePromptBriefCard';card.className='free-prompt-brief-card';card.innerHTML='<div><span>DEINE BESCHREIBUNG</span><p id="freePromptBriefText"></p></div><button type="button" class="outline-btn mini" id="freePromptEditBrief">Text ändern</button>';const grid=$('.free-prompt-grid.free-prompt-main',d);grid?.insertAdjacentElement('beforebegin',card);$('#freePromptEditBrief',card).onclick=()=>{label.dataset.editing='1';label.classList.remove('free-description-collapsed');desc.focus();desc.scrollIntoView({behavior:'smooth',block:'center'})};desc.addEventListener('blur',()=>{delete label.dataset.editing;syncBriefCard()});desc.addEventListener('input',syncBriefCard,{passive:true})}
     syncBriefCard();
