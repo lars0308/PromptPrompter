@@ -154,3 +154,36 @@ test('stability-ui.js restore() defers to an in-flight new-project mode handoff 
     guarded.window.close();
   }
 });
+
+test('master-prompt-popup.js opens a "Prompt ist fertig" popup when the workflow reaches step 8', async () => {
+  const dom = await createWorkflowDom();
+  try {
+    const doc = dom.window.document;
+    doc.getElementById('workflowApp').hidden = false;
+    doc.getElementById('welcomePage').hidden = true;
+    doc.getElementById('masterPrompt').value = 'Dies ist der fertige Master-Prompt.';
+    // jsdom does not implement <dialog>.showModal()/close(); polyfill the minimum needed to observe open state.
+    dom.window.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+    dom.window.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
+    await loadScripts(dom, ['tests/fixtures/mini-engine.js', 'master-prompt-popup.js']);
+    setStep(dom, 8);
+    await wait(200);
+    const popup = doc.getElementById('masterPromptResultDialog');
+    assert.ok(popup, 'the popup dialog should be created');
+    assert.equal(popup.open, true, 'the popup should open automatically once step 8 becomes active');
+    assert.equal(popup.querySelector('h2').textContent, 'Prompt ist fertig');
+    assert.equal(popup.querySelector('#masterPromptResultOutput').value, 'Dies ist der fertige Master-Prompt.');
+
+    // stepping away and back to 8 should not stack a second open
+    setStep(dom, 7);
+    await wait(60);
+    popup.close();
+    setStep(dom, 6);
+    await wait(60);
+    setStep(dom, 8);
+    await wait(200);
+    assert.equal(popup.open, true, 'returning to step 8 should reopen the popup');
+  } finally {
+    dom.window.close();
+  }
+});
