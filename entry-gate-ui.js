@@ -24,7 +24,11 @@
       .gate-theme-pick:hover{color:var(--ink)}
       @media(max-width:360px){.gate-primary-actions{grid-template-columns:1fr}}
       @media(min-width:821px){
-        .account-dialog.guest-gate:not(.gate-expanded) #gateActions{max-width:560px;gap:18px;margin-top:10px}
+        .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{display:flex;flex-direction:column;align-items:center;max-width:760px;margin:0 auto;padding-top:clamp(24px,6vh,80px)}
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero{max-width:100%;width:100%;text-align:center}
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-brand{justify-content:center}
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero h1{max-width:100%}
+        .account-dialog.guest-gate:not(.gate-expanded) #gateActions{max-width:640px;width:100%;gap:18px;margin-top:10px}
         .gate-primary-actions{gap:14px}
         .gate-primary-actions button{min-height:64px;font-size:17px;border-radius:16px}
         .gate-guest-btn{min-height:74px;font-size:19px;border-radius:18px}
