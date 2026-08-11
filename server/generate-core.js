@@ -2,6 +2,13 @@ const { resolveProviderKey } = require('../server/provider-key');
 const { getEntitlements } = require('../server/entitlements');
 const { rateLimit } = require('../server/rate-limit');
 const VARIANTS = ["split","poster","ledger","stacked","editorial","minimal"];
+const PROVIDER_TIMEOUT_MS = 20000;
+async function fetchWithTimeout(url,options={},timeoutMs=PROVIDER_TIMEOUT_MS){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{return await fetch(url,{...options,signal:controller.signal})}
+  catch(error){if(error?.name==='AbortError')throw Object.assign(new Error('Die KI-Anfrage hat zu lange gedauert und wurde abgebrochen.'),{status:504});throw error}
+  finally{clearTimeout(timer)}
+}
 
 const conceptProperties = {
   name:{type:"string"}, mood:{type:"string"}, palette:{type:"array",minItems:4,maxItems:4,items:{type:"string",pattern:"^#[0-9A-Fa-f]{6}$"}},
@@ -329,14 +336,14 @@ async function callOpenAI({key,model,prompt,images,schema,name}){
     input:[{role:"user",content}],
     text:{format:{type:"json_schema",name,strict:true,schema}}
   };
-  const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const response=await fetchWithTimeout("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
   const data=await response.json();
   if(!response.ok) throw Object.assign(new Error(data.error?.message||"OpenAI request failed"),{status:response.status});
   return cleanJsonText(extractOpenAIText(data));
 }
 
 async function gatewayRequest(body,key){
-  const response=await fetch("https://ai-gateway.vercel.sh/v1/chat/completions",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const response=await fetchWithTimeout("https://ai-gateway.vercel.sh/v1/chat/completions",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
   const data=await response.json();
   if(!response.ok) throw Object.assign(new Error(data.error?.message||data.message||"AI Gateway request failed"),{status:response.status});
   return data;
@@ -350,6 +357,7 @@ async function callGateway({key,model,prompt,images,schema,name}){
   try{
     data=await gatewayRequest({...base,response_format:{type:"json_schema",json_schema:{name,strict:true,schema}}},key);
   }catch(firstError){
+    if(firstError?.status===504)throw firstError;
     data=await gatewayRequest(base,key);
   }
   const text=data.choices?.[0]?.message?.content;
@@ -365,7 +373,7 @@ async function callGemini({key,model,prompt,images}){
     parts.push({text:`Reference image ${image.name}. Allowed aspects: ${(image.aspects||[]).join(", ")||"general mood"}. Likes: ${image.note||"-"}. Avoid: ${image.dislike||"-"}.`},{inlineData:{mimeType:match[1],data:match[2]}});
   }
   const selected=safeModel(model,process.env.GEMINI_MODEL||"gemini-3.6-flash").replace(/^models\//,"");
-  const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:"You are a senior web art director and website briefing analyst. Return only valid JSON and avoid generic AI website patterns."}]},contents:[{role:"user",parts}],generationConfig:{responseMimeType:"application/json"}})});
+  const response=await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:"You are a senior web art director and website briefing analyst. Return only valid JSON and avoid generic AI website patterns."}]},contents:[{role:"user",parts}],generationConfig:{responseMimeType:"application/json"}})});
   const data=await response.json();
   if(!response.ok)throw Object.assign(new Error(data.error?.message||"Gemini request failed"),{status:response.status});
   const text=(data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||"").join("");

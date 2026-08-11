@@ -274,3 +274,19 @@ test('the review/preview loader and the free-prompt thinking loader no longer us
   const v1=await text('promptai-experience-v1.js');
   assert.match(v1,/blue\.style\.clipPath=`inset\(0 \$\{\(\(1-ease\(t\)\)\*100\)\.toFixed\(2\)\}% 0 0\)`;/);
 });
+test('every AI provider call in the review/questions and free-prompt chains has a bounded timeout so a hanging provider fails fast instead of stalling the whole fallback chain',async()=>{
+  const core=await text('server/generate-core.js');
+  assert.match(core,/PROVIDER_TIMEOUT_MS\s*=\s*20000/);
+  assert.match(core,/async function fetchWithTimeout\(/);
+  assert.match(core,/AbortController/);
+  assert.match(core,/await fetchWithTimeout\(["']https:\/\/api\.openai\.com\/v1\/responses["']/);
+  assert.match(core,/await fetchWithTimeout\(["']https:\/\/ai-gateway\.vercel\.sh\/v1\/chat\/completions["']/);
+  assert.match(core,/generativelanguage\.googleapis\.com[\s\S]{0,400}fetchWithTimeout|fetchWithTimeout\([\s\S]{0,200}generativelanguage\.googleapis\.com/);
+  assert.match(core,/if\(firstError\?\.status===504\)throw firstError;/);
+  const freePrompt=await text('server/free-prompt-v2.js');
+  assert.match(freePrompt,/PROVIDER_TIMEOUT_MS\s*=\s*20000/);
+  assert.match(freePrompt,/async function fetchWithTimeout\(/);
+  assert.match(freePrompt,/await fetchWithTimeout\(['"]https:\/\/ai-gateway\.vercel\.sh\/v1\/chat\/completions['"]/);
+  assert.match(freePrompt,/await fetchWithTimeout\(['"]https:\/\/api\.openai\.com\/v1\/responses['"]/);
+  assert.match(freePrompt,/fetchWithTimeout\(`https:\/\/generativelanguage\.googleapis\.com/);
+});

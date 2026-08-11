@@ -5,6 +5,13 @@ const {rateLimit}=require('./rate-limit');
 const {logUsage}=require('./usage');
 
 const MAX_BODY=120000;
+const PROVIDER_TIMEOUT_MS=20000;
+async function fetchWithTimeout(url,options={},timeoutMs=PROVIDER_TIMEOUT_MS){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{return await fetch(url,{...options,signal:controller.signal})}
+  catch(error){if(error?.name==='AbortError')throw Object.assign(new Error('Die KI-Anfrage hat zu lange gedauert und wurde abgebrochen.'),{status:504});throw error}
+  finally{clearTimeout(timer)}
+}
 const CATEGORIES={
   music:'Musik / Song',
   video:'Video / Film',
@@ -218,18 +225,18 @@ function localFallback(input,{advanced=false}={}){
 }
 function safeModel(value,fallback){const model=String(value||fallback||'').trim();return model&&model.length<190&&/^[a-zA-Z0-9@._:/-]+$/.test(model)?model:fallback}
 async function gateway(key,model,prompt){
-  const response=await fetch('https://ai-gateway.vercel.sh/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'openai/gpt-5.4'),messages:[{role:'system',content:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'},{role:'user',content:prompt}],stream:false})});
+  const response=await fetchWithTimeout('https://ai-gateway.vercel.sh/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'openai/gpt-5.4'),messages:[{role:'system',content:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'},{role:'user',content:prompt}],stream:false})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||data.message||'AI Gateway nicht verfügbar.'),{status:response.status});
   const value=data.choices?.[0]?.message?.content;return cleanFence(typeof value==='string'?value:Array.isArray(value)?value.map(x=>x.text||'').join(''):'');
 }
 async function openai(key,model,prompt){
-  const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'gpt-5'),instructions:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.',input:prompt})});
+  const response=await fetchWithTimeout('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'gpt-5'),instructions:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.',input:prompt})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'OpenAI nicht verfügbar.'),{status:response.status});
   let text=typeof data.output_text==='string'?data.output_text:'';if(!text)for(const item of data.output||[])for(const part of item.content||[])if(part.type==='output_text')text+=part.text||'';return cleanFence(text);
 }
 async function gemini(key,model,prompt){
   const selected=safeModel(model,'gemini-3.6-flash').replace(/^models\//,'');
-  const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'}]},contents:[{role:'user',parts:[{text:prompt}]}]})});
+  const response=await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'}]},contents:[{role:'user',parts:[{text:prompt}]}]})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'Gemini nicht verfügbar.'),{status:response.status});return cleanFence((data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join(''));
 }
 async function generateWithSystemAi(req,input,{advanced=false}={}){
