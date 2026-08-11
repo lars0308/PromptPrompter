@@ -1111,7 +1111,7 @@
     const sig=projectSignature();
     if(!force && state.projectReview && state.reviewSignature===sig){
       const unanswered=(state.projectReview.questions||[]).filter(q=>q.required && !state.clarifications.some(a=>a.question===q.question && a.answer?.trim()));
-      const hasAnyUnresolved=(state.projectReview.questions||[]).length && !state.reviewDeferred && !state.clarifications.some(a=>a.answer?.trim());
+      const hasAnyUnresolved=(state.projectReview.questions||[]).length && !state.reviewDeferred && !(state.projectReview.questions||[]).every(q=>state.clarifications.some(a=>a.question===q.question));
       if(unanswered.length || hasAnyUnresolved){if(workflowIsOpen())renderClarificationDialog(state.projectReview);return false;}
       return !(state.settings.criticalBehavior==="block" && (state.projectReview.blockers||[]).length && !state.clarifications.some(a=>a.answer?.trim()));
     }
