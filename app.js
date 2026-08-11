@@ -1755,7 +1755,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     if(step===5) renderBlueprint();
     if(step===6 && state.mode==="auto" && !state.concepts.length) setTimeout(generateConcepts,100);
     if(step===7) renderSelectedPreview();
-    if(step===8){updateMasterPrompt();renderCompletionSummary()}
+    if(step===8){try{updateMasterPrompt();renderCompletionSummary()}catch(err){el.projectValidation.textContent=err?.message||"Der Master-Prompt konnte nicht zusammengestellt werden. Bitte versuch es erneut."}}
     updateGuide();saveState();window.scrollTo({top:0,behavior:"smooth"});
   }
 
@@ -1967,8 +1967,8 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
       try{
         if(state.currentStep===1&&!state.understanding){const ok=await analyzeProject();if(!ok)return;}
         if(state.currentStep===3&&next===4&&state.engine!=="local"&&state.settings.aiClarifications){const ok=await runProjectReview(false);if(!ok)return;}
-      }catch(err){el.projectValidation.textContent=err?.message||"Es gab ein Problem. Bitte versuch es erneut.";return}
-      goStep(next);
+        goStep(next);
+      }catch(err){el.projectValidation.textContent=err?.message||"Es gab ein Problem. Bitte versuch es erneut.";}
     }));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
     el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1300)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
