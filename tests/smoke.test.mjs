@@ -78,6 +78,25 @@ test('the three tiers are shown side by side and fully readable without expandin
   assert.match(css,/\.plan-card-summary>strong\{display:block;max-width:none/,'the narrow-screen price cap must be reset for the stacked header');
   assert.doesNotMatch(app,/addEventListener\('toggle',\(\)=>\{if\(!card\.open\)return;/,'the accordion handler has no cards to collapse anymore');
 });
+test('nothing floats over the step buttons and the guided references step stays a single decision',async()=>{
+  // The free upsell was position:fixed above the bottom edge and landed exactly on the step's own
+  // next button, so free users on small screens had no visible way to continue.
+  const home=await text('home-entry-ui.js'),guided=await text('guided-clean-ui.js');
+  assert.match(home,/function upgradeStrip\(\)\{\$\('#freeWorkflowUpgrade'\)\?\.remove\(\)\}/);
+  assert.doesNotMatch(home,/workflow\.appendChild\(strip\)/,'no fixed upsell bar over the workflow');
+  for(const sel of ['\\.reference-note-block','\\.no-references-note','\\.reference-lead'])
+    assert.match(guided,new RegExp(`#stepReferences ${sel}`),sel);
+  assert.match(guided,/#stepReferences \.reference-lead\{display:none!important\}/);
+  assert.match(guided,/uploads&&uploads\.offsetParent!==null\?c\[2\]:'Optional: Link zu einer Website oder einem Google-Eintrag hinzufügen\.'/,'the lead must not offer uploads on plans that hide them');
+});
+test('the menu names the signed-in account and only offers an upgrade when there is one',async()=>{
+  const app=await text('app.js'),css=await text('styles.css');
+  assert.match(app,/const signedInAs=\[\(state\.userProfile\.displayName\|\|''\)\.trim\(\),state\.cloud\.user\.email\|\|''\]\.filter\(Boolean\)\.join\(' · '\)/);
+  assert.match(app,/angemeldet als \$\{escapeHtml\(signedInAs\)\}/);
+  assert.match(app,/el\.upgradeMenuBtn\.hidden=state\.plan==='ultimate'\|\|state\.isAdmin/,'ultimate has nothing to upgrade to, admins are not billed');
+  assert.match(css,/\.topbar-menu #accountBtn \.account-btn-meta\{display:block/,'the second line only renders inside the dropdown');
+  assert.match(css,/#upgradeBtn,#upgradeMenuBtn\{gap:\.35em\}/,'flex collapses the space before the tier name');
+});
 test('the top menu cannot republish entries the app has hidden',async()=>{
   // The hidden attribute only carries the user-agent display:none, so an unconditional
   // display:...!important on menu children wins over it. That put Verwaltung (admin only),

@@ -299,6 +299,19 @@ body.dialog-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}.libra
 .plans-dialog.plans-gate-mode .dialog-back{display:none!important}
 .plans-dialog .close-dialog{display:grid;place-items:center;flex:0 0 auto;min-width:42px;min-height:42px}
 
+/* "angemeldet als …" under the Profil entry. Only the dropdown menu has room for a second line;
+   on wide screens the same button sits inline in the topbar, so the line is dropped there. */
+.account-btn-meta{display:none}
+/* These buttons are flex containers, so "Upgrade auf " and the <span> with the tier name become
+   two anonymous flex items and the whitespace between them collapses ("Upgrade aufUltimate"). */
+#upgradeBtn,#upgradeMenuBtn{gap:.35em}
+@media(max-width:820px){
+  .topbar-menu #accountBtn{flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:54px!important;padding-top:8px!important;padding-bottom:8px!important}
+  /* !important is needed: a global `p, li, small{font-size:13px!important}` readability rule
+     matches this <small> directly and would otherwise render it at full button size. */
+  .topbar-menu #accountBtn .account-btn-meta{display:block;max-width:100%;margin-top:2px;overflow:hidden;color:var(--muted)!important;font-size:10px!important;font-weight:600!important;line-height:1.35!important;letter-spacing:0;text-overflow:ellipsis;white-space:nowrap}
+}
+
 .admin-quota-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0 0 16px}.admin-quota-col{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}.admin-quota-col>strong{display:block;margin-bottom:12px;font-size:13px}.admin-quota-col .field{margin-bottom:12px}.admin-quota-col .field:last-child{margin-bottom:0}
 @media(max-width:820px){.admin-quota-grid{grid-template-columns:1fr}}
 

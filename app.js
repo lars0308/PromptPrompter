@@ -509,7 +509,10 @@
     if(!state.cloud.configured){ el.accountBtn.textContent="Cloud nicht verbunden"; setSyncState("Lokal"); return; }
     if(state.cloud.user){
       if(el.openLibraryBtn){el.openLibraryBtn.disabled=false;el.openLibraryBtn.title=""}if(el.generatorEngine)el.generatorEngine.disabled=false;
-      el.accountBtn.textContent="Profil";
+      // "Profil" alone never says which account is active. The second line names it; CSS shows it
+      // only inside the dropdown menu, where there is room for two lines.
+      const signedInAs=[(state.userProfile.displayName||'').trim(),state.cloud.user.email||''].filter(Boolean).join(' · ');
+      el.accountBtn.innerHTML=`Profil${signedInAs?`<small class="account-btn-meta">angemeldet als ${escapeHtml(signedInAs)}</small>`:''}`;
       const welcomeAccount=document.getElementById('welcomeAccountBtn');if(welcomeAccount)welcomeAccount.textContent='Profil & Synchronisierung';
       el.accountLoggedOut.hidden=true;el.accountLoggedIn.hidden=false;
       el.accountEmail.textContent=state.cloud.user.email||"Angemeldet";el.accountUserId.textContent=state.cloud.user.id||"";
