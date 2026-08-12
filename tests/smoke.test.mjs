@@ -653,3 +653,29 @@ test('admin announcements pop up large and come back on a fresh app open, not on
   assert.match(popup,/box\.showModal\(\)/,'large dialog instead of a toast');
   assert.match(popup,/document\.documentElement\.classList\.contains\('prompt-app-booting'\)\|\|document\.querySelector\('#cookieBanner\[open\],#maintenanceDialog\[open\]'\)/,'a gate that opens later would land on top of the announcement and bury it');
 });
+test('the two cookie choices are the same button, in the same size and colour',async()=>{
+  const html=await text('index.html'),legal=await text('legal-pages.js');
+  assert.match(html,/<button type="button" class="solid-btn" id="cookieBannerEssentialBtn">Nur notwendige<\/button><button type="button" class="solid-btn" id="cookieBannerAcceptBtn">Alle akzeptieren<\/button>/,'same class means the same colour under every later styling layer');
+  assert.match(legal,/\.cookie-banner-actions #cookieBannerEssentialBtn,\.cookie-banner-actions #cookieBannerAcceptBtn\{min-height:48px!important;padding:0 17px!important;border-radius:11px!important;font-size:13px!important/,'and the same box');
+});
+test('every long admin list is folded away by default',async()=>{
+  const html=await text('index.html'),core=await text('admin-console-core.js'),studio=await text('system-ai-studio.js'),ai=await text('admin-ai-ui.js'),css=await text('styles.css');
+  for(const key of ['usage','runs','users','support','announcements'])assert.match(html,new RegExp(`<details class="admin-fold"><summary><div><span>[^<]+</span><strong>[^<]+</strong></div><em data-fold-count="${key}"></em>`),`${key} list needs a closed fold`);
+  assert.doesNotMatch(html,/<details class="admin-fold" open/,'folds start closed');
+  assert.match(core,/function foldCount\(key,count,singular,plural\)/,'a closed section has to say how much is inside');
+  assert.match(core,/return `<details class="admin-user" data-user-id="\$\{esc\(user\.id\)\}"><summary>/,'one row per account, actions only when unfolded');
+  assert.match(studio,/<details class="admin-fold"><summary><div><span>ÜBERSICHT<\/span><strong>Reihenfolge pro Aufgabe/);
+  assert.match(ai,/<details class="admin-fold admin-ai-route"><summary>/);
+  assert.match(css,/\.admin-fold\{margin:14px 0 0;border:1px solid var\(--line\)/);
+});
+test('settings sections and the boxes around them stay compact when closed',async()=>{
+  const app=await text('app.js'),css=await text('styles.css');
+  assert.match(app,/section\.classList\.remove\('is-open'\)/,'no section is open on arrival');
+  assert.doesNotMatch(app,/const open=index===0/,'the first section used to open into an 1800px block');
+  assert.match(css,/\.settings-section\.is-collapsible:not\(\.is-open\)\{padding-top:0!important;padding-bottom:0!important\}/,'otherwise a closed row keeps a tall empty band');
+});
+test('a dialog box is never narrower than the card it holds',async()=>{
+  const polish=await text('ui-polish-final.js');
+  assert.match(polish,/body\.prompt-unified-ui #legalDialog\{width:min\(var\(--prompt-content\),calc\(100vw - 32px\)\)!important;max-width:none!important\}/,'the 1233px card was cut off inside a 1000px dialog');
+  assert.match(polish,/body\.prompt-unified-ui #appActionDialog,body\.prompt-unified-ui #agentLaunchDialog\{width:min\(900px,calc\(100vw - 28px\)\)!important/);
+});

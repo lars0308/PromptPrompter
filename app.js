@@ -292,13 +292,14 @@
 
   function enhanceSettingsAccordion(){
     if(!el.settingsDialog)return;
-    $$('.settings-section',el.settingsDialog).forEach((section,index)=>{
+    $$('.settings-section',el.settingsDialog).forEach(section=>{
       const heading=section.querySelector(':scope > .settings-heading');
       if(!heading||section.classList.contains('is-collapsible'))return;
       section.classList.add('is-collapsible');
-      const open=index===0;
-      section.classList.toggle('is-open',open);
-      heading.tabIndex=0;heading.setAttribute('role','button');heading.setAttribute('aria-expanded',String(open));
+      // Every section starts closed. Opening the first one meant the settings began with an 1800px
+      // block on a phone before the other sections were even in reach.
+      section.classList.remove('is-open');
+      heading.tabIndex=0;heading.setAttribute('role','button');heading.setAttribute('aria-expanded','false');
       const marker=document.createElement('i');marker.className='settings-chevron';marker.setAttribute('aria-hidden','true');heading.append(marker);
       const toggle=()=>{const next=!section.classList.contains('is-open');section.classList.toggle('is-open',next);heading.setAttribute('aria-expanded',String(next))};
       heading.addEventListener('click',toggle);heading.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();toggle()}});

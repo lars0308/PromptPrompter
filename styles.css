@@ -326,6 +326,37 @@ body.dialog-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}.libra
 .admin-quota-col .field:last-child{margin-bottom:16px}
 .admin-user-status .admin-pill{background:var(--accent);color:#fff}
 
+/* Every long admin list is folded away by default and shares one look with the quota accordion:
+   a row you tap to open, with the item count on the right. Open by default, the overview and the
+   account list were 2000-4000px tall on a phone. */
+.admin-fold{margin:14px 0 0;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.admin-fold>summary,.admin-user>summary{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 16px;cursor:pointer;list-style:none}
+.admin-fold>summary::-webkit-details-marker,.admin-user>summary::-webkit-details-marker{display:none}
+.admin-fold>summary>div>span{display:block;color:var(--accent);font-size:8px;font-weight:800;letter-spacing:.12em}
+.admin-fold>summary>div>strong{display:block;margin-top:5px;font-size:15px;letter-spacing:-.01em}
+.admin-fold>summary>em{margin-left:auto;color:var(--muted);font-size:11px;font-style:normal;white-space:nowrap}
+.admin-fold>summary>i,.admin-fold-mark{font-style:normal;font-size:18px;line-height:1;color:var(--muted)}
+.admin-fold[open]>summary{border-bottom:1px solid var(--line)}
+.admin-fold[open]>summary>i,.admin-user[open] .admin-fold-mark{transform:rotate(45deg)}
+.admin-fold-body{padding:16px}
+.admin-fold-body>.admin-fold-note{margin:0 0 14px;color:var(--muted);font-size:11px;line-height:1.55}
+.admin-fold-body>input[type="search"]{width:100%;margin-bottom:12px;padding:11px 13px;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink)}
+.admin-user{display:block;padding:0}
+.admin-user>summary{gap:12px;padding:14px 16px}
+.admin-user>summary>.admin-user-main{min-width:0}
+.admin-user>summary>.admin-user-status{flex:0 0 auto;align-items:center}
+.admin-user-actions{padding:12px 16px 14px;border-top:1px solid var(--line)}
+/* The AI pane wrote its own section heads before the shared ones existed - same look now. */
+.admin-ai-intro>div>span,.system-ai-studio-head>div>span{display:block;color:var(--accent);font-size:8px;font-weight:800;letter-spacing:.12em}
+.admin-ai-intro>div>h3,.system-ai-studio-head>div>h3{margin:4px 0 0;font-size:20px}
+.admin-section-head>.outline-btn,.admin-ai-intro>.outline-btn,.system-ai-studio-head>.outline-btn{flex:0 0 auto;align-self:start;width:auto;min-width:112px}
+
+/* A closed settings section is only its heading row. The section padding and the heading's bottom
+   margin (both !important from the unified-UI layer) otherwise left a tall empty band under every
+   closed row, which read as a broken layout rather than a folded one. */
+.settings-section.is-collapsible:not(.is-open){padding-top:0!important;padding-bottom:0!important}
+.settings-section.is-collapsible:not(.is-open)>.settings-heading{margin-bottom:0!important}
+
 /* The plan cards used to be <details> accordions, so a visitor had to expand each tier to find out
    what it contains. They are plain always-open cards now: everything is readable at a glance and
    the three tiers sit side by side on desktop. */

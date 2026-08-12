@@ -121,7 +121,12 @@
         body.prompt-unified-ui .dialog-head{padding:14px 15px!important}.dialog-head h2{font-size:25px!important}
         body.prompt-unified-ui .settings-body,body.prompt-unified-ui .account-body,body.prompt-unified-ui .library-pane,body.prompt-unified-ui .library-tools,body.prompt-unified-ui .quick-revision-body,body.prompt-unified-ui .admin-body,body.prompt-unified-ui .clarification-body{padding-left:15px!important;padding-right:15px!important}
         body.prompt-unified-ui .library-tabs,body.prompt-unified-ui .admin-tabs{padding-left:12px!important;padding-right:12px!important}
-        body.prompt-unified-ui .ai-connection-grid,body.prompt-unified-ui .admin-stats{grid-template-columns:1fr!important}
+        body.prompt-unified-ui .ai-connection-grid{grid-template-columns:1fr!important}
+        /* Four full-width stat cards filled the phone screen before the first real content. Two per
+           row says the same in half the height. */
+        body.prompt-unified-ui .admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+        body.prompt-unified-ui .admin-stats article{padding:14px!important}
+        body.prompt-unified-ui .admin-stats strong{font-size:23px!important}
         body.prompt-unified-ui .field-grid.two,body.prompt-unified-ui .field-grid.three{grid-template-columns:1fr!important}
         body.prompt-unified-ui .project-mode-dialog{width:100vw!important;height:100dvh!important}.project-mode-frame{min-height:100dvh!important;border:0!important;border-radius:0!important;padding:24px 15px 36px!important}
         body.prompt-unified-ui .project-mode-grid{grid-template-columns:1fr!important}

@@ -98,7 +98,10 @@
       .cookie-banner-box h2{margin:8px 0 0;font-size:clamp(24px,6vw,32px);letter-spacing:-.03em}
       .cookie-banner p{margin:0;font-size:14px;line-height:1.6;color:var(--muted)}
       .cookie-banner-actions{display:flex;flex-direction:column;gap:8px}
+      /* Both choices carry the same weight, so they get the same button (.solid-btn in the markup)
+         and the same box here - no size or colour difference between them. */
       .cookie-banner-actions button{width:100%;min-height:48px}
+      .cookie-banner-actions #cookieBannerEssentialBtn,.cookie-banner-actions #cookieBannerAcceptBtn{min-height:48px!important;padding:0 17px!important;border-radius:11px!important;font-size:13px!important;font-weight:750!important}
       .cookie-banner-actions #cookieBannerSettingsBtn{min-height:auto;width:auto;align-self:center}
       .cookie-banner-settings{display:grid;gap:12px;margin-top:2px;padding-top:16px;border-top:1px solid var(--line)}
       .cookie-banner-settings[hidden]{display:none}

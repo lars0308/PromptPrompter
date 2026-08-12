@@ -13,6 +13,13 @@
       body.prompt-unified-ui .welcome-page{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:var(--prompt-content)!important}
       html[data-clean-project-flow="1"] body.prompt-unified-ui #workflowApp{width:100%!important;max-width:none!important}
       html[data-clean-project-flow="1"] body.prompt-unified-ui .workspace{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:var(--prompt-content)!important}
+      /* The frame is the visible card. The <dialog> box around it is transparent, but it still
+         clips: a 1233px card inside a 1000px dialog (#legalDialog, #appActionDialog,
+         #agentLaunchDialog) hung out on both sides and cut the text off. The box therefore gets at
+         least the same room as the widest card it can hold. The three dialogs that paint their own
+         background keep their own size. */
+      body.prompt-unified-ui #legalDialog{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:none!important}
+      body.prompt-unified-ui #appActionDialog,body.prompt-unified-ui #agentLaunchDialog{width:min(900px,calc(100vw - 28px))!important;max-width:none!important}
       body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog) .dialog-frame{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:var(--prompt-content)!important;margin:16px auto!important}
       body.prompt-unified-ui #adminDialog .dialog-frame{width:min(1380px,calc(100vw - 32px))!important;max-width:1380px!important}
       body.prompt-unified-ui #libraryDialog .dialog-frame,body.prompt-unified-ui #settingsDialog .dialog-frame,body.prompt-unified-ui #accountDialog .dialog-frame{width:min(1280px,calc(100vw - 32px))!important;max-width:1280px!important}
