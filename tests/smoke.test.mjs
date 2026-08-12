@@ -527,7 +527,7 @@ test('a running preview generation can be cancelled',async()=>{
   assert.match(app,/function cancelPreviewRun\(\)/);
   assert.match(app,/conceptsGenerating=true;previewCancel=new AbortController\(\);/);
   assert.match(app,/cancelToken:previewCancel\?\.signal/,'the request has to carry the token');
-  assert.match(app,/if\(previewCancel\?\.signal\?\.aborted\)break;/,'the per-concept image loop stops too');
+  assert.match(app,/while\(queue\.length\)\{\s*if\(previewCancel\?\.signal\?\.aborted\)return;/,'the image queue stops too, not just the running request');
   assert.match(app,/if\(err\?\.cancelled\|\|previewCancel\?\.signal\?\.aborted\)return;/,'a cancel must not be reported as a failure');
   assert.match(app,/const onCancel=\(\)=>controller\.abort\('cancelled'\)/);
 });
@@ -548,4 +548,16 @@ test('the preview step gives the directions room to be judged',async()=>{
   assert.match(guided,/#stepPreviews \.concept-screen\{aspect-ratio:4\/3/,'a 16:11 thumbnail was too small to judge a design on a phone');
   assert.match(guided,/#stepPreviews \.preview-zoom-hint\{top:9px;right:9px;bottom:auto\}/,'it used to sit on the mini page footer');
   assert.match(guided,/@media\(min-width:821px\)\{[\s\S]{0,300}?#stepPreviews \.concept-gallery\{grid-template-columns:repeat\(auto-fit,minmax\(420px,1fr\)\)/);
+});
+test('preview images are requested in parallel with a capped concurrency',async()=>{
+  // Sequentially, every direction meant a full round trip one after the other (~140s for three).
+  const app=await text('app.js'),server=await text('server/preview-image.js');
+  assert.match(app,/const PREVIEW_IMAGE_CONCURRENCY=4;/);
+  assert.match(app,/const workers=Array\.from\(\{length:Math\.min\(PREVIEW_IMAGE_CONCURRENCY,total\)\},async\(\)=>\{/);
+  assert.match(app,/while\(queue\.length\)\{\s*if\(previewCancel\?\.signal\?\.aborted\)return;\s*await run\(queue\.shift\(\)\);/,'a cancel must stop the queue, not just the running request');
+  assert.match(app,/await Promise\.all\(workers\)/);
+  assert.doesNotMatch(app,/for\(let i=0;i<state\.concepts\.length;i\+\+\)\{\s*if\(previewCancel/,'the sequential loop is gone');
+  // 5 directions at 4 in flight stays under the server's own per-minute budget for this action.
+  const limit=server.match(/key:'preview-image',limit:(\d+)/);
+  assert.ok(limit&&Number(limit[1])>=5,'server limit must allow a full parallel run');
 });

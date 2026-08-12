@@ -1545,6 +1545,8 @@
   }
 
   let conceptsGenerating=false,previewCancel=null;
+  // Stays under the server's 12-per-minute limit for preview-image even at five directions.
+  const PREVIEW_IMAGE_CONCURRENCY=4;
   // One controller per generation run, so the Abbrechen button can stop a request that is taking
   // too long and the visitor can pick a different preview AI instead of waiting it out.
   function cancelPreviewRun(){
@@ -1608,15 +1610,40 @@
     return (window.PromptAiSystemAI?.candidatesFor?.('image')||[]).find(x=>String(x.id)===id)||null;
   }
   async function generateConceptImages(profile){
-    let quotaError=false,otherError=false;
-    for(let i=0;i<state.concepts.length;i++){
-      if(previewCancel?.signal?.aborted)break;
-      const concept=state.concepts[i];setTaskProgress("preview",Math.round(38+(i/state.concepts.length)*54),`Bildentwurf ${i+1} von ${state.concepts.length} wird gestaltet…`);
+    // The requests run in parallel: sequentially, three images meant three full round trips one
+    // after the other (measured at ~140s). The concurrency is capped so a run never trips the
+    // server's own per-minute limit for this action.
+    const concepts=state.concepts.slice(),total=concepts.length;
+    if(!total)return {kind:"success"};
+    let quotaError=false,otherError=false,done=0,firstMessage="";
+    const note=(className,text)=>{if(firstMessage)return;firstMessage=text;el.generationStatus.className=className;el.generationStatus.textContent=text};
+    const tick=()=>{done++;setTaskProgress("preview",Math.round(38+(done/total)*54),`Bildentwurf ${Math.min(done+1,total)} von ${total} wird gestaltet…`);renderConcepts();renderSelectedPreview()};
+
+    const run=async concept=>{
+      if(previewCancel?.signal?.aborted)return;
       try{
         const payload={action:"preview-image",imageProvider:profile?.provider||'',imageProfileId:profile?.id||'',...previewDesignPayload(),project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
-        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000,cancelToken:previewCancel?.signal});const data=await res.json();if(!res.ok){const err=new Error(data.error||"Bildvorschau fehlgeschlagen");err.status=res.status;throw err}concept.previewImage=data.imageDataUrl||"";
-      }catch(err){if(err?.cancelled||previewCancel?.signal?.aborted)break;const message=String(err?.message||"");if(/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(message)){quotaError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Gemini ist verbunden, das Bildkontingent ist momentan erschöpft. Layout-Vorschauen werden weiter angezeigt.";break;}if(err?.status===403){otherError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent=message||"KI-Bildvorschauen sind für deinen Tarif nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";break;}otherError=true;el.generationStatus.className="generation-status error";el.generationStatus.textContent=`Bildentwurf ${i+1} war nicht verfügbar (${message||'unbekannter Fehler'}). Die übrigen Vorschauen werden weiter vorbereitet.`;}
-    }
+        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000,cancelToken:previewCancel?.signal});
+        const data=await res.json();
+        if(!res.ok){const err=new Error(data.error||"Bildvorschau fehlgeschlagen");err.status=res.status;throw err}
+        concept.previewImage=data.imageDataUrl||"";
+      }catch(err){
+        if(err?.cancelled||previewCancel?.signal?.aborted)return;
+        const message=String(err?.message||"");
+        if(/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(message)){quotaError=true;note("generation-status notice","Das Bildkontingent der Vorschau-KI ist momentan erschöpft. Layout-Vorschauen werden weiter angezeigt.");return}
+        if(err?.status===403){otherError=true;note("generation-status notice",message||"KI-Bildvorschauen sind für deinen Tarif nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.");return}
+        otherError=true;note("generation-status notice",`Die Bildvorschau war nicht verfügbar (${message||'unbekannter Fehler'}). Die übrigen Vorschauen werden weiter vorbereitet.`);
+      }finally{tick()}
+    };
+
+    const queue=concepts.slice();
+    const workers=Array.from({length:Math.min(PREVIEW_IMAGE_CONCURRENCY,total)},async()=>{
+      while(queue.length){
+        if(previewCancel?.signal?.aborted)return;
+        await run(queue.shift());
+      }
+    });
+    await Promise.all(workers);
     renderConcepts();renderSelectedPreview();
     return {kind:quotaError?"quota":otherError?"error":"success"};
   }
