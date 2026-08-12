@@ -75,7 +75,10 @@
     }catch{}
   }
   async function startNew(trigger,brief=''){
-    const reset=trigger?.id==='resetBtn';if(!await confirmReplace(reset))return;
+    // Starting a new project is the plain path through the app, not a destructive action: the
+    // previous state is kept in the project history and the libraries are untouched. Only the
+    // explicit "Projekt zurücksetzen" still asks.
+    const reset=trigger?.id==='resetBtn';if(reset&&!await confirmReplace(true))return;
     const mode=await chooseMode();if(!mode)return;
     persistNewProject(mode,brief);location.reload();
   }

@@ -441,7 +441,7 @@ test('the login/entry gate has no leftover small hint texts (accountIntro paragr
 });
 test('the ".ai" suffix on the Prompt.ai wordmark is statically blue everywhere it ships in the HTML (topbar, boot screen, login gate), not only once a late-loading polish script runs',async()=>{
   const html=await text('index.html'),css=await text('styles.css');
-  const spots=[/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT/,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><p>Dein Arbeitsbereich wird vorbereitet\./,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><span>Aus Ideen wird ein klares Projekt/];
+  const spots=[/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT/,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><p class="prompt-fill-sweep">Dein Arbeitsbereich wird vorbereitet\./,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><span>Aus Ideen wird ein klares Projekt/];
   for(const pattern of spots)assert.match(html,pattern);
   assert.match(css,/\.auth-brand \.brand-ai-suffix\{color:var\(--accent\)\}/,'a plain .auth-brand span{color:muted} rule beats the single-class .brand-ai-suffix rule on specificity, so a targeted override is required');
 });
@@ -596,4 +596,24 @@ test('starting a project cannot flash the welcome page before the handoff overla
   assert.match(theme,/setTimeout\(\(\)=>document\.documentElement\.classList\.remove\('prompt-handoff-pending'\),9000\)/,'never leave the page hidden if the handoff stalls');
   assert.match(html,/html\.prompt-handoff-pending #welcomePage\{visibility:hidden!important\}/,'must sit in the static shell to beat the first paint');
   assert.match(handoff,/classList\.remove\('prompt-handoff-pending'\)/,'released when the handoff finishes');
+});
+test('every loading screen shows its progress in the headline, not in a thin bar',async()=>{
+  const css=await text('styles.css'),html=await text('index.html'),cleanup=await text('workflow-cleanup.js'),app=await text('app.js');
+  assert.match(css,/\.prompt-fill-progress\{background-image:linear-gradient\(90deg,var\(--prompt-fill-on\) 0 var\(--prompt-fill,0%\)/,'value-driven fill');
+  assert.match(css,/\.prompt-fill-sweep\{background-image:linear-gradient/,'indeterminate waits sweep instead');
+  assert.match(css,/-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important/,'more specific colour rules would otherwise repaint the glyphs opaque');
+  assert.doesNotMatch(css,/\.prompt-fill-progress\{[^}]*clip-path/,'clip-path cut ascenders and descenders in half');
+  assert.match(css,/\.master-generation-track,#promptAppBoot \.boot-track\{display:none\}/);
+  assert.match(css,/\.task-progress \.task-progress-track\{display:none\}/);
+  assert.match(html,/<p class="prompt-fill-sweep">Dein Arbeitsbereich wird vorbereitet\.<\/p>/,'boot screen status line - the wordmark itself stays untouched');
+  assert.match(cleanup,/<strong class="prompt-fill-sweep">Dein Master-Prompt entsteht<\/strong>/,'master prompt screen');
+  assert.match(app,/box\?\.style\.setProperty\('--prompt-fill',`\$\{pct\}%`\);label\?\.classList\.add\('prompt-fill-progress'\)/,'inline task progress');
+});
+test('starting a new project does not ask first, and finished projects are marked as such',async()=>{
+  const app=await text('app.js'),start=await text('project-start-ui.js'),history=await text('project-history.js');
+  assert.doesNotMatch(app,/Das aktuelle Projekt wird durch ein leeres neues Projekt ersetzt/,'a new project is the normal path, not a destructive action');
+  assert.match(start,/const reset=trigger\?\.id==='resetBtn';if\(reset&&!await confirmReplace\(true\)\)return;/,'only the explicit reset still asks');
+  assert.match(history,/function isDone\(row\)\{return Math\.max\(Number\(row\?\.maxStep\)\|\|0,Number\(row\?\.step\)\|\|0,Number\(row\?\.state\?\.maxVisited\)\|\|0\)>=8\}/);
+  assert.match(history,/isDone\(x\)\?'FERTIG':'NOCH OFFEN'/);
+  assert.match(history,/maxStep:Number\(clean\.maxVisited\)\|\|Number\(clean\.currentStep\)\|\|1/,'the reached step has to be stored with the snapshot');
 });

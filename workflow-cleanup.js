@@ -10,7 +10,7 @@
   function signature(){const text=[$('#projectName')?.value||'',$('#projectDescription')?.value||'',$('#selectedPreviewLarge')?.textContent||''].join('|');let h=2166136261;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}return `m${(h>>>0).toString(36)}`}
   function masterLoader(){
     const step=$('#stepPrompt');if(!step)return;
-    if(!$('#masterGeneration')){const l=document.createElement('div');l.id='masterGeneration';l.className='master-generation';l.innerHTML='<div class="master-generation-inner"><div class="master-generation-spinner"></div><span>PROMPT.AI</span><strong>Dein Master-Prompt entsteht</strong><small>Alle Angaben, Referenzen, Änderungen und die gewählte Richtung werden zu deinem individuellen Auftrag zusammengeführt.</small><div class="master-generation-track"><i></i></div></div>';step.insertBefore(l,$('#completionSummary')||step.children[2]||null)}
+    if(!$('#masterGeneration')){const l=document.createElement('div');l.id='masterGeneration';l.className='master-generation';l.innerHTML='<div class="master-generation-inner"><div class="master-generation-spinner"></div><span>PROMPT.AI</span><strong class="prompt-fill-sweep">Dein Master-Prompt entsteht</strong><small>Alle Angaben, Referenzen, Änderungen und die gewählte Richtung werden zu deinem individuellen Auftrag zusammengeführt.</small><div class="master-generation-track"><i></i></div></div>';step.insertBefore(l,$('#completionSummary')||step.children[2]||null)}
     // Only react to an actual enter/leave of step 8. revealMaster() toggles `master-generating`
     // on this same element, so reacting to every class mutation made the observer re-enter
     // itself in an endless add/remove cycle and locked up the whole tab.

@@ -1132,9 +1132,10 @@
   const progressTimers={};
   function startTaskProgress(kind,expectedSeconds){
     const box=el[`${kind}Progress`],fill=el[`${kind}ProgressFill`],percent=el[`${kind}ProgressPercent`],label=el[`${kind}ProgressText`];if(!box)return;clearInterval(progressTimers[kind]);const started=Date.now();box.hidden=false;fill.style.width="4%";percent.textContent="4 %";label.textContent=`Wird vorbereitet · ca. ${expectedSeconds} s`;
-    progressTimers[kind]=setInterval(()=>{const elapsed=(Date.now()-started)/1000,pct=Math.min(92,Math.round(4+88*(1-Math.exp(-elapsed/(expectedSeconds/2))))),remaining=Math.max(2,Math.ceil(expectedSeconds-elapsed));fill.style.width=`${pct}%`;percent.textContent=`${pct} %`;label.textContent=`${Math.floor(elapsed)} s vergangen · ca. ${remaining} s verbleibend`;},400);
+    progressTimers[kind]=setInterval(()=>{const elapsed=(Date.now()-started)/1000,pct=Math.min(92,Math.round(4+88*(1-Math.exp(-elapsed/(expectedSeconds/2))))),remaining=Math.max(2,Math.ceil(expectedSeconds-elapsed));setTaskProgress(kind,pct,`${Math.floor(elapsed)} s vergangen · ca. ${remaining} s verbleibend`)},400);
   }
-  function setTaskProgress(kind,pct,text){const fill=el[`${kind}ProgressFill`],percent=el[`${kind}ProgressPercent`],label=el[`${kind}ProgressText`];if(!fill)return;fill.style.width=`${pct}%`;percent.textContent=`${pct} %`;label.textContent=text;}
+  // The label text carries the progress instead of the thin track underneath it.
+  function setTaskProgress(kind,pct,text){const box=el[`${kind}Progress`],fill=el[`${kind}ProgressFill`],percent=el[`${kind}ProgressPercent`],label=el[`${kind}ProgressText`];if(!fill)return;fill.style.width=`${pct}%`;box?.style.setProperty('--prompt-fill',`${pct}%`);label?.classList.add('prompt-fill-progress');percent.textContent=`${pct} %`;if(label.textContent!==text)label.textContent=text;}
   function finishTaskProgress(kind,text="Abgeschlossen"){clearInterval(progressTimers[kind]);setTaskProgress(kind,100,text);setTimeout(()=>{if(el[`${kind}Progress`])el[`${kind}Progress`].hidden=true},1000);}
 
   function saveClarificationAnswers(){
@@ -2109,8 +2110,8 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   function downloadText(filename,text,type="text/plain") { const blob=new Blob([text],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500); }
 
   async function startFreshProject(){
-    const p=project(),hasContent=Boolean((p.name||"").trim()||(p.description||"").trim());
-    if(hasContent&&!await customConfirm("Das aktuelle Projekt wird durch ein leeres neues Projekt ersetzt. Bereits gespeicherte Bibliotheken bleiben erhalten.",{title:'Neues Projekt',confirmLabel:'Neu beginnen',danger:true}))return;
+    // No confirmation: the running state is snapshotted into the project history before the
+    // reload, so nothing is lost and a new project is simply a new project.
     localStorage.removeItem(STORAGE_KEY);sessionStorage.setItem(CONTINUE_WORKFLOW_KEY,'1');location.reload();
   }
   async function resetProject(){

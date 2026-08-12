@@ -415,3 +415,35 @@ body{padding-bottom:60px}
   #stepPreviews .concept-caption h3{font-size:20px}
   #stepPreviews .concept-card-actions{display:grid;grid-template-columns:1fr}
 }
+
+/* 10 — one progress language for every loading screen: the headline fills blue instead of a thin
+   bar underneath it. Two variants share the same look:
+   - .prompt-fill-progress follows a real value written to --prompt-fill
+   - .prompt-fill-sweep repeats for indeterminate waits where no percentage exists
+   background-clip:text follows the actual glyph outlines; an earlier clip-path attempt sliced
+   ascenders and descenders (g, t, f) in half. Engines without it keep plain coloured text. */
+@supports (background-clip:text) or (-webkit-background-clip:text){
+  .prompt-fill-progress,.prompt-fill-sweep{
+    --prompt-fill-on:var(--ui-blue,var(--accent,#1689c7));
+    --prompt-fill-off:color-mix(in srgb,var(--ink) 26%,transparent);
+    /* !important: these opt-in classes sit on elements whose colour is already set by a more
+       specific rule (e.g. .task-progress-label small), which would otherwise repaint the glyphs
+       opaque and hide the gradient underneath. */
+    -webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;
+  }
+  .prompt-fill-progress{background-image:linear-gradient(90deg,var(--prompt-fill-on) 0 var(--prompt-fill,0%),var(--prompt-fill-off) var(--prompt-fill,0%) 100%)}
+  .prompt-fill-sweep{background-image:linear-gradient(90deg,var(--prompt-fill-off) 0 35%,var(--prompt-fill-on) 50%,var(--prompt-fill-off) 65% 100%);background-size:280% 100%;animation:promptFillSweep 2.1s linear infinite}
+  @keyframes promptFillSweep{from{background-position:120% 0}to{background-position:-120% 0}}
+  @media(prefers-reduced-motion:reduce){.prompt-fill-sweep{animation:none;background-image:none;color:var(--ui-blue,var(--accent,#1689c7))}}
+}
+
+/* Indeterminate screens cannot report a percentage, so their status line sweeps rather than
+   filling to a value. The boot screen's wordmark stays the wordmark - the line below it carries
+   the progress instead. */
+#promptAppBoot p.prompt-fill-sweep{font-weight:800}
+.master-generation-track,#promptAppBoot .boot-track{display:none}
+
+/* Inline task progress (preview, review, website build) reports a real percentage, so its label
+   fills to that value and the thin track is no longer needed. */
+.task-progress-label small{font-weight:800}
+.task-progress .task-progress-track{display:none}
