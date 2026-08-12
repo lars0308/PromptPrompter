@@ -313,12 +313,16 @@ test('the full-screen workflow loader cannot stay stuck forever regardless of ca
 });
 test('AI preview images are framed as a flat UI screenshot, not a photo of a device on a desk, and must render the real brand/headline text',async()=>{
   const src=await text('server/preview-image.js');
-  assert.match(src,/UI SCREENSHOT\./);
-  assert.match(src,/Fill the entire 16:9 frame edge to edge with the webpage itself\./);
-  assert.match(src,/Do not depict any monitor, laptop, phone, tablet, desk, room, hand, wall, browser window, browser chrome, url bar, camera angle, perspective/);
-  assert.match(src,/Reminder: output only the flat webpage design itself, filling the full 16:9 frame — never a photo, mockup, or device of any kind\./);
+  // The long "do not depict a monitor, laptop, desk..." enumeration was counterproductive:
+  // diffusion models have no reliable negation and render what a prompt names, and on Cloudflare
+  // the closing reminder was cut off by the 2048-character limit anyway. The framing is positive
+  // and device-free now, stated first and last, with the device words in a real negative prompt.
+  assert.match(src,/FLAT WEB DESIGN ARTBOARD, 16:9, FULL BLEED/);
+  assert.match(src,/fills 100% of the frame and runs off all four edges/);
+  assert.match(src,/Every pixel of the frame is the webpage\./);
+  assert.match(src,/const NEGATIVE_PROMPT='monitor, computer screen, laptop/);
   assert.doesNotMatch(src,/If text cannot be rendered perfectly, render no text\./,'this escape hatch let models skip real brand/headline text instead of attempting it');
-  assert.match(src,/TYPOGRAPHY \(required\): render the brand name "\$\{brand\}" in the navigation or header \(unless the header instruction above says to omit it\), and render the headline "\$\{headline\}" as the large hero text/);
+  assert.match(src,/TEXT: render the brand name "\$\{brand\}" in the header and "\$\{headline\}" as the hero headline/);
 });
 test('AI-generated concept copy is required to use real industry vocabulary from the project, not a generic tagline',async()=>{
   const src=await text('server/generate-core.js');
@@ -373,8 +377,8 @@ test('literal user layout instructions (e.g. logo+hamburger-only header, image-l
   assert.match(img,/function headerInstruction\(p=\{\},c=\{\}\)\{/);
   assert.match(img,/if\(c\.layoutVariant==='minimal'\)return'This design has NO navigation bar, NO header, NO footer and NO separate sections/);
   assert.match(img,/const nav=c\.navStyle==='logo-hamburger'\?'The header\/top bar contains ONLY a small logo or brand name/);
-  assert.match(img,/Special wish \(if this literally describes the header, navigation or overall composition, treat it as the authoritative instruction and follow it exactly/);
-  assert.match(img,/HEADER \/ STRUCTURE \(required, follow exactly\): \$\{header\}/);
+  assert.match(img,/SPECIAL INSTRUCTION \(authoritative for header, navigation or composition\)/);
+  assert.match(img,/HEADER \/ STRUCTURE \(follow exactly\): \$\{header\}/);
 });
 test('CSS provides matching styles for the minimal variant, logo-hamburger nav and mirrored split/ledger layouts',async()=>{
   const css=await text('styles.css');
@@ -538,9 +542,9 @@ test('the preview image is generated against the same design decisions as the ma
   assert.match(app,/selectedModules\(\)\.map\(m=>`\$\{m\.name\}: /,'active module rules travel with the request');
   assert.match(server,/function controlText\(ctrl=\{\}\)/);
   assert.match(server,/function ruleText\(rules=\[\]\)/);
-  assert.match(server,/DESIGN CONTROLS \(the developer will build the finished site from a master prompt carrying these same settings/);
-  assert.match(server,/BINDING PROJECT DESIGN RULES/);
+  assert.match(server,/DESIGN CONTROLS \(the finished site is built from a master prompt carrying these same settings/);
   assert.match(server,/imagePrompt\(project,body\.concept\|\|\{\},\{controls:body\.controls\|\|\{\},designRules:body\.designRules\|\|\[\]\}\)/);
+  assert.match(server,/PROJECT DESIGN RULES/);
 });
 test('the preview step gives the directions room to be judged',async()=>{
   const guided=await text('guided-clean-ui.js');
@@ -560,4 +564,19 @@ test('preview images are requested in parallel with a capped concurrency',async(
   // 5 directions at 4 in flight stays under the server's own per-minute budget for this action.
   const limit=server.match(/key:'preview-image',limit:(\d+)/);
   assert.ok(limit&&Number(limit[1])>=5,'server limit must allow a full parallel run');
+});
+test('the preview image prompt never names a device and fits the provider limit',async()=>{
+  // Cloudflare's flux endpoint truncates at 2048 characters, and the closing "flat artboard"
+  // rule sat at the very end - so it was silently cut off. Naming devices to forbid them also
+  // backfires: diffusion models have no reliable negation and render what the prompt mentions.
+  const src=await text('server/preview-image.js');
+  assert.match(src,/const NEGATIVE_PROMPT='monitor, computer screen, laptop/);
+  assert.match(src,/negative_prompt:NEGATIVE_PROMPT/,'Cloudflare accepts a real negative prompt');
+  assert.match(src,/const PROMPT_LIMIT=1900;/);
+  assert.match(src,/FLAT WEB DESIGN ARTBOARD, 16:9, FULL BLEED/,'the framing rule leads');
+  assert.match(src,/Every pixel of the frame is the webpage\./,'and closes');
+  assert.match(src,/while\(prompt\.length>PROMPT_LIMIT&&blocks\.length>4\)/,'overflow drops middle blocks, never the closing rule');
+  // The positive prompt must not enumerate devices any more.
+  const body=src.slice(src.indexOf('function imagePrompt('),src.indexOf('\nfunction safe('));
+  assert.doesNotMatch(body,/monitor|laptop|tablet|desk|browser|mockup/i,'the positive prompt stays device-free');
 });
