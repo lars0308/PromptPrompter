@@ -4,6 +4,7 @@
   const CONTINUE_KEY='sitebrief-v6-continue-workflow';
   const PENDING_MODE_KEY='prompt-ai-new-project-mode-v2';
   const PENDING_BRIEF_KEY='prompt-ai-new-project-brief-v1';
+  const FRESH_PROJECT_KEY='prompt-ai-fresh-project-v1';
   const SIMPLE_START_KEY='prompt-ai-v1-simple-start';
   const CHECKPOINT_KEY='prompt-ai-ui-checkpoint-v2';
   const ADMIN_EMAIL='service.battermann@gmx.de';
@@ -65,6 +66,10 @@
   function persistNewProject(mode,brief=''){
     try{
       localStorage.removeItem(STORAGE_KEY);
+      // Clearing the store is not enough: browsers restore typed form values across a reload, so
+      // the old project name, customer and website came back into a brand new project. The flag
+      // tells the app to wipe the fields itself once it is up.
+      sessionStorage.setItem(FRESH_PROJECT_KEY,'1');
       localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({mode,step:1,surface:'workflow',at:Date.now()}));
       sessionStorage.setItem(PENDING_MODE_KEY,mode);
       if(brief.trim()){

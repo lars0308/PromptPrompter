@@ -271,3 +271,47 @@ test('copying hands over both documents, so a plain paste is not missing the sou
   // The briefing points at the sources file - and says where it is when copied.
   assert.match(app,/Beim Kopieren aus Prompt\.ai hängt diese Datei direkt unter diesem Auftrag als zweite Datei an\./);
 });
+
+test('a new project starts empty even though browsers restore form values across the reload',async()=>{
+  const app=await text('app.js'),start=await text('project-start-ui.js'),html=await text('index.html');
+  // Clearing the store was not enough: Chrome wrote the previous project's name, customer and
+  // website back into the fields after the reload, and everything derived from them followed.
+  assert.match(start,/sessionStorage\.setItem\(FRESH_PROJECT_KEY,'1'\);/);
+  assert.match(app,/const FRESH_PROJECT_KEY='prompt-ai-fresh-project-v1';/);
+  assert.match(app,/addEventListener\('load',\(\)=>wipe\(true\),\{once:true\}\);/,'the browser writes its values back after the first pass');
+  assert.match(app,/\[200,700,1500\]\.forEach\(delay=>setTimeout\(\(\)=>wipe\(true\),delay\)\);/);
+  assert.match(app,/loadLibrary\(\);loadSettings\(\);loadProfiles\(\);clearRestoredProjectFields\(\);restoreState\(\);/);
+  assert.match(app,/function resetProjectScopedState\(\)/);
+  for(const id of ['projectName','clientName','clientWebsite','projectDescription'])
+    assert.match(html,new RegExp(`id="${id}" autocomplete="off"`),`${id} must not be autofilled from another project`);
+});
+
+test('changing the brief invalidates the analysis and the questions derived from the old one',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/function invalidateDerivedProjectData\(\)/);
+  assert.match(app,/if\(state\.understanding\)\{state\.understanding=null;renderUnderstanding\(\)\}/);
+  assert.match(app,/state\.projectReview=null;state\.clarifications=\[\];state\.reviewSignature='';state\.reviewDeferred=false;/);
+  assert.match(app,/el\.projectDescription\.addEventListener\("input",\(\)=>\{[^}]*invalidateDerivedProjectData\(\)/);
+});
+
+test('guided mode confirms the project data before the briefing, and flags a mismatched industry',async()=>{
+  const app=await text('app.js'),css=await text('styles.css');
+  assert.match(app,/async function confirmProjectData\(\)/);
+  assert.match(app,/if\(state\.mode!=='guided'\)return true;/);
+  assert.match(app,/if\(next===8&&!await confirmProjectData\(\)\)return;/);
+  assert.match(app,/Sind diese Projektdaten korrekt\?/);
+  assert.match(app,/const INDUSTRY_WORDS=/,'the check compares the industry of name, customer, website and analysis with the brief');
+  assert.match(css,/#appActionMessage\{white-space:pre-line\}/,'the summary is a list and has to keep its line breaks');
+});
+
+test('sources are deduplicated, unusable crawls stay out of the prompt, and the website belongs to this project',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/const normalizedSourceUrl=/);
+  assert.match(app,/state\.sourceUrls\.some\(x=>normalizedSourceUrl\(x\.url\)===normalizedSourceUrl\(url\)\)/,'www and trailing slashes are the same site');
+  assert.match(app,/const UNUSABLE_SOURCE=\/enable javascript/);
+  assert.match(app,/const usableSources=\(\)=>state\.sourceUrls\.filter\(sourceUsable\);/);
+  assert.match(app,/const usable=usableSources\(\),skipped=state\.sourceUrls\.length-usable\.length;/,'failed crawls are counted, not printed');
+  assert.match(app,/website:el\.clientWebsite\?\.value\.trim\(\)\|\|usableSources\(\)\[0\]\?\.url\|\|""/,'the existing website is the one entered here, not the first crawl');
+  assert.match(app,/async function pendingNameSuggestion\(found\)/,'a found company name is offered, never written over silently');
+  assert.match(app,/liegt dem Übergabe-ZIP als Datei bei und ist dann die verbindliche visuelle Grundlage/,'the preview is only binding when it travels with the package');
+});
