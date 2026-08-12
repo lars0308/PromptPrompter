@@ -14,7 +14,7 @@ test('system AI supports dedicated free prompt task',async()=>{const src=await t
 test('new website project mode is selected once and switcher stays hidden',async()=>{const src=await text('project-start-ui.js');assert.match(src,/#modeSwitch\{display:none!important\}/);assert.match(src,/PENDING_BRIEF_KEY/);assert.match(src,/SIMPLE_START_KEY/);assert.match(src,/PromptAiHomeEntry\.openWebsite/);for(const mode of ['guided','auto','expert'])assert.match(src,new RegExp(`data-project-mode=\\"${mode}\\"`))});
 test('workflow separates revision and built project tools',async()=>{const src=await text('workflow-cleanup.js');assert.match(src,/#stepPrompt>#revisionStudio\{display:none!important\}/);assert.match(src,/workspacePreviewBtn/);assert.match(src,/Dein Master-Prompt entsteht/)});
 test('access boot loads final polish after all common UI layers',async()=>{const src=await text('admin-console.js'),fast=src.indexOf('cloud-fast-bundle.js'),stability=src.indexOf('stability-ui.js'),subscription=src.indexOf('subscription-ui.js'),ux=src.indexOf('ux-stability-fix.js'),final=src.indexOf('ui-polish-final.js'),touch=src.indexOf('ui-final-touch.js');assert.ok(fast>=0&&fast<stability);assert.ok(subscription>=0&&subscription<ux&&ux<final&&final<touch);assert.doesNotMatch(src,/owner-access\.js/);for(const file of ['home-entry-ui.js','streamlined-project-flow.js','guided-clean-ui.js','unified-ui-v1.js','trial-fix-ui.js','subscription-ui.js','ux-stability-fix.js','ui-polish-final.js','ui-final-touch.js'])assert.match(src,new RegExp(file.replace('.','\\.')))});
-test('home starts with website and free prompt, while Free locks secondary tools and skips internal dev-phase jargon',async()=>{const src=await text('home-entry-ui.js');assert.match(src,/Internetseite erstellen/);assert.match(src,/Freier Prompt/);assert.match(src,/Alles andere: Text, Bild, Video, Musik, PowerPoint, Code und mehr/);for(const id of ['workspaceRevisionBtn','workspacePreviewBtn','workspaceLastProjectBtn','workspaceLibraryBtn'])assert.ok(src.includes(id));assert.match(src,/home-plan-locked/);assert.doesNotMatch(src,/Feature-Freeze/)});
+test('home starts with website and free prompt, while Free locks secondary tools and skips internal dev-phase jargon',async()=>{const src=await text('home-entry-ui.js');assert.match(src,/Internetseite erstellen/);assert.match(src,/Freier Prompt/);assert.match(src,/Alles andere: Text, Bild, Video, Musik, PowerPoint, Code und mehr/);for(const id of ['workspaceRevisionBtn','workspaceBuildSiteBtn','workspacePreviewBtn','workspaceLastProjectBtn','workspaceLibraryBtn'])assert.ok(src.includes(id));assert.match(src,/home-plan-locked/);assert.doesNotMatch(src,/Feature-Freeze/)});
 test('simple entry comes before detailed website and free-prompt flows',async()=>{const src=await text('home-entry-ui.js');assert.match(src,/Beschreib deine Internetseite/);assert.match(src,/Was möchtest du mit KI machen/);assert.match(src,/startFromBrief/);assert.match(src,/freePromptDescription/)});
 test('mobile UX fix removes duplicate intake and keeps feedback before preview',async()=>{const src=await text('ux-stability-fix.js');assert.match(src,/text\.length>=20/);assert.match(src,/SIMPLE_START_KEY/);assert.match(src,/skipDuplicateDescription/);assert.match(src,/FLOW_ORDER=\['beschreibung','referenzen','rueckmeldung','vorschau'/);assert.match(src,/Weiter zur Vorschau/)});
 test('the references-step next-button label has exactly one owner (transition-polish CSS), not a JS text race',async()=>{const ux=await text('ux-stability-fix.js'),polish=await text('transition-polish.js');assert.doesNotMatch(ux,/prompt-review-transition/);assert.doesNotMatch(ux,/flowTransitionCompact/);assert.match(polish,/#stepReferences \.next-btn:before/);assert.match(polish,/content:'Rückmeldung prüfen'/)});
@@ -122,10 +122,11 @@ test('hiding the topbar upgrade button on mobile does not hit every upgrade butt
   assert.match(src,/body\.prompt-unified-ui \.topbar \.upgrade-btn\{display:none!important\}/);
   assert.doesNotMatch(src,/strong\{font-size:17px!important\}\.upgrade-btn\{display:none!important\}/,'the unscoped rule also hid the login card CTA');
 });
-test('the home page puts the three secondary tools in one row and only sells to free accounts',async()=>{
+test('the home page puts the four secondary tools in one row and only sells to free accounts',async()=>{
   const home=await text('home-entry-ui.js');
-  assert.match(home,/#welcomePage \.welcome-quick-actions\{display:grid!important;grid-template-columns:repeat\(6,minmax\(0,1fr\)\)!important/,'an ID selector is required - promptai-experience-v1 forces 1fr with body.prompt-unified-ui');
-  assert.match(home,/#workspacePreviewBtn,\.welcome-quick-actions>#workspaceLastProjectBtn,\.welcome-quick-actions>#workspaceLibraryBtn\{grid-column:span 2\}/);
+  assert.match(home,/#welcomePage \.welcome-quick-actions\{display:grid!important;grid-template-columns:repeat\(12,minmax\(0,1fr\)\)!important/,'an ID selector is required - promptai-experience-v1 forces 1fr with body.prompt-unified-ui');
+  assert.match(home,/#workspaceBuildSiteBtn,\.welcome-quick-actions>#workspacePreviewBtn,\.welcome-quick-actions>#workspaceLastProjectBtn,\.welcome-quick-actions>#workspaceLibraryBtn\{grid-column:span 3\}/,'a quarter each on a wide screen');
+  assert.match(home,/#workspaceBuildSiteBtn,\.welcome-quick-actions>#workspacePreviewBtn,\.welcome-quick-actions>#workspaceLastProjectBtn,\.welcome-quick-actions>#workspaceLibraryBtn\{grid-column:span 6/,'two per row on a phone');
   assert.match(home,/const plans=\$\('#showPlansBtn'\);if\(plans\)plans\.hidden=!free;/,'paid plans and admins have nothing to subscribe to here');
   assert.doesNotMatch(home,/free-workflow-upgrade/,'the removed fixed upsell bar leaves no styles behind');
 });
@@ -702,4 +703,21 @@ test('the critical scripts are fetched in parallel but still run in order',async
   assert.match(boot,/function preloadCritical\(\)\{/);
   assert.match(boot,/link\.rel='preload';link\.as='script';link\.href=src/,'warms the cache for every file at once');
   assert.match(boot,/async function critical\(\)\{preloadCritical\(\);let ready=0;for\(const src of CRITICAL_SCRIPTS\)/,'execution stays sequential - later files override earlier CSS layers');
+});
+
+test('building a website is its own tool on the home page, not a card at the end of the workflow',async()=>{
+  const ui=await text('website-build-ui.js'),home=await text('home-entry-ui.js'),html=await text('index.html'),loader=await text('admin-console.js'),sw=await text('sw.js');
+  // The card is moved, not rebuilt, so app.js keeps its element references and its handlers.
+  assert.match(ui,/const card=\$\('\.export-result-card'\),host=\$\('#websiteBuildMount'\);/);
+  assert.match(ui,/host\.appendChild\(card\)/);
+  assert.doesNotMatch(ui,/buildWebsiteBtn'\)\.addEventListener/,'the build itself stays in app.js');
+  assert.match(html,/<dialog id="websiteBuildDialog"/);
+  assert.match(html,/id="workspaceBuildSiteBtn"/);
+  assert.match(home,/decorate\(\$\('#workspaceBuildSiteBtn'\),'Website bauen'/);
+  assert.match(home,/'workspaceRevisionBtn','workspaceBuildSiteBtn','workspacePreviewBtn'/,'locked for free accounts like the other paid tools');
+  // Without a finished master prompt the AI would get an empty briefing.
+  assert.match(ui,/const ready=String\(\$\('#masterPrompt'\)\?\.value\|\|''\)\.trim\(\)\.length>200;/);
+  assert.match(ui,/Dafür wird ein fertiges Projekt gebraucht/);
+  assert.match(loader,/\.\/website-build-ui\.js\?v=\d{8}-\d+/);
+  assert.ok(sw.includes('/website-build-ui.js'));
 });

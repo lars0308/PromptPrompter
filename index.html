@@ -76,6 +76,7 @@
       <div class="welcome-quick-actions">
         <button type="button" class="solid-btn" id="workspaceNewProjectBtn">Neues Projekt</button>
         <button type="button" class="outline-btn" id="workspaceRevisionBtn">Webseite überarbeiten</button>
+        <button type="button" class="outline-btn" id="workspaceBuildSiteBtn">Website bauen</button>
         <button type="button" class="outline-btn" id="workspaceLastProjectBtn">Letztes Projekt öffnen</button>
         <button type="button" class="outline-btn" id="workspaceLibraryBtn">Bibliothek öffnen</button>
         <button type="button" class="outline-btn" id="showPlansBtn">Abonnieren</button>
@@ -718,6 +719,16 @@
     </form>
   </dialog>
 
+  <dialog id="websiteBuildDialog" class="library-dialog website-build-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head"><div><span>DIREKTE ERSTELLUNG</span><h2>Website bauen</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
+      <div class="website-build-body">
+        <div class="website-build-blocked" id="websiteBuildBlocked" hidden></div>
+        <div id="websiteBuildMount"></div>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="adminDialog" class="library-dialog admin-dialog">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>ADMINISTRATION</span><h2>Prompt.ai verwalten</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
@@ -784,7 +795,7 @@
   <script src="./entry-gate-ui.js?v=20260814-3" defer></script>
   <script src="./legal-pages.js?v=20260815-1" defer></script>
   <script src="./app.js?v=20260815-9" defer></script>
-  <script src="./admin-console.js?v=20260814-7" defer></script>
+  <script src="./admin-console.js?v=20260814-8" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>
 </html>
