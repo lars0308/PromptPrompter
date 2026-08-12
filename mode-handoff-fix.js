@@ -27,7 +27,12 @@
       .prompt-mode-handoff.is-leaving{opacity:0;pointer-events:none}
       .prompt-mode-handoff>div{width:min(560px,100%);text-align:center}.prompt-mode-handoff .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}.prompt-mode-handoff strong{display:block;margin-top:9px;font-size:clamp(31px,8vw,48px);line-height:1.02;letter-spacing:-.05em}
       .prompt-mode-handoff-status{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}.prompt-mode-handoff-status.is-changing{opacity:0;transform:translateY(4px)}
-      .prompt-mode-handoff-bar{width:min(240px,70%);height:4px;margin:22px auto 0;border-radius:99px;background:var(--ui-line,var(--line));overflow:hidden}.prompt-mode-handoff-bar i{display:block;height:100%;width:0%;border-radius:99px;background:var(--ui-blue,var(--accent,#1689c7));transition:width .3s ease}
+      .prompt-mode-handoff-bar{display:none}
+      /* The progress runs through the headline itself: a two-stop gradient clipped to the glyphs,
+         so the fill follows the real letter shapes. An earlier attempt clipped the element with
+         clip-path, which cut ascenders and descenders (g, t, f) in half. */
+      .prompt-mode-handoff strong{background-image:linear-gradient(90deg,var(--ui-blue,var(--accent,#1689c7)) 0 var(--prompt-fill,0%),color-mix(in srgb,var(--ink) 26%,transparent) var(--prompt-fill,0%) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;transition:none}
+      @supports not (background-clip:text){.prompt-mode-handoff strong{color:var(--ink);background-image:none}.prompt-mode-handoff-bar{display:block;width:min(240px,70%);height:4px;margin:22px auto 0;border-radius:99px;background:var(--ui-line,var(--line));overflow:hidden}.prompt-mode-handoff-bar i{display:block;height:100%;width:var(--prompt-fill,0%);
       .prompt-mode-handoff-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-mode-handoff-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptModeDot 1.05s ease-in-out infinite}.prompt-mode-handoff-pulse i:nth-child(2){animation-delay:.13s}.prompt-mode-handoff-pulse i:nth-child(3){animation-delay:.26s}@keyframes promptModeDot{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
       @media(prefers-reduced-motion:reduce){.prompt-mode-handoff,.prompt-mode-handoff-status{transition:none}.prompt-mode-handoff-bar i{transition:none!important}.prompt-mode-handoff-pulse i{animation:none;opacity:.7}}
     `;document.head.appendChild(s)
@@ -43,7 +48,7 @@
   function overlay(data){let box=$('#promptModeHandoff');if(box)return box;box=document.createElement('section');box.id='promptModeHandoff';box.className='prompt-mode-handoff';box.setAttribute('aria-live','polite');box.innerHTML=`<div><span class="kicker">PROMPT.AI · ${modeLabel(data.mode)}</span><strong>Projekt wird vorbereitet</strong><div class="prompt-mode-handoff-status"></div><div class="prompt-mode-handoff-bar"><i></i></div><div class="prompt-mode-handoff-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>`;document.body.appendChild(box);startSentences();startTitleFillLoop();return box}
   let titleFillRaf=0;
   function titleProgress(elapsed){const tau=1500;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
-  function applyTitleFill(progress){const bar=$('#promptModeHandoff .prompt-mode-handoff-bar i');if(bar)bar.style.width=`${(progress*100).toFixed(2)}%`}
+  function applyTitleFill(progress){const box=$('#promptModeHandoff');if(!box)return;const next=`${(progress*100).toFixed(1)}%`;if(box.style.getPropertyValue('--prompt-fill')!==next)box.style.setProperty('--prompt-fill',next)}
   function stopTitleFillLoop(complete=false){cancelAnimationFrame(titleFillRaf);titleFillRaf=0;if(complete)applyTitleFill(1)}
   function startTitleFillLoop(){
     stopTitleFillLoop();
@@ -61,7 +66,7 @@
   function applyBrief(data){const field=$('#projectDescription');if(!field)return false;if(field.value.trim()!==data.brief.trim()){field.value=data.brief.trim();field.dispatchEvent(new Event('input',{bubbles:true}));field.dispatchEvent(new Event('change',{bubbles:true}))}return field.value.trim().length>=8}
   function applyMode(data){const button=$(`.mode-switch button[data-mode="${data.mode}"]`);if(!button)return false;if(document.documentElement.classList.contains('prompt-access-pending'))return false;if(button.disabled||button.classList.contains('locked'))return false;if(!button.classList.contains('active'))button.click();document.documentElement.dataset.promptMode=data.mode;return button.classList.contains('active')}
 
-  function release(box){active=false;clearTimeout(timer);clearInterval(sentenceTimer);stopTitleFillLoop(true);clear();box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
+  function release(box){active=false;clearTimeout(timer);clearInterval(sentenceTimer);stopTitleFillLoop(true);clear();document.documentElement.classList.remove('prompt-handoff-pending');box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
   function finish(data){
     if(finishing)return;const elapsed=Date.now()-startedAt,box=$('#promptModeHandoff');if(elapsed<MIN_VISIBLE_MS||!uiReady()){timer=setTimeout(()=>tick(data),70);return}
     finishing=true;clearInterval(sentenceTimer);

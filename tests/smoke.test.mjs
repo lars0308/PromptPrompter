@@ -484,15 +484,20 @@ test('opening the hamburger menu re-syncs plan UI from window.PromptAiAccess, so
   const src=await text('app.js');
   assert.match(src,/const access=window\.PromptAiAccess;if\(access\)\{if\(access\.plan\)state\.plan=access\.plan;state\.isAdmin=Boolean\(access\.isAdmin\)\|\|isOwnerAccount\(\);if\(access\.ownApiKeys\)state\.ownApiKeys=true;\}applyPlanUi\(\);/);
 });
-test('the "Projekt wird vorbereitet" mode-handoff loader shows progress as a plain width-based bar (not a text-color clip-path fill, which rendered incompletely on letters with ascenders/descenders like g, t, f) that tracks real elapsed time and snaps to 100% the instant the real work finishes',async()=>{
+test('the "Projekt wird vorbereitet" mode-handoff loader fills the headline itself via background-clip (never clip-path, which cut ascenders/descenders like g, t, f) and tracks real elapsed time',async()=>{
   const src=await text('mode-handoff-fix.js');
-  assert.doesNotMatch(src,/clip-path/,'the mode-handoff loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
+  assert.doesNotMatch(src,/clip-path:/,'the mode-handoff loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
   assert.match(src,/<strong>Projekt wird vorbereitet<\/strong>/);
-  assert.match(src,/\.prompt-mode-handoff-bar i\{/);
+  // The thin bar was replaced by the headline filling blue. background-clip:text follows the real
+  // glyph outlines, unlike the clip-path attempt that sliced letters in half.
+  assert.match(src,/\.prompt-mode-handoff strong\{background-image:linear-gradient\(90deg/);
+  assert.match(src,/-webkit-background-clip:text;background-clip:text;color:transparent/);
+  assert.match(src,/box\.style\.setProperty\('--prompt-fill',next\)/);
+  assert.match(src,/@supports not \(background-clip:text\)/,'older engines keep the bar');
   assert.match(src,/function titleProgress\(elapsed\)\{const tau=1500;return Math\.min\(\.94,\.94\*\(1-Math\.exp\(-elapsed\/tau\)\)\)\}/,'must track real elapsed time asymptotically, not a fixed guessed duration');
   assert.match(src,/function release\(box\)\{active=false;clearTimeout\(timer\);clearInterval\(sentenceTimer\);stopTitleFillLoop\(true\);/,'release (called once the real handoff work is done) must snap the title fill to 100% instead of leaving it mid-fill');
 });
-test('the review/preview loader and the free-prompt thinking loader no longer use the fragile getBoundingClientRect + multi-line polygon clip-path technique for their fill, and the review/preview loader uses a plain progress bar instead of a text-color overlay (which rendered incompletely on ascenders/descenders like g, t, f) that cannot desync from the underlying text box',async()=>{
+test('the review/preview loader and the free-prompt thinking loader never fill text via measured rects or polygon clip-paths (which rendered garbled, offset text and cut ascenders/descenders); the review loader fills the headline with background-clip instead',async()=>{
   for(const file of ['transition-polish.js','promptai-experience-v1.js']){
     const src=await text(file);
     assert.doesNotMatch(src,/getClientRects/,`${file} must not measure per-line text rects for the fill anymore - this was reported live as rendering garbled/offset blue text even after an earlier defensive fix`);
@@ -500,10 +505,12 @@ test('the review/preview loader and the free-prompt thinking loader no longer us
     assert.doesNotMatch(src,/polygon\(/,`${file} must not build a reading-order polygon clip-path anymore`);
   }
   const transition=await text('transition-polish.js');
-  assert.doesNotMatch(transition,/clip-path/,'the review/preview loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
-  assert.match(transition,/function applyFill\(progress\)\{\s*const box=\$\('#promptWorkflowLoader'\);if\(!box\)return;\s*const bar=\$\('\.prompt-loader-bar i',box\);if\(!bar\)return;\s*const next=`\$\{\(progress\*100\)\.toFixed\(1\)\}%`;\s*if\(bar\.style\.width!==next\)bar\.style\.width=next;/);
+  assert.doesNotMatch(transition,/clip-path:/,'the review/preview loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
+  assert.match(transition,/#promptWorkflowLoader strong\{background-image:linear-gradient\(90deg/,'the headline itself carries the progress');
+  assert.match(transition,/if\(box\.style\.getPropertyValue\('--prompt-fill'\)!==next\)box\.style\.setProperty\('--prompt-fill',next\);/,'only write on change - assigning inside its own observer loops');
+  assert.match(transition,/@supports not \(background-clip:text\)/,'older engines keep the bar');
   const v1=await text('promptai-experience-v1.js');
-  assert.doesNotMatch(v1,/clip-path/,'the free-prompt thinking loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
+  assert.doesNotMatch(v1,/clip-path:/,'the free-prompt thinking loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
   assert.match(v1,/function applyTitleFill\(stage,progress\)\{const bar=\$\('\.prompt-thinking-bar i',stage\);if\(bar\)bar\.style\.width=`\$\{\(progress\*100\)\.toFixed\(2\)\}%`\}/);
 });
 test('every AI provider call in the review/questions and free-prompt chains has a bounded timeout so a hanging provider fails fast instead of stalling the whole fallback chain',async()=>{
@@ -579,4 +586,14 @@ test('the preview image prompt never names a device and fits the provider limit'
   // The positive prompt must not enumerate devices any more.
   const body=src.slice(src.indexOf('function imagePrompt('),src.indexOf('\nfunction safe('));
   assert.doesNotMatch(body,/monitor|laptop|tablet|desk|browser|mockup/i,'the positive prompt stays device-free');
+});
+test('starting a project cannot flash the welcome page before the handoff overlay',async()=>{
+  // The start reloads the page, and the welcome screen the visitor just left painted for a moment
+  // before mode-handoff-fix.js had built its overlay.
+  const theme=await text('theme-init.js'),html=await text('index.html'),handoff=await text('mode-handoff-fix.js');
+  assert.match(theme,/if\(sessionStorage\.getItem\('prompt-ai-v1-simple-start'\)==='1'\)\{/);
+  assert.match(theme,/classList\.add\('prompt-handoff-pending'\)/);
+  assert.match(theme,/setTimeout\(\(\)=>document\.documentElement\.classList\.remove\('prompt-handoff-pending'\),9000\)/,'never leave the page hidden if the handoff stalls');
+  assert.match(html,/html\.prompt-handoff-pending #welcomePage\{visibility:hidden!important\}/,'must sit in the static shell to beat the first paint');
+  assert.match(handoff,/classList\.remove\('prompt-handoff-pending'\)/,'released when the handoff finishes');
 });

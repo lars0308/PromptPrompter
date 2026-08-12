@@ -67,8 +67,10 @@
       #promptWorkflowLoader strong{display:block;margin-top:9px;font-size:clamp(31px,8vw,47px);line-height:1.02;letter-spacing:-.05em;color:var(--ui-blue,var(--accent,#1689c7))}
       .prompt-loader-sentence{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}
       .prompt-loader-sentence.is-changing{opacity:0;transform:translateY(4px)}
-      .prompt-loader-bar{width:min(280px,80%);height:4px;margin:26px auto 0;border-radius:99px;background:var(--ui-line,var(--line));overflow:hidden}
-      .prompt-loader-bar i{display:block;height:100%;width:0%;border-radius:99px;background:var(--ui-blue,var(--accent,#1689c7));transition:width .3s ease}
+      /* Same treatment as the handoff screen: the progress runs through the headline itself. */
+      .prompt-loader-bar{display:none}
+      #promptWorkflowLoader strong{background-image:linear-gradient(90deg,var(--ui-blue,var(--accent,#1689c7)) 0 var(--prompt-fill,0%),color-mix(in srgb,var(--ink) 26%,transparent) var(--prompt-fill,0%) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+      @supports not (background-clip:text){#promptWorkflowLoader strong{color:var(--ui-blue,var(--accent,#1689c7));background-image:none}.prompt-loader-bar{display:block;width:min(280px,80%);height:4px;margin:26px auto 0;border-radius:99px;background:var(--ui-line,var(--line));overflow:hidden}.prompt-loader-bar i{display:block;height:100%;width:var(--prompt-fill,0%);border-radius:99px;background:var(--ui-blue,var(--accent,#1689c7));transition:width .3s ease}}
       .prompt-loader-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-loader-pulse[hidden]{display:none}.prompt-loader-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptLoaderPulse 1.05s ease-in-out infinite}.prompt-loader-pulse i:nth-child(2){animation-delay:.13s}.prompt-loader-pulse i:nth-child(3){animation-delay:.26s}
       @keyframes promptLoaderPulse{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
       @media(prefers-reduced-motion:reduce){#promptWorkflowLoader,.prompt-loader-sentence{transition:none!important}.prompt-loader-pulse i{animation:none!important;opacity:.7!important}.prompt-loader-bar i{transition:none!important}}
@@ -87,9 +89,8 @@
   function fillProgress(elapsed){const tau=15000;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
   function applyFill(progress){
     const box=$('#promptWorkflowLoader');if(!box)return;
-    const bar=$('.prompt-loader-bar i',box);if(!bar)return;
     const next=`${(progress*100).toFixed(1)}%`;
-    if(bar.style.width!==next)bar.style.width=next;
+    if(box.style.getPropertyValue('--prompt-fill')!==next)box.style.setProperty('--prompt-fill',next);
   }
   function forceRecover(){
     clearInterval(cycleTimer);cycleTimer=0;

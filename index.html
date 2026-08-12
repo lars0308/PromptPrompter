@@ -11,11 +11,14 @@
   <link rel="icon" href="./sitebrief-logo.svg?v=4" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
-  <script src="./theme-init.js?v=2"></script>
+  <script src="./theme-init.js?v=3"></script>
   <link rel="stylesheet" href="./styles.css?v=20260814-5" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
     html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
+    /* Set by theme-init.js before the first paint when a project start is being handed over, so
+       the welcome page cannot flash between the reload and the handoff overlay. */
+    html.prompt-handoff-pending #welcomePage{visibility:hidden!important}
     #promptAppBoot{display:none;position:fixed;z-index:2147483647;inset:0;place-items:center;padding:28px 22px;background:var(--paper,#f5f6f7);color:var(--ink,#171814);opacity:1;transition:opacity .28s ease;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
     html.prompt-app-booting #promptAppBoot{display:grid}
     #promptAppBoot.is-leaving{opacity:0;pointer-events:none}
