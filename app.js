@@ -115,7 +115,7 @@
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
-      "previewFormat","conceptCount","generateConceptsBtn","generationStatus","conceptGallery","toRefineBtn","previewLightbox","previewLightboxTitle","previewLightboxClose","previewLightboxMedia","previewLightboxDownload","previewLightboxRegenerate","previewLightboxSelect",
+      "previewFormat","conceptCount","generateConceptsBtn","cancelPreviewBtn","generationStatus","conceptGallery","toRefineBtn","previewLightbox","previewLightboxTitle","previewLightboxClose","previewLightboxMedia","previewLightboxDownload","previewLightboxRegenerate","previewLightboxSelect",
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
       "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadProjectSourcesBtn","downloadHandoffPackageBtn","downloadBriefBtn","promptHandoff","promptHandoffText","promptHandoffPreview","downloadProjectReportBtn","downloadClientBriefBtn","downloadHandoverBtn","downloadWebsiteZipBtn","buildWebsiteBtn","downloadGeneratedWebsiteBtn","websiteBuildStatus","websiteBuildProgress","websiteBuildStage","websiteBuildPercent","websiteBuildFill","websiteBuildStages","websiteBuildPreview","websiteBuildTruthNote","websiteRequirements","publishGithubBtn","clientResultHint","exportResultHint",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
@@ -367,17 +367,24 @@
   function consumeGuestRun(){if(cloudReady())return;localStorage.setItem(GUEST_USAGE_KEY,String(Math.min(GUEST_RUN_LIMIT,guestRunCount()+1)));renderGuestLimit()}
 
   async function sitebriefApiFetch(url, options={}){
-    const {timeoutMs=60000,...rest}=options;
+    const {timeoutMs=60000,cancelToken,...rest}=options;
     const auth = await window.SiteBriefCloud?.authHeaders?.().catch?.(()=>({})) || {};
     const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    const timer=setTimeout(()=>controller.abort('timeout'),timeoutMs);
+    // A cancel token lets the user abort a running generation instead of waiting it out.
+    const onCancel=()=>controller.abort('cancelled');
+    cancelToken?.addEventListener?.('abort',onCancel);
     try{
       return await fetch(url,{...rest,headers:{...(rest.headers||{}),...auth},signal:controller.signal});
     }catch(err){
-      if(err?.name==='AbortError')throw new Error('Die Anfrage hat zu lange gedauert und wurde abgebrochen.');
+      if(err?.name==='AbortError'){
+        if(cancelToken?.aborted)throw Object.assign(new Error('Abgebrochen.'),{cancelled:true});
+        throw new Error('Die Anfrage hat zu lange gedauert und wurde abgebrochen.');
+      }
       throw err;
     }finally{
       clearTimeout(timer);
+      cancelToken?.removeEventListener?.('abort',onCancel);
     }
   }
 
@@ -1537,10 +1544,20 @@
     const {id,...rest}=c; return rest;
   }
 
-  let conceptsGenerating=false;
+  let conceptsGenerating=false,previewCancel=null;
+  // One controller per generation run, so the Abbrechen button can stop a request that is taking
+  // too long and the visitor can pick a different preview AI instead of waiting it out.
+  function cancelPreviewRun(){
+    if(!previewCancel)return;
+    previewCancel.abort();
+    finishTaskProgress("preview","Abgebrochen");
+    el.generationStatus.className="generation-status notice";
+    el.generationStatus.textContent="Vorschau abgebrochen. Du kannst oben eine andere Vorschau-KI wählen und es erneut versuchen.";
+  }
   async function generateConcepts(){
     if(conceptsGenerating)return;
-    conceptsGenerating=true;
+    conceptsGenerating=true;previewCancel=new AbortController();
+    if(el.cancelPreviewBtn)el.cancelPreviewBtn.hidden=false;
     try{
       if(!cloudReady()&&guestRunsRemaining()===0){showAccountGate();return;}
       if(state.engine!=="local" && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
@@ -1553,7 +1570,7 @@
         if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
         else{
           const payload={action:"concepts",count,engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
-          const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:120000}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"Generator-Anfrage fehlgeschlagen"); concepts=(data.concepts||[]).slice(0,count).map(normalizedConcept);
+          const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:120000,cancelToken:previewCancel?.signal}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"Generator-Anfrage fehlgeschlagen"); concepts=(data.concepts||[]).slice(0,count).map(normalizedConcept);
           if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
         }
         state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
@@ -1568,14 +1585,22 @@
           }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Für KI-Bilder ist eine Anmeldung nötig. Bis dahin werden HTML-Vorschauen angezeigt.";}
         }else{el.generationStatus.className="generation-status";el.generationStatus.textContent=`${state.concepts.length} echte HTML/CSS-Vorschauen erstellt. Wähle die stärkste Richtung – ohne Bildkontingent und ohne zusätzliche Kosten.`;}
       }catch(err){
+        if(err?.cancelled||previewCancel?.signal?.aborted)return;
         state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent="Die Vorschau-KI hat nicht geantwortet. Angezeigt werden die eingebauten HTML-Vorschauen – du kannst es oben erneut versuchen oder damit weiterarbeiten.";
       }finally{finishTaskProgress("preview","Vorschauen fertig");consumeGuestRun();el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
-    }finally{conceptsGenerating=false;}
+    }finally{conceptsGenerating=false;previewCancel=null;if(el.cancelPreviewBtn)el.cancelPreviewBtn.hidden=true;}
   }
 
   // The preview selector lists the administrator's configured image profiles, so the request has
   // to name the chosen profile. Without it the server just walked its own priority list and the
   // selection had no effect at all.
+  // The image must show what the developer will actually build, so it gets the same design
+  // decisions the master prompt carries: the sliders and the binding rules from active modules.
+  function previewDesignPayload(){
+    const ctrl=controls();
+    const rules=selectedModules().map(m=>`${m.name}: ${String(m.prompt||'').replace(/\s+/g,' ').trim().slice(0,220)}`).slice(0,6);
+    return {controls:{originality:ctrl.originality,antiSlop:ctrl.antiSlop,motion:ctrl.motion,density:ctrl.density},designRules:rules};
+  }
   function selectedImageProfile(){
     const value=el.previewFormat?.value||'';
     if(!value.startsWith('image-profile-'))return null;
@@ -1585,11 +1610,12 @@
   async function generateConceptImages(profile){
     let quotaError=false,otherError=false;
     for(let i=0;i<state.concepts.length;i++){
+      if(previewCancel?.signal?.aborted)break;
       const concept=state.concepts[i];setTaskProgress("preview",Math.round(38+(i/state.concepts.length)*54),`Bildentwurf ${i+1} von ${state.concepts.length} wird gestaltet…`);
       try{
-        const payload={action:"preview-image",imageProvider:profile?.provider||'',imageProfileId:profile?.id||'',project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
-        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000});const data=await res.json();if(!res.ok){const err=new Error(data.error||"Bildvorschau fehlgeschlagen");err.status=res.status;throw err}concept.previewImage=data.imageDataUrl||"";
-      }catch(err){const message=String(err?.message||"");if(/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(message)){quotaError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Gemini ist verbunden, das Bildkontingent ist momentan erschöpft. Layout-Vorschauen werden weiter angezeigt.";break;}if(err?.status===403){otherError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent=message||"KI-Bildvorschauen sind für deinen Tarif nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";break;}otherError=true;el.generationStatus.className="generation-status error";el.generationStatus.textContent=`Bildentwurf ${i+1} war nicht verfügbar (${message||'unbekannter Fehler'}). Die übrigen Vorschauen werden weiter vorbereitet.`;}
+        const payload={action:"preview-image",imageProvider:profile?.provider||'',imageProfileId:profile?.id||'',...previewDesignPayload(),project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
+        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000,cancelToken:previewCancel?.signal});const data=await res.json();if(!res.ok){const err=new Error(data.error||"Bildvorschau fehlgeschlagen");err.status=res.status;throw err}concept.previewImage=data.imageDataUrl||"";
+      }catch(err){if(err?.cancelled||previewCancel?.signal?.aborted)break;const message=String(err?.message||"");if(/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(message)){quotaError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Gemini ist verbunden, das Bildkontingent ist momentan erschöpft. Layout-Vorschauen werden weiter angezeigt.";break;}if(err?.status===403){otherError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent=message||"KI-Bildvorschauen sind für deinen Tarif nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";break;}otherError=true;el.generationStatus.className="generation-status error";el.generationStatus.textContent=`Bildentwurf ${i+1} war nicht verfügbar (${message||'unbekannter Fehler'}). Die übrigen Vorschauen werden weiter vorbereitet.`;}
     }
     renderConcepts();renderSelectedPreview();
     return {kind:quotaError?"quota":otherError?"error":"success"};
@@ -1629,7 +1655,7 @@
     if(!cloudReady()||!profile){el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für ein neues KI-Bild muss mindestens einer der Provider (Gemini, Cloudflare oder eigene Keys) unter Einstellungen → KI-Verbindungen verbunden sein.`;return;}
     c._imageBusy=true;renderConcepts();if(lightboxConceptId===c.id)openPreviewLightbox(c);
     try{
-      const payload={action:"preview-image",imageProvider:profile.provider||'',imageProfileId:profile.id||'',project:project(),concept:conceptForExport(c),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
+      const payload={action:"preview-image",imageProvider:profile.provider||'',imageProfileId:profile.id||'',...previewDesignPayload(),project:project(),concept:conceptForExport(c),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
       const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Bildvorschau fehlgeschlagen");
       c.previewImage=data.imageDataUrl||c.previewImage;
       el.generationStatus.className="generation-status";el.generationStatus.textContent=`Neues Bild für „${c.name}“ erstellt.`;
@@ -2077,7 +2103,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     el.templateSelect.addEventListener("change",()=>{state.templateId=el.templateSelect.value;saveState();updateGuide()});el.recommendModulesBtn.addEventListener("click",()=>recommendModules(true));
     el.importSkillFileBtn.addEventListener("click",()=>el.skillFileInput.click());el.skillFileInput.addEventListener("change",e=>{importSkillFiles(e.target.files);e.target.value=""});
     [el.originality,el.antiSlop,el.motion,el.density].forEach(r=>r.addEventListener("input",()=>{r.nextElementSibling.value=r.value;saveState();updateGuide()}));
-    el.generateConceptsBtn.addEventListener("click",generateConcepts);[el.conceptCount,el.previewFormat].forEach(control=>control.addEventListener("change",()=>{saveState();updateGuide()}));
+    el.generateConceptsBtn.addEventListener("click",generateConcepts);el.cancelPreviewBtn?.addEventListener("click",cancelPreviewRun);[el.conceptCount,el.previewFormat].forEach(control=>control.addEventListener("change",()=>{saveState();updateGuide()}));
     $$('#quickRefinements button').forEach(b=>b.addEventListener("click",()=>{const t=b.textContent.trim();el.refinementInput.value=el.refinementInput.value.trim()?`${el.refinementInput.value.trim()}, ${t}`:t;el.refinementInput.focus()}));el.applyRefinementBtn.addEventListener("click",applyRefinement);el.clearRefinementsBtn.addEventListener("click",()=>{state.refinements=[];renderRefinementHistory();saveState();updateGuide()});
     $$('.next-btn').forEach(b=>b.addEventListener("click",async()=>{
       const next=Number(b.dataset.next);

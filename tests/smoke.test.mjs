@@ -518,3 +518,34 @@ test('every AI provider call in the review/questions and free-prompt chains has 
   assert.match(freePrompt,/await fetchWithTimeout\(['"]https:\/\/api\.openai\.com\/v1\/responses['"]/);
   assert.match(freePrompt,/fetchWithTimeout\(`https:\/\/generativelanguage\.googleapis\.com/);
 });
+test('a running preview generation can be cancelled',async()=>{
+  // A slow image AI used to leave the visitor with a progress bar and nothing else - no way to
+  // stop it and pick a different preview AI.
+  const app=await text('app.js'),html=await text('index.html');
+  assert.match(html,/id="cancelPreviewBtn" hidden/,'the button only appears while a run is active');
+  assert.match(app,/let conceptsGenerating=false,previewCancel=null;/);
+  assert.match(app,/function cancelPreviewRun\(\)/);
+  assert.match(app,/conceptsGenerating=true;previewCancel=new AbortController\(\);/);
+  assert.match(app,/cancelToken:previewCancel\?\.signal/,'the request has to carry the token');
+  assert.match(app,/if\(previewCancel\?\.signal\?\.aborted\)break;/,'the per-concept image loop stops too');
+  assert.match(app,/if\(err\?\.cancelled\|\|previewCancel\?\.signal\?\.aborted\)return;/,'a cancel must not be reported as a failure');
+  assert.match(app,/const onCancel=\(\)=>controller\.abort\('cancelled'\)/);
+});
+test('the preview image is generated against the same design decisions as the master prompt',async()=>{
+  const app=await text('app.js'),server=await text('server/preview-image.js');
+  assert.match(app,/function previewDesignPayload\(\)/);
+  assert.match(app,/controls:\{originality:ctrl\.originality,antiSlop:ctrl\.antiSlop,motion:ctrl\.motion,density:ctrl\.density\}/);
+  assert.match(app,/selectedModules\(\)\.map\(m=>`\$\{m\.name\}: /,'active module rules travel with the request');
+  assert.match(server,/function controlText\(ctrl=\{\}\)/);
+  assert.match(server,/function ruleText\(rules=\[\]\)/);
+  assert.match(server,/DESIGN CONTROLS \(the developer will build the finished site from a master prompt carrying these same settings/);
+  assert.match(server,/BINDING PROJECT DESIGN RULES/);
+  assert.match(server,/imagePrompt\(project,body\.concept\|\|\{\},\{controls:body\.controls\|\|\{\},designRules:body\.designRules\|\|\[\]\}\)/);
+});
+test('the preview step gives the directions room to be judged',async()=>{
+  const guided=await text('guided-clean-ui.js');
+  assert.match(guided,/#stepPreviews \.concept-gallery\{display:grid;grid-template-columns:1fr;gap:24px;margin-top:24px\}/);
+  assert.match(guided,/#stepPreviews \.concept-screen\{aspect-ratio:4\/3/,'a 16:11 thumbnail was too small to judge a design on a phone');
+  assert.match(guided,/#stepPreviews \.preview-zoom-hint\{top:9px;right:9px;bottom:auto\}/,'it used to sit on the mini page footer');
+  assert.match(guided,/@media\(min-width:821px\)\{[\s\S]{0,300}?#stepPreviews \.concept-gallery\{grid-template-columns:repeat\(auto-fit,minmax\(420px,1fr\)\)/);
+});

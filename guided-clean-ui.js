@@ -46,8 +46,24 @@
       html[data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{display:grid!important;grid-template-columns:minmax(0,1fr) 100px!important;gap:9px;padding:12px!important;border:1px solid #e0e4e7!important;border-radius:10px!important;background:#f8f9fa!important}
       html[data-clean-project-flow="1"] #stepPreviews #generateConceptsBtn{grid-column:1/-1;width:100%}
       html[data-clean-project-flow="1"] #stepPreviews .generation-status{margin:16px 0 8px;color:#66717a;font-size:11px}
-      html[data-clean-project-flow="1"] #stepPreviews .concept-gallery{display:grid;grid-template-columns:1fr;gap:14px}
-      html[data-clean-project-flow="1"] #stepPreviews .concept-option{border:1px solid #d9dde1!important;border-radius:14px!important;background:#fff!important;overflow:hidden}
+      /* The directions are the decision on this screen, so they get the room: one per row, a
+         larger frame and space between caption, details and buttons instead of a tight grid. */
+      html[data-clean-project-flow="1"] #stepPreviews .concept-gallery{display:grid;grid-template-columns:1fr;gap:24px;margin-top:24px}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-option{border:1px solid #d9dde1!important;border-radius:18px!important;background:#fff!important;overflow:hidden;padding:16px}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-screen{aspect-ratio:4/3;border-radius:12px}
+      /* Top right, away from the mini page's own footer bar which it used to sit on top of. */
+      html[data-clean-project-flow="1"] #stepPreviews .preview-zoom-hint{top:9px;right:9px;bottom:auto}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-caption{margin-top:16px}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-caption h3{font-size:21px;letter-spacing:-.02em}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-caption p{margin-top:6px;line-height:1.5}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-details{margin-top:10px}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-card-actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
+      html[data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{margin-bottom:24px}
+      @media(min-width:821px){
+        html[data-clean-project-flow="1"] #stepPreviews .concept-gallery{grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:28px}
+        html[data-clean-project-flow="1"] #stepPreviews .concept-screen{aspect-ratio:16/9}
+        html[data-clean-project-flow="1"] #stepPreviews .concept-card-actions{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+      }
       html[data-clean-project-flow="1"] #stepRefine .quick-refinements{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px}html[data-clean-project-flow="1"] #stepRefine .quick-refinements button{flex:0 0 auto;border:1px solid #d5dade;border-radius:999px;background:#fff;padding:8px 11px;font-size:10px}
       html[data-clean-project-flow="1"] #stepRefine #selectedPreviewLarge{margin:18px 0}
       html[data-clean-project-flow="1"] #stepPrompt .master-prompt{min-height:360px!important;border:1px solid #cfd5da!important;border-radius:10px!important;background:#fff!important;padding:16px!important;font-size:12px!important;line-height:1.55!important}
