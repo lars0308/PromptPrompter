@@ -352,7 +352,11 @@ async function gatewayRequest(body,key){
 async function callGateway({key,model,prompt,images,schema,name}){
   if(!key) throw Object.assign(new Error("Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
   const content=[{type:"text",text:prompt},...imageContent(images,"gateway")];
-  const base={model:safeModel(model,process.env.AI_GATEWAY_MODEL||"openai/gpt-5.4"),messages:[{role:"system",content:"You are a senior web art director. Return only valid JSON and avoid generic AI website patterns."},{role:"user",content}],stream:false};
+  // Without an explicit cap the gateway applies a per-model default output budget (65536) that
+  // exceeds the context window of smaller models, and the request is rejected before it runs
+  // ("max_tokens cannot be greater than max_model_len"). A concept response never needs that much.
+  const maxTokens=Math.max(1000,Math.min(16000,Number(process.env.AI_GATEWAY_MAX_TOKENS)||8000));
+  const base={model:safeModel(model,process.env.AI_GATEWAY_MODEL||"openai/gpt-5.4"),messages:[{role:"system",content:"You are a senior web art director. Return only valid JSON and avoid generic AI website patterns."},{role:"user",content}],max_tokens:maxTokens,stream:false};
   let data;
   try{
     data=await gatewayRequest({...base,response_format:{type:"json_schema",json_schema:{name,strict:true,schema}}},key);

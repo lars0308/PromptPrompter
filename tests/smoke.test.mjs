@@ -158,6 +158,31 @@ test('admin rights are granted by the admins table, not by a single hard-coded a
   assert.match(ent,/isAdmin=Boolean\(id\)&&id===String\(admin\.user_id\)/);
   assert.doesNotMatch(ent,/ADMIN_EMAIL/,'entitlements no longer gate on one address');
 });
+test('one preview selector, HTML by default, and the plan caps how many AI options it offers',async()=>{
+  const app=await text('app.js'),fix=await text('preview-mode-fix.js');
+  assert.match(app,/free:\{label:"Free"[^}]*previewImageOptions:0/);
+  assert.match(app,/pro:\{label:"Pro"[^}]*previewImageOptions:2/);
+  assert.match(app,/ultimate:\{label:"Ultimate"[^}]*previewImageOptions:5/);
+  assert.match(app,/const options=\[\['html','HTML-Website'\],\.\.\.unique\.slice\(0,Math\.max\(0,Number\(rules\.previewImageOptions\)\|\|0\)\)\]/);
+  assert.match(app,/el\.previewFormat\.value=options\.some\(\(\[value\]\)=>value===current\)\?current:'html'/,'HTML stays the default');
+  assert.doesNotMatch(app,/image-auto/,'no entry may pick a provider on its own');
+  // preview-mode-fix.js used to rewrite the same <select> after app.js built it, so the visible
+  // options depended on which script rendered last and Cloudflare was mislabelled "automatisch".
+  assert.doesNotMatch(fix,/previewFormat'\)[\s\S]{0,200}?remove\(\)/,'app.js owns the option list alone');
+  assert.doesNotMatch(fix,/KI-Bild · automatisch/);
+  assert.match(fix,/if\(next!==status\.textContent\)status\.textContent=next;/,'assigning textContent unconditionally inside its own observer loops forever');
+});
+test('the gateway request caps its output budget so small models are not rejected',async()=>{
+  const core=await text('server/generate-core.js');
+  assert.match(core,/const maxTokens=Math\.max\(1000,Math\.min\(16000,Number\(process\.env\.AI_GATEWAY_MAX_TOKENS\)\|\|8000\)\)/);
+  assert.match(core,/max_tokens:maxTokens,stream:false/);
+});
+test('the gate price chips follow live Stripe pricing instead of a baked-in number',async()=>{
+  const gate=await text('entry-gate-ui.js');
+  assert.match(gate,/function watchPricing\(\)/);
+  assert.match(gate,/new MutationObserver\(syncTierChips\)\.observe\(label,\{childList:true,characterData:true,subtree:true\}\)/,'the price is written as text, which no attribute observer would see');
+  assert.match(gate,/for\(const id of \['#proPriceLabel','#ultimatePriceLabel'\]\)/);
+});
 test('the top menu cannot republish entries the app has hidden',async()=>{
   // The hidden attribute only carries the user-agent display:none, so an unconditional
   // display:...!important on menu children wins over it. That put Verwaltung (admin only),

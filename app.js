@@ -40,9 +40,9 @@
     ultimate:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Marktplatz","SaaS-Anwendung","Kundenportal","Buchungsplattform","Mitgliederbereich","Community","Magazin oder Blog","Dokumentation","Dashboard","Interne Fachanwendung","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Direkt verkaufen","Abonnements verkaufen","Termine oder Buchungen","Marke positionieren","Registrierungen gewinnen","Aktive Nutzung steigern","Kunden binden","Community aufbauen","Inhalte veröffentlichen","Interne Abläufe automatisieren","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]}
   };
   const PLAN_RULES = {
-    free:{label:"Free",modes:["guided"],concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,maxRefUrls:1,maxRefImages:0},
-    pro:{label:"Pro",modes:["guided","auto"],concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false,existing:true,maxRefUrls:3,maxRefImages:3},
-    ultimate:{label:"Ultimate",modes:["guided","auto","expert"],concepts:5,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true,existing:true,maxRefUrls:5,maxRefImages:5}
+    free:{label:"Free",modes:["guided"],concepts:3,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,previewImageOptions:0,maxRefUrls:1,maxRefImages:0},
+    pro:{label:"Pro",modes:["guided","auto"],concepts:4,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false,existing:true,previewImageOptions:2,maxRefUrls:3,maxRefImages:3},
+    ultimate:{label:"Ultimate",modes:["guided","auto","expert"],concepts:5,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true,existing:true,previewImageOptions:5,maxRefUrls:5,maxRefImages:5}
   };
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
@@ -464,7 +464,22 @@
     if(el.openAgentBtn)el.openAgentBtn.textContent=`${AGENT_NAMES[state.targetAgent]} öffnen`;
     $$('#agentSelector button').forEach(button=>{const allowed=rules.agents.includes(button.dataset.agent);button.hidden=!allowed;button.disabled=false;button.classList.toggle("active",button.dataset.agent===state.targetAgent)});
     if(el.conceptCount){el.conceptCount.max=String(rules.concepts);if(Number(el.conceptCount.value)>rules.concepts)el.conceptCount.value=String(rules.concepts)}
-    if(el.previewFormat){const current=el.previewFormat.value,options=[['html','HTML-Website']];const hasCloudflare=rules.modules||state.ownApiKeys,hasGemini=rules.advanced||state.ownApiKeys,customImageProviders=state.aiConnections.filter(x=>['openai','gemini','anthropic'].some(p=>x.provider.includes(p)));if(hasCloudflare||hasGemini||customImageProviders.length)options.push(['image-auto','KI-Bild · automatisch']);if(hasCloudflare)options.push(['image-cloudflare','Cloudflare-Bild']);if(hasGemini)options.push(['image-gemini','Gemini-Bild']);customImageProviders.forEach(conn=>{const label=conn.provider.includes('openai')?'OpenAI':conn.provider.includes('gemini')?'Gemini':conn.provider.includes('anthropic')?'Claude':'KI';options.push([`image-custom-${conn.provider}`,`${label}-Bild (eigene Keys)`])});el.previewFormat.innerHTML=options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('');el.previewFormat.value=options.some(([value])=>value===current)?current:'html'}
+    if(el.previewFormat){
+      // One list, one owner. HTML is always first and always the default; the AI options are
+      // named explicitly - there is no "automatisch" entry that silently picks a provider - and
+      // the plan decides how many of them are offered at all.
+      const current=el.previewFormat.value;
+      const custom=state.aiConnections.filter(x=>['openai','gemini','anthropic'].some(p=>x.provider.includes(p)));
+      const labelFor=provider=>provider.includes('openai')?'OpenAI':provider.includes('gemini')?'Gemini':provider.includes('anthropic')?'Claude':'KI';
+      // The plan's option count is the only gate - free gets none, Pro two, Ultimate five - so the
+      // list is built from what exists and then capped, instead of gating each provider separately.
+      const available=[['image-cloudflare','Cloudflare-Bild'],['image-gemini','Gemini-Bild']];
+      custom.forEach(conn=>available.push([`image-custom-${conn.provider}`,`${labelFor(conn.provider)}-Bild (eigene Keys)`]));
+      const seen=new Set(),unique=available.filter(([value])=>!seen.has(value)&&seen.add(value));
+      const options=[['html','HTML-Website'],...unique.slice(0,Math.max(0,Number(rules.previewImageOptions)||0))];
+      el.previewFormat.innerHTML=options.map(([value,label])=>`<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('');
+      el.previewFormat.value=options.some(([value])=>value===current)?current:'html';
+    }
     if(el.currentPlanBadge)el.currentPlanBadge.textContent="PROFIL";
     if(el.currentPlanTitle)el.currentPlanTitle.textContent=state.isAdmin?"Vollzugriff":rules===PLAN_RULES.free?"Kostenloser Tarif":`${rules.label}-Tarif`;
     if(el.currentPlanDescription){const trialEnd=state.subscriptionPeriodEnd?new Intl.DateTimeFormat('de-DE').format(new Date(state.subscriptionPeriodEnd)):'';el.currentPlanDescription.textContent=state.subscriptionStatus==='trialing'?`Kostenlose Testphase aktiv${trialEnd?` bis ${trialEnd}`:''}.`:rules===PLAN_RULES.free?"Gute Ergebnisse mit geführten Standards und drei Richtungen.":rules===PLAN_RULES.pro?"Claude/Codex, Module, Skills, vier Richtungen und Kundenunterlagen.":"Alle Agenten, Modelle, Profile, Einstellungen und fünf Richtungen."}
@@ -719,7 +734,7 @@
     el.descriptionCount.textContent = el.projectDescription.value.length;
     const c = saved.controls || {}; ["originality","antiSlop","motion","density"].forEach(id => { if(c[id] != null){ el[id].value = c[id]; el[id].nextElementSibling.value = c[id]; } });
     if(saved.conceptCount) el.conceptCount.value = String(clamp(saved.conceptCount,3,5));
-    if(el.previewFormat)el.previewFormat.value=['image-cloudflare','image-gemini'].includes(saved.previewFormat)?saved.previewFormat:'html';
+    if(el.previewFormat)el.previewFormat.value=/^image-/.test(String(saved.previewFormat||''))?saved.previewFormat:'html';
     applyAlwaysActiveItems(false);
     if(persistLocal) try{localStorage.setItem(STORAGE_KEY,JSON.stringify(serializableProjectState()));}catch{}
   }
@@ -1530,7 +1545,7 @@
         }
         state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
         if(el.previewFormat.value.startsWith("image-")){
-          let imageProvider=el.previewFormat.value.replace('image-','');if(imageProvider==='auto'){imageProvider=aiConnection('gemini')?'gemini':aiConnection('cloudflare')?'cloudflare':state.aiConnections.find(x=>['openai','anthropic'].some(p=>x.provider.includes(p)))?.provider||'';}
+          const imageProvider=el.previewFormat.value.replace(/^image-(custom-)?/,'');
           if(!imageProvider){el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Für KI-Bilder muss mindestens einer der Provider (Gemini, Cloudflare oder eigene Keys) unter Einstellungen → KI-Verbindungen verbunden sein. Bis dahin werden HTML-Vorschauen angezeigt.";return;}
           const providerLabel=imageProvider==='cloudflare'?'Cloudflare Workers AI':imageProvider.includes('openai')?'OpenAI':imageProvider.includes('gemini')?'Gemini':imageProvider.includes('anthropic')?'Claude':'KI';
           if(cloudReady()&&aiConnection(imageProvider)){
@@ -1538,7 +1553,7 @@
           }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für KI-Bilder muss ${providerLabel} unter Einstellungen → KI-Verbindungen verbunden sein. Bis dahin werden HTML-Vorschauen angezeigt.`;}
         }else{el.generationStatus.className="generation-status";el.generationStatus.textContent=`${state.concepts.length} echte HTML/CSS-Vorschauen erstellt. Wähle die stärkste Richtung – ohne Bildkontingent und ohne zusätzliche Kosten.`;}
       }catch(err){
-        state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent=`KI-Verbindung nicht verfügbar (${err.message}). Lokale Vorschauen wurden stattdessen erstellt.`;
+        state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent="Die Vorschau-KI hat nicht geantwortet. Angezeigt werden die eingebauten HTML-Vorschauen – du kannst es oben erneut versuchen oder damit weiterarbeiten.";
       }finally{finishTaskProgress("preview","Vorschauen fertig");consumeGuestRun();el.generateConceptsBtn.disabled=false;saveState();updateGuide();}
     }finally{conceptsGenerating=false;}
   }
@@ -1586,7 +1601,7 @@
   }
   async function regenerateConceptImage(c){
     if(!c?.previewImage||c._imageBusy)return;
-    let imageProvider=(el.previewFormat.value||"").replace("image-","");if(imageProvider==='auto'){imageProvider=aiConnection('gemini')?'gemini':aiConnection('cloudflare')?'cloudflare':state.aiConnections.find(x=>['openai','anthropic'].some(p=>x.provider.includes(p)))?.provider||'';}
+    const imageProvider=(el.previewFormat.value||"").replace(/^image-(custom-)?/,'');
     if(!cloudReady()||!imageProvider||!aiConnection(imageProvider)){el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für ein neues KI-Bild muss mindestens einer der Provider (Gemini, Cloudflare oder eigene Keys) unter Einstellungen → KI-Verbindungen verbunden sein.`;return;}
     c._imageBusy=true;renderConcepts();if(lightboxConceptId===c.id)openPreviewLightbox(c);
     try{

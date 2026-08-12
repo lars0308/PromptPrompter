@@ -68,11 +68,21 @@
     $('#gateThemePick',box).addEventListener('click',()=>$('#themeToggleBtn')?.click());
   }
 
-  // Keep the price chips in sync with whatever pricing the plans dialog is currently showing.
+  // The price labels in the plans dialog are the single place live Stripe pricing is written to
+  // (ui-regression-fixes.applyPricing). Mirroring them keeps the chips correct without a second
+  // source; watchPricing below reacts to the text changing, which settle() alone would miss
+  // because a characterData change is not a childList or attribute mutation.
   function syncTierChips(){
     const pro=$('#proPriceLabel')?.textContent?.trim(),ultimate=$('#ultimatePriceLabel')?.textContent?.trim();
-    const chip=(id,label,price)=>{const node=$(id);if(node&&price)node.textContent=`${label} ${price.replace(/\s*\/\s*Monat$/,'')}`};
+    const chip=(id,label,price)=>{const node=$(id);if(!node||!price)return;const text=`${label} ${price.replace(/\s*\/\s*Monat$/,'').trim()}`;if(node.textContent!==text)node.textContent=text};
     chip('#gateProTier','Pro',pro);chip('#gateUltimateTier','Ultimate',ultimate);
+  }
+  function watchPricing(){
+    for(const id of ['#proPriceLabel','#ultimatePriceLabel']){
+      const label=$(id);if(!label||label.__gatePriceWatched)continue;
+      label.__gatePriceWatched=true;
+      new MutationObserver(syncTierChips).observe(label,{childList:true,characterData:true,subtree:true});
+    }
   }
 
   // Opened from the login page, so closing the plans dialog has to land back on the login page
@@ -90,7 +100,7 @@
     if(!dialog.classList.contains('guest-gate'))dialog.classList.remove('gate-expanded');
   }
 
-  function settle(){styles();ensureGateActions();syncTierChips();resetExpansion()}
+  function settle(){styles();ensureGateActions();watchPricing();syncTierChips();resetExpansion()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
   function init(){settle();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});window.addEventListener('promptai:access',schedule);window.addEventListener('pageshow',schedule)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
