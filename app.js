@@ -465,20 +465,17 @@
     $$('#agentSelector button').forEach(button=>{const allowed=rules.agents.includes(button.dataset.agent);button.hidden=!allowed;button.disabled=false;button.classList.toggle("active",button.dataset.agent===state.targetAgent)});
     if(el.conceptCount){el.conceptCount.max=String(rules.concepts);if(Number(el.conceptCount.value)>rules.concepts)el.conceptCount.value=String(rules.concepts)}
     if(el.previewFormat){
-      // One list, one owner. HTML is always first and always the default; the AI options are
-      // named explicitly - there is no "automatisch" entry that silently picks a provider - and
-      // the plan decides how many of them are offered at all.
+      // One list, one owner. HTML is always first and always the default. The AI entries are the
+      // image profiles an administrator actually configured under "Bilder & Vorschauen" - listing
+      // fixed provider names here showed AIs that were never set up (Gemini) while hiding the ones
+      // that were. The plan decides how many of them are offered at all.
       const current=el.previewFormat.value;
-      const custom=state.aiConnections.filter(x=>['openai','gemini','anthropic'].some(p=>x.provider.includes(p)));
-      const labelFor=provider=>provider.includes('openai')?'OpenAI':provider.includes('gemini')?'Gemini':provider.includes('anthropic')?'Claude':'KI';
-      // The plan's option count is the only gate - free gets none, Pro two, Ultimate five - so the
-      // list is built from what exists and then capped, instead of gating each provider separately.
-      const available=[['image-cloudflare','Cloudflare-Bild'],['image-gemini','Gemini-Bild']];
-      custom.forEach(conn=>available.push([`image-custom-${conn.provider}`,`${labelFor(conn.provider)}-Bild (eigene Keys)`]));
-      const seen=new Set(),unique=available.filter(([value])=>!seen.has(value)&&seen.add(value));
-      const options=[['html','HTML-Website'],...unique.slice(0,Math.max(0,Number(rules.previewImageOptions)||0))];
+      const configured=(window.PromptAiSystemAI?.candidatesFor?.('image')||[]).filter(x=>x&&x.id);
+      const cap=Math.max(0,Number(rules.previewImageOptions)||0);
+      const options=[['html','HTML-Website'],...configured.slice(0,cap).map(profile=>[`image-profile-${profile.id}`,profile.label||profile.model||'KI-Bild'])];
       el.previewFormat.innerHTML=options.map(([value,label])=>`<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('');
       el.previewFormat.value=options.some(([value])=>value===current)?current:'html';
+      el.previewFormat.disabled=options.length<2;
     }
     if(el.currentPlanBadge)el.currentPlanBadge.textContent="PROFIL";
     if(el.currentPlanTitle)el.currentPlanTitle.textContent=state.isAdmin?"Vollzugriff":rules===PLAN_RULES.free?"Kostenloser Tarif":`${rules.label}-Tarif`;
@@ -1545,12 +1542,14 @@
         }
         state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
         if(el.previewFormat.value.startsWith("image-")){
-          const imageProvider=el.previewFormat.value.replace(/^image-(custom-)?/,'');
-          if(!imageProvider){el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Für KI-Bilder muss mindestens einer der Provider (Gemini, Cloudflare oder eigene Keys) unter Einstellungen → KI-Verbindungen verbunden sein. Bis dahin werden HTML-Vorschauen angezeigt.";return;}
-          const providerLabel=imageProvider==='cloudflare'?'Cloudflare Workers AI':imageProvider.includes('openai')?'OpenAI':imageProvider.includes('gemini')?'Gemini':imageProvider.includes('anthropic')?'Claude':'KI';
-          if(cloudReady()&&aiConnection(imageProvider)){
-            const imageResult=await generateConceptImages(imageProvider);el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt; verfügbare ${providerLabel}-Bilder wurden eingesetzt.`:imageResult?.kind==="quota"?`${providerLabel} ist verbunden, aber das Tageskontingent reicht nicht. Die HTML-Vorschauen bleiben vollständig nutzbar.`:"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
-          }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für KI-Bilder muss ${providerLabel} unter Einstellungen → KI-Verbindungen verbunden sein. Bis dahin werden HTML-Vorschauen angezeigt.`;}
+          const profile=selectedImageProfile();
+          if(!profile){el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Für diese Vorschau ist keine Bild-KI eingerichtet. Die HTML-Vorschauen bleiben nutzbar.";return;}
+          const providerLabel=profile.label||profile.model||'KI';
+          // No personal connection is required: these profiles run on the central keys, and the
+          // server reports clearly if it cannot reach them.
+          if(cloudReady()){
+            const imageResult=await generateConceptImages(profile);el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt; verfügbare ${providerLabel}-Bilder wurden eingesetzt.`:imageResult?.kind==="quota"?`${providerLabel} ist verbunden, aber das Tageskontingent reicht nicht. Die HTML-Vorschauen bleiben vollständig nutzbar.`:"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
+          }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Für KI-Bilder ist eine Anmeldung nötig. Bis dahin werden HTML-Vorschauen angezeigt.";}
         }else{el.generationStatus.className="generation-status";el.generationStatus.textContent=`${state.concepts.length} echte HTML/CSS-Vorschauen erstellt. Wähle die stärkste Richtung – ohne Bildkontingent und ohne zusätzliche Kosten.`;}
       }catch(err){
         state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent="Die Vorschau-KI hat nicht geantwortet. Angezeigt werden die eingebauten HTML-Vorschauen – du kannst es oben erneut versuchen oder damit weiterarbeiten.";
@@ -1558,12 +1557,21 @@
     }finally{conceptsGenerating=false;}
   }
 
-  async function generateConceptImages(imageProvider="gemini"){
+  // The preview selector lists the administrator's configured image profiles, so the request has
+  // to name the chosen profile. Without it the server just walked its own priority list and the
+  // selection had no effect at all.
+  function selectedImageProfile(){
+    const value=el.previewFormat?.value||'';
+    if(!value.startsWith('image-profile-'))return null;
+    const id=value.slice('image-profile-'.length);
+    return (window.PromptAiSystemAI?.candidatesFor?.('image')||[]).find(x=>String(x.id)===id)||null;
+  }
+  async function generateConceptImages(profile){
     let quotaError=false,otherError=false;
     for(let i=0;i<state.concepts.length;i++){
       const concept=state.concepts[i];setTaskProgress("preview",Math.round(38+(i/state.concepts.length)*54),`Bildentwurf ${i+1} von ${state.concepts.length} wird gestaltet…`);
       try{
-        const payload={action:"preview-image",imageProvider,project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
+        const payload={action:"preview-image",imageProvider:profile?.provider||'',imageProfileId:profile?.id||'',project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000});const data=await res.json();if(!res.ok){const err=new Error(data.error||"Bildvorschau fehlgeschlagen");err.status=res.status;throw err}concept.previewImage=data.imageDataUrl||"";
       }catch(err){const message=String(err?.message||"");if(/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(message)){quotaError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Gemini ist verbunden, das Bildkontingent ist momentan erschöpft. Layout-Vorschauen werden weiter angezeigt.";break;}if(err?.status===403){otherError=true;el.generationStatus.className="generation-status notice";el.generationStatus.textContent=message||"KI-Bildvorschauen sind für deinen Tarif nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";break;}otherError=true;el.generationStatus.className="generation-status error";el.generationStatus.textContent=`Bildentwurf ${i+1} war nicht verfügbar (${message||'unbekannter Fehler'}). Die übrigen Vorschauen werden weiter vorbereitet.`;}
     }
@@ -1601,11 +1609,11 @@
   }
   async function regenerateConceptImage(c){
     if(!c?.previewImage||c._imageBusy)return;
-    const imageProvider=(el.previewFormat.value||"").replace(/^image-(custom-)?/,'');
-    if(!cloudReady()||!imageProvider||!aiConnection(imageProvider)){el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für ein neues KI-Bild muss mindestens einer der Provider (Gemini, Cloudflare oder eigene Keys) unter Einstellungen → KI-Verbindungen verbunden sein.`;return;}
+    const profile=selectedImageProfile();
+    if(!cloudReady()||!profile){el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für ein neues KI-Bild muss mindestens einer der Provider (Gemini, Cloudflare oder eigene Keys) unter Einstellungen → KI-Verbindungen verbunden sein.`;return;}
     c._imageBusy=true;renderConcepts();if(lightboxConceptId===c.id)openPreviewLightbox(c);
     try{
-      const payload={action:"preview-image",imageProvider,project:project(),concept:conceptForExport(c),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
+      const payload={action:"preview-image",imageProvider:profile.provider||'',imageProfileId:profile.id||'',project:project(),concept:conceptForExport(c),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
       const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Bildvorschau fehlgeschlagen");
       c.previewImage=data.imageDataUrl||c.previewImage;
       el.generationStatus.className="generation-status";el.generationStatus.textContent=`Neues Bild für „${c.name}“ erstellt.`;
@@ -2128,6 +2136,10 @@ el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBt
     initCloudIntegration();
     if(sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)){sessionStorage.removeItem(CONTINUE_WORKFLOW_KEY);showWorkflow(1);}
     window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.installPrompt=event;if(el.installAppBtn)el.installAppBtn.hidden=false});window.addEventListener('appinstalled',()=>{state.installPrompt=null;if(el.installAppBtn)el.installAppBtn.hidden=true});
+    // The image profiles arrive after the first render, so the preview selector has to be rebuilt
+    // once they are known - otherwise it keeps showing only the HTML entry.
+    window.addEventListener('promptai:system-ai-ready',()=>applyPlanUi());
+    window.addEventListener('promptai:system-ai-updated',()=>setTimeout(()=>applyPlanUi(),300));
     window.addEventListener('promptai:access',event=>{const access=event.detail||window.PromptAiAccess;if(!access)return;if(access.plan)state.plan=access.plan;state.isAdmin=Boolean(access.isAdmin)||isOwnerAccount();if(access.ownApiKeys)state.ownApiKeys=true;applyPlanUi();updateAccountUi();});
     if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
     let autoSaveInterval;const startAutoSave=()=>{if(autoSaveInterval)return;autoSaveInterval=setInterval(()=>saveState({cloud:false}),15000)};const stopAutoSave=()=>{if(autoSaveInterval){clearInterval(autoSaveInterval);autoSaveInterval=null}};document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')startAutoSave();else stopAutoSave()});startAutoSave();

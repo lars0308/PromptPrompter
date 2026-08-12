@@ -163,14 +163,29 @@ test('one preview selector, HTML by default, and the plan caps how many AI optio
   assert.match(app,/free:\{label:"Free"[^}]*previewImageOptions:0/);
   assert.match(app,/pro:\{label:"Pro"[^}]*previewImageOptions:2/);
   assert.match(app,/ultimate:\{label:"Ultimate"[^}]*previewImageOptions:5/);
-  assert.match(app,/const options=\[\['html','HTML-Website'\],\.\.\.unique\.slice\(0,Math\.max\(0,Number\(rules\.previewImageOptions\)\|\|0\)\)\]/);
+  // The entries are the image profiles an administrator configured under "Bilder & Vorschauen".
+  // Hard-coded provider names listed AIs that were never set up (Gemini) and hid the ones that
+  // were, and the client additionally required a personal connection the central profiles do not
+  // need - so a configured image AI could never be reached.
+  assert.match(app,/const configured=\(window\.PromptAiSystemAI\?\.candidatesFor\?\.\('image'\)\|\|\[\]\)\.filter\(x=>x&&x\.id\)/);
+  assert.match(app,/configured\.slice\(0,cap\)\.map\(profile=>\[`image-profile-\$\{profile\.id\}`,profile\.label\|\|profile\.model\|\|'KI-Bild'\]\)/);
   assert.match(app,/el\.previewFormat\.value=options\.some\(\(\[value\]\)=>value===current\)\?current:'html'/,'HTML stays the default');
+  assert.match(app,/window\.addEventListener\('promptai:system-ai-ready',\(\)=>applyPlanUi\(\)\)/,'profiles arrive after the first render');
+  assert.match(app,/function selectedImageProfile\(\)/);
+  assert.match(app,/imageProfileId:profile\?\.id\|\|''/,'the request has to name the chosen profile');
   assert.doesNotMatch(app,/image-auto/,'no entry may pick a provider on its own');
+  assert.doesNotMatch(app,/aiConnection\(imageProvider\)/,'central profiles need no personal connection');
   // preview-mode-fix.js used to rewrite the same <select> after app.js built it, so the visible
   // options depended on which script rendered last and Cloudflare was mislabelled "automatisch".
   assert.doesNotMatch(fix,/previewFormat'\)[\s\S]{0,200}?remove\(\)/,'app.js owns the option list alone');
   assert.doesNotMatch(fix,/KI-Bild · automatisch/);
   assert.match(fix,/if\(next!==status\.textContent\)status\.textContent=next;/,'assigning textContent unconditionally inside its own observer loops forever');
+});
+test('the preview image request uses the profile the visitor picked',async()=>{
+  const src=await text('server/preview-image.js');
+  assert.match(src,/const wantedId=String\(body\.imageProfileId\|\|''\)\.trim\(\);/);
+  assert.match(src,/if\(wantedId&&candidates\.some\(x=>String\(x\.id\)===wantedId\)\)candidates=\[\.\.\.candidates\.filter\(x=>String\(x\.id\)===wantedId\),\.\.\.candidates\.filter\(x=>String\(x\.id\)!==wantedId\)\]/,'the pick goes first, the rest stay as fallbacks');
+  assert.match(src,/listProfiles\('image'/,'the candidates are the configured profiles, not fixed provider names');
 });
 test('the gateway request caps its output budget so small models are not rejected',async()=>{
   const core=await text('server/generate-core.js');
