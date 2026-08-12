@@ -1,6 +1,7 @@
 const { resolveProviderKey } = require('../server/provider-key');
 const { getEntitlements } = require('../server/entitlements');
 const { rateLimit } = require('../server/rate-limit');
+const { primePromptTemplates, promptText } = require('../server/prompt-templates');
 const VARIANTS = ["split","poster","ledger","stacked","editorial","minimal"];
 const PROVIDER_TIMEOUT_MS = 35000;
 async function fetchWithTimeout(url,options={},timeoutMs=PROVIDER_TIMEOUT_MS){
@@ -115,7 +116,7 @@ function reviewText(projectReview={}){
 
 function makeConceptPrompt({count,project,references,documents,controls,template,modules,settings,clarifications,projectReview,tier='free'}){
   const variants=VARIANTS.slice(0,count);
-  return `You are a senior web art director designing a real project, not a generic AI landing page. Create exactly ${count} visual directions. They must be structurally different, not color variations of one layout.
+  return `${promptText('concepts-role',{count})}
 
 LAYOUT INSTRUCTION PRIORITY: check the project's special wish and description for an explicit, literal layout or header instruction, for example "large hero with one image and no normal nav bar, only a logo and a hamburger menu on the right", "image on the left, big wide text on the right, a completely normal header on top", or "nothing else, just one image with a small headline inside it". If such an instruction is present, EVERY direction must honor it literally — pick the closest matching layoutVariant and set navStyle/mirror to match instead of forcing artificial variety. Available layoutVariant values: ${VARIANTS.join(", ")}. "minimal" means one full-bleed image and a small headline only — no navigation bar, no sections, no footer. Set navStyle to "logo-hamburger" when the instruction wants a header with only a logo plus a hamburger/burger menu instead of a normal nav bar with menu items; otherwise use "full". Set mirror to true when the instruction explicitly wants the image on the left and the text on the right (or another mirrored order) inside a two-column layout like "split". If no explicit layout instruction is given, instead maximize structural variety: use each of these layoutVariant values once, in this order, across the ${count} directions, and use navStyle "full" with mirror false: ${variants.join(", ")}.
 
@@ -153,14 +154,14 @@ ${documentText(documents)}
 CONTROLS
 Originality ${controls.originality}/100; avoid AI/template look ${controls.antiSlop}/100; motion ${controls.motion}/100; information density ${controls.density}/100.
 
-For every direction return a memorable project-specific name, a short mood, exactly four valid hex colors, typography concept, layout principle, hero principle, one of the required composition variants, and concrete preview copy. The headline and every other piece of preview copy must read like it was written for this exact business, not a template: use its real name, offering and industry vocabulary directly (a döner shop's headline should reference döner/food, a landscaping business should reference gardens/outdoor work, and so on) instead of a generic tagline that could belong to any project. Every direction must differ in information hierarchy, composition, typography and image treatment — a palette swap is not a distinct direction. Keep preview copy short enough to fit a real mobile layout. No fake statistics, reviews, logos or awards. Avoid default AI/SaaS conventions: badge + centered giant headline + two buttons, gradient orbs, glass cards, repetitive three-card grids, excessive rounded rectangles. Use reference inputs only for user-approved aspects and never copy a reference one-to-one. Use the real industry and project purpose to drive visual decisions; do not fall back to generic agency or portfolio styling. The concept must leave room for all enabled compliance/quality checks, but do not invent legal copy, company facts or claims of compliance.
+For every direction return a memorable project-specific name, a short mood, exactly four valid hex colors, typography concept, layout principle, hero principle, one of the required composition variants, and concrete preview copy. ${promptText('concepts-quality')}
 
 Schreibe alle sichtbaren Textwerte auf Deutsch (Fragen, Begründungen, Antwortvorschläge, Hinweise, Blocker, Annahmen, Namen und Vorschautexte), auch wenn Projektangaben oder Referenzen in einer anderen Sprache verfasst sind. Feldnamen, Aufzählungswerte und Hex-Farben bleiben unverändert.
 Gib ausschließlich das verlangte JSON zurück.`;
 }
 
 function makeRefinePrompt({project,concept,refinement,references,documents,controls,template,modules,settings,clarifications,projectReview}){
-  return `Refine ONE already selected website direction. Preserve its identity unless the user's refinement explicitly asks for a structural change. Return exactly one concept object.
+  return `${promptText('refine-role')}
 
 PROJECT
 ${project.description||""}
@@ -203,7 +204,7 @@ Gib ausschließlich das verlangte JSON zurück.`;
 
 function makeReviewPrompt({project,references,documents,settings,template,modules,clarifications}){
   const max=Math.min(6,Math.max(2,Number(settings?.maxQuestions)||4));
-  return `Review this website/web-app project BEFORE visual concepts are generated. Decide whether materially important information is missing, contradictory, infeasible, risky, or likely to cause a bad implementation. Ask at most ${max} concise questions. Do not ask preference questions that can be reasonably inferred without changing the outcome.
+  return `${promptText('review-role',{max})}
 
 PROJECT
 Name: ${project.name||"not set"}
@@ -232,15 +233,7 @@ PREVIOUS USER ANSWERS
 ${clarificationText(clarifications)}
 
 Rules:
-- Ask only questions whose answer materially changes architecture, content, design, legal/privacy handling, or feasibility.
-- If requirements conflict, explain the conflict in the reason and ask for a choice when settings allow conflict questions.
-- If something is not realistically achievable, add a blocker and, when possible, a concrete alternative. Pair a serious blocker with a required question whose "question" and "reason" both name the specific blocked item in plain language (never a placeholder like "the critical point" or "an issue was found") so the user immediately understands what is blocked and why. A blocker's "message" must never be empty or generic.
-- For privacy/legal/imprint topics: identify missing factual inputs or implementation concerns, but never claim legal compliance and never invent legal/company data or legal text.
-- Consider the configured legal/market region, but treat laws as potentially changing; flag items that need current professional/legal verification.
-- Consider accessibility, security, performance, SEO, privacy and imprint only when enabled.
-- For every question, return 2–4 short, mutually distinct clickable suggestions. Use concrete fitting tools where useful (for example Sanity, WordPress, Webflow or no CMS), not vague filler choices.
-- suggestedAnswer may be empty when no safe default exists; suggestions must still contain useful decision options.
-- ready is true only when there is no required question or blocker preventing useful concept generation.
+${promptText('review-rules')}
 
 Schreibe alle sichtbaren Textwerte auf Deutsch (Fragen, Begründungen, Antwortvorschläge, Hinweise, Blocker, Annahmen, Namen und Vorschautexte), auch wenn Projektangaben oder Referenzen in einer anderen Sprache verfasst sind. Feldnamen, Aufzählungswerte und Hex-Farben bleiben unverändert.
 Gib ausschließlich das verlangte JSON zurück.`;
@@ -255,20 +248,7 @@ SECURITY AND INPUT TRUST
 - Use placeholders only for values that genuinely require a customer account or factual input, and list every placeholder in requiredInputs.
 
 DELIVERY RULES
-- Return complete file contents, never patches, excerpts, ellipses or TODO-only files.
-- The package must start locally using the setup instructions you return.
-- Preserve the selected direction in composition, typography, spacing, palette and image treatment. Do not replace it with a generic template.
-- Implement responsive navigation, meaningful focus states, error/empty/loading states and the real primary user flow.
-- If the brief requests a shop, booking, reviews, CMS, maps, email, authentication, payments or another external service, implement the safe integration boundary and environment-variable wiring where feasible. Never fake live data or claim the service works without credentials.
-- requiredInputs must state exactly what the owner still needs to supply, where it comes from and why it is needed.
-- For factual or legal content that is missing, use an explicit, professionally worded placeholder and list it in requiredInputs.
-- Keep the package within 20 text files. Prefer a coherent minimal implementation over unnecessary dependencies.
-- The visual quality standard is identical for every subscription tier. Paid plans add workflow and delivery features, never permission to use a generic or visibly weaker design.
-- Derive the page model, navigation and components from the actual project. Do not force every project into the same landing-page sequence.
-- Build mobile as a deliberate composition with tested type wrapping, spacing and navigation. No horizontal overflow, clipped text or desktop-only interactions.
-- Use at least three project-specific design decisions that could not be transferred unchanged to an unrelated industry.
-- When several pages are requested, create the real page files/routes and shared navigation instead of compressing everything into one homepage.
-- Before returning, verify that every generated file is internally consistent, referenced assets exist, primary links work and the package follows its own setup instructions.
+${promptText('website-rules')}
 
 OUTPUT TARGET
 ${outputTarget||'Static HTML / CSS / JavaScript'}
@@ -490,6 +470,7 @@ module.exports = async function handler(req,res){
   try{
     const body=req.body||{};
     if(JSON.stringify(body).length>4500000)return res.status(413).json({error:'Die Anfrage ist zu groß. Bitte weniger oder kleinere Referenzen verwenden.'});
+    await primePromptTemplates();
     const entitlement=await getEntitlements(req);
     const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},clarifications=[],projectReview={},revisionInput={},siteContext={}}=body,modules=entitlement.plan==='free'?[]:(Array.isArray(body.modules)?body.modules:[]),settings=entitlement.plan==='free'?{legalRegion:'Deutschland / EU',checks:{privacy:true,imprint:true,accessibility:true,security:true,performance:true},noInventLegal:true,finalChecklist:true}:body.settings||{};usageEvent={action,provider:engine,model:model||'',project};
     if(entitlement.plan==="free"&&!entitlement.ownApiKeys&&action!=="revision-brief") return res.status(403).json({error:"Externe KI-Generierung ist ab Pro oder mit dem eigenen API-Key-Add-on verfügbar."});

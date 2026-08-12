@@ -312,7 +312,8 @@ test('the full-screen workflow loader cannot stay stuck forever regardless of ca
   assert.match(src,/if\(elapsed>LOADER_TIMEOUT_MS\)\{fillRaf=0;forceRecover\(\);return\}/);
 });
 test('AI preview images are framed as a flat UI screenshot, not a photo of a device on a desk, and must render the real brand/headline text',async()=>{
-  const src=await text('server/preview-image.js');
+  // The framing rule is editable in the admin console now, so it is asserted on its default.
+  const src=await text('server/preview-image.js')+await text('server/prompt-templates.js');
   // The long "do not depict a monitor, laptop, desk..." enumeration was counterproductive:
   // diffusion models have no reliable negation and render what a prompt names, and on Cloudflare
   // the closing reminder was cut off by the 2048-character limit anyway. The framing is positive
@@ -325,7 +326,8 @@ test('AI preview images are framed as a flat UI screenshot, not a photo of a dev
   assert.match(src,/TEXT: render the brand name "\$\{brand\}" in the header and "\$\{headline\}" as the hero headline/);
 });
 test('AI-generated concept copy is required to use real industry vocabulary from the project, not a generic tagline',async()=>{
-  const src=await text('server/generate-core.js');
+  // Lives in the editable quality rules now; the built-in default still has to carry it.
+  const src=await text('server/prompt-templates.js');
   assert.match(src,/a döner shop's headline should reference döner\/food, a landscaping business should reference gardens\/outdoor work/);
 });
 test('reference links and images are capped per plan tier (Free 1/0, Pro 3/3, Ultimate 5/5), independent of the paid own-API-keys add-on',async()=>{
@@ -576,16 +578,18 @@ test('the preview image prompt never names a device and fits the provider limit'
   // Cloudflare's flux endpoint truncates at 2048 characters, and the closing "flat artboard"
   // rule sat at the very end - so it was silently cut off. Naming devices to forbid them also
   // backfires: diffusion models have no reliable negation and render what the prompt mentions.
-  const src=await text('server/preview-image.js');
+  const src=await text('server/preview-image.js'),defaults=await text('server/prompt-templates.js');
   assert.match(src,/const NEGATIVE_PROMPT='monitor, computer screen, laptop/);
   assert.match(src,/negative_prompt:NEGATIVE_PROMPT/,'Cloudflare accepts a real negative prompt');
   assert.match(src,/const PROMPT_LIMIT=1900;/);
-  assert.match(src,/FLAT WEB DESIGN ARTBOARD, 16:9, FULL BLEED/,'the framing rule leads');
+  assert.match(defaults,/FLAT WEB DESIGN ARTBOARD, 16:9, FULL BLEED/,'the framing rule leads');
   assert.match(src,/Every pixel of the frame is the webpage\./,'and closes');
   assert.match(src,/while\(prompt\.length>PROMPT_LIMIT&&blocks\.length>4\)/,'overflow drops middle blocks, never the closing rule');
   // The positive prompt must not enumerate devices any more.
   const body=src.slice(src.indexOf('function imagePrompt('),src.indexOf('\nfunction safe('));
   assert.doesNotMatch(body,/monitor|laptop|tablet|desk|browser|mockup/i,'the positive prompt stays device-free');
+  const framing=(await import('../server/prompt-templates.js')).default.promptDefaults().find(x=>x.key==='preview-image-rules');
+  assert.doesNotMatch(framing.body,/monitor|laptop|tablet|desk|browser|mockup/i,'…and so does its editable default');
 });
 test('starting a project cannot flash the welcome page before the handoff overlay',async()=>{
   // The start reloads the page, and the welcome screen the visitor just left painted for a moment

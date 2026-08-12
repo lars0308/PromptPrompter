@@ -54,7 +54,7 @@
   if(!document.getElementById('promptAccessBootStyle')){const s=document.createElement('style');s.id='promptAccessBootStyle';s.textContent='html.prompt-access-pending #upgradeBtn,html.prompt-access-pending #upgradeMenuBtn,html.prompt-access-pending #modeSwitch,html.prompt-access-pending .workflow-upgrade,html.prompt-access-pending .quick-upgrade-note,html.prompt-access-pending .quick-tier-block,html.prompt-access-pending #settingsUpgradeNote,html.prompt-access-pending #apiAddonCard,html.prompt-access-pending #currentPlanBadge,html.prompt-access-pending .plan-current{visibility:hidden!important;opacity:0!important;pointer-events:none!important}html.prompt-access-pending #workflowApp:not([hidden]){opacity:0!important}html:not(.prompt-home-ready) .welcome-workspace{visibility:hidden!important;opacity:0!important}';document.head.appendChild(s)}
   const loaded=new Set();
   function load(src){if(loaded.has(src))return Promise.resolve();loaded.add(src);return new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;resolve()};const s=document.createElement('script');s.src=src;s.async=false;s.onload=finish;s.onerror=finish;document.head.appendChild(s);setTimeout(finish,8000)})}
-  const CORE_SCRIPT='./admin-console-core.js?v=20260814-3';
+  const CORE_SCRIPT='./admin-console-core.js?v=20260815-1';
   async function loadCore(){const original=document.addEventListener;document.addEventListener=function(type,listener,options){if(type==='DOMContentLoaded'&&document.readyState!=='loading'){queueMicrotask(()=>listener.call(document,new Event('DOMContentLoaded')));return}return original.call(document,type,listener,options)};await load(CORE_SCRIPT);document.addEventListener=original}
   // One list instead of a chain of awaits: the boot screen reports real progress by counting how
   // many of these are on board. 'core' is admin-console-core, which needs the loadCore() wrapper.
@@ -70,7 +70,7 @@
     document.head.appendChild(frag);
   }
   async function critical(){preloadCritical();let ready=0;for(const src of CRITICAL_SCRIPTS){await (src==='core'?loadCore():load(src));bootProgress(++ready/CRITICAL_SCRIPTS.length)}document.querySelector('#freePromptCategory option[value="website"]')?.remove();const intro=document.querySelector('#freePromptDialog .free-prompt-intro');if(intro)intro.textContent='Wähle jetzt Typ und Ziel-Tool. Weitere Angaben sind optional.';document.documentElement.classList.add('prompt-home-ready')}
-  async function adminExtras(){await load('./admin-ai-ui.js?v=20260814-1');await load('./system-ai-studio.js?v=20260814-1')}
+  async function adminExtras(){await load('./admin-ai-ui.js?v=20260814-1');await load('./admin-prompts-ui.js?v=20260815-1');await load('./system-ai-studio.js?v=20260814-1')}
   async function previewExtras(){await load('./sandbox-preview.js?v=20260813-2');await load('./github-sandbox.js?v=20260813-2')}
   async function accountExtras(){await load('./learning-controls.js?v=20260813-2')}
   function lazy(){document.addEventListener('click',e=>{if(e.target.closest?.('#adminBtn'))adminExtras();if(e.target.closest?.('#workspacePreviewBtn'))previewExtras();if(e.target.closest?.('#accountBtn,#welcomeAccountBtn'))accountExtras()},{capture:true});const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,900));idle(async()=>{await load('./project-history.js?v=20260814-1');await load('./generator-selection.js?v=20260813-2')},{timeout:2500})}

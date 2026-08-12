@@ -1,6 +1,7 @@
 const {requireAdmin,serviceFetch}=require('../server/admin');
 const {SUPABASE_URL,PUBLISHABLE_KEY}=require('../server/supabase-user');
 const {stripeRequest,stripeGet}=require('../server/stripe-rest');
+const {isPromptKey}=require('../server/prompt-templates');
 
 const uuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
 const ADMIN_EMAIL=String(process.env.PROMPT_AI_ADMIN_EMAIL||'service.battermann@gmx.de').trim().toLowerCase();
@@ -119,6 +120,48 @@ module.exports=async function(req,res){
       const row={id:'main',enabled:Boolean(body.enabled),reason:String(body.reason||'').trim().slice(0,500),eta:String(body.eta||'').trim().slice(0,200),updated_by:admin.id,updated_at:new Date().toISOString()};
       await serviceFetch('/rest/v1/sitebrief_maintenance?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:row});
       await audit(admin.id,action,null,{enabled:row.enabled});
+      return res.status(200).json({ok:true});
+    }
+    // Master prompts: every save creates a new version instead of overwriting, so an older
+    // wording is always one click away and a rework can sit next to the running one.
+    if(action==='prompt-load'){
+      if(!uuid(body.id))return res.status(400).json({error:'Unbekannte Prompt-Version.'});
+      const {data}=await serviceFetch(`/rest/v1/sitebrief_prompt_templates?id=eq.${encodeURIComponent(body.id)}&select=id,prompt_key,label,body,version,active&limit=1`);
+      const row=Array.isArray(data)?data[0]:null;
+      if(!row)return res.status(404).json({error:'Diese Prompt-Version gibt es nicht mehr.'});
+      return res.status(200).json({template:row});
+    }
+    if(action==='prompt-save'){
+      const key=String(body.key||'');
+      if(!isPromptKey(key))return res.status(400).json({error:'Unbekannter Prompt-Bereich.'});
+      const text=String(body.body||'').trim();
+      if(text.length<40)return res.status(400).json({error:'Der Prompt-Text ist zu kurz.'});
+      if(text.length>20000)return res.status(400).json({error:'Der Prompt-Text ist zu lang (max. 20.000 Zeichen).'});
+      const {data:existing}=await serviceFetch(`/rest/v1/sitebrief_prompt_templates?prompt_key=eq.${encodeURIComponent(key)}&select=version&order=version.desc&limit=1`);
+      const version=(Number(Array.isArray(existing)?existing[0]?.version:0)||0)+1;
+      const label=String(body.label||'').trim().slice(0,120)||`Version ${version}`;
+      const activate=body.activate!==false;
+      if(activate)await serviceFetch(`/rest/v1/sitebrief_prompt_templates?prompt_key=eq.${encodeURIComponent(key)}&active=is.true`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:{active:false,updated_at:new Date().toISOString()}});
+      const {data}=await serviceFetch('/rest/v1/sitebrief_prompt_templates',{method:'POST',headers:{Prefer:'return=representation'},body:{prompt_key:key,label,body:text,version,active:activate,created_by:admin.id}});
+      await audit(admin.id,action,null,{key,version,active:activate});
+      return res.status(200).json({template:Array.isArray(data)?data[0]:null});
+    }
+    if(action==='prompt-activate'){
+      const key=String(body.key||'');
+      if(!isPromptKey(key))return res.status(400).json({error:'Unbekannter Prompt-Bereich.'});
+      await serviceFetch(`/rest/v1/sitebrief_prompt_templates?prompt_key=eq.${encodeURIComponent(key)}&active=is.true`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:{active:false,updated_at:new Date().toISOString()}});
+      // No id means: use the built-in default again.
+      if(body.id){
+        if(!uuid(body.id))return res.status(400).json({error:'Unbekannte Prompt-Version.'});
+        await serviceFetch(`/rest/v1/sitebrief_prompt_templates?id=eq.${encodeURIComponent(body.id)}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:{active:true,updated_at:new Date().toISOString()}});
+      }
+      await audit(admin.id,action,null,{key,id:body.id||null});
+      return res.status(200).json({ok:true});
+    }
+    if(action==='prompt-delete'){
+      if(!uuid(body.id))return res.status(400).json({error:'Unbekannte Prompt-Version.'});
+      await serviceFetch(`/rest/v1/sitebrief_prompt_templates?id=eq.${encodeURIComponent(body.id)}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+      await audit(admin.id,action,null,{id:body.id});
       return res.status(200).json({ok:true});
     }
     return res.status(400).json({error:'Unbekannte Admin-Aktion.'});

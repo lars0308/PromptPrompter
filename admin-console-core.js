@@ -27,7 +27,10 @@
   function quota(){const rows=state.data?.quotaLimits||[],byPlan=Object.fromEntries((Array.isArray(rows)?rows:[]).map(r=>[r.plan,r]));for(const plan of ['free','pro','ultimate']){const row=byPlan[plan]||QUOTA_DEFAULTS[plan];ui[`quota${plan}FreePrompts`].value=row.free_prompts;ui[`quota${plan}WebsiteGenerations`].value=row.website_generations;ui[`quota${plan}AiPreviews`].value=row.ai_previews}}
   function maintenance(){const item=state.data?.maintenance||{};ui.maintenanceEnabled.checked=Boolean(item.enabled);ui.maintenanceReason.value=item.reason||'';ui.maintenanceEta.value=item.eta||''}
   function render(){stats();usage();runs();userRows();support();announcements();offer();quota();maintenance()}
-  async function load(){message('Admin-Daten werden geladen…');try{state.data=await api('/api/admin-overview');render();message('Aktueller Stand geladen.','good')}catch(error){message(error.message,'error')}}
+  async function load(){message('Admin-Daten werden geladen…');try{state.data=await api('/api/admin-overview');render();
+    // One request, several consoles: the prompt editor renders from the same payload.
+    window.PromptAiAdminData=state.data;window.dispatchEvent(new CustomEvent('promptai:admin-data',{detail:state.data}));
+    message('Aktueller Stand geladen.','good')}catch(error){message(error.message,'error')}}
   async function action(payload,success){message('Änderung wird gespeichert…');try{await api('/api/admin-action',{method:'POST',body:JSON.stringify(payload)});message(success,'good');await load()}catch(error){message(error.message,'error')}}
   function init(){
     Object.assign(ui,{button:$('#adminBtn'),dialog:$('#adminDialog'),message:$('#adminMessage'),stats:$('#adminStats'),usage:$('#adminUsage'),runs:$('#adminRuns'),users:$('#adminUsers'),search:$('#adminUserSearch'),support:$('#adminSupport'),announcements:$('#adminAnnouncements'),offerEnabled:$('#offerEnabled'),offerEyebrow:$('#adminOfferEyebrow'),offerTitle:$('#adminOfferTitle'),offerDescription:$('#adminOfferDescription'),offerCta:$('#adminOfferCta'),offerTrial:$('#adminOfferTrialDays'),offerDiscount:$('#adminOfferDiscount'),offerCoupon:$('#adminOfferCoupon'),offerEnds:$('#adminOfferEndsAt')});
