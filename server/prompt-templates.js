@@ -67,9 +67,137 @@ const DEFAULTS=[
   "hint": "Bildaufbau der KI-Vorschau. Die Regel gegen Bildschirme und Geräte bleibt fest im Code.",
   "placeholders": [],
   "body": "FLAT WEB DESIGN ARTBOARD, 16:9, FULL BLEED. The webpage graphic itself fills 100% of the frame and runs off all four edges, like a design file exported at full size. Flat vector-style rendering, straight-on, no depth."
+ },
+ {
+  "key": "freeprompt-universal",
+  "label": "Freier Prompt · Grundregeln (alle Bereiche)",
+  "hint": "Gilt für jeden freien Prompt, zusätzlich zu den Regeln des jeweiligen Bereichs.",
+  "placeholders": [],
+  "body": "PROFESSIONALISIERUNG: Formuliere sämtliche Nutzereingaben im fertigen Prompt professionell neu. Korrigiere Rechtschreibung, Grammatik und Satzbau, ordne Stichpunkte und Umgangssprache sinnvoll und entferne Dopplungen. Bedeutung, Zahlen, Namen, Wünsche, Einschränkungen und Prioritäten müssen unverändert erhalten bleiben.\nKEINE ERFINDUNGEN: Erfinde niemals Fakten, Namen, Zahlen, Quellen, Bewertungen, Rechte, Preise, Funktionen, technische Voraussetzungen, rechtliche Angaben oder Nutzerwünsche. Wenn etwas Entscheidendes fehlt, stelle höchstens eine kurze gezielte Rückfrage; sonst nutze nur klar gekennzeichnete reversible Annahmen.\nANTI-KI-MUSTER: Vermeide generische KI-Floskeln, unnötige Meta-Sprache, Buzzword-Ketten, künstliche Übertreibungen, mechanische Dreierlisten und austauschbare Template-Formulierungen. Der Prompt soll wie von einem erfahrenen Fachexperten für genau diesen Auftrag formuliert wirken.\nSICHERHEIT & DATENSCHUTZ: Berücksichtige Sicherheit, Privatsphäre, Rechte Dritter, Plattformregeln und sensible Daten dort, wo sie für die Aufgabe relevant sind. Nutze datensparsame, sichere Defaults.\nRECHTLICHES: Rechtliche Pflichtinhalte, Einwilligungen, Lizenzen, Claims oder Beratung niemals erfinden. Wo rechtliche Anforderungen relevant sein können, soll das Zielsystem sie prüfen bzw. fehlende Angaben als offene Punkte markieren; der Prompt ersetzt keine Rechtsberatung.\nTOOL-ANPASSUNG: Passe Struktur, Fachsprache, Detailtiefe, Parameter und Ausgabeform ausdrücklich an die gewählte Ziel-KI bzw. das Tool an. Ein Bild-, Musik-, Coding- oder Recherche-Prompt darf nicht wie derselbe Universaltext aussehen.\nPRIORITÄTEN: Explizite Nutzervorgaben stehen über allgemeinen Stilregeln. Widersprüchliche Angaben müssen sichtbar aufgelöst werden, statt stillschweigend eine Seite zu wählen.\nQUALITÄTSCHECK: Baue eine kurze interne Endprüfung ein: Ziel erfüllt, alle verbindlichen Angaben enthalten, Verbote beachtet, keine Fakten erfunden, Format korrekt, Ergebnis direkt nutzbar.\nAUSGABE: Der Ziel-Agent soll nur das angeforderte Arbeitsergebnis liefern, ohne zu erklären, dass er einem Prompt folgt oder wie der Prompt aufgebaut wurde."
+ },
+ {
+  "key": "freeprompt-music",
+  "label": "Freier Prompt · Musik",
+  "hint": "Fachregeln für Musik. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Genre, Stimmung, Tempo/BPM nur wenn sinnvoll, Instrumentierung, Songstruktur, Gesang/Stimme, Sprache und Produktionsästhetik.\nFormuliere für Musik-KIs kompakt und musikalisch verwertbar; trenne Stil, Struktur und Negativvorgaben sauber.\nKeine täuschende Imitation lebender Künstler verlangen. Gewünschte Referenzwirkung über musikalische Merkmale statt über Kopieren beschreiben."
+ },
+ {
+  "key": "freeprompt-video",
+  "label": "Freier Prompt · Video",
+  "hint": "Fachregeln für Video. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Motiv, Handlung, Shot-Abfolge, Kamera, Bewegung, Licht, Look, Dauer, Seitenverhältnis, Kontinuität und Audio/Atmosphäre.\nBei vorhandenem Material klar zwischen unverändert zu erhaltenden Elementen und gewünschten Änderungen unterscheiden.\nVermeide ungewollte Morphing-, Anatomie-, Text- und Kontinuitätsfehler durch konkrete Negativvorgaben."
+ },
+ {
+  "key": "freeprompt-text",
+  "label": "Freier Prompt · Text",
+  "hint": "Fachregeln für Text. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Zweck, Zielgruppe, Ton, Perspektive, Umfang, Aufbau, Faktenregeln, Beispiele und Ausgabeformat.\nDer Text soll natürlich und fachlich klingen, nicht nach generischer KI: keine leeren Einleitungen, übertriebenen Superlative, künstlichen Dreierlisten oder Standardfloskeln.\nStilwünsche des Nutzers haben Vorrang vor allgemeinen Schreibkonventionen, solange Fakten, Sicherheit und Recht gewahrt bleiben."
+ },
+ {
+  "key": "freeprompt-website",
+  "label": "Freier Prompt · Website",
+  "hint": "Fachregeln für Website. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Ziel, Nutzer, Seiten/Funktionen, Inhalte, Informationshierarchie, visuelle Richtung, Responsive-Verhalten, Barrierefreiheit, Performance und technische Grenzen.\nVermeide typische generische KI-/SaaS-Muster wie grundlose Gradient-Heroes, Glassmorphism, Pill-Overload, identische Kartenraster, riesige Leerflächen und austauschbare Marketingtexte, sofern nicht ausdrücklich gewünscht.\nDatenschutz, Impressum/Anbieterangaben, Cookie-/Tracking-Themen, externe Dienste, Sicherheit, SEO-Grundlagen und Barrierefreiheit passend zum Rechtsraum mitdenken. Fehlende rechtliche Daten niemals erfinden.\nBei bestehender Website Erhaltenswertes und konkrete Änderungen getrennt festhalten; keine Inhalte oder Funktionen stillschweigend löschen."
+ },
+ {
+  "key": "freeprompt-presentation",
+  "label": "Freier Prompt · Präsentation",
+  "hint": "Fachregeln für Präsentation. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Publikum, Ziel, Kernaussage, Folienanzahl, Dramaturgie, Folienstruktur, Visualisierungsregeln, Quellen/Belege, Sprecherhinweise und Dateilogik.\nKeine Textwände oder austauschbare Business-Folien. Jede Folie braucht einen klaren Zweck und eine erkennbare Informationshierarchie.\nZahlen, Studien, Zitate und Quellen nie erfinden; fehlende Belege als offen markieren."
+ },
+ {
+  "key": "freeprompt-image",
+  "label": "Freier Prompt · Bild",
+  "hint": "Fachregeln für Bild. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Motiv, Umgebung, Komposition, Perspektive/Kamera, Licht, Materialität, Farbwelt, Stilgrad, Seitenverhältnis, Detailgrad und Negativvorgaben.\nBei Bildbearbeitung exakt trennen: Was bleibt 1:1 erhalten? Was darf verändert, entfernt oder ergänzt werden?\nKeine unnötige Beauty-Retusche, Identitätsänderung, Logos, Texte oder Objekte hinzufügen, wenn der Nutzer sie nicht verlangt."
+ },
+ {
+  "key": "freeprompt-code",
+  "label": "Freier Prompt · Code",
+  "hint": "Fachregeln für Code. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Problem, Benutzerfluss, Plattform, Stack/Constraints, Datenmodell, Schnittstellen, Zustände, Fehlerfälle, Tests und eindeutige Fertig-/Abnahmekriterien.\nSecurity by default: Secrets nie in Clientcode, Eingaben validieren, Auth/Autorisierung sauber trennen, Least Privilege, sichere Fehlerausgaben und sinnvolle Rate-Limits berücksichtigen.\nBestehenden Code respektieren: zuerst Architektur und Abhängigkeiten verstehen, dann minimal-invasive Änderungen; keine funktionierenden Bereiche ohne Grund neu schreiben.\nRelevante Accessibility-, Datenschutz-, Performance- und Rechtsanforderungen in Web-/App-Projekten berücksichtigen."
+ },
+ {
+  "key": "freeprompt-marketing",
+  "label": "Freier Prompt · Marketing",
+  "hint": "Fachregeln für Marketing. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Angebot, Zielgruppe, Kanal, Zielhandlung/CTA, Nutzenargumentation, Belegbarkeit, Ton, Varianten und messbares Ausgabeziel.\nKeine erfundenen Bewertungen, Referenzen, Rabatte, Knappheit, Leistungsversprechen oder unbelegten Superlative.\nWerbe-, Datenschutz- und Plattformregeln passend zum Kanal berücksichtigen."
+ },
+ {
+  "key": "freeprompt-social",
+  "label": "Freier Prompt · Social Media",
+  "hint": "Fachregeln für Social Media. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Plattform, Zielgruppe, Ziel, Format, Länge, Hook, Ton, CTA sowie Hashtag-/Emoji-Regeln.\nKeine erfundenen Trends, Zahlen, Kundenstimmen oder Fakten. Plattformtypische Sprache nutzen, ohne Clickbait zu erzwingen.\nBei Serien/Varianten Wiederholungen vermeiden und jeden Beitrag inhaltlich eigenständig machen."
+ },
+ {
+  "key": "freeprompt-research",
+  "label": "Freier Prompt · Recherche",
+  "hint": "Fachregeln für Recherche. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Forschungsfrage, Umfang, Zeitraum, Quellenanforderungen, Gegenpositionen, Unsicherheiten, Zitationsformat und gewünschte Entscheidungshilfe.\nPrimärquellen und aktuelle Quellen bevorzugen, wenn Aktualität relevant ist. Fakt, Quelle, Schlussfolgerung und Annahme klar trennen.\nKeine Quellen, Studien, Daten oder Zitate erfinden. Widersprüche zwischen guten Quellen sichtbar machen."
+ },
+ {
+  "key": "freeprompt-learning",
+  "label": "Freier Prompt · Lernen",
+  "hint": "Fachregeln für Lernen. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Wissensstand, Lernziel, Tiefe, Beispiele, Übungsform, Verständnisprüfung und Erklärsprache.\nSchrittweise erklären, ohne unnötig zu vereinfachen oder Fachbegriffe ungeklärt einzusetzen.\nFehlerquellen und typische Missverständnisse dort aufnehmen, wo sie dem Lernziel helfen."
+ },
+ {
+  "key": "freeprompt-audio",
+  "label": "Freier Prompt · Audio",
+  "hint": "Fachregeln für Audio. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Sprecherrolle, Sprache, Stimmung, Tempo, Aussprache, Pausen, Aufnahmecharakter, Länge und technische Ausgabeanforderungen.\nBei Voice- oder TTS-Aufgaben Namen, Zahlen, Abkürzungen und schwierige Aussprache ausdrücklich absichern.\nKeine nicht autorisierte täuschende Imitation realer Personen verlangen."
+ },
+ {
+  "key": "freeprompt-automation",
+  "label": "Freier Prompt · Automatisierung",
+  "hint": "Fachregeln für Automatisierung. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Trigger, Eingaben, Systeme, einzelne Schritte, Bedingungen, Fehlerpfade, Freigaben und erwartetes Endergebnis.\nDatenschutz, Zugriffsrechte, Secret-Handling, Least Privilege, Idempotenz, Retry-Verhalten, Logging und manuelle Fallbacks berücksichtigen.\nGefährliche oder irreversible Aktionen mit Bestätigung, Dry-Run oder sicherer Rückfallebene absichern."
+ },
+ {
+  "key": "freeprompt-business",
+  "label": "Freier Prompt · Business",
+  "hint": "Fachregeln für Business. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Ausgangslage, Ziel, Rahmenbedingungen, bekannte Zahlen, ausdrücklich erlaubte Annahmen, Optionen, Risiken und gewünschte Entscheidungsausgabe.\nFakten und Annahmen klar trennen; keine Markt-, Steuer-, Rechts- oder Finanzzahlen erfinden.\nBei finanziellen, rechtlichen oder strategischen Entscheidungen Unsicherheiten und relevante Alternativen sichtbar machen."
+ },
+ {
+  "key": "freeprompt-design3d",
+  "label": "Freier Prompt · design3d",
+  "hint": "Fachregeln für design3d. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Objekt/Szene, Proportionen, Maßstab, Material, Licht, Kamera, Stilgrad, technische Nutzung, Geometrie-/Rendergrenzen und Exportziel.\nBei Fertigung/3D-Druck Maße, Toleranzen, Material- und Produktionsgrenzen explizit behandeln; fehlende technische Werte nicht erfinden.\nVisuelle Details und technische Geometrieanforderungen getrennt und eindeutig formulieren."
+ },
+ {
+  "key": "freeprompt-email",
+  "label": "Freier Prompt · E-Mail",
+  "hint": "Fachregeln für E-Mail. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Definiere Absenderrolle, Empfänger, Anlass, Ziel, Ton, Länge, Pflichtinformationen, CTA und Formulierungen, die vermieden werden sollen.\nNatürlich, konkret und adressatengerecht schreiben; keine generischen KI-Begrüßungen oder aufgeblähten Höflichkeitsfloskeln.\nVertrauliche Informationen minimieren und keine rechtlichen Behauptungen oder Zusagen erfinden."
+ },
+ {
+  "key": "freeprompt-custom",
+  "label": "Freier Prompt · Sonstiges",
+  "hint": "Fachregeln für Sonstiges. Eine Regel pro Zeile.",
+  "placeholders": [],
+  "body": "Leite nur die für den beschriebenen Ausgabetyp wirklich relevanten professionellen Prompt-Bausteine ab.\nErfinde keine Domänenanforderungen, Daten oder Einschränkungen, die der Nutzer nicht genannt hat und die sich nicht zwingend aus dem Ziel ergeben.\nÜbernimm aus dem universellen Grundgerüst nur Regeln, die für den konkreten Fall tatsächlich helfen."
  }
 ];
 
+// The free-prompt areas are rule lists: one rule per line, rendered as bullets by the builder.
+function promptLines(key){return promptText(key).split('\n').map(line=>line.replace(/^\s*[-•*]\s*/,'').trim()).filter(Boolean)}
 const KEYS=DEFAULTS.map(x=>x.key);
 const BY_KEY=new Map(DEFAULTS.map(x=>[x.key,x]));
 const CACHE_MS=20000;
@@ -105,4 +233,4 @@ function promptText(key,vars={}){
 function promptDefaults(){return DEFAULTS.map(x=>({...x}))}
 function isPromptKey(key){return BY_KEY.has(String(key||''))}
 
-module.exports={primePromptTemplates,promptText,promptDefaults,isPromptKey,KEYS};
+module.exports={primePromptTemplates,promptText,promptLines,promptDefaults,isPromptKey,KEYS};

@@ -8,7 +8,7 @@ const templates=require('../server/prompt-templates.js');
 const text=name=>readFile(new URL(`../${name}`,import.meta.url),'utf8');
 
 test('every prompt area ships a built-in default, so an empty database still produces a full prompt',()=>{
-  assert.equal(templates.KEYS.length,8);
+  assert.equal(templates.KEYS.length,26,'8 project areas plus the universal free-prompt rules and 17 categories');
   for(const item of templates.promptDefaults()){
     assert.ok(item.key&&item.label&&item.body,`${item.key} is incomplete`);
     assert.ok(item.body.length>100,`${item.key} default looks truncated`);
@@ -154,4 +154,22 @@ test('the saver mode is visible to the user and settable per plan by an administ
   assert.match(html,/Token-Budget <em>\(0 = kein Limit\)<\/em>/);
   assert.match(core,/for\(const field of \['FreePrompts','WebsiteGenerations','AiPreviews','MonthlyTokens'\]\)/);
   assert.match(action,/monthly_tokens:Math\.max\(0,Math\.min\(2000000000,Number\(plans\[plan\]\.monthly_tokens\)\|\|0\)\)/);
+});
+
+test('the fixed rule sets of every free-prompt area are editable too, and default to the built-in list',()=>{
+  const templates=require('../server/prompt-templates.js');
+  const keys=templates.KEYS.filter(k=>k.startsWith('freeprompt-'));
+  assert.equal(keys.length,18,'universal rules plus 17 categories');
+  for(const area of ['image','video','code','text','music','email','custom'])assert.ok(keys.includes('freeprompt-'+area),`${area} is missing`);
+  const lines=templates.promptLines('freeprompt-image');
+  assert.ok(lines.length>=3&&lines.every(x=>x&&!x.startsWith('-')),'one rule per line, without the bullet');
+  assert.deepEqual(templates.promptLines('nope'),[],'an unknown area yields no rules instead of throwing');
+});
+
+test('the free prompt builds from the editable rules and falls back to the code default',async()=>{
+  const free=await text('server/free-prompt-v2.js'),ui=await text('admin-prompts-ui.js');
+  assert.match(free,/function categoryRules\(input\)\{const lines=promptLines\(`freeprompt-\$\{safeCategory\(input\.category\)\}`\);return lines\.length\?lines:\(CATEGORY_MASTER_RULES\[input\.category\]\|\|CATEGORY_MASTER_RULES\.custom\)\}/);
+  assert.match(free,/function universalRules\(\)\{const lines=promptLines\('freeprompt-universal'\);return lines\.length\?lines:UNIVERSAL_MASTER_RULES\}/);
+  assert.doesNotMatch(free,/asBullets\(UNIVERSAL_MASTER_RULES\)/,'the universal rules go through the editable path now');
+  assert.match(ui,/const groups=\[\['Projekt & Website'/,'26 areas need grouping in the picker');
 });

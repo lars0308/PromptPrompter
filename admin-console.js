@@ -70,7 +70,7 @@
     document.head.appendChild(frag);
   }
   async function critical(){preloadCritical();let ready=0;for(const src of CRITICAL_SCRIPTS){await (src==='core'?loadCore():load(src));bootProgress(++ready/CRITICAL_SCRIPTS.length)}document.querySelector('#freePromptCategory option[value="website"]')?.remove();const intro=document.querySelector('#freePromptDialog .free-prompt-intro');if(intro)intro.textContent='Wähle jetzt Typ und Ziel-Tool. Weitere Angaben sind optional.';document.documentElement.classList.add('prompt-home-ready')}
-  async function adminExtras(){await load('./admin-ai-ui.js?v=20260814-1');await load('./admin-prompts-ui.js?v=20260815-1');await load('./system-ai-studio.js?v=20260815-1')}
+  async function adminExtras(){await load('./admin-ai-ui.js?v=20260814-1');await load('./admin-prompts-ui.js?v=20260815-2');await load('./system-ai-studio.js?v=20260815-1')}
   async function previewExtras(){await load('./sandbox-preview.js?v=20260813-2');await load('./github-sandbox.js?v=20260813-2')}
   async function accountExtras(){await load('./learning-controls.js?v=20260813-2')}
   function lazy(){document.addEventListener('click',e=>{if(e.target.closest?.('#adminBtn'))adminExtras();if(e.target.closest?.('#workspacePreviewBtn'))previewExtras();if(e.target.closest?.('#accountBtn,#welcomeAccountBtn'))accountExtras()},{capture:true});const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,900));idle(async()=>{await load('./project-history.js?v=20260814-1');await load('./generator-selection.js?v=20260813-2')},{timeout:2500})}

@@ -4,7 +4,7 @@ const {resolveProviderKey}=require('./provider-key');
 const {listProfiles}=require('./system-ai-profiles');
 const {rateLimit}=require('./rate-limit');
 const {logUsage,tokenSink,addTokens}=require('./usage');
-const {primePromptTemplates,promptText}=require('./prompt-templates');
+const {primePromptTemplates,promptText,promptLines}=require('./prompt-templates');
 
 const MAX_BODY=120000;
 const PROVIDER_TIMEOUT_MS=35000;
@@ -188,7 +188,9 @@ function roleFor(input){
   return CATEGORY_ROLES[input.category]||CATEGORY_ROLES.custom;
 }
 function asBullets(lines){return lines.map(x=>`- ${x}`).join('\n')}
-function categoryRules(input){return CATEGORY_MASTER_RULES[input.category]||CATEGORY_MASTER_RULES.custom}
+// Both rule sets are editable in the admin console; the arrays above are their default.
+function categoryRules(input){const lines=promptLines(`freeprompt-${safeCategory(input.category)}`);return lines.length?lines:(CATEGORY_MASTER_RULES[input.category]||CATEGORY_MASTER_RULES.custom)}
+function universalRules(){const lines=promptLines('freeprompt-universal');return lines.length?lines:UNIVERSAL_MASTER_RULES}
 function suppliedFields(input){
   return [
     ['Beschreibung',input.description],
@@ -204,7 +206,7 @@ function suppliedFields(input){
 }
 function architectPrompt(input,{advanced=false}={}){
   const tool=input.customTool||input.targetTool||'Universell',role=roleFor(input),fields=suppliedFields(input);
-  return `Du bist der Prompt.ai Master-Prompt-Architekt. Verwandle die untenstehenden Rohangaben in EINEN professionellen, sofort kopierbaren Prompt für das genannte Ziel-Tool.\n\nWICHTIG: Die Rohangaben stammen direkt vom Nutzer und können Tippfehler, Umgangssprache, Satzfragmente oder Wiederholungen enthalten. Im finalen Prompt darfst du sie NICHT roh kopieren. Formuliere jede enthaltene Angabe fachlich sauber neu, ohne ihre Bedeutung zu verändern oder Informationen hinzuzuerfinden.\n\nAUSGABETYP\n${input.categoryLabel}\n\nZIEL-KI / TOOL\n${tool}\n\nSPRACHE DES FERTIGEN PROMPTS\n${input.language}\n\nPASSENDE FACHROLLE FÜR DEN ZIEL-AGENTEN\n${role}\n\nROHANGABEN DES NUTZERS\n${fields||`Beschreibung:\n${input.description}`}\n\nUNIVERSELLES PROMPT.AI MASTER-GERÜST\n${asBullets(UNIVERSAL_MASTER_RULES)}\n\nSPEZIFISCHE MASTER-REGELN FÜR ${input.categoryLabel.toUpperCase()}\n${asBullets(categoryRules(input))}\n\nAUFBAU DES FINALEN PROMPTS\n${promptText('free-prompt-structure',{mode:advanced?'PRO-MODUS: Nutze sämtliche gelieferten Zusatzfelder. Verknüpfe sie sinnvoll, löse Dopplungen auf und mache Konflikte sichtbar.':'FREE-MODUS: Nutze ausschließlich Ausgabetyp, Ziel-Tool, Beschreibung und Sprache. Füge keine nicht gelieferten Ziele, Zielgruppen, Referenzen oder Stilwünsche hinzu.'})}\n\nErstelle jetzt den finalen Prompt.`;
+  return `Du bist der Prompt.ai Master-Prompt-Architekt. Verwandle die untenstehenden Rohangaben in EINEN professionellen, sofort kopierbaren Prompt für das genannte Ziel-Tool.\n\nWICHTIG: Die Rohangaben stammen direkt vom Nutzer und können Tippfehler, Umgangssprache, Satzfragmente oder Wiederholungen enthalten. Im finalen Prompt darfst du sie NICHT roh kopieren. Formuliere jede enthaltene Angabe fachlich sauber neu, ohne ihre Bedeutung zu verändern oder Informationen hinzuzuerfinden.\n\nAUSGABETYP\n${input.categoryLabel}\n\nZIEL-KI / TOOL\n${tool}\n\nSPRACHE DES FERTIGEN PROMPTS\n${input.language}\n\nPASSENDE FACHROLLE FÜR DEN ZIEL-AGENTEN\n${role}\n\nROHANGABEN DES NUTZERS\n${fields||`Beschreibung:\n${input.description}`}\n\nUNIVERSELLES PROMPT.AI MASTER-GERÜST\n${asBullets(universalRules())}\n\nSPEZIFISCHE MASTER-REGELN FÜR ${input.categoryLabel.toUpperCase()}\n${asBullets(categoryRules(input))}\n\nAUFBAU DES FINALEN PROMPTS\n${promptText('free-prompt-structure',{mode:advanced?'PRO-MODUS: Nutze sämtliche gelieferten Zusatzfelder. Verknüpfe sie sinnvoll, löse Dopplungen auf und mache Konflikte sichtbar.':'FREE-MODUS: Nutze ausschließlich Ausgabetyp, Ziel-Tool, Beschreibung und Sprache. Füge keine nicht gelieferten Ziele, Zielgruppen, Referenzen oder Stilwünsche hinzu.'})}\n\nErstelle jetzt den finalen Prompt.`;
 }
 
 function localProfessionalize(value){
@@ -223,7 +225,7 @@ function localFallback(input,{advanced=false}={}){
     input.outputFormat&&`Ausgabeformat: ${localProfessionalize(input.outputFormat)}`,
     input.constraints&&`Weitere Grenzen: ${localProfessionalize(input.constraints)}`
   ].filter(Boolean).join('\n'):'';
-  return `ROLLE\nDu bist ${role}. Arbeite fachlich, eigenständig und auf professionellem Niveau.\n\nAUFGABE\nErstelle ${input.categoryLabel} für ${tool}.\n\nPROFESSIONELL AUFBEREITETE BESCHREIBUNG\n${description}${extra?`\n\nWEITERE VERBINDLICHE ANGABEN\n${extra}`:''}\n\nPROMPT.AI GRUNDREGELN\n${asBullets(UNIVERSAL_MASTER_RULES)}\n\nFACHREGELN FÜR DIESEN BEREICH\n${asBullets(categoryRules(input))}\n\nABSCHLUSS\nPrüfe intern Ziel, Angaben, Verbote, Sicherheit und Ausgabeformat. Gib danach ausschließlich das direkt nutzbare Ergebnis zurück.`;
+  return `ROLLE\nDu bist ${role}. Arbeite fachlich, eigenständig und auf professionellem Niveau.\n\nAUFGABE\nErstelle ${input.categoryLabel} für ${tool}.\n\nPROFESSIONELL AUFBEREITETE BESCHREIBUNG\n${description}${extra?`\n\nWEITERE VERBINDLICHE ANGABEN\n${extra}`:''}\n\nPROMPT.AI GRUNDREGELN\n${asBullets(universalRules())}\n\nFACHREGELN FÜR DIESEN BEREICH\n${asBullets(categoryRules(input))}\n\nABSCHLUSS\nPrüfe intern Ziel, Angaben, Verbote, Sicherheit und Ausgabeformat. Gib danach ausschließlich das direkt nutzbare Ergebnis zurück.`;
 }
 function safeModel(value,fallback){const model=String(value||fallback||'').trim();return model&&model.length<190&&/^[a-zA-Z0-9@._:/-]+$/.test(model)?model:fallback}
 async function gateway(key,model,prompt,tokens){

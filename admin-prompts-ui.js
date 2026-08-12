@@ -25,6 +25,8 @@
       .admin-prompt-picker>summary{display:none}
       .admin-prompt-picker .admin-fold-body{display:block!important;padding:0!important;border:0!important}
       .admin-prompt-list{display:grid;gap:6px}
+      .admin-prompt-group{margin:12px 0 2px;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+      .admin-prompt-group:first-child{margin-top:0}
       .admin-prompt-list button{display:block;width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);text-align:left;cursor:pointer}
       .admin-prompt-list button.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
       .admin-prompt-list strong{display:block;font-size:12px}
@@ -90,10 +92,13 @@
     if(!host)return;
     if(picker)picker.open=WIDE()?true:picker.open;
     if(current)current.textContent=defaultFor(state.key)?.label||'Bereich wählen';
-    host.innerHTML=state.defaults.map(item=>{
+    // Two groups, otherwise 26 areas are one long undifferentiated list.
+    const groups=[['Projekt & Website',state.defaults.filter(x=>!x.key.startsWith('freeprompt-'))],['Freier Prompt',state.defaults.filter(x=>x.key.startsWith('freeprompt-'))]];
+    host.innerHTML=groups.filter(([,items])=>items.length).map(([title,items])=>`<p class="admin-prompt-group">${esc(title)}</p>`+items.map(item=>{
       const active=activeFor(item.key);
-      return `<button type="button" data-prompt-key="${esc(item.key)}" class="${item.key===state.key?'active':''}"><strong>${esc(item.label)}</strong><small class="${active?'is-custom':''}">${active?`Version ${esc(active.version)}${active.label?` · ${esc(active.label)}`:''}`:'Standardtext'}</small></button>`;
-    }).join('');
+      const label=item.label.replace(/^Freier Prompt · /,'');
+      return `<button type="button" data-prompt-key="${esc(item.key)}" class="${item.key===state.key?'active':''}"><strong>${esc(label)}</strong><small class="${active?'is-custom':''}">${active?`Version ${esc(active.version)}${active.label?` · ${esc(active.label)}`:''}`:'Standardtext'}</small></button>`;
+    }).join('')).join('');
   }
   function renderEditor(){
     const host=$('#adminPromptEditor');if(!host)return;
