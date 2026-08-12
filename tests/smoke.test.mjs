@@ -25,7 +25,53 @@ test('final UI polish keeps menus at top, broad surfaces and smooth fades',async
 test('final menu shield hides the page behind the open top menu',async()=>{const src=await text('ui-final-touch.js');for(const token of ['prompt-menu-shield','promptFinalMenuBackdrop','backdrop-filter:blur(14px)','2147483001','MutationObserver'])assert.ok(src.includes(token),token)});
 test('guided feedback hides technical provider failures and the intro/background hint text',async()=>{const src=await text('ux-stability-fix.js');assert.match(src,/#clarificationWarnings\{display:none!important\}/);assert.match(src,/AI Gateway\|credit card\|vercel\\\.com/);assert.match(src,/lokale Prüfung/);assert.match(src,/clarification-intro,\.clarification-background-note\{display:none!important\}/);assert.doesNotMatch(src,/Bevor die Vorschau entsteht/);assert.doesNotMatch(src,/Datenschutz, Impressum, Barrierefreiheit, Sicherheit und Performance/)});
 test('fresh guided preview defaults to stable HTML but manual choice remains possible',async()=>{const src=await text('ux-stability-fix.js');assert.match(src,/FRESH_WEBSITE_KEY/);assert.match(src,/PREVIEW_MANUAL_KEY/);assert.match(src,/format\.value='html'/);assert.match(src,/isTrusted/)});
-test('master prompt transition is a short intentional handoff',async()=>{const src=await text('workflow-cleanup.js');assert.match(src,/elapsed<3200/);assert.match(src,/prompt\.length<80&&elapsed<30000/);assert.match(src,/Dein Master-Prompt entsteht/);assert.match(src,/individuellen Auftrag/)});
+test('master prompt transition is a short intentional handoff',async()=>{
+  const src=await text('workflow-cleanup.js');
+  assert.match(src,/Dein Master-Prompt entsteht/);
+  assert.match(src,/individuellen Auftrag/);
+  assert.match(src,/const MASTER_MAX_WAIT=8000;/,'the overlay must always be released after a bounded wait');
+  assert.match(src,/Date\.now\(\)-start>=MASTER_MAX_WAIT/,'the wait cap must actually be checked in the poll');
+  assert.doesNotMatch(src,/elapsed<3200/,'a finished master prompt must never be hidden behind an artificial minimum delay');
+  assert.doesNotMatch(src,/elapsed<30000/,'a failed build must not leave the user on a spinner for 30s');
+});
+test('the step-8 overlay cannot re-enter itself through the class mutation it makes',async()=>{
+  // revealMaster() toggles `master-generating` on #stepPrompt, which is the same element whose
+  // class attribute the observer watches. Reacting to every class change made the observer feed
+  // itself and hard-locked the tab when the Master-Prompt button was pressed.
+  const src=await text('workflow-cleanup.js');
+  assert.match(src,/masterStepActive=step\.classList\.contains\('active'\)/);
+  assert.match(src,/if\(active===masterStepActive\)return;/,'the observer must ignore class changes that do not toggle step 8 itself');
+  assert.doesNotMatch(src,/new MutationObserver\(\(\)=>\{if\(step\.classList\.contains\('active'\)\)revealMaster\(\)\}\)/);
+});
+test('the review/preview loader cannot be starved by its own animation frames',async()=>{
+  // The loader writes an inline style on its progress bar every frame. Those writes reached the
+  // body MutationObserver, which re-armed the sync() debounce forever, so the overlay stayed on
+  // screen after the workflow had already moved on.
+  const src=await text('transition-polish.js');
+  assert.match(src,/const MAX_SETTLE_MS=400;/,'the debounce needs a hard ceiling');
+  assert.match(src,/settleDeadline=now\+MAX_SETTLE_MS/);
+  assert.match(src,/const fromLoader=node=>/,'loader-internal mutations must be filtered out');
+  assert.match(src,/records\.some\(record=>!fromLoader\(record\.target\)\)/);
+  assert.doesNotMatch(src,/function schedule\(delay=STEP_STABLE_MS\)\{clearTimeout\(settleTimer\);settleTimer=setTimeout\(sync,delay\)\}/);
+});
+test('the plans dialog always offers a way out and never opens on top of itself',async()=>{
+  // plansDialog doubles as the upsell for every locked feature, so an un-dismissable variant
+  // reads as a frozen app. It must keep a visible close button and accept Escape/backdrop.
+  const css=await text('styles.css'),app=await text('app.js');
+  assert.doesNotMatch(css,/\.plans-dialog\.plans-gate-mode \.close-dialog/,'the close button must stay visible in gate mode');
+  assert.match(css,/\.plans-dialog \.close-dialog\{display:grid/);
+  assert.doesNotMatch(app,/plansDialog\.addEventListener\("cancel"/,'Escape must not be swallowed');
+  assert.match(app,/el\.plansDialog\.showModal=\(\)=>\{if\(el\.plansDialog\.open\)return;/,'showModal() throws when the dialog is already open');
+  assert.match(app,/el\.plansDialog\.addEventListener\("click",e=>\{if\(e\.target===el\.plansDialog\)el\.plansDialog\.close\(\)\}\)/);
+});
+test('reaching the modules step never interrupts a free user with a modal',async()=>{
+  // goStep(4) and the automatic mode routing both call recommendModules(), so opening the plans
+  // dialog from there trapped every free user mid-workflow behind a dialog they could not close.
+  const src=await text('app.js');
+  assert.match(src,/function recommendModules\(apply=false\)\{[\s\S]{0,400}?if\(!planRules\(\)\.modules\)\{renderModuleSelection\(\);return \[\]\}/);
+  assert.doesNotMatch(src,/function recommendModules\(apply=false\)\{\s*if\(!planRules\(\)\.modules\)\{el\.plansDialog\?\.showModal\(\);return \[\]\}/);
+  assert.match(src,/renderModuleSelection[\s\S]{0,600}?data-upgrade-plans/,'the lock stays visible inline instead');
+});
 test('website master prompt rebuilds from project decisions and professional role',async()=>{const src=await text('app.js');for(const token of ['Senior-Webdesigner und Frontend-Entwickler','AUSGEWÄHLTE DESIGNRICHTUNG','FEINSCHLIFF NACH DER VORSCHAU','AKTIVE PROMPT-MODULE','AKTIVE AGENT-SKILLS','DEFINITION OF DONE'])assert.ok(src.includes(token),token);assert.match(src,/if\(step===8\)\{try\{updateMasterPrompt\(\);renderCompletionSummary\(\)\}catch/)});
 test('free prompt has second settings stage with editable description and no leftover legacy generation stage',async()=>{const src=await text('ui-polish-final.js');for(const token of ['EINSTELLUNGEN','free-prompt-brief-card','free-description-collapsed','dataset.editing'])assert.ok(src.includes(token),token);assert.doesNotMatch(src,/tier-locked/);assert.doesNotMatch(src,/free-prompt-generation-stage/)});
 test('free prompt uses category master rules and professionally rewrites raw user input',async()=>{const src=await text('server/free-prompt-v2.js');for(const token of ['Musikproduzent','Regisseur','Senior-Webdesigner','Präsentationsdesigner','Photo-Retoucher','Senior-Softwareentwickler','Automation-Engineer','3D-Designer','roleFor','Lokaler Master-Prompt-Fallback','UNIVERSAL_MASTER_RULES','CATEGORY_MASTER_RULES','PROFESSIONALISIERUNG','ANTI-KI-MUSTER','Datenschutz'])assert.ok(src.includes(token),token);assert.match(src,/CATEGORY_MASTER_RULES\[input\.category\]/);assert.match(src,/function architectPrompt\(input,\{advanced=false\}=\{\}\)/);assert.match(src,/prompt:localFallback\(input,\{advanced\}\),provider:'local'/)});
@@ -272,7 +318,7 @@ test('the review/preview loader and the free-prompt thinking loader no longer us
   }
   const transition=await text('transition-polish.js');
   assert.doesNotMatch(transition,/clip-path/,'the review/preview loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
-  assert.match(transition,/function applyFill\(progress\)\{\s*const box=\$\('#promptWorkflowLoader'\);if\(!box\)return;\s*const bar=\$\('\.prompt-loader-bar i',box\);if\(bar\)bar\.style\.width=`\$\{\(progress\*100\)\.toFixed\(2\)\}%`;/);
+  assert.match(transition,/function applyFill\(progress\)\{\s*const box=\$\('#promptWorkflowLoader'\);if\(!box\)return;\s*const bar=\$\('\.prompt-loader-bar i',box\);if\(!bar\)return;\s*const next=`\$\{\(progress\*100\)\.toFixed\(1\)\}%`;\s*if\(bar\.style\.width!==next\)bar\.style\.width=next;/);
   const v1=await text('promptai-experience-v1.js');
   assert.doesNotMatch(v1,/clip-path/,'the free-prompt thinking loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
   assert.match(v1,/function applyTitleFill\(stage,progress\)\{const bar=\$\('\.prompt-thinking-bar i',stage\);if\(bar\)bar\.style\.width=`\$\{\(progress\*100\)\.toFixed\(2\)\}%`\}/);

@@ -1327,7 +1327,10 @@
   }
 
   function recommendModules(apply=false){
-    if(!planRules().modules){el.plansDialog?.showModal();return []}
+    // Locked plans never interrupt the flow with a modal here: goStep(4) and the automatic
+    // mode routing both call this, so a modal would trap free users mid-workflow. The lock is
+    // communicated inline by renderModuleSelection() instead.
+    if(!planRules().modules){renderModuleSelection();return []}
     const scored=state.modules.map(m=>({id:m.id,score:moduleScore(m)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,4);
     state.recommendedModuleIds=scored.map(x=>x.id);
     if(apply) state.selectedModuleIds=[...new Set([...state.selectedModuleIds,...state.recommendedModuleIds])];
@@ -2058,7 +2061,9 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
     el.saveProfileBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.manageProfilesBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.createProfileBtn.addEventListener("click",createProfileFromDialog);
     el.accountBtn.addEventListener("click",()=>{updateAccountUi();renderGuestLimit();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",signIn);el.signUpBtn.addEventListener("click",signUp);el.forgotPasswordBtn?.addEventListener('click',resetPassword);el.saveNewPasswordBtn?.addEventListener('click',saveNewPassword);el.guestContinueBtn.addEventListener("click",closeAccountGate);$$('.auth-plan-pick').forEach(button=>button.addEventListener('click',()=>pickAuthPlan(button.dataset.authPlanPick)));el.authViewAllPlansBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});el.footerImpressumLink?.addEventListener('click',e=>{e.preventDefault();window.PromptAiLegalPages?.openLegal('imprint')});el.footerPrivacyLink?.addEventListener('click',e=>{e.preventDefault();window.PromptAiLegalPages?.openLegal('privacy')});el.footerCookieLink?.addEventListener('click',e=>{e.preventDefault();el.cookieBanner?.showModal()});
-    if(el.plansDialog){const nativePlansShowModal=el.plansDialog.showModal.bind(el.plansDialog);el.plansDialog.showModal=()=>{el.plansDialog.classList.toggle("plans-gate-mode",!cloudReady());nativePlansShowModal()};el.plansDialog.addEventListener("cancel",e=>{if(el.plansDialog.classList.contains("plans-gate-mode"))e.preventDefault()});}
+    // The plans dialog must always be dismissable (X, Escape, backdrop). It is opened from many
+    // locked features during the normal workflow, so a non-dismissable variant reads as a freeze.
+    if(el.plansDialog){const nativePlansShowModal=el.plansDialog.showModal.bind(el.plansDialog);el.plansDialog.showModal=()=>{if(el.plansDialog.open)return;el.plansDialog.classList.toggle("plans-gate-mode",!cloudReady());nativePlansShowModal()};el.plansDialog.addEventListener("click",e=>{if(e.target===el.plansDialog)el.plansDialog.close()});}
     el.themeToggleBtn.addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
     el.runAiReviewBtn.addEventListener("click",()=>{if(state.engine!=="local"&&!state.settings.aiClarifications){populateSettingsDialog();el.settingsDialog.showModal();return;}runProjectReview(true)});
     el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});

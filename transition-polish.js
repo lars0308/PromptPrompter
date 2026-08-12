@@ -1,8 +1,9 @@
 (()=>{
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
-  let settleTimer=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false;
+  let settleTimer=0,settleDeadline=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false;
   const STEP_STABLE_MS=90;
+  const MAX_SETTLE_MS=400;
   const SENTENCE_MS=3000;
   const LOADER_TIMEOUT_MS=95000;
 
@@ -85,7 +86,9 @@
   function fillProgress(elapsed){const tau=15000;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
   function applyFill(progress){
     const box=$('#promptWorkflowLoader');if(!box)return;
-    const bar=$('.prompt-loader-bar i',box);if(bar)bar.style.width=`${(progress*100).toFixed(2)}%`;
+    const bar=$('.prompt-loader-bar i',box);if(!bar)return;
+    const next=`${(progress*100).toFixed(1)}%`;
+    if(bar.style.width!==next)bar.style.width=next;
   }
   function forceRecover(){
     clearInterval(cycleTimer);cycleTimer=0;
@@ -127,7 +130,14 @@
     if(activeKind!=='login'){activeKind='login';startCycle('login');startFillLoop()}
   }
   function hideLogin(){loginActive=false;hide()}
-  function schedule(delay=STEP_STABLE_MS){clearTimeout(settleTimer);settleTimer=setTimeout(sync,delay)}
+  // Debounced, but with a hard ceiling: a steady stream of mutations must never be able to
+  // postpone sync() indefinitely, otherwise the loader can outlive the state that justified it.
+  function schedule(delay=STEP_STABLE_MS){
+    const now=Date.now();
+    if(!settleTimer)settleDeadline=now+MAX_SETTLE_MS;
+    clearTimeout(settleTimer);
+    settleTimer=setTimeout(()=>{settleTimer=0;sync()},Math.max(0,Math.min(delay,settleDeadline-now)));
+  }
 
   function onClick(event){
     const refNext=event.target.closest?.('#stepReferences .next-btn,#skipReferencesBtn');if(refNext&&workflowVisible()&&cleanMode()){userExited=false;pendingFromReferences=true;show('review');schedule(180);return}
@@ -136,7 +146,11 @@
     if(event.target.closest?.('#clarificationDialog .close-dialog')){pendingFromReferences=false;hide();return}
   }
   function blockLateHiddenClicks(event){if(workflowVisible())return;const button=event.target.closest?.('#workflowApp .next-btn,#workflowApp .back-btn');if(button&&!event.isTrusted){event.preventDefault();event.stopImmediatePropagation()}}
-  function observe(){new MutationObserver(()=>schedule()).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style']});window.addEventListener('pageshow',()=>schedule(0));window.addEventListener('promptai:access',()=>schedule(0))}
+  // The loader repaints its own progress bar every frame. Those inline-style writes are not
+  // workflow state, and letting them reach schedule() kept re-arming the debounce so sync()
+  // never ran — the overlay then stayed on screen until the 95s timeout.
+  const fromLoader=node=>{const el=node?.nodeType===1?node:node?.parentElement;return Boolean(el?.closest?.('#promptWorkflowLoader'))};
+  function observe(){new MutationObserver(records=>{if(records.some(record=>!fromLoader(record.target)))schedule()}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style']});window.addEventListener('pageshow',()=>schedule(0));window.addEventListener('promptai:access',()=>schedule(0))}
   function observeClarification(){
     const watch=dialog=>{if(!dialog||dialog.__promptLoaderWatched)return;dialog.__promptLoaderWatched=true;new MutationObserver(()=>{if(dialog.open){pendingFromReferences=false;hide()}else sync()}).observe(dialog,{attributes:true,attributeFilter:['open']})};
     watch($('#clarificationDialog'));
