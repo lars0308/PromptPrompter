@@ -441,7 +441,7 @@ test('the login/entry gate has no leftover small hint texts (accountIntro paragr
 });
 test('the ".ai" suffix on the Prompt.ai wordmark is statically blue everywhere it ships in the HTML (topbar, boot screen, login gate), not only once a late-loading polish script runs',async()=>{
   const html=await text('index.html'),css=await text('styles.css');
-  const spots=[/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT/,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><p class="prompt-fill-sweep">Dein Arbeitsbereich wird vorbereitet\./,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><span>Aus Ideen wird ein klares Projekt/];
+  const spots=[/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT/,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><p class="prompt-fill-progress"[^>]*>Dein Arbeitsbereich wird vorbereitet\./,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><span>Aus Ideen wird ein klares Projekt/];
   for(const pattern of spots)assert.match(html,pattern);
   assert.match(css,/\.auth-brand \.brand-ai-suffix\{color:var\(--accent\)\}/,'a plain .auth-brand span{color:muted} rule beats the single-class .brand-ai-suffix rule on specificity, so a targeted override is required');
 });
@@ -605,7 +605,7 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   assert.doesNotMatch(css,/\.prompt-fill-progress\{[^}]*clip-path/,'clip-path cut ascenders and descenders in half');
   assert.match(css,/\.master-generation-track,#promptAppBoot \.boot-track\{display:none\}/);
   assert.match(css,/\.task-progress \.task-progress-track\{display:none\}/);
-  assert.match(html,/<p class="prompt-fill-sweep">Dein Arbeitsbereich wird vorbereitet\.<\/p>/,'boot screen status line - the wordmark itself stays untouched');
+  assert.match(html,/<p class="prompt-fill-progress" style="--prompt-fill:6%">Dein Arbeitsbereich wird vorbereitet\.<\/p>/,'boot screen status line - the wordmark itself stays untouched');
   assert.match(cleanup,/<strong class="prompt-fill-sweep">Dein Master-Prompt entsteht<\/strong>/,'master prompt screen');
   assert.match(app,/box\?\.style\.setProperty\('--prompt-fill',`\$\{pct\}%`\);label\?\.classList\.add\('prompt-fill-progress'\)/,'inline task progress');
 });
@@ -616,4 +616,40 @@ test('starting a new project does not ask first, and finished projects are marke
   assert.match(history,/function isDone\(row\)\{return Math\.max\(Number\(row\?\.maxStep\)\|\|0,Number\(row\?\.step\)\|\|0,Number\(row\?\.state\?\.maxVisited\)\|\|0\)>=8\}/);
   assert.match(history,/isDone\(x\)\?'FERTIG':'NOCH OFFEN'/);
   assert.match(history,/maxStep:Number\(clean\.maxVisited\)\|\|Number\(clean\.currentStep\)\|\|1/,'the reached step has to be stored with the snapshot');
+});
+test('the boot screen fills with the load it really has, then blinks blue once before it leaves',async()=>{
+  const boot=await text('admin-console.js'),theme=await text('theme-init.js'),css=await text('styles.css');
+  assert.match(boot,/const CRITICAL_SCRIPTS=\[/,'progress can only be reported against a known list');
+  assert.match(boot,/for\(const src of CRITICAL_SCRIPTS\)\{await \(src==='core'\?loadCore\(\):load\(src\)\);bootProgress\(\+\+ready\/CRITICAL_SCRIPTS\.length\)\}/,'every loaded script moves the fill');
+  assert.doesNotMatch(boot,/ready&&elapsed>=1050/,'a minimum showtime makes the screen a timer again');
+  assert.match(boot,/if\(ready\|\|elapsed>=5200\)/,'ready leaves immediately, the cap stays as a failsafe');
+  assert.match(boot,/window\.PromptAiFill\?\.finish\(boot\?\.querySelector\('p'\),\(\)=>\{boot\?\.classList\.add\('is-leaving'\)/,'the blink runs before the fade');
+  assert.match(theme,/window\.PromptAiFill=\{/,'shared driver ships in the first blocking script');
+  assert.match(theme,/if\(pct<previous\)return/,'progress never walks backwards');
+  assert.match(css,/\.prompt-fill-complete\{--prompt-fill:100%!important;animation:promptFillFlash/);
+  assert.match(css,/@keyframes promptFillFlash\{0%\{opacity:1\}30%\{opacity:\.2\}/,'one blink, not a loop');
+});
+test('every loading screen ends the same way: full fill, one blue blink, then gone',async()=>{
+  const transition=await text('transition-polish.js'),handoff=await text('mode-handoff-fix.js'),cleanup=await text('workflow-cleanup.js'),app=await text('app.js');
+  assert.match(transition,/#promptWorkflowLoader\.is-complete strong\{animation:promptFillFlash/);
+  assert.match(transition,/if\(box\.classList\.contains\('is-complete'\)\)return;/,'sync() calls hide() repeatedly - restarting the blink would keep the screen up forever');
+  assert.match(transition,/box\.classList\.remove\('is-leaving','is-complete'\)/,'resumed work cancels the blink');
+  assert.match(handoff,/\.prompt-mode-handoff\.is-complete strong\{animation:promptFillFlash/);
+  assert.match(handoff,/setTimeout\(\(\)=>leave\(box\),flash\)/);
+  assert.match(cleanup,/window\.PromptAiFill\?\.finish\(\$\('#masterGeneration strong'\),\(\)=>step\.classList\.remove\('master-generating'\)\)/);
+  assert.match(cleanup,/window\.PromptAiFill\?\.reset\(\$\('#masterGeneration strong'\)\)/,'the overlay can run again for the next project');
+  assert.match(app,/el\[`\$\{kind\}ProgressText`\]\?\.classList\.add\('prompt-fill-complete'\)/,'inline task progress ends the same way');
+});
+test('admin announcements pop up large and come back on a fresh app open, not on the way home',async()=>{
+  const popup=await text('announcement-popup.js'),core=await text('admin-console-core.js'),html=await text('index.html'),css=await text('styles.css'),boot=await text('admin-console.js');
+  assert.doesNotMatch(html,/id="publicNotices"/,'the small bottom-right stack is gone');
+  assert.doesNotMatch(css,/\.public-notice/,'…and so is its styling');
+  assert.doesNotMatch(core,/class="public-notice/,'the fetch only publishes the data now');
+  assert.match(core,/window\.PromptAiAnnouncements=Array\.isArray\(announcements\)\?announcements:\[\];window\.dispatchEvent\(new CustomEvent\('promptai:announcements'/);
+  assert.match(boot,/'\.\/announcement-popup\.js\?v=[^']+','core'/,'the listener has to exist before the fetch resolves');
+  assert.match(popup,/const SEEN_KEY='prompt-ai-announcement-seen-v1'/);
+  assert.match(popup,/sessionStorage\.setItem\(SEEN_KEY/,'session scope: survives the internal reload, resets on a real app open');
+  assert.doesNotMatch(popup,/localStorage/,'localStorage would silence the notice forever');
+  assert.match(popup,/box\.showModal\(\)/,'large dialog instead of a toast');
+  assert.match(popup,/document\.documentElement\.classList\.contains\('prompt-app-booting'\)\|\|document\.querySelector\('#cookieBanner\[open\],#maintenanceDialog\[open\]'\)/,'a gate that opens later would land on top of the announcement and bury it');
 });

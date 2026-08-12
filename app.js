@@ -1135,8 +1135,9 @@
     progressTimers[kind]=setInterval(()=>{const elapsed=(Date.now()-started)/1000,pct=Math.min(92,Math.round(4+88*(1-Math.exp(-elapsed/(expectedSeconds/2))))),remaining=Math.max(2,Math.ceil(expectedSeconds-elapsed));setTaskProgress(kind,pct,`${Math.floor(elapsed)} s vergangen · ca. ${remaining} s verbleibend`)},400);
   }
   // The label text carries the progress instead of the thin track underneath it.
-  function setTaskProgress(kind,pct,text){const box=el[`${kind}Progress`],fill=el[`${kind}ProgressFill`],percent=el[`${kind}ProgressPercent`],label=el[`${kind}ProgressText`];if(!fill)return;fill.style.width=`${pct}%`;box?.style.setProperty('--prompt-fill',`${pct}%`);label?.classList.add('prompt-fill-progress');percent.textContent=`${pct} %`;if(label.textContent!==text)label.textContent=text;}
-  function finishTaskProgress(kind,text="Abgeschlossen"){clearInterval(progressTimers[kind]);setTaskProgress(kind,100,text);setTimeout(()=>{if(el[`${kind}Progress`])el[`${kind}Progress`].hidden=true},1000);}
+  function setTaskProgress(kind,pct,text){const box=el[`${kind}Progress`],fill=el[`${kind}ProgressFill`],percent=el[`${kind}ProgressPercent`],label=el[`${kind}ProgressText`];if(!fill)return;fill.style.width=`${pct}%`;box?.style.setProperty('--prompt-fill',`${pct}%`);label?.classList.add('prompt-fill-progress');if(pct<100)label?.classList.remove('prompt-fill-complete');percent.textContent=`${pct} %`;if(label.textContent!==text)label.textContent=text;}
+  // Same ending as the full-screen loaders: full fill, one blue blink, then the box disappears.
+  function finishTaskProgress(kind,text="Abgeschlossen"){clearInterval(progressTimers[kind]);setTaskProgress(kind,100,text);el[`${kind}ProgressText`]?.classList.add('prompt-fill-complete');setTimeout(()=>{if(el[`${kind}Progress`])el[`${kind}Progress`].hidden=true},1000);}
 
   function saveClarificationAnswers(){
     const questions=state.projectReview?.questions||[]; const rows=$$(".clarification-question",el.clarificationQuestions); const answers=[];

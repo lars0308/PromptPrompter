@@ -60,6 +60,9 @@
       html.prompt-workflow-loading #guidedCleanHead{visibility:hidden!important}
       #promptWorkflowLoader{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       #promptWorkflowLoader.is-leaving{opacity:0;pointer-events:none}
+      /* Closing blink, shared with the boot and handoff screens: the headline snaps to full and
+         flashes blue once before the screen leaves. */
+      #promptWorkflowLoader.is-complete strong{animation:promptFillFlash .42s ease-out 1}
       #promptWorkflowLoader>div{width:min(560px,100%);text-align:center}
       #promptWorkflowLoaderClose{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--ui-line,var(--line));border-radius:50%;background:var(--ui-card,var(--surface));color:var(--ink);font:700 21px/1 Arial,sans-serif;box-shadow:none}
       #promptWorkflowLoaderClose:hover{background:var(--ui-soft,var(--surface-soft));border-color:color-mix(in srgb,var(--ui-blue,var(--accent)) 45%,var(--ui-line,var(--line)))}
@@ -84,7 +87,8 @@
   };
   let loginActive=false;
 
-  let fillRaf=0,fillStartedAt=0;
+  let fillRaf=0,fillStartedAt=0,flashTimer=0;
+  const FLASH_MS=window.PromptAiFill?.flashMs??420;
   const reduceMotion=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}};
   function fillProgress(elapsed){const tau=15000;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
   function applyFill(progress){
@@ -117,8 +121,12 @@
   function setTitle(box,text){const host=$('strong',box);if(!host||host.textContent===text)return;host.textContent=text}
   function setSentence(text,immediate=false){const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document);if(!host)return;const apply=()=>{host.textContent=text;host.classList.remove('is-changing')};if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)}
   function startCycle(kind){const data=copy[kind];if(!data)return;clearInterval(cycleTimer);let index=0;setSentence(data.sentences[index],true);cycleTimer=setInterval(()=>{const box=$('#promptWorkflowLoader');if(!box||activeKind!==kind){clearInterval(cycleTimer);return}index=(index+1)%data.sentences.length;setSentence(data.sentences[index])},SENTENCE_MS+240)}
-  function show(kind){const data=copy[kind];if(!data)return;if(kind!=='login'&&(userExited||!workflowVisible()||!cleanMode()))return;const box=loader();box.classList.remove('is-leaving');document.documentElement.classList.add('prompt-workflow-loading');const kicker=$('.kicker',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;setTitle(box,data.title);if(activeKind!==kind){activeKind=kind;startCycle(kind);startFillLoop()}}
-  function hide(immediate=false){loginActive=false;clearInterval(cycleTimer);cycleTimer=0;activeKind='';const box=$('#promptWorkflowLoader');document.documentElement.classList.remove('prompt-workflow-loading');if(!box){stopFillLoop();return}stopFillLoop(true);if(immediate){box.remove();return}box.classList.add('is-leaving');setTimeout(()=>box.remove(),250)}
+  function show(kind){const data=copy[kind];if(!data)return;if(kind!=='login'&&(userExited||!workflowVisible()||!cleanMode()))return;const box=loader();clearTimeout(flashTimer);box.classList.remove('is-leaving','is-complete');document.documentElement.classList.add('prompt-workflow-loading');const kicker=$('.kicker',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;setTitle(box,data.title);if(activeKind!==kind){activeKind=kind;startCycle(kind);startFillLoop()}}
+  function hide(immediate=false){loginActive=false;clearInterval(cycleTimer);cycleTimer=0;activeKind='';const box=$('#promptWorkflowLoader');document.documentElement.classList.remove('prompt-workflow-loading');if(!box){stopFillLoop();return}stopFillLoop(true);if(immediate){clearTimeout(flashTimer);box.remove();return}
+    // Fill to full, blink once, then leave. sync() may call hide() again while the blink runs, so
+    // a running blink is never restarted - that would keep the screen up forever. show() cancels it.
+    if(box.classList.contains('is-complete'))return;
+    box.classList.add('is-complete');flashTimer=setTimeout(()=>{box.classList.add('is-leaving');setTimeout(()=>box.remove(),250)},FLASH_MS)}
 
   function closeLateWorkflowUi(){const dialog=$('#clarificationDialog');if(dialog?.open){try{dialog.close('cancel')}catch{dialog.removeAttribute('open')}}$('#promptCompletionFlash')?.remove();document.documentElement.classList.remove('prompt-review-transition','prompt-clarification-exit')}
 

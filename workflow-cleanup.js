@@ -30,7 +30,10 @@
     clearTimeout(masterTimer);
     const done=prompt=>{
       lastMasterSignature=sig;
-      step.classList.remove('master-generating');
+      // When the overlay was actually up, close it the same way every other loading screen does:
+      // the headline fills to full, blinks blue once, then the step appears.
+      if(step.classList.contains('master-generating'))window.PromptAiFill?.finish($('#masterGeneration strong'),()=>step.classList.remove('master-generating'));
+      else step.classList.remove('master-generating');
       try{sessionStorage.setItem(`prompt-ai-master-ready:${sig}`,'1')}catch{}
       if(prompt)window.dispatchEvent(new CustomEvent('promptai:prompt-version',{detail:{source:'master',title:$('#projectName')?.value||'Master-Prompt',prompt}}));
     };
@@ -38,6 +41,7 @@
     // The prompt is assembled synchronously, so in practice it is already there. Never hold the
     // finished result behind an artificial delay, and always release the overlay after the cap.
     if(ready().length>=80||($('#projectValidation')?.textContent||'').trim()){done(ready());return}
+    window.PromptAiFill?.reset($('#masterGeneration strong'));
     step.classList.add('master-generating');
     const start=Date.now(),check=()=>{
       const prompt=ready();
