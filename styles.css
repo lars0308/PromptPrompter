@@ -302,16 +302,42 @@ body.dialog-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}.libra
 .admin-quota-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0 0 16px}.admin-quota-col{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}.admin-quota-col>strong{display:block;margin-bottom:12px;font-size:13px}.admin-quota-col .field{margin-bottom:12px}.admin-quota-col .field:last-child{margin-bottom:0}
 @media(max-width:820px){.admin-quota-grid{grid-template-columns:1fr}}
 
-/* the .plan-card accordion styles above were written mobile-first (single narrow column) and never got a desktop counterpart, so on wide viewports the plans dialog stayed pinned at 760px/1 column and needed horizontal scrolling */
+/* The plan cards used to be <details> accordions, so a visitor had to expand each tier to find out
+   what it contains. They are plain always-open cards now: everything is readable at a glance and
+   the three tiers sit side by side on desktop. */
+.plans-dialog .plan-card{position:relative;display:flex;flex-direction:column;overflow:visible}
+/* Stacked header (name, tagline, quota line, then the price) instead of name-beside-price: at a
+   third of the dialog width the side-by-side version wrapped both the tagline and the price. */
+.plan-card-summary{display:block;cursor:default;min-height:0;padding:22px 20px 18px;border-bottom:1px solid var(--line)}
+/* max-width/text-align come from the narrow-screen rules written for the old price-beside-name
+   header; on the stacked header they squeezed the price into two lines. */
+.plan-card-summary>strong{display:block;max-width:none;margin-top:14px;font-size:clamp(22px,5vw,26px);letter-spacing:-.03em;text-align:left;white-space:nowrap}
+.plan-card-summary .plan-quota-summary{margin-top:8px;font-weight:650;color:var(--accent)}
+.plan-card.recommended .plan-card-summary{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.plan-card-badge{position:absolute;top:-10px;left:20px;z-index:1;padding:4px 10px;border-radius:99px;background:var(--accent);color:#fff;font-size:8px;font-weight:850;letter-spacing:.12em}
+.plan-card-detail{display:flex;flex-direction:column;flex:1;padding:18px 20px 20px}
+.plan-card-includes{margin:0 0 12px!important;color:var(--ink)!important;font-size:12px!important;font-weight:750}
+.plan-card-includes b{color:var(--accent)}
+.plan-card-detail>ul{flex:1;gap:9px;margin:0 0 18px;padding-left:0;list-style:none;line-height:1.45}
+.plan-card-detail>ul>li{position:relative;padding-left:21px}
+.plan-card-detail>ul>li:before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:800}
+.plan-card-buy{margin-top:auto;width:100%;min-height:46px;font-size:13px;font-weight:800}
+.plan-card .single-check-note{margin:0 0 16px;padding:13px}
+.plan-card .single-check-note strong{font-size:11px}
+.plan-card .single-check-note small{font-size:10px!important;line-height:1.45}
+.plan-card .plan-quota-box{margin-bottom:16px}
+
 @media(min-width:821px){
-  .plans-dialog{width:min(1200px,calc(100vw - 32px))}
-  .plans-dialog .dialog-frame{width:100%;max-width:100%;max-height:90vh;overflow-x:hidden;overflow-y:auto}
-  .plans-dialog .plans-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:26px 28px;align-items:start}
-  .plans-dialog .plan-card{display:flex;flex-direction:column}
-  .plans-dialog .plan-card-detail{display:block!important;flex:1}
-  .plans-dialog .plan-card-detail>ul{flex:1}
-  .plans-dialog .plan-card-summary{pointer-events:none;cursor:default;border-bottom:1px solid var(--line)}
-  .plans-dialog .plan-card-summary>i{display:none}
+  /* ui-polish-final.js forces every .dialog-frame to the shared --prompt-content width with
+     !important, so the dialog itself has to use the same width or the frame (and with it the
+     close button) overflows past the dialog's right edge. */
+  .plans-dialog{width:min(1240px,calc(100vw - 32px))}
+  .plans-dialog .dialog-frame{max-width:100%;max-height:92vh;overflow-x:hidden;overflow-y:auto}
+  .plans-dialog .plans-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;padding:26px 28px;align-items:stretch;overflow:visible}
+  .plans-dialog .plan-card.recommended{transform:translateY(-6px)}
+}
+@media(max-width:820px){
+  .plans-dialog .plan-card{margin-top:14px}
 }
 
 /* 8 — footer */

@@ -64,6 +64,29 @@ test('the plans dialog always offers a way out and never opens on top of itself'
   assert.match(app,/el\.plansDialog\.showModal=\(\)=>\{if\(el\.plansDialog\.open\)return;/,'showModal() throws when the dialog is already open');
   assert.match(app,/el\.plansDialog\.addEventListener\("click",e=>\{if\(e\.target===el\.plansDialog\)el\.plansDialog\.close\(\)\}\)/);
 });
+test('the three tiers are shown side by side and fully readable without expanding anything',async()=>{
+  const html=await text('index.html'),css=await text('styles.css'),app=await text('app.js');
+  assert.doesNotMatch(html,/<details class="plan-card"/,'plan cards must not be collapsed accordions anymore');
+  assert.doesNotMatch(html,/<summary class="plan-card-summary"/);
+  for(const plan of ['free','pro','ultimate'])assert.match(html,new RegExp(`<article class="plan-card[^"]*" data-plan-card="${plan}">`),plan);
+  assert.match(html,/<p class="plan-card-includes">Alles aus <b>Kostenlos<\/b>, plus:<\/p>/,'Pro must build on the free tier');
+  assert.match(html,/<p class="plan-card-includes">Alles aus <b>Pro<\/b>, plus:<\/p>/,'Ultimate must build on Pro');
+  assert.match(html,/class="solid-btn plan-card-buy" id="startProCheckoutBtn">Jetzt kaufen</);
+  assert.match(html,/class="outline-btn plan-card-buy" id="startUltimateCheckoutBtn">Jetzt kaufen</);
+  assert.match(css,/\.plan-card-buy\{margin-top:auto/,'the buy button sits at the bottom of every card');
+  assert.match(css,/\.plans-dialog \.plans-grid\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'three columns on desktop');
+  assert.match(css,/\.plan-card-summary>strong\{display:block;max-width:none/,'the narrow-screen price cap must be reset for the stacked header');
+  assert.doesNotMatch(app,/addEventListener\('toggle',\(\)=>\{if\(!card\.open\)return;/,'the accordion handler has no cards to collapse anymore');
+});
+test('the login page opens the tier comparison and gets the visitor back afterwards',async()=>{
+  const gate=await text('entry-gate-ui.js'),fix=await text('ui-regression-fixes.js');
+  assert.match(gate,/class="gate-plans-copy"/,'all copy shares one grid cell so the arrow cannot land between the lines');
+  assert.match(gate,/class="gate-plans-tiers"/);
+  assert.match(gate,/function openPlansFromGate\(\)/);
+  assert.match(gate,/plans\.addEventListener\('close',\(\)=>\{const dialog=\$\('#accountDialog'\);if\(dialog&&!dialog\.open\)\{try\{dialog\.showModal\(\)\}catch\{\}\}\},\{once:true\}\)/,'closing the plans dialog must return to the login page');
+  assert.doesNotMatch(gate,/\.gate-plans-pick:after\{content:"→"/,'the arrow is its own element now, not a grid-row-spanning pseudo element');
+  assert.doesNotMatch(fix,/\$\('#accountDialog'\)\?\.close\(\);setTimeout\(\(\)=>\$\('#plansDialog'\)\?\.showModal\(\)/,'the login page stays open underneath instead of being closed');
+});
 test('reaching the modules step never interrupts a free user with a modal',async()=>{
   // goStep(4) and the automatic mode routing both call recommendModules(), so opening the plans
   // dialog from there trapped every free user mid-workflow behind a dialog they could not close.
@@ -97,7 +120,7 @@ test('submitting the clarification dialog with only optional questions left blan
   assert.doesNotMatch(src,/hasAnyUnresolved=\(state\.projectReview\.questions\|\|\[\]\)\.length && !state\.reviewDeferred && !state\.clarifications\.some\(a=>a\.answer\?\.trim\(\)\)/,'the old check demanded at least one non-blank answer text across ALL clarifications, even when every question was optional and the user legitimately submitted the dialog blank - this reopened the same dialog on every "Weiter" click forever');
   assert.match(src,/hasAnyUnresolved=\(state\.projectReview\.questions\|\|\[\]\)\.length && !state\.reviewDeferred && !\(state\.projectReview\.questions\|\|\[\]\)\.every\(q=>state\.clarifications\.some\(a=>a\.question===q\.question\)\)/,'unresolved must mean "a question has no submitted clarification entry yet", not "no answer anywhere has text in it" - saveClarificationAnswers() always records one entry per rendered question, blank or not');
 });
-test('Pro trial does not leak into Ultimate and shows its exact lifecycle',async()=>{const checkout=await text('api/checkout.js'),webhook=await text('api/stripe-webhook.js'),ui=await text('trial-fix-ui.js');assert.match(checkout,/product==='pro'\?await currentOffer\(\):null/);assert.match(webhook,/customer\.subscription\.created/);assert.match(webhook,/o\.status==='trialing'&&o\.trial_end/);assert.match(ui,/Pro · Testphase/);assert.match(ui,/Noch \$\{remaining\}/);assert.match(ui,/Ultimate wählen/);assert.match(ui,/gilt ausschließlich für Pro/)});
+test('Pro trial does not leak into Ultimate and shows its exact lifecycle',async()=>{const checkout=await text('api/checkout.js'),webhook=await text('api/stripe-webhook.js'),ui=await text('trial-fix-ui.js');assert.match(checkout,/product==='pro'\?await currentOffer\(\):null/);assert.match(webhook,/customer\.subscription\.created/);assert.match(webhook,/o\.status==='trialing'&&o\.trial_end/);assert.match(ui,/Pro · Testphase/);assert.match(ui,/Noch \$\{remaining\}/);assert.match(ui,/if\(ultimate&&Number\(offer\.trial_days\)>0\)ultimate\.textContent='Jetzt kaufen'/,'a Pro trial must not relabel the Ultimate button as a trial');assert.match(ui,/gilt ausschließlich für Pro/)});
 test('subscription management shows live Stripe billing details without a new function',async()=>{const checkout=await text('api/checkout.js'),ui=await text('subscription-ui.js');assert.match(checkout,/action==='subscription-info'/);assert.match(checkout,/invoices\/create_preview/);assert.match(checkout,/payment_method_update/);assert.match(checkout,/subscription_cancel/);assert.match(checkout,/subscription_update/);assert.match(checkout,/billing_portal\/configurations/);assert.match(checkout,/Prompt\.ai Kundenportal/);assert.match(checkout,/features\[subscription_update\]\[default_allowed_updates\]\[0\].*price/);for(const copy of ['Abo verwalten','Nächste Abbuchung','Zahlungsmethode','Abrechnungsverlauf','Auf Ultimate wechseln'])assert.ok(ui.includes(copy));assert.match(ui,/manageSubscriptionBtn/);assert.match(ui,/data-sub-portal="cancel"/)});
 test('prompt history and learning controls remain user-owned',async()=>{const history=await text('project-history.js'),learning=await text('learning-controls.js');assert.match(history,/sitebrief_prompt_versions/);assert.match(history,/user_id/);assert.match(learning,/sitebrief_learning_examples/);assert.match(learning,/\.eq\('user_id',cloud\.user\.id\)/)});
 test('package is frozen as Prompt.ai v1.0',async()=>{const pkg=JSON.parse(await text('package.json'));assert.equal(pkg.version,'1.0.0');const version=await text('VERSION.md');assert.match(version,/Feature Freeze/);assert.match(version,/Bugfix/)});

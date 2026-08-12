@@ -185,7 +185,10 @@
   }
 
   function initPlanCards(){
-    $$('[data-plan-card]').forEach(card=>card.addEventListener('toggle',()=>{if(!card.open)return;$$('[data-plan-card]').forEach(other=>{if(other!==card)other.open=false})}));
+    // The plan cards are always-open cards, not <details> accordions, so there is nothing to
+    // collapse. Keep the tier of the current plan marked so the active one is recognisable.
+    const current=state.isAdmin?'ultimate':state.plan;
+    $$('[data-plan-card]').forEach(card=>card.classList.toggle('is-current-plan',card.dataset.planCard===current));
   }
 
   const AGENT_LAUNCH={claude:{web:'https://claude.ai/new',desktop:prompt=>`claude://code/new?q=${encodeURIComponent(prompt.slice(0,14000))}`},codex:{web:'https://chatgpt.com/codex'},chatgpt:{web:'https://chatgpt.com/'},gemini:{web:'https://gemini.google.com/app'},cursor:{web:'https://cursor.com/agents'},v0:{web:'https://v0.dev/chat'},universal:{web:'https://chatgpt.com/'}};
@@ -454,6 +457,7 @@
   }
   function applyPlanUi(){
     const rules=planRules(),name=state.isAdmin?"Admin · Ultimate":rules.label;
+    initPlanCards();
     if(!rules.modes.includes(state.mode))state.mode=rules.modes[0];
     $$('.mode-switch button').forEach(button=>{const allowed=rules.modes.includes(button.dataset.mode);button.classList.toggle('locked',!allowed);button.title=allowed?'':'Ab Pro verfügbar';button.classList.toggle('active',button.dataset.mode===state.mode)});
     if(!rules.agents.includes(state.targetAgent))state.targetAgent=rules.agents[0];

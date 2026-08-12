@@ -43,8 +43,9 @@
       const response=await fetch('/api/offer',{cache:'no-store'}),data=await response.json(),offer=data?.offer;
       if(!offer)return;
       const pro=$('#startProCheckoutBtn'),ultimate=$('#startUltimateCheckoutBtn');
-      if(pro)pro.textContent=offer.cta_label||(Number(offer.trial_days)>0?`${offer.trial_days} Tage kostenlos testen`:'Pro wählen');
-      if(ultimate&&Number(offer.trial_days)>0)ultimate.textContent='Ultimate wählen';
+      if(pro)pro.textContent=offer.cta_label||(Number(offer.trial_days)>0?`${offer.trial_days} Tage kostenlos testen`:'Jetzt kaufen');
+      // A Pro trial offer must never relabel Ultimate as a trial - Ultimate keeps its plain buy CTA.
+      if(ultimate&&Number(offer.trial_days)>0)ultimate.textContent='Jetzt kaufen';
     }catch{}
   }
 
