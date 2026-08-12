@@ -1750,7 +1750,13 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   function updateMasterPrompt(){
     el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Master-Prompt wird zusammengestellt…";
     setTimeout(()=>{
-      const prompt=buildMasterPrompt();el.masterPrompt.value=prompt;const c=selectedConcept();el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} · ${escapeHtml(c?.name||"keine Richtung")}</span><span>${prompt.length.toLocaleString("de-DE")} Zeichen · Quellen separat · ${selectedModules().length} Module · ${selectedSkills().length} Skills</span>`;renderPromptHandoff();el.generationStatus.textContent="";
+      const prompt=buildMasterPrompt();
+      setTimeout(()=>{
+        el.masterPrompt.value=prompt;
+        setTimeout(()=>{
+          const c=selectedConcept();el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} · ${escapeHtml(c?.name||"keine Richtung")}</span><span>${prompt.length.toLocaleString("de-DE")} Zeichen · Quellen separat · ${selectedModules().length} Module · ${selectedSkills().length} Skills</span>`;renderPromptHandoff();el.generationStatus.textContent="";
+        },0);
+      },0);
     },0);
   }
 

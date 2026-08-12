@@ -78,6 +78,14 @@
         <button type="button" class="outline-btn" id="workspaceLibraryBtn">Bibliothek öffnen</button>
       </div>
     </section>
+    <section class="welcome-pricing" aria-label="Tarife">
+      <div class="pricing-intro"><span class="section-kicker">PASSENDE PLÄNE FÜR JEDES PROJEKT</span><h2>Wähle den richtigen Tarif</h2></div>
+      <div class="pricing-cards">
+        <div class="pricing-card"><strong>Kostenlos</strong><small>Für erste Projekte und Ideen</small><span class="price">0 €</span><ul><li>Geführter Ablauf</li><li>Drei Richtungen</li><li>Master-Prompt</li></ul><button type="button" class="outline-btn" id="startFreeBtn">Kostenlos starten</button></div>
+        <div class="pricing-card featured"><strong>Pro</strong><small>Für vollständige Kundenprojekte</small><span class="price">15,99 €<small>/Monat</small></span><ul><li>Vier Richtungen</li><li>Erweiterte Prüfung</li><li>Website-Überarbeitung</li><li>Eigene Module &amp; Skills</li></ul><button type="button" class="solid-btn" data-upgrade-plans>Pro wählen</button></div>
+        <div class="pricing-card"><strong>Ultimate</strong><small>Für Agenturen und volle Kontrolle</small><span class="price">25,99 €<small>/Monat</small></span><ul><li>Alle Features aus Pro</li><li>Alle Agenten</li><li>Prompt-Werkstatt</li><li>KI-Verbindungen</li><li>Expertenmodus</li></ul><button type="button" class="outline-btn" data-upgrade-plans>Ultimate wählen</button></div>
+      </div>
+    </section>
   </main>
 
   <div class="app-shell" id="workflowApp" hidden>
@@ -761,7 +769,7 @@
         <span class="footer-divider">·</span>
         <a href="#" id="footerCookieLink" class="footer-link">Cookies</a>
       </nav>
-      <small class="prompt-footer-text">© 2024 Prompt.ai. Alle Rechte vorbehalten.</small>
+      <small class="prompt-footer-text">© <span id="currentYear">2024</span> Prompt.ai. Alle Rechte vorbehalten.</small>
     </div>
   </footer>
 
@@ -771,6 +779,7 @@
   <script src="./legal-pages.js?v=20260813-2" defer></script>
   <script src="./app.js?v=20260813-6" defer></script>
   <script src="./admin-console.js?v=20260813-11" defer></script>
+  <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>
 </html>
 
