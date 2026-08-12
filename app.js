@@ -2098,7 +2098,7 @@ el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBt
     window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.installPrompt=event;if(el.installAppBtn)el.installAppBtn.hidden=false});window.addEventListener('appinstalled',()=>{state.installPrompt=null;if(el.installAppBtn)el.installAppBtn.hidden=true});
     window.addEventListener('promptai:access',event=>{const access=event.detail||window.PromptAiAccess;if(!access)return;if(access.plan)state.plan=access.plan;state.isAdmin=Boolean(access.isAdmin)||isOwnerAccount();if(access.ownApiKeys)state.ownApiKeys=true;applyPlanUi();updateAccountUi();});
     if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
-    setInterval(()=>saveState({cloud:false}),15000);
+    let autoSaveInterval;const startAutoSave=()=>{if(autoSaveInterval)return;autoSaveInterval=setInterval(()=>saveState({cloud:false}),15000)};const stopAutoSave=()=>{if(autoSaveInterval){clearInterval(autoSaveInterval);autoSaveInterval=null}};document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')startAutoSave();else stopAutoSave()});startAutoSave();
   }
 
   document.addEventListener("DOMContentLoaded",init);
