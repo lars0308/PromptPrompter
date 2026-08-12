@@ -1748,13 +1748,15 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   }
 
   function updateMasterPrompt(){
-    if(!el.generatingDialog)return;
-    el.generatingDialog.showModal();
-    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,100));
-    idle(()=>{
-      let prompt;try{prompt=buildMasterPrompt()}catch(err){el.generatingDialog.close();el.generationStatus.textContent="Fehler: "+err.message;return}
-      setTimeout(()=>{el.masterPrompt.value=prompt;setTimeout(()=>{const c=selectedConcept();el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} · ${escapeHtml(c?.name||"keine Richtung")}</span><span>${prompt.length.toLocaleString("de-DE")} Zeichen · Quellen separat · ${selectedModules().length} Module · ${selectedSkills().length} Skills</span>`;renderPromptHandoff();el.generatingDialog.close();},0);},0);
-    });
+    try{
+      const prompt=buildMasterPrompt();
+      el.masterPrompt.value=prompt;
+      const c=selectedConcept();
+      el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} · ${escapeHtml(c?.name||"keine Richtung")}</span><span>${prompt.length.toLocaleString("de-DE")} Zeichen · Quellen separat · ${selectedModules().length} Module · ${selectedSkills().length} Skills</span>`;
+      renderPromptHandoff();
+    }catch(err){
+      el.generationStatus.textContent="Fehler beim Master-Prompt: "+err.message;
+    }
   }
 
   function guideConfig(step){
