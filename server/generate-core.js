@@ -315,7 +315,7 @@ function imageContent(images=[],mode="openai"){
   return out;
 }
 
-async function callOpenAI({key,model,prompt,images,schema,name}){
+async function callOpenAI({key,model,prompt,images,schema,name,tokens}){
   if(!key) throw Object.assign(new Error("Kein OpenAI API-Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
   const content=[{type:"input_text",text:prompt},...imageContent(images,"openai")];
   const body={
@@ -327,6 +327,7 @@ async function callOpenAI({key,model,prompt,images,schema,name}){
   const response=await fetchWithTimeout("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
   const data=await response.json();
   if(!response.ok) throw Object.assign(new Error(data.error?.message||"OpenAI request failed"),{status:response.status});
+  addTokens(tokens,data.usage);
   return cleanJsonText(extractOpenAIText(data));
 }
 
@@ -337,7 +338,7 @@ async function gatewayRequest(body,key){
   return data;
 }
 
-async function callGateway({key,model,prompt,images,schema,name}){
+async function callGateway({key,model,prompt,images,schema,name,tokens}){
   if(!key) throw Object.assign(new Error("Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
   const content=[{type:"text",text:prompt},...imageContent(images,"gateway")];
   // Without an explicit cap the gateway applies a per-model default output budget (65536) that
@@ -352,11 +353,12 @@ async function callGateway({key,model,prompt,images,schema,name}){
     if(firstError?.status===504)throw firstError;
     data=await gatewayRequest(base,key);
   }
+  addTokens(tokens,data.usage);
   const text=data.choices?.[0]?.message?.content;
   return cleanJsonText(typeof text==="string"?text:Array.isArray(text)?text.map(x=>x.text||"").join(""):"");
 }
 
-async function callGemini({key,model,prompt,images}){
+async function callGemini({key,model,prompt,images,tokens}){
   if(!key) throw Object.assign(new Error("Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
   const parts=[{text:prompt}];
   for(const image of images.slice(0,3)){
@@ -368,6 +370,7 @@ async function callGemini({key,model,prompt,images}){
   const response=await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:"POST",headers:{"x-goog-api-key":key,"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:"You are a senior web art director and website briefing analyst. Return only valid JSON and avoid generic AI website patterns."}]},contents:[{role:"user",parts}],generationConfig:{responseMimeType:"application/json"}})});
   const data=await response.json();
   if(!response.ok)throw Object.assign(new Error(data.error?.message||"Gemini request failed"),{status:response.status});
+  addTokens(tokens,data.usageMetadata);
   const text=(data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||"").join("");
   return cleanJsonText(text);
 }
@@ -460,7 +463,7 @@ The result must read instantly as a bespoke real website design, not as an AI-ge
   const response=await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/black-forest-labs/flux-1-schnell`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt.slice(0,2048),steps:8,width:1280,height:720,seed})});const data=await response.json().catch(()=>({}));if(!response.ok||data?.success===false)throw Object.assign(new Error(data?.errors?.[0]?.message||'Cloudflare image request failed'),{status:response.status||500});const image=data?.result?.image;if(!image)throw new Error('Cloudflare hat kein Bild zurückgegeben');return {imageDataUrl:`data:image/jpeg;base64,${image}`};
 }
 
-const {logUsage}=require('../server/usage');
+const {logUsage,tokenSink,addTokens}=require('../server/usage');
 
 module.exports = async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
@@ -504,9 +507,11 @@ module.exports = async function handler(req,res){
     const resolved = await resolveProviderKey(req,engine);
     if(entitlement.plan==='free'&&entitlement.ownApiKeys&&resolved.source!=='account')throw Object.assign(new Error('Für dieses Add-on muss ein eigener API-Key verbunden sein.'),{status:403});
     if(!resolved.key) throw Object.assign(new Error(engine==="openai"?"Kein OpenAI API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":engine==="gemini"?"Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":"Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
-    const result=engine==="openai" ? await callOpenAI({key:resolved.key,model,prompt,images,schema,name}) : engine==="gemini" ? await callGemini({key:resolved.key,model,prompt,images}) : await callGateway({key:resolved.key,model,prompt,images,schema,name});
+    const tokens=tokenSink();
+    const result=engine==="openai" ? await callOpenAI({key:resolved.key,model,prompt,images,schema,name,tokens}) : engine==="gemini" ? await callGemini({key:resolved.key,model,prompt,images,tokens}) : await callGateway({key:resolved.key,model,prompt,images,schema,name,tokens});
     res.setHeader('X-SiteBrief-AI-Key-Source', resolved.source);
-    await logUsage(req,{...usageEvent,durationMs:Date.now()-startedAt});
+    res.setHeader('X-Prompt-AI-Tokens', String(tokens.total||0));
+    await logUsage(req,{...usageEvent,tokens,durationMs:Date.now()-startedAt});
     return res.status(200).json(result);
   }catch(error){
     await logUsage(req,{...usageEvent,success:false,durationMs:Date.now()-startedAt,error:error?.message||'Unexpected generation error'});

@@ -99,3 +99,33 @@ test('the AI studio lets an administrator pick the plans of a profile',async()=>
   assert.match(studio,/if\(!body\.plans\.length\)return formMsg\('Bitte mindestens einen Tarif auswählen\.','error'\)/);
   assert.match(studio,/\$\$\('\[data-system-ai-plan\]'\)\.forEach\(x=>x\.checked=\(p\.plans\|\|\['free','pro','ultimate'\]\)\.includes\(x\.value\)\)/,'editing shows the stored plans');
 });
+
+test('token counts are read from every provider shape and stored with the usage event',async()=>{
+  const usage=require('../server/usage.js');
+  const sink=usage.tokenSink();
+  usage.addTokens(sink,{prompt_tokens:120,completion_tokens:40,total_tokens:160});      // gateway
+  usage.addTokens(sink,{input_tokens:10,output_tokens:5});                              // OpenAI responses
+  usage.addTokens(sink,{promptTokenCount:7,candidatesTokenCount:3,totalTokenCount:10}); // Gemini
+  assert.deepEqual(sink,{prompt:137,completion:48,total:185});
+  assert.deepEqual(usage.addTokens(usage.tokenSink(),null),{prompt:0,completion:0,total:0},'a run without token data stays at zero');
+  assert.deepEqual(usage.addTokens(usage.tokenSink(),{input_tokens:4,output_tokens:6}),{prompt:4,completion:6,total:10},'a missing total is derived');
+
+  const src=await text('server/usage.js'),core=await text('server/generate-core.js'),free=await text('server/free-prompt-v2.js'),migration=await text('supabase/migrations/20260815_add_usage_tokens.sql');
+  assert.match(src,/prompt_tokens:int\(tokens\.prompt\),completion_tokens:int\(tokens\.completion\),total_tokens:int\(tokens\.total\)/);
+  assert.match(core,/const tokens=tokenSink\(\);/);
+  assert.match(core,/await logUsage\(req,\{\.\.\.usageEvent,tokens,durationMs:Date\.now\(\)-startedAt\}\)/);
+  assert.match(core,/addTokens\(tokens,data\.usage\);/);
+  assert.match(core,/addTokens\(tokens,data\.usageMetadata\);/);
+  assert.match(free,/const errors=\[\],architect=architectPrompt\(input,\{advanced\}\),tokens=tokenSink\(\);/);
+  assert.match(free,/usage\.tokens=result\.tokens;/);
+  assert.match(migration,/add column if not exists prompt_tokens integer not null default 0/);
+});
+
+test('the admin console reports what the tokens were spent on',async()=>{
+  const overview=await text('api/admin-overview.js'),core=await text('admin-console-core.js');
+  assert.match(overview,/prompt_tokens,completion_tokens,total_tokens/,'the columns have to be read');
+  assert.match(overview,/const tokens=usage\.reduce\(\(sum,x\)=>sum\+\(Number\(x\.total_tokens\)\|\|0\),0\);/);
+  assert.match(core,/\['Verbrauchte Tokens',s\.tokens\|\|0\]/,'a stat card for the total');
+  assert.match(core,/current\.tokens\+=Number\(item\.total_tokens\)\|\|0/,'and per model, with an average per call');
+  assert.match(core,/Tokens \(Ø \$\{Math\.round\(data\.tokens\/data\.count\)/);
+});

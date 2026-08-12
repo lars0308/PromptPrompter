@@ -2,7 +2,7 @@ const {getEntitlements}=require('./entitlements');
 const {resolveProviderKey}=require('./provider-key');
 const {listProfiles}=require('./system-ai-profiles');
 const {rateLimit}=require('./rate-limit');
-const {logUsage}=require('./usage');
+const {logUsage,tokenSink,addTokens}=require('./usage');
 const {primePromptTemplates,promptText}=require('./prompt-templates');
 
 const MAX_BODY=120000;
@@ -225,36 +225,38 @@ function localFallback(input,{advanced=false}={}){
   return `ROLLE\nDu bist ${role}. Arbeite fachlich, eigenständig und auf professionellem Niveau.\n\nAUFGABE\nErstelle ${input.categoryLabel} für ${tool}.\n\nPROFESSIONELL AUFBEREITETE BESCHREIBUNG\n${description}${extra?`\n\nWEITERE VERBINDLICHE ANGABEN\n${extra}`:''}\n\nPROMPT.AI GRUNDREGELN\n${asBullets(UNIVERSAL_MASTER_RULES)}\n\nFACHREGELN FÜR DIESEN BEREICH\n${asBullets(categoryRules(input))}\n\nABSCHLUSS\nPrüfe intern Ziel, Angaben, Verbote, Sicherheit und Ausgabeformat. Gib danach ausschließlich das direkt nutzbare Ergebnis zurück.`;
 }
 function safeModel(value,fallback){const model=String(value||fallback||'').trim();return model&&model.length<190&&/^[a-zA-Z0-9@._:/-]+$/.test(model)?model:fallback}
-async function gateway(key,model,prompt){
+async function gateway(key,model,prompt,tokens){
   const response=await fetchWithTimeout('https://ai-gateway.vercel.sh/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'openai/gpt-5.4'),messages:[{role:'system',content:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'},{role:'user',content:prompt}],stream:false})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||data.message||'AI Gateway nicht verfügbar.'),{status:response.status});
+  addTokens(tokens,data.usage);
   const value=data.choices?.[0]?.message?.content;return cleanFence(typeof value==='string'?value:Array.isArray(value)?value.map(x=>x.text||'').join(''):'');
 }
-async function openai(key,model,prompt){
+async function openai(key,model,prompt,tokens){
   const response=await fetchWithTimeout('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'gpt-5'),instructions:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.',input:prompt})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'OpenAI nicht verfügbar.'),{status:response.status});
+  addTokens(tokens,data.usage);
   let text=typeof data.output_text==='string'?data.output_text:'';if(!text)for(const item of data.output||[])for(const part of item.content||[])if(part.type==='output_text')text+=part.text||'';return cleanFence(text);
 }
-async function gemini(key,model,prompt){
+async function gemini(key,model,prompt,tokens){
   const selected=safeModel(model,'gemini-3.6-flash').replace(/^models\//,'');
   const response=await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'}]},contents:[{role:'user',parts:[{text:prompt}]}]})});
-  const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'Gemini nicht verfügbar.'),{status:response.status});return cleanFence((data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join(''));
+  const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'Gemini nicht verfügbar.'),{status:response.status});addTokens(tokens,data.usageMetadata);return cleanFence((data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join(''));
 }
 async function generateWithSystemAi(req,input,{advanced=false,plan=''}={}){
   // The plan decides which AIs are in the chain - the visitor never picks a model.
   let profiles=await listProfiles('freeprompt',{providers:['gateway','openai','gemini'],plan});if(!profiles.length)profiles=await listProfiles('prompt',{providers:['gateway','openai','gemini'],plan});
-  const errors=[],architect=architectPrompt(input,{advanced});
+  const errors=[],architect=architectPrompt(input,{advanced}),tokens=tokenSink();
   for(const profile of profiles){
     if(profile.enabled===false)continue;
     try{
       const resolved=await resolveProviderKey(req,profile.provider,{systemOnly:true});if(!resolved.key)continue;
       const model=profile.model||resolved.defaultModel||'';
-      const result=profile.provider==='gateway'?await gateway(resolved.key,model,architect):profile.provider==='openai'?await openai(resolved.key,model,architect):await gemini(resolved.key,model,architect);
+      const result=profile.provider==='gateway'?await gateway(resolved.key,model,architect,tokens):profile.provider==='openai'?await openai(resolved.key,model,architect,tokens):await gemini(resolved.key,model,architect,tokens);
       if(result.length<180)throw new Error('Antwort war zu kurz.');
-      return {prompt:result,provider:profile.provider,model:model||resolved.defaultModel||'',profile:profile.label||'',polished:true};
+      return {prompt:result,provider:profile.provider,model:model||resolved.defaultModel||'',profile:profile.label||'',polished:true,tokens};
     }catch(error){errors.push(`${profile.label||profile.provider}: ${error.message}`)}
   }
-  return {prompt:localFallback(input,{advanced}),provider:'local',model:'',profile:'Lokaler Master-Prompt-Fallback',fallbackErrors:errors.slice(0,3),polished:false};
+  return {prompt:localFallback(input,{advanced}),provider:'local',model:'',profile:'Lokaler Master-Prompt-Fallback',fallbackErrors:errors.slice(0,3),polished:false,tokens};
 }
 
 module.exports=async function freePromptV2(req,res){
@@ -266,7 +268,7 @@ module.exports=async function freePromptV2(req,res){
     const normalized=normalizedInput(req.body||{});if(normalized.description.length<12)return res.status(400).json({error:'Beschreibe bitte etwas genauer, was die KI für dich erstellen soll.'});
     const entitlement=await getEntitlements(req),pro=entitlement.isAdmin||['pro','ultimate'].includes(entitlement.plan),input=pro?normalized:freeInput(normalized);
     usage.project={name:'Freier Prompt',type:input.categoryLabel,goal:(input.goal||input.description).slice(0,180)};
-    const result=await generateWithSystemAi(req,input,{advanced:pro,plan:entitlement.isAdmin?'ultimate':String(entitlement.plan||'free')});usage.provider=result.provider;usage.model=result.model;
+    const result=await generateWithSystemAi(req,input,{advanced:pro,plan:entitlement.isAdmin?'ultimate':String(entitlement.plan||'free')});usage.provider=result.provider;usage.model=result.model;usage.tokens=result.tokens;
     await logUsage(req,{...usage,durationMs:Date.now()-started});
     return res.status(200).json({...result,tier:entitlement.isAdmin?'ultimate':entitlement.plan,advanced:pro,masterVersion:'v2'});
   }catch(error){
