@@ -53,7 +53,32 @@
   function upgradeStrip(){$('#freeWorkflowUpgrade')?.remove()}
   function settle(){styles();hero();bindFree();reorder();planLocks();upgradeStrip()}
   function warmup(){let n=0;const timer=setInterval(()=>{settle();if(++n>=16)clearInterval(timer)},250)}
-  function init(){settle();intercept();warmup();window.addEventListener('promptai:access',settle);window.addEventListener('pageshow',settle);document.addEventListener('click',()=>setTimeout(upgradeStrip,0),true)}
+  // A sub-pixel rounding (a body of 844.7px in an 844px viewport) made the start page scrollable by
+  // exactly one pixel - on a phone that shows up as a rubber-band bounce on a page that fits.
+  // Only that artifact is clipped: from three pixels of real overflow the page scrolls normally.
+  const HAIRLINE=2;
+  function hairlineScroll(){
+    const root=document.documentElement;
+    const extra=root.scrollHeight-root.clientHeight;
+    root.classList.toggle('prompt-no-hairline-scroll',extra>0&&extra<=HAIRLINE);
+  }
+  function watchHairlineScroll(){
+    if(!document.getElementById('promptHairlineScrollStyle')){
+      const style=document.createElement('style');style.id='promptHairlineScrollStyle';
+      style.textContent='html.prompt-no-hairline-scroll,html.prompt-no-hairline-scroll body{overflow-y:hidden!important}';
+      document.head.appendChild(style);
+    }
+    hairlineScroll();
+    // Late layout shifts (web fonts, images, the boot screen leaving) change the height after the
+    // first measurement, so it is repeated a few times and on every real resize.
+    [300,900,2000].forEach(delay=>setTimeout(hairlineScroll,delay));
+    addEventListener('load',hairlineScroll);
+    addEventListener('resize',hairlineScroll,{passive:true});
+    try{document.fonts?.ready?.then(hairlineScroll)}catch{}
+    // Re-measure whenever the page grows or shrinks, so real content never gets locked away.
+    try{new ResizeObserver(()=>hairlineScroll()).observe(document.body)}catch{}
+  }
+  function init(){settle();intercept();warmup();watchHairlineScroll();window.addEventListener('promptai:access',settle);window.addEventListener('pageshow',settle);document.addEventListener('click',()=>setTimeout(upgradeStrip,0),true)}
   window.PromptAiHomeEntry={openWebsite:()=>open('website'),openFreePrompt:()=>open('free'),openRevision:()=>open('revision'),openPreview:()=>open('preview'),isBypass:id=>bypassTarget===id};
   styles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

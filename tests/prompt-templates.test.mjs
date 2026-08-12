@@ -204,3 +204,28 @@ test('regenerating builds on the selected direction and is capped per plan',asyn
   assert.match(quota,/async function consumePreviewRun\(req\)/);
   assert.match(image,/let usage=\{action:'preview-image-call'/,'single images no longer count as a preview unit');
 });
+
+test('own API keys are sold per slot: one bought slot, one stored provider key',async()=>{
+  const entitlements=await text('server/entitlements.js'),checkout=await text('api/checkout.js'),webhook=await text('api/stripe-webhook.js'),cloud=await text('cloud.js'),app=await text('app.js'),html=await text('index.html'),migration=await text('supabase/migrations/20260815_add_api_key_slots.sql');
+  assert.match(migration,/add column if not exists quantity integer not null default 1/);
+  assert.match(entitlements,/const apiKeySlots=isAdmin\?MAX_API_KEY_SLOTS:addonActive\?Math\.max\(1,Math\.min\(MAX_API_KEY_SLOTS,Number\(apiAddon\?\.quantity\)\|\|1\)\):0;/);
+  assert.match(entitlements,/const ownApiKeys=apiKeySlots>0;/,'no plan includes keys any more - the slots are the product');
+  assert.match(checkout,/const slots=isAddon\?Math\.max\(1,Math\.min\(4,Number\(req\.body\?\.slots\)\|\|1\)\):1;/);
+  assert.match(checkout,/'line_items\[0\]\[quantity\]':String\(slots\)/);
+  assert.match(checkout,/'line_items\[0\]\[adjustable_quantity\]\[maximum\]':'4'/,'the customer can change the count in Stripe too');
+  assert.match(webhook,/quantity:Math\.max\(1,Math\.min\(4,Number\(o\.metadata\?\.slots\)\|\|1\)\)/,'the bought count is stored');
+  assert.match(webhook,/Number\(o\.items\?\.data\?\.\[0\]\?\.quantity\)/,'a later change in Stripe updates it');
+  assert.match(cloud,/apiKeySlots:Boolean\(adminRes\.data\)\?4:/);
+  // The section only exists once something was bought, and never more keys than slots.
+  assert.match(html,/<section class="settings-section" id="apiKeySection" hidden>/);
+  assert.match(app,/section\.hidden=!cloudReady\(\)\|\|slots<=0;/);
+  assert.match(app,/const stored=Boolean\(aiConnection\(provider\)\),full=!stored&&used>=slots;/);
+  assert.match(app,/beginCheckout\('own_api_keys',\{slots:Number\(el\.apiAddonSlots\?\.value\)\|\|1\}\)/);
+});
+
+test('the start page does not scroll by a rounding pixel',async()=>{
+  const home=await text('home-entry-ui.js');
+  assert.match(home,/const HAIRLINE=2;/);
+  assert.match(home,/root\.classList\.toggle\('prompt-no-hairline-scroll',extra>0&&extra<=HAIRLINE\)/,'only the artifact is clipped, real overflow keeps scrolling');
+  assert.match(home,/new ResizeObserver\(\(\)=>hairlineScroll\(\)\)\.observe\(document\.body\)/,'growing content has to unlock scrolling again');
+});

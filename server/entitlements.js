@@ -1,3 +1,4 @@
+const MAX_API_KEY_SLOTS=4;
 const {authenticatedUser,ownSubscription,ownApiAddon}=require('./supabase-user');
 
 async function ownRow(req, table, select){
@@ -14,7 +15,7 @@ async function getEntitlements(req){
   const [subscription,admin,apiAddon]=await Promise.all([
     ownRow(req,'sitebrief_subscriptions','plan,status'),
     ownRow(req,'sitebrief_admins','user_id'),
-    ownRow(req,'sitebrief_addons','addon,status')
+    ownRow(req,'sitebrief_addons','addon,status,quantity')
   ]);
   // The row is read with the caller's own token under an own-row RLS policy; comparing the ids
   // keeps that guarantee even if the policy is ever changed. Membership in sitebrief_admins is
@@ -27,8 +28,11 @@ async function getEntitlements(req){
   const paidPlan=active&&['pro','ultimate'].includes(subscription?.plan)?subscription.plan:'free';
   const addonActive=apiAddon?.addon==='own_api_keys'&&['active','trialing'].includes(apiAddon?.status);
   const plan=isAdmin?'ultimate':paidPlan;
-  const ownApiKeys=isAdmin||plan==='ultimate'||(plan==='pro'&&addonActive);
-  return {plan,isAdmin,ownApiKeys,maxConcepts:plan==='ultimate'?5:plan==='pro'?4:3};
+  // One bought slot, one provider the account may store a key for. Nothing is included in a plan
+  // any more - the slots are the product.
+  const apiKeySlots=isAdmin?MAX_API_KEY_SLOTS:addonActive?Math.max(1,Math.min(MAX_API_KEY_SLOTS,Number(apiAddon?.quantity)||1)):0;
+  const ownApiKeys=apiKeySlots>0;
+  return {plan,isAdmin,ownApiKeys,apiKeySlots,maxConcepts:plan==='ultimate'?5:plan==='pro'?4:3};
 }
 
 module.exports={getEntitlements};

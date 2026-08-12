@@ -351,6 +351,15 @@ body.dialog-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}.libra
 .admin-user>summary{gap:12px;padding:14px 16px}
 .admin-user>summary>.admin-user-main{min-width:0}
 .admin-user>summary>.admin-user-status{flex:0 0 auto;align-items:center}
+/* On a phone the pills and the fold marker were pushed off the right edge by the e-mail address,
+   so the row wraps into two lines instead: identity first, status and marker underneath. */
+@media(max-width:640px){
+  .admin-user>summary{flex-wrap:wrap;align-items:flex-start}
+  .admin-user>summary>.admin-user-main{flex:1 1 100%}
+  .admin-user>summary>.admin-user-status{flex:1 1 100%;flex-wrap:wrap;justify-content:flex-start;gap:6px}
+  .admin-user>summary>.admin-user-status .admin-fold-mark{margin-left:auto}
+  .admin-user-main strong{overflow-wrap:anywhere}
+}
 .admin-user-actions{padding:12px 16px 14px;border-top:1px solid var(--line)}
 /* The AI pane wrote its own section heads before the shared ones existed - same look now. */
 .admin-ai-intro>div>span,.system-ai-studio-head>div>span{display:block;color:var(--accent);font-size:8px;font-weight:800;letter-spacing:.12em}
@@ -473,7 +482,7 @@ body{padding-bottom:60px}
   @keyframes promptFillSweep{from{background-position:120% 0}to{background-position:-120% 0}}
   /* The end of every wait: the fill snaps to full and the whole line blinks blue once, so the
      screen leaves on a finished note instead of disappearing mid-fill. */
-  .prompt-fill-complete{--prompt-fill:100%!important;animation:promptFillFlash .42s ease-out 1!important;background-image:linear-gradient(90deg,var(--prompt-fill-on) 0 100%)!important}
+  .prompt-fill-complete{--prompt-fill:100%!important;animation:promptFillFlash .42s ease-out var(--prompt-flash-count,1)!important;background-image:linear-gradient(90deg,var(--prompt-fill-on) 0 100%)!important}
   @media(prefers-reduced-motion:reduce){.prompt-fill-sweep{animation:none;background-image:none;color:var(--ui-blue,var(--accent,#1689c7))}.prompt-fill-complete{animation:none!important}}
 }
 /* Outside the @supports block on purpose: the loaders that paint their own gradient

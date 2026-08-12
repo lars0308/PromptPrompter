@@ -99,6 +99,7 @@
     subscriptionPeriodEnd: null,
     isAdmin: false,
     ownApiKeys: false,
+    apiKeySlots: 0,
     reviewCredits: 0,
     clientContext:"",
     generatedWebsite:null,
@@ -118,18 +119,18 @@
       "agentSelector","generatorEngine","generatorModel","modelOptions","engineHelp","engineStatus","profileImpact","outputTargetSelector",
       "templateSelect","moduleSelection","skillSelection","skillContextLabel","recommendModulesBtn","importSkillFileBtn","skillFileInput","skillImportMessage",
       "blueprintSummary","originality","antiSlop","motion","density",
-      "regenerateConceptsBtn","regenerateConceptsHint","cancelPreviewBtn","generationStatus","conceptGallery","toRefineBtn","previewLightbox","previewLightboxTitle","previewLightboxClose","previewLightboxMedia","previewLightboxDownload","previewLightboxRegenerate","previewLightboxSelect",
+      "regenerateConceptsBtn","regenerateConceptsHint","apiAddonCard","apiAddonSlots","apiAddonState","cancelPreviewBtn","generationStatus","conceptGallery","toRefineBtn","previewLightbox","previewLightboxTitle","previewLightboxClose","previewLightboxMedia","previewLightboxDownload","previewLightboxRegenerate","previewLightboxSelect",
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
       "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadProjectSourcesBtn","downloadHandoffPackageBtn","downloadBriefBtn","promptHandoff","promptHandoffText","promptHandoffPreview","downloadProjectReportBtn","downloadClientBriefBtn","downloadHandoverBtn","downloadWebsiteZipBtn","buildWebsiteBtn","downloadGeneratedWebsiteBtn","websiteBuildStatus","websiteBuildProgress","websiteBuildStage","websiteBuildPercent","websiteBuildFill","websiteBuildStages","websiteBuildPreview","websiteBuildTruthNote","websiteRequirements","publishGithubBtn","clientResultHint","exportResultHint",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
       "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","libraryProjectList","faceIdBtn","faceIdMessage","supportCategory","supportSubject","supportMessage","sendSupportBtn","supportStatus",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
-      "settingsDialog","setActiveProfile","applyProfileBtn","githubLoginRow","githubUpgradeRow","githubConnectionGrid","githubSettingsLoginBtn","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
+      "settingsDialog","apiKeySection","apiKeySlotsNote","setActiveProfile","applyProfileBtn","githubLoginRow","githubUpgradeRow","githubConnectionGrid","githubSettingsLoginBtn","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
       "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","buyReviewInlineBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
-      "resetBtn","startNewBtn","brandHome","installAppBtn","upgradeBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","generatingDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","buySingleReviewBtn","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
+      "resetBtn","startNewBtn","brandHome","installAppBtn","upgradeBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","generatingDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","startApiAddonCheckoutBtn","manageSubscriptionBtn","buySingleReviewBtn","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
       "workspaceNewProjectBtn","workspaceLastProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionUpgradeNote","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn","appActionDialog","appActionKicker","appActionTitle","appActionMessage","appActionInputWrap","appActionInputLabel","appActionInput","appActionSelect","appActionCancelBtn","appActionConfirmBtn","openAgentBtn","agentLaunchDialog","closeAgentLaunchBtn","agentLaunchTitle","agentLaunchText","openAgentWebBtn","openAgentDesktopBtn","agentLaunchHint"
     ].forEach(id => el[id] = document.getElementById(id));
   }
@@ -397,15 +398,43 @@
   }
 
   function aiConnection(provider){ return state.aiConnections.find(x=>x.provider===provider)||null; }
-  // Own API keys are no longer a product: the settings only carry the GitHub connection, which
-  // reuses the same save/test/disconnect helpers.
-  function aiConnectionEls(){
-    return {status:el.githubConnectionStatus,input:el.githubToken,connect:el.githubConnectBtn,test:el.githubTestBtn,disconnect:el.githubDisconnectBtn,message:el.githubConnectionMessage};
+  const AI_PROVIDER_IDS=['gateway','openai','gemini','cloudflare'];
+  // The provider cards only exist once slots have been bought, so every lookup goes through the
+  // DOM instead of a fixed element map.
+  function aiConnectionEls(provider='github'){
+    if(provider==='github')return {status:el.githubConnectionStatus,input:el.githubToken,connect:el.githubConnectBtn,test:el.githubTestBtn,disconnect:el.githubDisconnectBtn,message:el.githubConnectionMessage};
+    const id=x=>document.getElementById(`${provider}${x}`);
+    return {status:id('ConnectionStatus'),input:provider==='cloudflare'?id('ApiToken'):id('ApiKey'),account:provider==='cloudflare'?id('AccountId'):null,connect:id('ConnectBtn'),test:id('TestBtn'),disconnect:id('DisconnectBtn'),message:id('ConnectionMessage')};
+  }
+  // One bought slot, one stored key. Everything above the bought number stays locked.
+  function apiKeySlots(){return state.isAdmin?4:Math.max(0,Number(state.apiKeySlots)||0)}
+  function storedKeyCount(){return state.aiConnections.filter(x=>AI_PROVIDER_IDS.includes(x.provider)).length}
+  function renderApiAddonCard(){
+    const card=el.apiAddonCard;if(!card)return;
+    const slots=apiKeySlots();
+    card.hidden=!cloudReady();
+    if(el.apiAddonState)el.apiAddonState.textContent=slots?`${slots} ${slots===1?'Platz':'Plätze'} gebucht. Weitere Plätze kannst du hier dazubuchen.`:'Pro gebuchtem Platz kannst du einen Anbieter-Key hinterlegen.';
+    if(el.startApiAddonCheckoutBtn)el.startApiAddonCheckoutBtn.textContent=slots?'Weitere Plätze buchen':'Plätze buchen';
+  }
+  function renderApiKeySlots(){
+    const section=el.apiKeySection;if(!section)return;
+    const slots=apiKeySlots(),used=storedKeyCount();
+    section.hidden=!cloudReady()||slots<=0;
+    if(el.apiKeySlotsNote)el.apiKeySlotsNote.textContent=slots?`${used} von ${slots} ${slots===1?'Platz':'Plätzen'} belegt. Jeder gebuchte Platz erlaubt einen eigenen Anbieter-Key.`:'';
+    for(const provider of AI_PROVIDER_IDS){
+      const ui=aiConnectionEls(provider);if(!ui.status)continue;
+      const stored=Boolean(aiConnection(provider)),full=!stored&&used>=slots;
+      const card=ui.status.closest('.ai-connection-card');
+      if(card)card.classList.toggle('is-slot-locked',full);
+      [ui.input,ui.account,ui.connect,ui.test].forEach(node=>{if(node)node.disabled=full});
+      if(full&&ui.message&&!ui.message.textContent)ui.message.textContent='Alle gebuchten Plätze sind belegt.';
+    }
   }
 
   function renderAiConnections(){
-    for(const provider of ['github']){
-      const ui=aiConnectionEls(); if(!ui.status) continue;
+    renderApiKeySlots();renderApiAddonCard();
+    for(const provider of [...AI_PROVIDER_IDS,'github']){
+      const ui=aiConnectionEls(provider); if(!ui.status) continue;
       const conn=aiConnection(provider), logged=cloudReady();
       ui.status.className='connection-status'+(conn?' connected':'');
       ui.status.textContent=conn?`Verbunden · ••••${conn.last4||''}`:(logged?'Nicht verbunden':'Login erforderlich');
@@ -418,7 +447,7 @@
   }
 
   async function saveAiProviderConnection(provider){
-    const ui=aiConnectionEls();
+    const ui=aiConnectionEls(provider);
     if(!cloudReady()){ui.message.textContent='Bitte zuerst bei Prompt.ai anmelden.';ui.message.className='connection-message error';return;}
     let secret=ui.input.value.trim();
     if(provider==='cloudflare'){const account=ui.account?.value.trim()||'';if(!/^[a-f0-9]{32}$/i.test(account)){ui.message.textContent='Bitte eine gültige 32-stellige Cloudflare Account-ID eingeben.';ui.message.className='connection-message error';return;}secret=`${account}:${secret}`;}
@@ -435,7 +464,7 @@
   }
 
   async function testAiProviderConnection(provider,quiet=false){
-    const ui=aiConnectionEls();
+    const ui=aiConnectionEls(provider);
     try{
       ui.test.disabled=true;if(!quiet){ui.message.textContent='Verbindung wird getestet…';ui.message.className='connection-message';}
       const res=await sitebriefApiFetch(`/api/ai-test?provider=${encodeURIComponent(provider)}`,{cache:'no-store'});
@@ -447,7 +476,7 @@
   }
 
   async function disconnectAiProvider(provider){
-    const ui=aiConnectionEls();if(!cloudReady())return;
+    const ui=aiConnectionEls(provider);if(!cloudReady())return;
     try{await window.SiteBriefCloud.deleteAiConnection(provider);state.aiConnections=[...(window.SiteBriefCloud.aiConnections||[])];ui.message.textContent='Eigener Key entfernt.';ui.message.className='connection-message';renderAiConnections();if(provider==='gateway')state.modelsLoaded=false;}
     catch(err){ui.message.textContent=err?.message||'Verbindung konnte nicht getrennt werden.';ui.message.className='connection-message error';}
   }
@@ -587,7 +616,7 @@
       const subscription=bundle.subscription||{};
       state.isAdmin=Boolean(subscription.isAdmin);
       window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:state.isAdmin}}));
-      state.ownApiKeys=Boolean(subscription.ownApiKeys);
+      state.ownApiKeys=Boolean(subscription.ownApiKeys);state.apiKeySlots=Math.max(0,Number(subscription.apiKeySlots)||0);
       state.reviewCredits=Number(bundle.reviewCredits)||0;
       state.subscriptionStatus=subscription.status||'active';state.subscriptionPeriodEnd=subscription.current_period_end||null;
       state.userProfile={...state.userProfile,...(bundle.userProfile||{})};
@@ -660,7 +689,7 @@
           const previousUserId=state.cloud.user?.id||null;
           state.cloud.user=payload.user||null;const nextUserId=state.cloud.user?.id||null;
           const realTransition=previousUserId!==nextUserId;
-          if(realTransition){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;window.PromptAiAccess={plan:'free',isAdmin:false,ownApiKeys:false};window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}
+          if(realTransition){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;state.apiKeySlots=0;window.PromptAiAccess={plan:'free',isAdmin:false,ownApiKeys:false};window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}
           updateAccountUi();
           if(realTransition&&payload.authEvent==='SIGNED_IN'&&nextUserId){closeAccountGate();showWelcome();continuePendingAuthPlan();maybePromptBiometric();}
           else if(realTransition&&payload.authEvent==='SIGNED_OUT'&&!nextUserId){showWelcome();}
@@ -694,7 +723,7 @@
   }
 
   async function signOut(){
-    try{await window.SiteBriefCloud.signOut();state.cloud.user=null;state.cloudProjects=[];state.aiConnections=[];state.plan='free';state.isAdmin=false;state.ownApiKeys=false;state.reviewCredits=0;window.SiteBriefCloud.aiConnections=[];renderAiConnections();applyPlanUi();setSyncState("Cloud bereit");updateAccountUi();el.accountDialog.close();}catch(err){el.syncMessage.textContent=err?.message||"Abmelden fehlgeschlagen.";el.syncMessage.className="auth-message error";}
+    try{await window.SiteBriefCloud.signOut();state.cloud.user=null;state.cloudProjects=[];state.aiConnections=[];state.plan='free';state.isAdmin=false;state.apiKeySlots=0;state.ownApiKeys=false;state.reviewCredits=0;window.SiteBriefCloud.aiConnections=[];renderAiConnections();applyPlanUi();setSyncState("Cloud bereit");updateAccountUi();el.accountDialog.close();}catch(err){el.syncMessage.textContent=err?.message||"Abmelden fehlgeschlagen.";el.syncMessage.className="auth-message error";}
   }
 
   function applySavedState(saved,{persistLocal=false}={}){
@@ -2040,7 +2069,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     }catch(err){el.websiteBuildProgress.hidden=false;el.websiteBuildProgress.classList.add('failed');el.websiteBuildStage.textContent='Erstellung wurde abgebrochen';el.websiteBuildTruthNote.textContent='Der letzte bestätigte Arbeitsschritt bleibt sichtbar. Du kannst den Vorgang erneut starten.';el.websiteBuildStatus.textContent=err.message||'Website konnte nicht erstellt werden.'}
     finally{el.buildWebsiteBtn.disabled=false}
   }
-  async function beginCheckout(plan){if(!cloudReady()){showAccountGate();return}try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');saveState();window.PromptAiForceCheckpoint?.();location.href=data.url}catch(err){await customAlert(err.message,{title:'Zahlung nicht möglich'})}}
+  async function beginCheckout(plan,extra={}){if(!cloudReady()){showAccountGate();return}try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan,...extra})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');saveState();window.PromptAiForceCheckpoint?.();location.href=data.url}catch(err){await customAlert(err.message,{title:'Zahlung nicht möglich'})}}
   async function openBillingPortal(){try{const response=await sitebriefApiFetch('/api/portal',{method:'POST'}),data=await response.json();if(!response.ok)throw new Error(data.error||'Aboverwaltung nicht verfügbar');location.href=data.url}catch(err){await customAlert(err.message,{title:'Aboverwaltung nicht erreichbar'})}}
   async function fetchGithubRepos(){try{const response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list-repos'})}),data=await response.json();if(!response.ok)return null;return Array.isArray(data.repos)?data.repos:[]}catch{return null}}
   async function publishToGithub(){
@@ -2139,13 +2168,14 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
     el.downloadProjectReportBtn?.addEventListener('click',()=>downloadText('sitebrief-projektbericht.md',buildProjectReport(),'text/markdown'));
     el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));[el.buySingleReviewBtn,el.buyReviewInlineBtn].forEach(button=>button?.addEventListener('click',()=>beginCheckout('single_review')));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
-    el.saveUserProfileBtn?.addEventListener('click',saveUserProfile);el.faceIdBtn?.addEventListener('click',handleBiometric);el.sendSupportBtn?.addEventListener('click',sendSupportRequest);el.importClientWebsiteBtn?.addEventListener('click',importClientWebsite);document.addEventListener('click',e=>{if(e.target.closest('[data-api-addon]'))beginCheckout('own_api_keys')});
+    el.startApiAddonCheckoutBtn?.addEventListener('click',()=>beginCheckout('own_api_keys',{slots:Number(el.apiAddonSlots?.value)||1}));el.saveUserProfileBtn?.addEventListener('click',saveUserProfile);el.faceIdBtn?.addEventListener('click',handleBiometric);el.sendSupportBtn?.addEventListener('click',sendSupportRequest);el.importClientWebsiteBtn?.addEventListener('click',importClientWebsite);document.addEventListener('click',e=>{if(e.target.closest('[data-api-addon]'))beginCheckout('own_api_keys')});
     el.openLibraryBtn.addEventListener("click",()=>openLibrary("projects"));$$('[data-open-library]').forEach(b=>b.addEventListener("click",()=>openLibrary(b.dataset.openLibrary)));$$('[data-library-tab]').forEach(b=>b.addEventListener("click",()=>switchLibraryTab(b.dataset.libraryTab)));
     el.openSettingsBtn.addEventListener("click",()=>{populateSettingsDialog();el.settingsDialog.showModal()});el.saveSettingsBtn.addEventListener("click",saveSettingsFromDialog);
     
     
     
     
+    for(const provider of AI_PROVIDER_IDS){const ui=aiConnectionEls(provider);ui.connect?.addEventListener('click',()=>saveAiProviderConnection(provider));ui.test?.addEventListener('click',()=>testAiProviderConnection(provider));ui.disconnect?.addEventListener('click',()=>disconnectAiProvider(provider))}
     el.githubConnectBtn?.addEventListener('click',()=>saveAiProviderConnection('github'));el.githubTestBtn?.addEventListener('click',()=>testAiProviderConnection('github'));el.githubDisconnectBtn?.addEventListener('click',()=>disconnectAiProvider('github'));
     el.previewLightboxClose?.addEventListener("click",closePreviewLightbox);el.previewLightbox?.addEventListener("click",e=>{if(e.target===el.previewLightbox)closePreviewLightbox()});el.previewLightboxDownload?.addEventListener("click",()=>downloadConceptImage(state.concepts.find(c=>c.id===lightboxConceptId)));el.previewLightboxSelect?.addEventListener("click",()=>{selectConcept(lightboxConceptId);closePreviewLightbox()});
     el.settingsLoginBtn?.addEventListener("click",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});

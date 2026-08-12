@@ -22,12 +22,27 @@
   // Lives in the first blocking script so the boot screen can report progress before anything
   // else is parsed.
   const FLASH_MS=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches?0:420}catch{return 420}})();
+  // A screen that appears and disappears within a few hundred milliseconds reads as a glitch, not
+  // as progress. Every loading screen therefore stays for at least this long; if the work took
+  // longer anyway, only the closing blink is added.
+  const MIN_VISIBLE_MS=FLASH_MS?1600:0;
   window.PromptAiFill={
     flashMs:FLASH_MS,
+    minVisibleMs:MIN_VISIBLE_MS,
+    // Marks the moment a screen went up, so finish() knows how much of the minimum is left.
+    begin(node){if(node&&!node.dataset.fillStart)node.dataset.fillStart=String(Date.now())},
+    // Milliseconds a screen still has to stay: the rest of the minimum, at least one blink.
+    tail(startedAt){
+      if(!FLASH_MS)return 0;
+      const started=Number(startedAt)||0;
+      const elapsed=started?Date.now()-started:0;
+      return Math.max(FLASH_MS,MIN_VISIBLE_MS-elapsed);
+    },
     set(node,value){
       if(!node)return;
       const pct=Math.max(0,Math.min(100,Number(value)||0));
       if(node.dataset.fillDone==='1')return;
+      if(!node.dataset.fillStart)node.dataset.fillStart=String(Date.now());
       if(node.classList.contains('prompt-fill-sweep'))node.dataset.fillOrigin='sweep';
       node.classList.remove('prompt-fill-sweep');
       node.classList.add('prompt-fill-progress');
@@ -45,10 +60,13 @@
       node.classList.remove('prompt-fill-sweep');
       node.classList.add('prompt-fill-progress','prompt-fill-complete');
       node.style.setProperty('--prompt-fill','100%');
-      setTimeout(end,FLASH_MS);
+      const wait=this.tail(node.dataset.fillStart);
+      // The blink repeats for as long as the screen is held, instead of one flash and then silence.
+      node.style.setProperty('--prompt-flash-count',String(Math.max(1,Math.round(wait/FLASH_MS))));
+      setTimeout(end,wait);
     },
     // Screens that can run more than once (the master-prompt overlay) hand the headline back to
     // the state it started in, so the next wait animates again instead of sitting at 100%.
-    reset(node){if(!node)return;delete node.dataset.fillDone;delete node.dataset.fillValue;node.classList.remove('prompt-fill-complete');node.style.removeProperty('--prompt-fill');if(node.dataset.fillOrigin==='sweep'){node.classList.remove('prompt-fill-progress');node.classList.add('prompt-fill-sweep')}}
+    reset(node){if(!node)return;delete node.dataset.fillDone;delete node.dataset.fillValue;delete node.dataset.fillStart;node.style.removeProperty('--prompt-flash-count');node.classList.remove('prompt-fill-complete');node.style.removeProperty('--prompt-fill');if(node.dataset.fillOrigin==='sweep'){node.classList.remove('prompt-fill-progress');node.classList.add('prompt-fill-sweep')}}
   };
 })();

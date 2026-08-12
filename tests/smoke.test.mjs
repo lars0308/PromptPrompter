@@ -270,7 +270,19 @@ test('submitting the clarification dialog with only optional questions left blan
   assert.doesNotMatch(src,/hasAnyUnresolved=\(state\.projectReview\.questions\|\|\[\]\)\.length && !state\.reviewDeferred && !state\.clarifications\.some\(a=>a\.answer\?\.trim\(\)\)/,'the old check demanded at least one non-blank answer text across ALL clarifications, even when every question was optional and the user legitimately submitted the dialog blank - this reopened the same dialog on every "Weiter" click forever');
   assert.match(src,/hasAnyUnresolved=\(state\.projectReview\.questions\|\|\[\]\)\.length && !state\.reviewDeferred && !\(state\.projectReview\.questions\|\|\[\]\)\.every\(q=>state\.clarifications\.some\(a=>a\.question===q\.question\)\)/,'unresolved must mean "a question has no submitted clarification entry yet", not "no answer anywhere has text in it" - saveClarificationAnswers() always records one entry per rendered question, blank or not');
 });
-test('Pro trial does not leak into Ultimate and shows its exact lifecycle',async()=>{const checkout=await text('api/checkout.js'),webhook=await text('api/stripe-webhook.js'),ui=await text('trial-fix-ui.js');assert.match(checkout,/product==='pro'\?await currentOffer\(\):null/);assert.match(webhook,/customer\.subscription\.created/);assert.match(webhook,/o\.status==='trialing'&&o\.trial_end/);assert.match(ui,/Pro · Testphase/);assert.match(ui,/Noch \$\{remaining\}/);assert.match(ui,/if\(ultimate&&Number\(offer\.trial_days\)>0\)ultimate\.textContent='Jetzt kaufen'/,'a Pro trial must not relabel the Ultimate button as a trial');assert.match(ui,/gilt ausschließlich für Pro/)});
+test('the trial applies to Pro and Ultimate alike and shows its exact lifecycle',async()=>{
+  const checkout=await text('api/checkout.js'),webhook=await text('api/stripe-webhook.js'),ui=await text('trial-fix-ui.js');
+  // The trial is pushed to Stripe at checkout (subscription_data[trial_period_days]); nothing is
+  // read back from Stripe, so the admin field is the single source for new purchases.
+  assert.match(checkout,/\['pro','ultimate'\]\.includes\(product\)\?await currentOffer\(\):null/);
+  assert.match(checkout,/'subscription_data\[trial_period_days\]':String\(trialDays\)/);
+  assert.match(webhook,/customer\.subscription\.created/);
+  assert.match(webhook,/o\.status==='trialing'&&o\.trial_end/);
+  assert.match(ui,/\$\{subscription\?\.plan==='ultimate'\?'Ultimate':'Pro'\} · Testphase/);
+  assert.match(ui,/Noch \$\{remaining\}/);
+  assert.match(ui,/!\['pro','ultimate'\]\.includes\(subscription\.plan\)/,'both paid plans can be in a trial');
+  assert.match(ui,/Gilt für Pro und Ultimate/);
+});
 test('subscription management shows live Stripe billing details without a new function',async()=>{const checkout=await text('api/checkout.js'),ui=await text('subscription-ui.js');assert.match(checkout,/action==='subscription-info'/);assert.match(checkout,/invoices\/create_preview/);assert.match(checkout,/payment_method_update/);assert.match(checkout,/subscription_cancel/);assert.match(checkout,/subscription_update/);assert.match(checkout,/billing_portal\/configurations/);assert.match(checkout,/Prompt\.ai Kundenportal/);assert.match(checkout,/features\[subscription_update\]\[default_allowed_updates\]\[0\].*price/);for(const copy of ['Abo verwalten','Nächste Abbuchung','Zahlungsmethode','Abrechnungsverlauf','Auf Ultimate wechseln'])assert.ok(ui.includes(copy));assert.match(ui,/manageSubscriptionBtn/);assert.match(ui,/data-sub-portal="cancel"/)});
 test('prompt history and learning controls remain user-owned',async()=>{const history=await text('project-history.js'),learning=await text('learning-controls.js');assert.match(history,/sitebrief_prompt_versions/);assert.match(history,/user_id/);assert.match(learning,/sitebrief_learning_examples/);assert.match(learning,/\.eq\('user_id',cloud\.user\.id\)/)});
 test('package is frozen as Prompt.ai v1.0',async()=>{const pkg=JSON.parse(await text('package.json'));assert.equal(pkg.version,'1.0.0');const version=await text('VERSION.md');assert.match(version,/Feature Freeze/);assert.match(version,/Bugfix/)});
@@ -627,13 +639,19 @@ test('the boot screen fills with the load it really has, then blinks blue once b
   assert.match(css,/\.prompt-fill-complete\{--prompt-fill:100%!important;animation:promptFillFlash/);
   assert.match(css,/@keyframes promptFillFlash\{0%\{opacity:1\}30%\{opacity:\.2\}/,'one blink, not a loop');
 });
-test('every loading screen ends the same way: full fill, one blue blink, then gone',async()=>{
-  const transition=await text('transition-polish.js'),handoff=await text('mode-handoff-fix.js'),cleanup=await text('workflow-cleanup.js'),app=await text('app.js');
+test('every loading screen ends the same way: full fill, blinking, then gone - and never flickers past',async()=>{
+  const transition=await text('transition-polish.js'),handoff=await text('mode-handoff-fix.js'),cleanup=await text('workflow-cleanup.js'),app=await text('app.js'),theme=await text('theme-init.js');
+  // A screen that appears and disappears within 200ms reads as a glitch, so every one of them
+  // stays for a shared minimum and keeps blinking until then.
+  assert.match(theme,/const MIN_VISIBLE_MS=FLASH_MS\?1600:0;/);
+  assert.match(theme,/return Math\.max\(FLASH_MS,MIN_VISIBLE_MS-elapsed\);/);
+  assert.match(transition,/const wait=window\.PromptAiFill\?\.tail\?\.\(shownAt\)\?\?FLASH_MS;/);
+  assert.match(handoff,/const wait=window\.PromptAiFill\?\.tail\?\.\(startedAt\)\?\?flash;/);
   assert.match(transition,/#promptWorkflowLoader\.is-complete strong\{animation:promptFillFlash/);
   assert.match(transition,/if\(box\.classList\.contains\('is-complete'\)\)return;/,'sync() calls hide() repeatedly - restarting the blink would keep the screen up forever');
   assert.match(transition,/box\.classList\.remove\('is-leaving','is-complete'\)/,'resumed work cancels the blink');
   assert.match(handoff,/\.prompt-mode-handoff\.is-complete strong\{animation:promptFillFlash/);
-  assert.match(handoff,/setTimeout\(\(\)=>leave\(box\),flash\)/);
+  assert.match(handoff,/setTimeout\(\(\)=>leave\(box\),flash\?wait:0\)/);
   assert.match(cleanup,/window\.PromptAiFill\?\.finish\(\$\('#masterGeneration strong'\),\(\)=>step\.classList\.remove\('master-generating'\)\)/);
   assert.match(cleanup,/window\.PromptAiFill\?\.reset\(\$\('#masterGeneration strong'\)\)/,'the overlay can run again for the next project');
   assert.match(app,/el\[`\$\{kind\}ProgressText`\]\?\.classList\.add\('prompt-fill-complete'\)/,'inline task progress ends the same way');

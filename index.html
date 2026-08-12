@@ -11,8 +11,8 @@
   <link rel="icon" href="./sitebrief-logo.svg?v=4" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
-  <script src="./theme-init.js?v=4"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260815-2" />
+  <script src="./theme-init.js?v=5"></script>
+  <link rel="stylesheet" href="./styles.css?v=20260815-3" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
     html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
@@ -506,6 +506,65 @@
       </header>
       <div class="settings-body">
         <div class="settings-upgrade-note" id="settingsUpgradeNote"></div>
+        <section class="settings-section" id="apiKeySection" hidden><div class="settings-heading"><strong>Eigene KI-Verbindungen</strong></div><p class="settings-note" id="apiKeySlotsNote"></p><div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein Prompt.ai-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
+          <div class="connection-login-row" id="connectionUpgradeRow" hidden><span>Eigene KI-Verbindungen sind ab Ultimate enthalten oder als Zusatz für 5,99 € / Monat buchbar.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
+          <div class="ai-connection-grid" id="aiConnectionGrid">
+            <article class="ai-connection-card recommended">
+              <div class="ai-connection-head">
+                <div><span>EMPFOHLEN</span><strong>Vercel AI Gateway</strong></div>
+                <span class="connection-status" id="gatewayConnectionStatus">Nicht verbunden</span>
+              </div>
+              <label class="field"><span>API-Key</span><input id="gatewayApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Key hier einmal eintragen" /></label>
+              <div class="connection-actions">
+                <button type="button" class="solid-btn mini" id="gatewayConnectBtn">Speichern & verbinden</button>
+                <button type="button" class="outline-btn mini" id="gatewayTestBtn">Testen</button>
+                <button type="button" class="text-btn" id="gatewayDisconnectBtn" hidden>Trennen</button>
+              </div>
+              <small class="connection-message" id="gatewayConnectionMessage"></small>
+            </article>
+
+            <article class="ai-connection-card">
+              <div class="ai-connection-head">
+                <div><span>DIREKT</span><strong>OpenAI</strong></div>
+                <span class="connection-status" id="openaiConnectionStatus">Nicht verbunden</span>
+              </div>
+              <label class="field"><span>API-Key</span><input id="openaiApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…" /></label>
+              <div class="connection-actions">
+                <button type="button" class="solid-btn mini" id="openaiConnectBtn">Speichern & verbinden</button>
+                <button type="button" class="outline-btn mini" id="openaiTestBtn">Testen</button>
+                <button type="button" class="text-btn" id="openaiDisconnectBtn" hidden>Trennen</button>
+              </div>
+              <small class="connection-message" id="openaiConnectionMessage"></small>
+            </article>
+            <article class="ai-connection-card">
+              <div class="ai-connection-head">
+                <div><span>GOOGLE AI STUDIO</span><strong>Google Gemini</strong></div>
+                <span class="connection-status" id="geminiConnectionStatus">Nicht verbunden</span>
+              </div>
+              <label class="field"><span>API-Key</span><input id="geminiApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Gemini API-Key" /></label>
+              <div class="connection-actions">
+                <button type="button" class="solid-btn mini" id="geminiConnectBtn">Speichern & verbinden</button>
+                <button type="button" class="outline-btn mini" id="geminiTestBtn">Testen</button>
+                <button type="button" class="text-btn" id="geminiDisconnectBtn" hidden>Trennen</button>
+              </div>
+              <small class="connection-message" id="geminiConnectionMessage"></small>
+            </article>
+            <article class="ai-connection-card">
+              <div class="ai-connection-head">
+                <div><span>10.000 NEURONEN / TAG FREI</span><strong>Cloudflare Workers AI</strong></div>
+                <span class="connection-status" id="cloudflareConnectionStatus">Nicht verbunden</span>
+              </div>
+              <label class="field"><span>Account-ID</span><input id="cloudflareAccountId" type="text" autocomplete="off" spellcheck="false" placeholder="32-stellige Cloudflare Account-ID" /></label>
+              <label class="field"><span>API-Token</span><input id="cloudflareApiToken" type="password" autocomplete="off" spellcheck="false" placeholder="Workers AI API-Token" /></label>
+              <div class="connection-actions">
+                <button type="button" class="solid-btn mini" id="cloudflareConnectBtn">Speichern & verbinden</button>
+                <button type="button" class="outline-btn mini" id="cloudflareTestBtn">Testen</button>
+                <button type="button" class="text-btn" id="cloudflareDisconnectBtn" hidden>Trennen</button>
+              </div>
+              <small class="connection-message" id="cloudflareConnectionMessage"></small>
+            </article>
+          </div>
+          </section>
         <section class="settings-section">
           <div class="settings-heading"><strong>GitHub-Verbindung</strong></div>
           <div class="connection-login-row" id="githubLoginRow" hidden><span>Zum Verbinden von GitHub zuerst anmelden.</span><button type="button" class="outline-btn mini" id="githubSettingsLoginBtn">Zum Speichern anmelden</button></div>
@@ -594,6 +653,7 @@
           <section class="account-overview-head"><div class="account-user"><span>MEIN PROFIL</span><h2>Persönliche Angaben und Sicherheit</h2><strong id="accountEmail">–</strong><small id="accountUserId"></small></div><div class="cloud-stats" id="cloudStats"></div></section>
           <section class="account-profile-settings"><div class="account-section-head"><div><strong>Profildaten</strong></div></div><div class="field-grid two"><label class="field"><span>Name</span><input id="userDisplayName" type="text" /></label><label class="field"><span>Firma / Agentur</span><input id="userCompanyName" type="text" /></label><label class="field"><span>Website</span><input id="userWebsite" type="url" /></label><label class="field"><span>Standard-Auftraggeber</span><select id="userDefaultClientType"><option value="">Nicht festgelegt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="kunde">Kundenprojekt</option><option value="intern">Internes Projekt</option></select></label></div><div class="account-save-row"><button type="button" class="solid-btn" id="saveUserProfileBtn">Änderungen speichern</button><small id="userProfileMessage"></small></div></section>
           
+          <section class="api-addon-card" id="apiAddonCard"><div><span>OPTIONALES ADD-ON</span><strong>Eigene KI-API-Keys</strong><small id="apiAddonState">Pro gebuchtem Platz kannst du einen Anbieter-Key hinterlegen.</small></div><div><b id="apiAddonPrice">5,99 € / Monat je Platz</b><label class="compact-field"><span>Plätze</span><select id="apiAddonSlots"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label><button type="button" class="solid-btn" id="startApiAddonCheckoutBtn">Plätze buchen</button></div></section>
           <section class="account-tool-card"><div><strong>Face ID &amp; Biometrie</strong></div><div><button type="button" class="outline-btn" id="faceIdBtn">Face ID einrichten</button><small id="faceIdMessage"></small></div></section>
           <section class="account-support-card"><div class="account-section-head"><div><strong>Support-Anfrage</strong></div></div><div class="field-grid two"><label class="field"><span>Thema</span><select id="supportCategory"><option value="technical">Technisches Problem</option><option value="billing">Zahlung &amp; Tarif</option><option value="account">Konto &amp; Anmeldung</option><option value="feedback">Idee &amp; Feedback</option></select></label><label class="field"><span>Betreff</span><input id="supportSubject" type="text" maxlength="120" placeholder="Worum geht es?" /></label></div><label class="field"><span>Nachricht</span><textarea id="supportMessage" rows="4" maxlength="3000" placeholder="Was ist passiert und wobei brauchst du Hilfe?"></textarea></label><div class="account-save-row"><button type="button" class="solid-btn" id="sendSupportBtn">Anfrage senden</button><small id="supportStatus"></small></div></section>
           <div class="inline-actions"><button type="button" class="solid-btn" id="syncNowBtn">Jetzt synchronisieren</button><button type="button" class="outline-btn" id="signOutBtn">Abmelden</button></div>
@@ -719,11 +779,11 @@
     </div>
   </footer>
 
-  <script type="module" src="./cloud.js?v=20260813-2"></script>
+  <script type="module" src="./cloud.js?v=20260815-1"></script>
   <script src="./maintenance-mode.js?v=20260813-2" defer></script>
   <script src="./entry-gate-ui.js?v=20260814-3" defer></script>
   <script src="./legal-pages.js?v=20260815-1" defer></script>
-  <script src="./app.js?v=20260815-5" defer></script>
+  <script src="./app.js?v=20260815-6" defer></script>
   <script src="./admin-console.js?v=20260814-6" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>
