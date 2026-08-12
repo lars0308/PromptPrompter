@@ -130,7 +130,7 @@
 
   function closeLateWorkflowUi(){const dialog=$('#clarificationDialog');if(dialog?.open){try{dialog.close('cancel')}catch{dialog.removeAttribute('open')}}$('#promptCompletionFlash')?.remove();document.documentElement.classList.remove('prompt-review-transition','prompt-clarification-exit')}
 
-  function sync(){installStyles();if(loginActive)return;const visible=workflowVisible(),step=currentStep();if(!visible){pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}if(userExited)return;if(clarificationOpen()){pendingFromReferences=false;hide();return}if(step===2){if(!pendingFromReferences)hide();return}if(step===3){pendingFromReferences=false;show('review');return}if(step===5){pendingFromReferences=false;show('preview');return}if(step===4||step===1||step>=6){pendingFromReferences=false;hide();return}}
+  function sync(){installStyles();if(loginActive)return;const visible=workflowVisible(),step=currentStep();if(!visible){pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}if(userExited)return;if(clarificationOpen()){pendingFromReferences=false;hide();return}if(step===2){if(!pendingFromReferences)hide();return}if(step===3){pendingFromReferences=false;show('review');return}if(step===5||(step===6&&document.body.dataset.previewGenerating==='1')){pendingFromReferences=false;show('preview');return}if(step===4||step===1||step>=6){pendingFromReferences=false;hide();return}}
 
   function showLogin(){
     loginActive=true;installStyles();
@@ -160,7 +160,7 @@
   // workflow state, and letting them reach schedule() kept re-arming the debounce so sync()
   // never ran — the overlay then stayed on screen until the 95s timeout.
   const fromLoader=node=>{const el=node?.nodeType===1?node:node?.parentElement;return Boolean(el?.closest?.('#promptWorkflowLoader'))};
-  function observe(){new MutationObserver(records=>{if(records.some(record=>!fromLoader(record.target)))schedule()}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style']});window.addEventListener('pageshow',()=>schedule(0));window.addEventListener('promptai:access',()=>schedule(0))}
+  function observe(){new MutationObserver(records=>{if(records.some(record=>!fromLoader(record.target)))schedule()}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style','data-preview-generating']});window.addEventListener('pageshow',()=>schedule(0));window.addEventListener('promptai:access',()=>schedule(0))}
   function observeClarification(){
     const watch=dialog=>{if(!dialog||dialog.__promptLoaderWatched)return;dialog.__promptLoaderWatched=true;new MutationObserver(()=>{if(dialog.open){pendingFromReferences=false;hide()}else sync()}).observe(dialog,{attributes:true,attributeFilter:['open']})};
     watch($('#clarificationDialog'));

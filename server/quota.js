@@ -96,6 +96,16 @@ async function assertQuota(req,metric){
   return {allowed:true,summary,item};
 }
 
+// One preview run = three images. Counting every image would have made a project with two
+// regenerations eat nine of them, so the run is what is booked - written server-side, once.
+async function consumePreviewRun(req){
+  const checked=await assertQuota(req,'ai_previews');
+  if(!checked.summary.authenticated||!checked.summary.available)return checked.summary;
+  const user=await authenticatedUser(req);
+  await serviceFetch('/rest/v1/sitebrief_usage_events',{method:'POST',headers:{Prefer:'return=minimal'},body:{user_id:user.id,action:METRIC_ACTIONS.ai_previews,provider:'prompt-ai',model:'',success:true,error_message:'',project_name:'Vorschau-Durchlauf',project_type:'Website',project_goal:''}});
+  return getQuotaSummary(req);
+}
+
 async function consumeWebsiteGeneration(req){
   const checked=await assertQuota(req,'website_generations');
   if(!checked.summary.authenticated||!checked.summary.available)return getQuotaSummary(req);
@@ -106,4 +116,4 @@ async function consumeWebsiteGeneration(req){
 
 function quotaErrorPayload(error){return {error:error?.message||'Monatskontingent nicht verfügbar.',code:error?.code||'QUOTA_ERROR',metric:error?.metric||null,quota:error?.quota||null}}
 
-module.exports={PLAN_LIMITS,METRIC_ACTIONS,getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,quotaErrorPayload};
+module.exports={PLAN_LIMITS,METRIC_ACTIONS,getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,consumePreviewRun,quotaErrorPayload};

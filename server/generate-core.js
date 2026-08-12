@@ -114,7 +114,7 @@ function reviewText(projectReview={}){
   return `Previous review warnings:\n${warnings}\nPrevious blockers:\n${blockers}`;
 }
 
-function makeConceptPrompt({count,project,references,documents,controls,template,modules,settings,clarifications,projectReview,tier='free'}){
+function makeConceptPrompt({count,project,references,documents,controls,template,modules,settings,clarifications,projectReview,tier='free',baseConcept=null}){
   const variants=VARIANTS.slice(0,count);
   return `${promptText('concepts-role',{count})}
 
@@ -151,7 +151,11 @@ ${refText(references)}
 PROJECT DOCUMENTS
 ${documentText(documents)}
 
-CONTROLS
+${baseConcept?`SELECTED DIRECTION TO BUILD ON
+The user picked this direction and asked for three further directions based on it. Keep its core idea, palette family and tone recognisable, and vary layout, hierarchy and hero treatment around it. Do not repeat it unchanged.
+${JSON.stringify({name:baseConcept.name,mood:baseConcept.mood,palette:baseConcept.palette,type:baseConcept.type,layout:baseConcept.layout,layoutVariant:baseConcept.layoutVariant,hero:baseConcept.hero,headline:baseConcept.headline},null,2)}
+
+`:''}CONTROLS
 Originality ${controls.originality}/100; avoid AI/template look ${controls.antiSlop}/100; motion ${controls.motion}/100; information density ${controls.density}/100.
 
 For every direction return a memorable project-specific name, a short mood, exactly four valid hex colors, typography concept, layout principle, hero principle, one of the required composition variants, and concrete preview copy. ${promptText('concepts-quality')}
@@ -501,7 +505,7 @@ module.exports = async function handler(req,res){
       schema=refineSchema();name="sitebrief_refined_concept";
     }else{
       const count=Math.min(entitlement.maxConcepts,Math.max(3,Number(body.count)||entitlement.maxConcepts));
-      prompt=makeConceptPrompt({count,project,references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview,tier:entitlement.plan});
+      prompt=makeConceptPrompt({count,project,references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview,tier:entitlement.plan,baseConcept:body.regenerate&&body.baseConcept?body.baseConcept:null});
       schema=conceptsSchema(count);name="sitebrief_concepts";
     }
     const resolved = await resolveProviderKey(req,engine);

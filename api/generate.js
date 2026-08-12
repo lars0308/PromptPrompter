@@ -3,7 +3,7 @@ const previewImage=require('../server/preview-image');
 const sandboxBuild=require('../server/sandbox-build');
 const freePrompt=require('../server/free-prompt-v2');
 const {taskForAction,listProfiles}=require('../server/system-ai-profiles');
-const {getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,quotaErrorPayload}=require('../server/quota');
+const {getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,consumePreviewRun,quotaErrorPayload}=require('../server/quota');
 const {getEntitlements}=require('../server/entitlements');
 
 // Which AIs a request may use follows the plan, never a choice in the browser.
@@ -35,10 +35,18 @@ async function quotaRoute(req,res,action){
 }
 async function enforce(req,res,metric){try{await assertQuota(req,metric);return true}catch(error){res.status(error?.status||429).json(quotaErrorPayload(error));return false}}
 async function websiteConceptRoute(req,res){
-  try{await assertQuota(req,'website_generations')}catch(error){return res.status(error?.status||429).json(quotaErrorPayload(error))}
+  // A regeneration is the same project with the same brief, so it does not book another website
+  // generation - but it is another preview run, and that is what the preview quota counts.
+  const regenerate=req.body?.regenerate===true;
+  try{if(!regenerate)await assertQuota(req,'website_generations')}catch(error){return res.status(error?.status||429).json(quotaErrorPayload(error))}
   const captured=captureResponse();
   if(req.body?.systemAiProfileId&&req.body?.useOwnApi!==true)await runSystemProfiles(req,captured);else await core(req,captured);
-  if(captured.state.status<400){try{await consumeWebsiteGeneration(req)}catch{}}
+  if(captured.state.status<400){
+    if(!regenerate){try{await consumeWebsiteGeneration(req)}catch{}}
+    try{await consumePreviewRun(req)}catch{}
+  }
   return flush(res,captured.state);
 }
+// preview-image only checks that the plan may render images at all - the run itself is booked
+// once by the concepts route, so three images cost one preview.
 module.exports=async function generateRouter(req,res){if(req.method==='POST'){const action=String(req.body?.action||'');if(['quota-summary','quota-check','quota-consume'].includes(action))return quotaRoute(req,res,action);if(action==='free-prompt'){if(!await enforce(req,res,'free_prompts'))return;return freePrompt(req,res)}if(action==='preview-image'){if(!await enforce(req,res,'ai_previews'))return;return previewImage(req,res)}if(action==='concepts')return websiteConceptRoute(req,res);if(action==='sandbox-build')return sandboxBuild(req,res);if(req.body?.systemAiProfileId&&req.body?.useOwnApi!==true)return runSystemProfiles(req,res)}return core(req,res)};

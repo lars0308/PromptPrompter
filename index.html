@@ -282,11 +282,9 @@
       <section class="step-panel preview-step" data-step-panel="6" id="stepPreviews">
         <div class="section-kicker">06 — VORSCHAUEN</div>
         <div class="preview-step-head">
-          <div><h1>3–5 echte Richtungen.</h1></div>
+          <div><h1>Drei echte Richtungen.</h1></div>
           <div class="preview-generation-controls">
-            
-            <label class="compact-field"><span>Anzahl</span><select id="conceptCount"><option>3</option><option>4</option><option selected>5</option></select></label>
-            <button type="button" class="solid-btn" id="generateConceptsBtn">Vorschauen erzeugen</button>
+            <button type="button" class="outline-btn" id="regenerateConceptsBtn" hidden>Andere Vorschauen erstellen <small id="regenerateConceptsHint"></small></button>
           </div>
         </div>
         <div id="generationStatus" class="generation-status">Noch keine Vorschauen erzeugt.</div>
@@ -725,7 +723,7 @@
   <script src="./maintenance-mode.js?v=20260813-2" defer></script>
   <script src="./entry-gate-ui.js?v=20260814-3" defer></script>
   <script src="./legal-pages.js?v=20260815-1" defer></script>
-  <script src="./app.js?v=20260815-3" defer></script>
+  <script src="./app.js?v=20260815-5" defer></script>
   <script src="./admin-console.js?v=20260814-6" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>

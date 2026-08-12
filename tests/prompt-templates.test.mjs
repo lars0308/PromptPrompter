@@ -173,3 +173,34 @@ test('the free prompt builds from the editable rules and falls back to the code 
   assert.doesNotMatch(free,/asBullets\(UNIVERSAL_MASTER_RULES\)/,'the universal rules go through the editable path now');
   assert.match(ui,/const groups=\[\['Projekt & Website'/,'26 areas need grouping in the picker');
 });
+
+test('the preview step runs by itself: three directions for every plan, no count and no start button',async()=>{
+  const app=await text('app.js'),html=await text('index.html'),transition=await text('transition-polish.js');
+  assert.match(app,/const PREVIEW_COUNT=3;/);
+  for(const plan of ['Free','Pro','Ultimate'])assert.match(app,new RegExp(`label:"${plan}"[^}]*concepts:3,previewRetries:[123]`),`${plan} has to run on three previews`);
+  assert.doesNotMatch(html,/id="conceptCount"/,'no count field');
+  assert.doesNotMatch(html,/id="generateConceptsBtn"/,'no start button - arriving at the step starts the run');
+  assert.doesNotMatch(app,/conceptCount/);
+  assert.match(app,/if\(step===6 && !state\.concepts\.length && !conceptsGenerating\) setTimeout\(\(\)=>generateConcepts\(\),100\);/);
+  // The loading screen of the step before has to stay up until the directions are there.
+  assert.match(app,/document\.body\.dataset\.previewGenerating='1';/);
+  assert.match(transition,/step===6&&document\.body\.dataset\.previewGenerating==='1'/);
+  assert.match(transition,/attributeFilter:\['class','hidden','open','style','data-preview-generating'\]/,'the flag has to be observed, or the loader never leaves');
+});
+
+test('regenerating builds on the selected direction and is capped per plan',async()=>{
+  const app=await text('app.js'),core=await text('server/generate-core.js'),router=await text('api/generate.js'),quota=await text('server/quota.js'),image=await text('server/preview-image.js');
+  assert.match(app,/free:\{label:"Free"[^}]*previewRetries:1/);
+  assert.match(app,/pro:\{label:"Pro"[^}]*previewRetries:2/);
+  assert.match(app,/ultimate:\{label:"Ultimate"[^}]*previewRetries:3/);
+  assert.match(app,/function previewRetriesLeft\(\)\{return Math\.max\(0,\(state\.isAdmin\?99:planRules\(\)\.previewRetries\|\|0\)-\(Number\(state\.previewRuns\)\|\|0\)\)\}/);
+  assert.match(app,/baseConcept:regenerate\?conceptForExport\(selectedConcept\(\)\):null/,'the new three build on the chosen one');
+  assert.match(app,/if\(regenerate\)state\.previewRuns=\(Number\(state\.previewRuns\)\|\|0\)\+1;/);
+  assert.match(core,/SELECTED DIRECTION TO BUILD ON/);
+  // A regeneration is the same project: it books a preview run, not another website generation.
+  assert.match(router,/const regenerate=req\.body\?\.regenerate===true;/);
+  assert.match(router,/try\{if\(!regenerate\)await assertQuota\(req,'website_generations'\)\}/);
+  assert.match(router,/try\{await consumePreviewRun\(req\)\}catch\{\}/);
+  assert.match(quota,/async function consumePreviewRun\(req\)/);
+  assert.match(image,/let usage=\{action:'preview-image-call'/,'single images no longer count as a preview unit');
+});
