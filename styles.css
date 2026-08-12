@@ -327,4 +327,5 @@ body{padding-bottom:60px}
   body{padding-bottom:120px}
 }
 
+.generating-body{padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px}.generating-spinner{width:48px;height:48px;border:4px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.generating-body p{color:var(--muted);font-size:13px;line-height:1.6;max-width:400px}
 
