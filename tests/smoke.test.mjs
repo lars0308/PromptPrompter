@@ -679,3 +679,9 @@ test('a dialog box is never narrower than the card it holds',async()=>{
   assert.match(polish,/body\.prompt-unified-ui #legalDialog\{width:min\(var\(--prompt-content\),calc\(100vw - 32px\)\)!important;max-width:none!important\}/,'the 1233px card was cut off inside a 1000px dialog');
   assert.match(polish,/body\.prompt-unified-ui #appActionDialog,body\.prompt-unified-ui #agentLaunchDialog\{width:min\(900px,calc\(100vw - 28px\)\)!important/);
 });
+test('the critical scripts are fetched in parallel but still run in order',async()=>{
+  const boot=await text('admin-console.js');
+  assert.match(boot,/function preloadCritical\(\)\{/);
+  assert.match(boot,/link\.rel='preload';link\.as='script';link\.href=src/,'warms the cache for every file at once');
+  assert.match(boot,/async function critical\(\)\{preloadCritical\(\);let ready=0;for\(const src of CRITICAL_SCRIPTS\)/,'execution stays sequential - later files override earlier CSS layers');
+});
