@@ -1745,7 +1745,10 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   }
 
   function updateMasterPrompt(){
-    const prompt=buildMasterPrompt();el.masterPrompt.value=prompt;const c=selectedConcept();el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} · ${escapeHtml(c?.name||"keine Richtung")}</span><span>${prompt.length.toLocaleString("de-DE")} Zeichen · Quellen separat · ${selectedModules().length} Module · ${selectedSkills().length} Skills</span>`;renderPromptHandoff();
+    el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Master-Prompt wird zusammengestellt…";
+    setTimeout(()=>{
+      const prompt=buildMasterPrompt();el.masterPrompt.value=prompt;const c=selectedConcept();el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} · ${escapeHtml(c?.name||"keine Richtung")}</span><span>${prompt.length.toLocaleString("de-DE")} Zeichen · Quellen separat · ${selectedModules().length} Module · ${selectedSkills().length} Skills</span>`;renderPromptHandoff();el.generationStatus.textContent="";
+    },0);
   }
 
   function guideConfig(step){
@@ -1790,7 +1793,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     if(step===6 && state.mode==="auto" && !state.concepts.length) setTimeout(generateConcepts,100);
     if(step===7) renderSelectedPreview();
     if(step===8){try{updateMasterPrompt();renderCompletionSummary()}catch(err){const message=err?.message||"Der Master-Prompt konnte nicht zusammengestellt werden. Bitte versuch es erneut.";el.projectValidation.textContent=message;if(el.masterPrompt)el.masterPrompt.value=`Der Master-Prompt konnte nicht erstellt werden: ${message}\n\nBitte versuch es erneut oder ändere zuletzt getroffene Auswahl (z. B. Feinschliff-Änderungen) und komm zu diesem Schritt zurück.`}}
-    updateGuide();saveState();window.scrollTo({top:0,behavior:"smooth"});
+    updateGuide();saveState();requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"auto"}));
   }
 
   const MODE_DESCRIPTIONS={guided:"Schritt für Schritt mit klaren Vorgaben – bei jeder wichtigen Entscheidung wird nachgefragt.",auto:"Sinnvolle Standardwerte werden automatisch gewählt, Module empfohlen und Vorschauen direkt erzeugt.",expert:"Freie Navigation zwischen allen Schritten, volle manuelle Kontrolle über jede Einstellung."};
