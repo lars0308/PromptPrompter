@@ -109,7 +109,10 @@
       body.prompt-unified-ui .project-mode-dialog{background:transparent!important}.project-mode-frame{border:1px solid var(--ui-line)!important;border-radius:22px!important;background:var(--ui-card)!important;box-shadow:var(--ui-shadow)!important}.project-mode-card{border:1px solid var(--ui-line)!important;border-radius:13px!important;background:var(--ui-card)!important;box-shadow:none!important}.project-mode-card:hover:not(:disabled){border-color:var(--ui-blue)!important;transform:none!important}.project-mode-head h2{font-family:Arial,Helvetica,sans-serif!important;font-weight:800!important}.project-mode-head span,.project-mode-card i{color:var(--ui-blue)!important}
 
       @media(max-width:820px){
-        body.prompt-unified-ui .topbar{height:70px!important;margin:8px 10px 0!important}.brand-copy strong{font-size:17px!important}.upgrade-btn{display:none!important}
+        /* .upgrade-btn was unscoped here, so it hid every upgrade button on small screens - not
+           just the topbar one that moves into the menu, but also the "Tarife ansehen" button in
+           the login card. Scoped to the topbar. */
+        body.prompt-unified-ui .topbar{height:70px!important;margin:8px 10px 0!important}.brand-copy strong{font-size:17px!important}body.prompt-unified-ui .topbar .upgrade-btn{display:none!important}
         body.prompt-unified-ui .topbar-menu{right:10px!important;left:10px!important;top:auto!important;bottom:10px!important;width:auto!important;max-height:min(72dvh,620px)!important;border-radius:20px!important;padding:12px 12px calc(12px + env(safe-area-inset-bottom))!important}
         body.prompt-unified-ui .topbar-menu>button{min-height:52px!important;font-size:14px!important}
         body.prompt-unified-ui .welcome-page{width:100%!important;padding:32px 15px 45px!important}.welcome-hero{padding-left:4px!important;padding-right:4px!important}.welcome-hero h1{font-size:43px!important}

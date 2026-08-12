@@ -41,10 +41,36 @@
     <p>Ab Pro kannst du eigene API-Keys (u.&nbsp;a. für GitHub) unter Einstellungen hinterlegen. Diese werden verschlüsselt in Supabase Vault gespeichert und ausschließlich für die von dir ausgelösten Aktionen verwendet (z.&nbsp;B. GitHub-Veröffentlichung oder eigene KI-Anfragen).</p>
     <h3>9. Kundeninformationen &amp; fremde Webseiten</h3>
     <p>Wenn du unter „Kundeninformationen" die Website oder einen Google-Eintrag deines Auftraggebers hinterlegst, ruft Prompt.ai diese öffentlich erreichbare Seite ab und liest Inhalte, Links und Bilder aus, um sie in dein Projekt zu übernehmen. Dabei können auch personenbezogene Daten Dritter enthalten sein (z.&nbsp;B. Namen oder Kontaktdaten auf einer „Über uns"-Seite). Du bist dafür verantwortlich, dass du zur Angabe dieser Quelle berechtigt bist; Prompt.ai übernimmt keine Haftung für Inhalte, die auf diesem Weg verarbeitet werden. Gleiches gilt für Referenz-Links und -Bilder, die du unter „Referenzen" hinterlegst.</p>
+    <p><strong>Hinweis zu Referenzen und Unterlagen:</strong> Verlinke oder lade nur Inhalte hoch, an denen du die nötigen Rechte hast. Prompt.ai übernimmt keine Haftung für Inhalte Dritter, die du hier hinterlegst — die Verantwortung dafür liegt bei dir.</p>
     <h3>10. Deine Rechte</h3>
     <p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch gemäß Art. 15–21 DSGVO sowie ein Beschwerderecht bei einer Aufsichtsbehörde. [Kontaktweg für Anfragen ergänzen.]</p>
     <h3>11. Speicherdauer</h3>
     <p>[Konkrete Speicher- und Löschfristen für Konto- und Projektdaten ergänzen.]</p>
+  `;
+
+  const TERMS_HTML=`
+    <h3>1. Geltungsbereich</h3>
+    <p>Diese Nutzungsbedingungen gelten für die Nutzung von Prompt.ai über [Domain eintragen], einschließlich kostenloser und kostenpflichtiger Tarife. Anbieter ist [Firmenname / Name, Anschrift wie im Impressum].</p>
+    <h3>2. Vertragsschluss &amp; Konto</h3>
+    <p>Mit dem Anlegen eines Kontos kommt ein Nutzungsvertrag über den kostenlosen Tarif zustande. Du bist verpflichtet, wahrheitsgemäße Angaben zu machen und deine Zugangsdaten geheim zu halten. Ein Konto ist nicht übertragbar. [Mindestalter und ggf. Regelung für Unternehmer/Verbraucher ergänzen.]</p>
+    <h3>3. Leistungsbeschreibung</h3>
+    <p>Prompt.ai erstellt aus deinen Angaben strukturierte Prompts, Blueprints, Vorschauen und Projektunterlagen. Die Ergebnisse werden mit Hilfe von KI-Systemen erzeugt und können fehlerhaft, unvollständig oder unpassend sein. Sie ersetzen keine fachliche, rechtliche oder steuerliche Beratung und sind vor einer Verwendung von dir zu prüfen.</p>
+    <h3>4. Deine Inhalte &amp; Rechte Dritter</h3>
+    <p>Für alle Inhalte, die du eingibst, verlinkst oder hochlädst, bist du verantwortlich. Verlinke oder lade nur Inhalte hoch, an denen du die nötigen Rechte hast. Prompt.ai übernimmt keine Haftung für Inhalte Dritter, die du hier hinterlegst. Du stellst den Anbieter von Ansprüchen Dritter frei, die aus einer rechtswidrigen Nutzung durch dich entstehen. [Umfang der Freistellung juristisch prüfen.]</p>
+    <h3>5. Rechte an den Ergebnissen</h3>
+    <p>Die von dir erzeugten Prompts und Projektunterlagen darfst du frei verwenden. [Regelung zu Nutzungsrechten, Weitergabe und Wiederverkauf ergänzen.]</p>
+    <h3>6. Tarife, Kontingente &amp; Zahlung</h3>
+    <p>Kostenpflichtige Tarife werden über Stripe abgerechnet und laufen monatlich, sofern nicht anders angegeben. Jeder Tarif enthält ein monatliches Kontingent, das zum Beginn eines neuen Abrechnungsmonats neu startet. [Preise, Laufzeit, Verlängerung, Kündigungsfrist und Widerrufsrecht für Verbraucher ergänzen.]</p>
+    <h3>7. Zulässige Nutzung</h3>
+    <p>Untersagt sind insbesondere: die Erzeugung rechtswidriger Inhalte, das Umgehen von Kontingenten oder technischen Beschränkungen, automatisierte Massenabfragen sowie Handlungen, die den Betrieb beeinträchtigen.</p>
+    <h3>8. Verfügbarkeit &amp; Änderungen</h3>
+    <p>Ein bestimmter Verfügbarkeitsgrad wird nicht zugesichert. Wartungsarbeiten, Weiterentwicklungen und Änderungen am Funktionsumfang sind möglich. [Ankündigungsfristen für wesentliche Änderungen ergänzen.]</p>
+    <h3>9. Haftung</h3>
+    <p>[Haftungsregelung anwaltlich formulieren lassen — insbesondere Haftung für Vorsatz und grobe Fahrlässigkeit, Kardinalpflichten, Personenschäden und Produkthaftung.]</p>
+    <h3>10. Kündigung</h3>
+    <p>Du kannst dein Konto jederzeit löschen; kostenpflichtige Tarife enden zum Ende des laufenden Abrechnungszeitraums. [Kündigungswege und Folgen für gespeicherte Daten ergänzen.]</p>
+    <h3>11. Schlussbestimmungen</h3>
+    <p>[Anwendbares Recht, Gerichtsstand und Regelung zu Änderungen dieser Bedingungen ergänzen.]</p>
   `;
 
   function ensureStyle(){
@@ -62,6 +88,8 @@
       .gate-legal-row{display:flex;justify-content:center;gap:16px;padding:14px 26px 20px;margin-top:2px;border-top:1px solid var(--line)}
       .gate-legal-row .text-btn{font-size:9px;color:var(--muted)}
       .link-btn{border:0;background:none;padding:0;margin:0;color:var(--accent);text-decoration:underline;text-underline-offset:2px;font:inherit;cursor:pointer}
+      .auth-consent-note{margin:12px 0 0;color:var(--muted);font-size:11px!important;line-height:1.5}
+      .auth-consent-note .link-btn{font-size:inherit!important}
       .cookie-banner{position:fixed;inset:0;z-index:2147483200;margin:0;padding:20px;border:0;background:var(--paper);display:grid;place-items:center;pointer-events:none;width:100%;height:100%;max-width:none;max-height:none;color:inherit}
       .cookie-banner:not([open]){display:none}
       .cookie-banner::backdrop{display:none}
@@ -88,6 +116,7 @@
     const dialog=$('#legalDialog');if(!dialog)return;
     const title=$('#legalTitle'),content=$('#legalContent');
     if(kind==='privacy'){title.textContent='Datenschutzerklärung';content.innerHTML=PRIVACY_HTML}
+    else if(kind==='terms'){title.textContent='Nutzungsbedingungen';content.innerHTML=TERMS_HTML}
     else{title.textContent='Impressum';content.innerHTML=IMPRINT_HTML}
     if(!dialog.open)dialog.showModal();
   }
@@ -103,8 +132,23 @@
     const privacy=document.createElement('button');
     privacy.type='button';privacy.className='text-btn';privacy.id='menuPrivacyBtn';privacy.textContent='Datenschutz';
     privacy.addEventListener('click',()=>openLegal('privacy'));
-    row.appendChild(imprint);row.appendChild(privacy);
+    const terms=document.createElement('button');
+    terms.type='button';terms.className='text-btn';terms.id='menuTermsBtn';terms.textContent='Nutzungsbedingungen';
+    terms.addEventListener('click',()=>openLegal('terms'));
+    row.appendChild(imprint);row.appendChild(privacy);row.appendChild(terms);
     menu.appendChild(row);
+  }
+
+  // Consent line under the registration action. The buttons open the same dialog as the footer
+  // links, so the texts a new account agrees to are readable before the account exists.
+  function ensureAuthConsent(){
+    const actions=$('#accountLoggedOut .auth-primary-actions');if(!actions||$('#authConsentNote'))return;
+    const note=document.createElement('p');
+    note.id='authConsentNote';note.className='auth-consent-note';
+    note.innerHTML='Mit „Neues Konto“ stimmst du den <button type="button" class="link-btn" id="authTermsLink">Nutzungsbedingungen</button> zu und bestätigst, die <button type="button" class="link-btn" id="authPrivacyConsentLink">Datenschutzerklärung</button> gelesen zu haben.';
+    actions.insertAdjacentElement('afterend',note);
+    $('#authTermsLink',note).addEventListener('click',()=>openLegal('terms'));
+    $('#authPrivacyConsentLink',note).addEventListener('click',()=>openLegal('privacy'));
   }
 
   function ensureGateFooter(){
@@ -144,6 +188,7 @@
   function init(){
     ensureStyle();
     ensureMenuLinks();
+    ensureAuthConsent();
     ensureGateFooter();
     initCookieBanner();
   }

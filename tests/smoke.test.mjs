@@ -97,6 +97,31 @@ test('the menu names the signed-in account and only offers an upgrade when there
   assert.match(css,/\.topbar-menu #accountBtn \.account-btn-meta\{display:block/,'the second line only renders inside the dropdown');
   assert.match(css,/#upgradeBtn,#upgradeMenuBtn\{gap:\.35em\}/,'flex collapses the space before the tier name');
 });
+test('the reload the intake dialog triggers stays covered instead of flashing an empty app',async()=>{
+  // Starting a project reloads the page; mode-handoff-fix.js owns the cover for that reload.
+  // transition-polish.js used to hide it in guided/auto (the default for free accounts), and
+  // promptai-loading-v2.js blanks the description step meanwhile, so the reload showed an empty
+  // screen until the references step appeared.
+  const polish=await text('transition-polish.js'),handoff=await text('mode-handoff-fix.js'),v2=await text('promptai-loading-v2.js');
+  assert.doesNotMatch(polish,/#promptModeHandoff\{display:none!important\}|#promptModeHandoff,/,'the reload cover must not be suppressed');
+  assert.match(polish,/#promptAiThinkingStage\{display:none!important\}/,'the in-page step overlays stay suppressed');
+  assert.match(handoff,/box\.id='promptModeHandoff'/);
+  assert.match(v2,/prompt-skip-intake-brief #workflowApp #stepProject\.active\{visibility:hidden!important/,'the blanked step is why a cover is required');
+});
+test('legal texts cover uploaded references and registration names what is agreed to',async()=>{
+  const legal=await text('legal-pages.js');
+  assert.match(legal,/Verlinke oder lade nur Inhalte hoch, an denen du die nötigen Rechte hast\./,'the references notice lives in the privacy policy now');
+  assert.match(legal,/const TERMS_HTML=/);
+  assert.match(legal,/kind==='terms'\)\{title\.textContent='Nutzungsbedingungen'/);
+  assert.match(legal,/function ensureAuthConsent\(\)/);
+  assert.match(legal,/Mit „Neues Konto“ stimmst du den <button type="button" class="link-btn" id="authTermsLink">Nutzungsbedingungen<\/button> zu/);
+  assert.match(legal,/id='menuTermsBtn'/,'the terms page must be reachable outside the sign-up form too');
+});
+test('hiding the topbar upgrade button on mobile does not hit every upgrade button',async()=>{
+  const src=await text('unified-ui-v1.js');
+  assert.match(src,/body\.prompt-unified-ui \.topbar \.upgrade-btn\{display:none!important\}/);
+  assert.doesNotMatch(src,/strong\{font-size:17px!important\}\.upgrade-btn\{display:none!important\}/,'the unscoped rule also hid the login card CTA');
+});
 test('the top menu cannot republish entries the app has hidden',async()=>{
   // The hidden attribute only carries the user-agent display:none, so an unconditional
   // display:...!important on menu children wins over it. That put Verwaltung (admin only),

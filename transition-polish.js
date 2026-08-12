@@ -22,7 +22,6 @@
       html[data-clean-project-flow="1"] #modeFlowPanel,
       html[data-clean-project-flow="1"] #promptCompletionFlash,
       html[data-clean-project-flow="1"] #promptAiThinkingStage,
-      html[data-clean-project-flow="1"] #promptModeHandoff,
       html[data-prompt-mode="guided"] #promptBriefHandoff,
       html[data-prompt-mode="auto"] #promptBriefHandoff,
       html[data-prompt-mode="guided"] #flowTransitionCompact,
@@ -34,9 +33,11 @@
       html[data-prompt-mode="guided"] #promptCompletionFlash,
       html[data-prompt-mode="auto"] #promptCompletionFlash,
       html[data-prompt-mode="guided"] #promptAiThinkingStage,
-      html[data-prompt-mode="auto"] #promptAiThinkingStage,
-      html[data-prompt-mode="guided"] #promptModeHandoff,
-      html[data-prompt-mode="auto"] #promptModeHandoff{display:none!important}
+      html[data-prompt-mode="auto"] #promptAiThinkingStage{display:none!important}
+      /* #promptModeHandoff is deliberately NOT in the list above. The other overlays are competing
+         in-page step transitions that this file replaced, but that one covers the page reload the
+         intake dialog triggers - a gap this file's step-based sync() never sees. Hiding it left a
+         blank screen from the reload until the references step appeared. */
       html[data-clean-project-flow="1"].prompt-review-transition #workflowApp .step-panel.active,
       html[data-prompt-mode="guided"].prompt-review-transition #workflowApp .step-panel.active,
       html[data-prompt-mode="auto"].prompt-review-transition #workflowApp .step-panel.active{display:flex!important;visibility:visible!important;pointer-events:auto!important}
