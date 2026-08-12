@@ -121,12 +121,12 @@
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
       "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","libraryProjectList","faceIdBtn","faceIdMessage","supportCategory","supportSubject","supportMessage","sendSupportBtn","supportStatus",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
-      "settingsDialog","setActiveProfile","applyProfileBtn","connectionLoginRow","connectionUpgradeRow","aiConnectionGrid","settingsLoginBtn","githubLoginRow","githubUpgradeRow","githubConnectionGrid","githubSettingsLoginBtn","gatewayConnectionStatus","gatewayApiKey","gatewayConnectBtn","gatewayTestBtn","gatewayDisconnectBtn","gatewayConnectionMessage","openaiConnectionStatus","openaiApiKey","openaiConnectBtn","openaiTestBtn","openaiDisconnectBtn","openaiConnectionMessage","geminiConnectionStatus","geminiApiKey","geminiConnectBtn","geminiTestBtn","geminiDisconnectBtn","geminiConnectionMessage","cloudflareConnectionStatus","cloudflareAccountId","cloudflareApiToken","cloudflareConnectBtn","cloudflareTestBtn","cloudflareDisconnectBtn","cloudflareConnectionMessage","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
+      "settingsDialog","setActiveProfile","applyProfileBtn","githubLoginRow","githubUpgradeRow","githubConnectionGrid","githubSettingsLoginBtn","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
       "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","buyReviewInlineBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
       "templateLibraryList","libTemplateName","libTemplateTag","libTemplateSummary","libTemplatePrompt","saveTemplateBtn","cancelTemplateEditBtn","templateEditorTitle",
       "moduleLibraryList","libModuleName","libModuleTag","libModuleSummary","libModulePrompt","saveModuleBtn","cancelModuleEditBtn","moduleEditorTitle",
       "skillLibraryList","libSkillName","libSkillAgent","libSkillTrigger","libSkillPrompt","saveSkillBtn","cancelSkillEditBtn","skillEditorTitle",
-      "resetBtn","startNewBtn","brandHome","installAppBtn","upgradeBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","generatingDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","startApiAddonCheckoutBtn","buySingleReviewBtn","apiAddonCard","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
+      "resetBtn","startNewBtn","brandHome","installAppBtn","upgradeBtn","currentPlanBadge","currentPlanTitle","currentPlanDescription","showPlansBtn","plansDialog","generatingDialog","settingsUpgradeNote","startProCheckoutBtn","startUltimateCheckoutBtn","manageSubscriptionBtn","buySingleReviewBtn","userDisplayName","userCompanyName","userWebsite","userDefaultClientType","saveUserProfileBtn","userProfileMessage","githubConnectionStatus","githubToken","githubConnectBtn","githubTestBtn","githubDisconnectBtn","githubConnectionMessage","forgotPasswordBtn","passwordRecoveryPanel","newAccountPassword","saveNewPasswordBtn","completionSummary","revisionProGate","revisionEditor","revisionFiles","revisionReference","revisionDescription","createRevisionPromptBtn","revisionStatus","revisionPromptResult","revisionPrompt","copyRevisionPromptBtn","downloadRevisionPromptBtn","proPriceLabel","ultimatePriceLabel",
       "workspaceNewProjectBtn","workspaceLastProjectBtn","quickRevisionBtn","workspaceRevisionBtn","workspaceLibraryBtn","quickRevisionDialog","quickRevisionUrl","quickRevisionAgent","quickRevisionDescription","quickRevisionUpgradeNote","quickRevisionProBlock","quickRevisionProNote","quickRevisionPreserve","quickRevisionScope","quickRevisionReference","quickRevisionFiles","quickRevisionUltimateBlock","quickRevisionUltimateNote","quickRevisionTechnical","quickRevisionDesignRules","quickRevisionAcceptance","quickRevisionChecks","scanQuickRevisionBtn","quickRevisionStatus","quickRevisionResult","quickRevisionScanResult","quickRevisionPrompt","copyQuickRevisionBtn","downloadQuickRevisionBtn","quickRevisionVariantTools","quickRevisionVariantName","saveQuickRevisionVariantBtn","quickRevisionVariantSelect","deleteQuickRevisionVariantBtn","appActionDialog","appActionKicker","appActionTitle","appActionMessage","appActionInputWrap","appActionInputLabel","appActionInput","appActionSelect","appActionCancelBtn","appActionConfirmBtn","openAgentBtn","agentLaunchDialog","closeAgentLaunchBtn","agentLaunchTitle","agentLaunchText","openAgentWebBtn","openAgentDesktopBtn","agentLaunchHint"
     ].forEach(id => el[id] = document.getElementById(id));
   }
@@ -290,20 +290,24 @@
     if(cloud) scheduleCloudProjectSave();
   }
 
-  function enhanceSettingsAccordion(){
-    if(!el.settingsDialog)return;
-    $$('.settings-section',el.settingsDialog).forEach(section=>{
-      const heading=section.querySelector(':scope > .settings-heading');
+  // Sections start closed - in the settings and in the profile alike. Unfolded, the profile opened
+  // with identity block, profile data, Face ID and the support form all at once.
+  function collapseSections(root,sectionSelector,headingSelector){
+    if(!root)return;
+    $$(sectionSelector,root).forEach(section=>{
+      const heading=section.querySelector(headingSelector);
       if(!heading||section.classList.contains('is-collapsible'))return;
       section.classList.add('is-collapsible');
-      // Every section starts closed. Opening the first one meant the settings began with an 1800px
-      // block on a phone before the other sections were even in reach.
       section.classList.remove('is-open');
       heading.tabIndex=0;heading.setAttribute('role','button');heading.setAttribute('aria-expanded','false');
       const marker=document.createElement('i');marker.className='settings-chevron';marker.setAttribute('aria-hidden','true');heading.append(marker);
       const toggle=()=>{const next=!section.classList.contains('is-open');section.classList.toggle('is-open',next);heading.setAttribute('aria-expanded',String(next))};
       heading.addEventListener('click',toggle);heading.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();toggle()}});
     });
+  }
+  function enhanceSettingsAccordion(){
+    collapseSections(el.settingsDialog,'.settings-section',':scope > .settings-heading');
+    collapseSections(el.accountDialog,'.account-profile-settings,.account-tool-card,.account-support-card',':scope > .account-section-head, :scope > div:first-child');
   }
 
   function initMobileWorkflowMenu(){
@@ -390,21 +394,15 @@
   }
 
   function aiConnection(provider){ return state.aiConnections.find(x=>x.provider===provider)||null; }
-  function aiConnectionEls(provider){
-    return provider==='gateway'
-      ? {status:el.gatewayConnectionStatus,input:el.gatewayApiKey,connect:el.gatewayConnectBtn,test:el.gatewayTestBtn,disconnect:el.gatewayDisconnectBtn,message:el.gatewayConnectionMessage}
-      : provider==='openai'
-        ? {status:el.openaiConnectionStatus,input:el.openaiApiKey,connect:el.openaiConnectBtn,test:el.openaiTestBtn,disconnect:el.openaiDisconnectBtn,message:el.openaiConnectionMessage}
-        : provider==='gemini'
-          ? {status:el.geminiConnectionStatus,input:el.geminiApiKey,connect:el.geminiConnectBtn,test:el.geminiTestBtn,disconnect:el.geminiDisconnectBtn,message:el.geminiConnectionMessage}
-          : provider==='cloudflare'
-            ? {status:el.cloudflareConnectionStatus,input:el.cloudflareApiToken,account:el.cloudflareAccountId,connect:el.cloudflareConnectBtn,test:el.cloudflareTestBtn,disconnect:el.cloudflareDisconnectBtn,message:el.cloudflareConnectionMessage}
-            : {status:el.githubConnectionStatus,input:el.githubToken,connect:el.githubConnectBtn,test:el.githubTestBtn,disconnect:el.githubDisconnectBtn,message:el.githubConnectionMessage};
+  // Own API keys are no longer a product: the settings only carry the GitHub connection, which
+  // reuses the same save/test/disconnect helpers.
+  function aiConnectionEls(){
+    return {status:el.githubConnectionStatus,input:el.githubToken,connect:el.githubConnectBtn,test:el.githubTestBtn,disconnect:el.githubDisconnectBtn,message:el.githubConnectionMessage};
   }
 
   function renderAiConnections(){
-    for(const provider of ['gateway','openai','gemini','cloudflare','github']){
-      const ui=aiConnectionEls(provider); if(!ui.status) continue;
+    for(const provider of ['github']){
+      const ui=aiConnectionEls(); if(!ui.status) continue;
       const conn=aiConnection(provider), logged=cloudReady();
       ui.status.className='connection-status'+(conn?' connected':'');
       ui.status.textContent=conn?`Verbunden · ••••${conn.last4||''}`:(logged?'Nicht verbunden':'Login erforderlich');
@@ -417,7 +415,7 @@
   }
 
   async function saveAiProviderConnection(provider){
-    const ui=aiConnectionEls(provider);
+    const ui=aiConnectionEls();
     if(!cloudReady()){ui.message.textContent='Bitte zuerst bei Prompt.ai anmelden.';ui.message.className='connection-message error';return;}
     let secret=ui.input.value.trim();
     if(provider==='cloudflare'){const account=ui.account?.value.trim()||'';if(!/^[a-f0-9]{32}$/i.test(account)){ui.message.textContent='Bitte eine gültige 32-stellige Cloudflare Account-ID eingeben.';ui.message.className='connection-message error';return;}secret=`${account}:${secret}`;}
@@ -434,7 +432,7 @@
   }
 
   async function testAiProviderConnection(provider,quiet=false){
-    const ui=aiConnectionEls(provider);
+    const ui=aiConnectionEls();
     try{
       ui.test.disabled=true;if(!quiet){ui.message.textContent='Verbindung wird getestet…';ui.message.className='connection-message';}
       const res=await sitebriefApiFetch(`/api/ai-test?provider=${encodeURIComponent(provider)}`,{cache:'no-store'});
@@ -446,7 +444,7 @@
   }
 
   async function disconnectAiProvider(provider){
-    const ui=aiConnectionEls(provider);if(!cloudReady())return;
+    const ui=aiConnectionEls();if(!cloudReady())return;
     try{await window.SiteBriefCloud.deleteAiConnection(provider);state.aiConnections=[...(window.SiteBriefCloud.aiConnections||[])];ui.message.textContent='Eigener Key entfernt.';ui.message.className='connection-message';renderAiConnections();if(provider==='gateway')state.modelsLoaded=false;}
     catch(err){ui.message.textContent=err?.message||'Verbindung konnte nicht getrennt werden.';ui.message.className='connection-message error';}
   }
@@ -486,8 +484,6 @@
     if(!rules.existing&&state.outputTarget==='existing')state.outputTarget='next-vercel';
     if(el.revisionProGate)el.revisionProGate.hidden=rules.existing;if(el.revisionEditor)el.revisionEditor.hidden=!rules.existing;
     if(el.exportResultHint)el.exportResultHint.textContent=rules.github?"Website durch die gewählte KI erstellen, als ZIP laden oder auf GitHub veröffentlichen.":rules.zip?"Die gewählte KI erstellt das Website-Paket. GitHub-Veröffentlichung ist in Ultimate enthalten.":"Direkte Website-Erstellung und Kundenunterlagen sind ab Pro enthalten.";
-    if(el.connectionUpgradeRow)el.connectionUpgradeRow.hidden=!cloudReady()||state.ownApiKeys;
-    if(el.aiConnectionGrid)el.aiConnectionGrid.hidden=!cloudReady()||!state.ownApiKeys;
     const githubAvailable=cloudReady()&&(state.plan!=="free"||state.isAdmin);
     if(el.githubLoginRow)el.githubLoginRow.hidden=cloudReady();
     if(el.githubUpgradeRow)el.githubUpgradeRow.hidden=!cloudReady()||githubAvailable;
@@ -496,7 +492,9 @@
     const checksSection=el.setLegalRegion?.closest(".settings-section");
     if(qualitySection)qualitySection.hidden=state.plan==="free"&&!state.isAdmin;
     if(checksSection)checksSection.hidden=state.plan==="free"&&!state.isAdmin;
-    if(el.settingsUpgradeNote){el.settingsUpgradeNote.hidden=state.ownApiKeys;el.settingsUpgradeNote.innerHTML=state.plan==='free'?'<strong>Mehr Kontrolle mit Pro</strong><p>Claude, Module, Skills, Kundenunterlagen, ZIP-Export und erweiterte Prüfregeln.</p><button type="button" class="outline-btn mini" data-upgrade-plans>Pro ansehen</button>':'<strong>Eigene API-Keys für 5,99 €</strong><p>Eigene KI-Verbindungen werden erst nach Buchung des Add-ons angezeigt. In Ultimate ist es enthalten.</p><button type="button" class="outline-btn mini" data-api-addon>API-Key-Add-on buchen</button>'}
+    // The note used to advertise the own-API-key add-on, which no longer exists. Only the plan
+    // hint for free accounts is left.
+    if(el.settingsUpgradeNote){el.settingsUpgradeNote.hidden=state.plan!=='free';el.settingsUpgradeNote.innerHTML='<strong>Mehr Kontrolle mit Pro</strong><p>Claude, Module, Skills, Kundenunterlagen, ZIP-Export und erweiterte Prüfregeln.</p><button type="button" class="outline-btn mini" data-upgrade-plans>Pro ansehen</button>'}
     const moduleStep=document.getElementById('stepModules');if(moduleStep)moduleStep.classList.toggle('tier-unavailable',!rules.modules);
     if(el.openLibraryBtn)el.openLibraryBtn.hidden=!rules.modules;
     document.querySelectorAll('[data-open-library],[data-mobile-library]').forEach(button=>button.hidden=!rules.modules);
@@ -525,7 +523,6 @@
       const welcomeAccount=document.getElementById('welcomeAccountBtn');if(welcomeAccount)welcomeAccount.textContent='Profil & Synchronisierung';
       el.accountLoggedOut.hidden=true;el.accountLoggedIn.hidden=false;
       el.accountEmail.textContent=state.cloud.user.email||"Angemeldet";el.accountUserId.textContent=state.cloud.user.id||"";
-      if(el.apiAddonCard)el.apiAddonCard.hidden=state.ownApiKeys;
       if(el.userDisplayName){el.userDisplayName.value=state.userProfile.displayName||'';el.userCompanyName.value=state.userProfile.companyName||'';el.userWebsite.value=state.userProfile.website||'';el.userDefaultClientType.value=state.userProfile.defaultClientType||''}
       const counts={profiles:state.profiles.length,modules:state.modules.length,skills:state.skills.length,projects:state.cloudProjects.length};
       el.cloudStats.innerHTML=`<div><b>${counts.profiles}</b><span>Profile</span></div><div><b>${counts.modules}</b><span>Module</span></div><div><b>${counts.skills}</b><span>Skills</span></div><div><b>${counts.projects}</b><span>Projekte</span></div>`;
@@ -2124,13 +2121,13 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
     el.downloadProjectReportBtn?.addEventListener('click',()=>downloadText('sitebrief-projektbericht.md',buildProjectReport(),'text/markdown'));
     el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));[el.buySingleReviewBtn,el.buyReviewInlineBtn].forEach(button=>button?.addEventListener('click',()=>beginCheckout('single_review')));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
-    el.startApiAddonCheckoutBtn?.addEventListener('click',()=>beginCheckout('own_api_keys'));el.saveUserProfileBtn?.addEventListener('click',saveUserProfile);el.faceIdBtn?.addEventListener('click',handleBiometric);el.sendSupportBtn?.addEventListener('click',sendSupportRequest);el.importClientWebsiteBtn?.addEventListener('click',importClientWebsite);document.addEventListener('click',e=>{if(e.target.closest('[data-api-addon]'))beginCheckout('own_api_keys')});
+    el.saveUserProfileBtn?.addEventListener('click',saveUserProfile);el.faceIdBtn?.addEventListener('click',handleBiometric);el.sendSupportBtn?.addEventListener('click',sendSupportRequest);el.importClientWebsiteBtn?.addEventListener('click',importClientWebsite);document.addEventListener('click',e=>{if(e.target.closest('[data-api-addon]'))beginCheckout('own_api_keys')});
     el.openLibraryBtn.addEventListener("click",()=>openLibrary("projects"));$$('[data-open-library]').forEach(b=>b.addEventListener("click",()=>openLibrary(b.dataset.openLibrary)));$$('[data-library-tab]').forEach(b=>b.addEventListener("click",()=>switchLibraryTab(b.dataset.libraryTab)));
     el.openSettingsBtn.addEventListener("click",()=>{populateSettingsDialog();el.settingsDialog.showModal()});el.saveSettingsBtn.addEventListener("click",saveSettingsFromDialog);
-    el.gatewayConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gateway"));el.gatewayTestBtn?.addEventListener("click",()=>testAiProviderConnection("gateway"));el.gatewayDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gateway"));
-    el.openaiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("openai"));el.openaiTestBtn?.addEventListener("click",()=>testAiProviderConnection("openai"));el.openaiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("openai"));
-    el.geminiConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("gemini"));el.geminiTestBtn?.addEventListener("click",()=>testAiProviderConnection("gemini"));el.geminiDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("gemini"));
-    el.cloudflareConnectBtn?.addEventListener("click",()=>saveAiProviderConnection("cloudflare"));el.cloudflareTestBtn?.addEventListener("click",()=>testAiProviderConnection("cloudflare"));el.cloudflareDisconnectBtn?.addEventListener("click",()=>disconnectAiProvider("cloudflare"));
+    
+    
+    
+    
     el.githubConnectBtn?.addEventListener('click',()=>saveAiProviderConnection('github'));el.githubTestBtn?.addEventListener('click',()=>testAiProviderConnection('github'));el.githubDisconnectBtn?.addEventListener('click',()=>disconnectAiProvider('github'));
     el.previewLightboxClose?.addEventListener("click",closePreviewLightbox);el.previewLightbox?.addEventListener("click",e=>{if(e.target===el.previewLightbox)closePreviewLightbox()});el.previewLightboxDownload?.addEventListener("click",()=>downloadConceptImage(state.concepts.find(c=>c.id===lightboxConceptId)));el.previewLightboxSelect?.addEventListener("click",()=>{selectConcept(lightboxConceptId);closePreviewLightbox()});
     el.settingsLoginBtn?.addEventListener("click",()=>{el.settingsDialog.close();updateAccountUi();el.accountDialog.showModal();});

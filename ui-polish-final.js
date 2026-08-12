@@ -54,7 +54,7 @@
         body.prompt-unified-ui .welcome-page{width:100%!important;max-width:none!important;padding-left:15px!important;padding-right:15px!important}
         html[data-clean-project-flow="1"] body.prompt-unified-ui .workspace{width:100%!important;max-width:none!important}
         body.prompt-unified-ui .topbar-menu{left:10px!important;right:10px!important;top:86px!important;bottom:auto!important;width:auto!important;max-height:calc(100dvh - 98px)!important;border-radius:16px!important}
-        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog) .dialog-frame{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important}
+        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#cookieBanner) .dialog-frame{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important}
         .free-prompt-brief-card{grid-template-columns:1fr}.free-prompt-brief-card button{width:100%}
       }
       @media(prefers-reduced-motion:reduce){body.prompt-unified-ui .topbar-menu.open,body.prompt-unified-ui .topbar-menu[data-open="true"],body.prompt-unified-ui dialog[open] .dialog-frame,body.prompt-unified-ui .step-panel.active,body.prompt-unified-ui .library-pane.active,body.prompt-unified-ui .admin-pane.active,.free-prompt-result:not([hidden]){animation:none!important;transition:none!important}}

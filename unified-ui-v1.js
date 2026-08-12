@@ -116,8 +116,8 @@
         body.prompt-unified-ui .topbar-menu{right:10px!important;left:10px!important;top:auto!important;bottom:10px!important;width:auto!important;max-height:min(72dvh,620px)!important;border-radius:20px!important;padding:12px 12px calc(12px + env(safe-area-inset-bottom))!important}
         body.prompt-unified-ui .topbar-menu>button{min-height:52px!important;font-size:14px!important}
         body.prompt-unified-ui .welcome-page{width:100%!important;padding:32px 15px 45px!important}.welcome-hero{padding-left:4px!important;padding-right:4px!important}.welcome-hero h1{font-size:43px!important}
-        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog){width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important}
-        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog) .dialog-frame{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#cookieBanner){width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important}
+        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#cookieBanner) .dialog-frame{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
         body.prompt-unified-ui .dialog-head{padding:14px 15px!important}.dialog-head h2{font-size:25px!important}
         body.prompt-unified-ui .settings-body,body.prompt-unified-ui .account-body,body.prompt-unified-ui .library-pane,body.prompt-unified-ui .library-tools,body.prompt-unified-ui .quick-revision-body,body.prompt-unified-ui .admin-body,body.prompt-unified-ui .clarification-body{padding-left:15px!important;padding-right:15px!important}
         body.prompt-unified-ui .library-tabs,body.prompt-unified-ui .admin-tabs{padding-left:12px!important;padding-right:12px!important}

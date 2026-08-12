@@ -36,9 +36,9 @@
     <h3>6. Cookies &amp; lokale Speicherung</h3>
     <p>Wir setzen technisch notwendige Cookies bzw. lokale Speicherung (localStorage/sessionStorage) ein, um Anmeldung, Sitzung und Einstellungen (z.&nbsp;B. Dunkelmodus) zu ermöglichen. [Falls Analyse-/Marketing-Cookies eingesetzt werden, hier ergänzen und Einwilligungslogik entsprechend erweitern.]</p>
     <h3>7. KI-Verarbeitung deiner Eingaben</h3>
-    <p>Deine Projektangaben, Referenztexte, hochgeladenen Bilder/PDFs und ausgewählten Antworten werden zur Erstellung von Prompts, Vorschauen und Bildvorschauen an angebundene KI-Anbieter übermittelt. Je nach gewählter Verbindung und Funktion sind das: Vercel AI Gateway, OpenAI, Google (Gemini) und Cloudflare Workers AI. Wenn du eigene API-Keys hinterlegst, verarbeitet ausschließlich der jeweils gewählte Anbieter deine Anfrage; ohne eigene Keys nutzen wir eine von uns zentral bereitgestellte Verbindung zu einem dieser Anbieter. [Rechtsgrundlage, Auftragsverarbeitungsverträge und Speicherdauer bei den jeweiligen Anbietern ergänzen.]</p>
-    <h3>8. Eigene Verbindungen (API-Keys, GitHub)</h3>
-    <p>Ab Pro kannst du eigene API-Keys (u.&nbsp;a. für GitHub) unter Einstellungen hinterlegen. Diese werden verschlüsselt in Supabase Vault gespeichert und ausschließlich für die von dir ausgelösten Aktionen verwendet (z.&nbsp;B. GitHub-Veröffentlichung oder eigene KI-Anfragen).</p>
+    <p>Deine Projektangaben, Referenztexte, hochgeladenen Bilder/PDFs und ausgewählten Antworten werden zur Erstellung von Prompts, Vorschauen und Bildvorschauen an angebundene KI-Anbieter übermittelt. Je nach Funktion und Tarif sind das: Vercel AI Gateway, OpenAI, Google (Gemini) und Cloudflare Workers AI. Die Verbindungen stellen wir zentral bereit; welcher Anbieter eine Anfrage bearbeitet, entscheidet Prompt.ai anhand deines Tarifs. [Rechtsgrundlage, Auftragsverarbeitungsverträge und Speicherdauer bei den jeweiligen Anbietern ergänzen.]</p>
+    <h3>8. GitHub-Verbindung</h3>
+    <p>Ab Pro kannst du unter Einstellungen ein GitHub-Token hinterlegen. Es wird verschlüsselt in Supabase Vault gespeichert und ausschließlich für die von dir ausgelösten Veröffentlichungen verwendet.</p>
     <h3>9. Kundeninformationen &amp; fremde Webseiten</h3>
     <p>Wenn du unter „Kundeninformationen" die Website oder einen Google-Eintrag deines Auftraggebers hinterlegst, ruft Prompt.ai diese öffentlich erreichbare Seite ab und liest Inhalte, Links und Bilder aus, um sie in dein Projekt zu übernehmen. Dabei können auch personenbezogene Daten Dritter enthalten sein (z.&nbsp;B. Namen oder Kontaktdaten auf einer „Über uns"-Seite). Du bist dafür verantwortlich, dass du zur Angabe dieser Quelle berechtigt bist; Prompt.ai übernimmt keine Haftung für Inhalte, die auf diesem Weg verarbeitet werden. Gleiches gilt für Referenz-Links und -Bilder, die du unter „Referenzen" hinterlegst.</p>
     <p><strong>Hinweis zu Referenzen und Unterlagen:</strong> Verlinke oder lade nur Inhalte hoch, an denen du die nötigen Rechte hast. Prompt.ai übernimmt keine Haftung für Inhalte Dritter, die du hier hinterlegst — die Verantwortung dafür liegt bei dir.</p>
@@ -90,19 +90,29 @@
       .link-btn{border:0;background:none;padding:0;margin:0;color:var(--accent);text-decoration:underline;text-underline-offset:2px;font:inherit;cursor:pointer}
       .auth-consent-note{margin:12px 0 0;color:var(--muted);font-size:11px!important;line-height:1.5}
       .auth-consent-note .link-btn{font-size:inherit!important}
-      .cookie-banner{position:fixed;inset:0;z-index:2147483200;margin:0;padding:20px;border:0;background:var(--paper);display:grid;place-items:center;pointer-events:none;width:100%;height:100%;max-width:none;max-height:none;color:inherit}
+      /* A slim bar at the bottom instead of a full-screen dialog: the notice is required, but it
+         is not the reason anybody opened the app. The dialog element keeps its modal behaviour so
+         nothing else can be clicked past it, but it only occupies the bottom edge. */
+      .cookie-banner{position:fixed;inset:auto 0 0 0;z-index:2147483200;width:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:inherit;overflow:visible}
       .cookie-banner:not([open]){display:none}
-      .cookie-banner::backdrop{display:none}
-      .cookie-banner-box{pointer-events:auto;width:100%;max-width:520px;padding:0;border-radius:0;border:0;background:transparent;box-shadow:none;display:flex;flex-direction:column;gap:18px}
-      .cookie-banner-box .section-kicker{display:block;color:var(--accent);font-size:10px;font-weight:850;letter-spacing:.12em}
-      .cookie-banner-box h2{margin:8px 0 0;font-size:clamp(24px,6vw,32px);letter-spacing:-.03em}
-      .cookie-banner p{margin:0;font-size:14px;line-height:1.6;color:var(--muted)}
-      .cookie-banner-actions{display:flex;flex-direction:column;gap:8px}
-      /* Both choices carry the same weight, so they get the same button (.solid-btn in the markup)
-         and the same box here - no size or colour difference between them. */
-      .cookie-banner-actions button{width:100%;min-height:48px}
-      .cookie-banner-actions #cookieBannerEssentialBtn,.cookie-banner-actions #cookieBannerAcceptBtn{min-height:48px!important;padding:0 17px!important;border-radius:11px!important;font-size:13px!important;font-weight:750!important}
-      .cookie-banner-actions #cookieBannerSettingsBtn{min-height:auto;width:auto;align-self:center}
+      .cookie-banner::backdrop{background:transparent}
+      .cookie-banner-box{pointer-events:auto;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px 20px;width:min(1100px,calc(100% - 24px));margin:0 auto 12px;padding:14px 18px;border:1px solid var(--line);border-radius:14px;background:var(--paper);box-shadow:0 14px 40px rgba(12,20,26,.16)}
+      .cookie-banner-box>div:first-child{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+      .cookie-banner-box .section-kicker{color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.12em}
+      .cookie-banner-box h2{margin:0;font-size:15px;letter-spacing:-.01em}
+      .cookie-banner p{grid-column:1;margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+      .cookie-banner-actions{grid-column:2;grid-row:1/3;display:flex;align-items:center;gap:8px}
+      .cookie-banner-actions button{width:auto}
+      .cookie-banner-actions #cookieBannerEssentialBtn,.cookie-banner-actions #cookieBannerAcceptBtn{min-height:40px!important;padding:0 16px!important;border-radius:10px!important;font-size:12px!important;font-weight:750!important;white-space:nowrap}
+      .cookie-banner-actions #cookieBannerSettingsBtn{min-height:auto;width:auto;white-space:nowrap}
+      .cookie-banner-settings{grid-column:1/-1}
+      @media(max-width:760px){
+        .cookie-banner-box{grid-template-columns:1fr;gap:10px;width:calc(100% - 16px);margin-bottom:8px;padding:13px 14px}
+        .cookie-banner-box h2{font-size:14px}
+        .cookie-banner p{font-size:11.5px}
+        .cookie-banner-actions{grid-column:1;grid-row:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .cookie-banner-actions #cookieBannerSettingsBtn{grid-column:1/-1;order:3}
+      }
       .cookie-banner-settings{display:grid;gap:12px;margin-top:2px;padding-top:16px;border-top:1px solid var(--line)}
       .cookie-banner-settings[hidden]{display:none}
       .cookie-category{display:grid;grid-template-columns:16px 1fr;gap:9px;align-items:start}

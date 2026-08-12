@@ -649,12 +649,14 @@ test('admin announcements pop up large and come back on a fresh app open, not on
   assert.match(popup,/sessionStorage\.setItem\(SEEN_KEY/,'session scope: survives the internal reload, resets on a real app open');
   assert.doesNotMatch(popup,/localStorage/,'localStorage would silence the notice forever');
   assert.match(popup,/box\.showModal\(\)/,'large dialog instead of a toast');
-  assert.match(popup,/document\.documentElement\.classList\.contains\('prompt-app-booting'\)\|\|document\.querySelector\('#cookieBanner\[open\],#maintenanceDialog\[open\]'\)/,'a gate that opens later would land on top of the announcement and bury it');
+  assert.match(popup,/document\.querySelector\('#cookieBanner\[open\],#maintenanceDialog\[open\],#accountDialog\[open\]'\)/,'the sign-in page is mandatory - an announcement must never push it aside');
 });
-test('the two cookie choices are the same button, in the same size and colour',async()=>{
+test('the cookie notice is a slim bar at the bottom and both choices are the same button',async()=>{
   const html=await text('index.html'),legal=await text('legal-pages.js');
-  assert.match(html,/<button type="button" class="solid-btn" id="cookieBannerEssentialBtn">Nur notwendige<\/button><button type="button" class="solid-btn" id="cookieBannerAcceptBtn">Alle akzeptieren<\/button>/,'same class means the same colour under every later styling layer');
-  assert.match(legal,/\.cookie-banner-actions #cookieBannerEssentialBtn,\.cookie-banner-actions #cookieBannerAcceptBtn\{min-height:48px!important;padding:0 17px!important;border-radius:11px!important;font-size:13px!important/,'and the same box');
+  assert.match(html,/<button type="button" class="solid-btn" id="cookieBannerEssentialBtn">Nur notwendige<\/button><button type="button" class="solid-btn" id="cookieBannerAcceptBtn">Alle akzeptieren<\/button>/,'same button class, so every layer styles them alike');
+  assert.match(legal,/\.cookie-banner\{position:fixed;inset:auto 0 0 0;/,'sits at the bottom edge, not over the whole screen');
+  assert.match(legal,/\.cookie-banner::backdrop\{background:transparent\}/,'no dimmed full-screen backdrop behind a bar');
+  assert.match(legal,/\.cookie-banner-actions #cookieBannerEssentialBtn,\.cookie-banner-actions #cookieBannerAcceptBtn\{min-height:40px!important;padding:0 16px!important;border-radius:10px!important;font-size:12px!important;font-weight:750!important;white-space:nowrap\}/,'identical box for both choices');
 });
 test('every long admin list is folded away by default',async()=>{
   const html=await text('index.html'),core=await text('admin-console-core.js'),studio=await text('system-ai-studio.js'),ai=await text('admin-ai-ui.js'),css=await text('styles.css');

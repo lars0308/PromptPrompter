@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
   <script src="./theme-init.js?v=4"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260815-1" />
+  <link rel="stylesheet" href="./styles.css?v=20260815-2" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
     html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
@@ -509,65 +509,7 @@
       <div class="settings-body">
         <div class="settings-upgrade-note" id="settingsUpgradeNote"></div>
         <section class="settings-section">
-          <div class="settings-heading"><strong>Eigene Verbindungen</strong></div>
-          <div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein Prompt.ai-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
-          <div class="connection-login-row" id="connectionUpgradeRow" hidden><span>Eigene KI-Verbindungen sind ab Ultimate enthalten oder als Zusatz für 5,99 € / Monat buchbar.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
-          <div class="ai-connection-grid" id="aiConnectionGrid">
-            <article class="ai-connection-card recommended">
-              <div class="ai-connection-head">
-                <div><span>EMPFOHLEN</span><strong>Vercel AI Gateway</strong></div>
-                <span class="connection-status" id="gatewayConnectionStatus">Nicht verbunden</span>
-              </div>
-              <label class="field"><span>API-Key</span><input id="gatewayApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Key hier einmal eintragen" /></label>
-              <div class="connection-actions">
-                <button type="button" class="solid-btn mini" id="gatewayConnectBtn">Speichern & verbinden</button>
-                <button type="button" class="outline-btn mini" id="gatewayTestBtn">Testen</button>
-                <button type="button" class="text-btn" id="gatewayDisconnectBtn" hidden>Trennen</button>
-              </div>
-              <small class="connection-message" id="gatewayConnectionMessage"></small>
-            </article>
-
-            <article class="ai-connection-card">
-              <div class="ai-connection-head">
-                <div><span>DIREKT</span><strong>OpenAI</strong></div>
-                <span class="connection-status" id="openaiConnectionStatus">Nicht verbunden</span>
-              </div>
-              <label class="field"><span>API-Key</span><input id="openaiApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…" /></label>
-              <div class="connection-actions">
-                <button type="button" class="solid-btn mini" id="openaiConnectBtn">Speichern & verbinden</button>
-                <button type="button" class="outline-btn mini" id="openaiTestBtn">Testen</button>
-                <button type="button" class="text-btn" id="openaiDisconnectBtn" hidden>Trennen</button>
-              </div>
-              <small class="connection-message" id="openaiConnectionMessage"></small>
-            </article>
-            <article class="ai-connection-card">
-              <div class="ai-connection-head">
-                <div><span>GOOGLE AI STUDIO</span><strong>Google Gemini</strong></div>
-                <span class="connection-status" id="geminiConnectionStatus">Nicht verbunden</span>
-              </div>
-              <label class="field"><span>API-Key</span><input id="geminiApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Gemini API-Key" /></label>
-              <div class="connection-actions">
-                <button type="button" class="solid-btn mini" id="geminiConnectBtn">Speichern & verbinden</button>
-                <button type="button" class="outline-btn mini" id="geminiTestBtn">Testen</button>
-                <button type="button" class="text-btn" id="geminiDisconnectBtn" hidden>Trennen</button>
-              </div>
-              <small class="connection-message" id="geminiConnectionMessage"></small>
-            </article>
-            <article class="ai-connection-card">
-              <div class="ai-connection-head">
-                <div><span>10.000 NEURONEN / TAG FREI</span><strong>Cloudflare Workers AI</strong></div>
-                <span class="connection-status" id="cloudflareConnectionStatus">Nicht verbunden</span>
-              </div>
-              <label class="field"><span>Account-ID</span><input id="cloudflareAccountId" type="text" autocomplete="off" spellcheck="false" placeholder="32-stellige Cloudflare Account-ID" /></label>
-              <label class="field"><span>API-Token</span><input id="cloudflareApiToken" type="password" autocomplete="off" spellcheck="false" placeholder="Workers AI API-Token" /></label>
-              <div class="connection-actions">
-                <button type="button" class="solid-btn mini" id="cloudflareConnectBtn">Speichern & verbinden</button>
-                <button type="button" class="outline-btn mini" id="cloudflareTestBtn">Testen</button>
-                <button type="button" class="text-btn" id="cloudflareDisconnectBtn" hidden>Trennen</button>
-              </div>
-              <small class="connection-message" id="cloudflareConnectionMessage"></small>
-            </article>
-          </div>
+          <div class="settings-heading"><strong>GitHub-Verbindung</strong></div>
           <div class="connection-login-row" id="githubLoginRow" hidden><span>Zum Verbinden von GitHub zuerst anmelden.</span><button type="button" class="outline-btn mini" id="githubSettingsLoginBtn">Zum Speichern anmelden</button></div>
           <div class="connection-login-row" id="githubUpgradeRow" hidden><span>Die eigene GitHub-Verbindung ist ab Pro enthalten.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
           <div class="ai-connection-grid" id="githubConnectionGrid" hidden>
@@ -653,7 +595,7 @@
         <div id="accountLoggedIn" hidden>
           <section class="account-overview-head"><div class="account-user"><span>MEIN PROFIL</span><h2>Persönliche Angaben und Sicherheit</h2><strong id="accountEmail">–</strong><small id="accountUserId"></small></div><div class="cloud-stats" id="cloudStats"></div></section>
           <section class="account-profile-settings"><div class="account-section-head"><div><strong>Profildaten</strong></div></div><div class="field-grid two"><label class="field"><span>Name</span><input id="userDisplayName" type="text" /></label><label class="field"><span>Firma / Agentur</span><input id="userCompanyName" type="text" /></label><label class="field"><span>Website</span><input id="userWebsite" type="url" /></label><label class="field"><span>Standard-Auftraggeber</span><select id="userDefaultClientType"><option value="">Nicht festgelegt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="kunde">Kundenprojekt</option><option value="intern">Internes Projekt</option></select></label></div><div class="account-save-row"><button type="button" class="solid-btn" id="saveUserProfileBtn">Änderungen speichern</button><small id="userProfileMessage"></small></div></section>
-          <section class="api-addon-card" id="apiAddonCard"><div><span>OPTIONALES ADD-ON</span><strong>Eigene KI-API-Keys</strong></div><div><b>5,99 € / Monat</b><button type="button" class="solid-btn" id="startApiAddonCheckoutBtn">Add-on buchen</button></div></section>
+          
           <section class="account-tool-card"><div><strong>Face ID &amp; Biometrie</strong></div><div><button type="button" class="outline-btn" id="faceIdBtn">Face ID einrichten</button><small id="faceIdMessage"></small></div></section>
           <section class="account-support-card"><div class="account-section-head"><div><strong>Support-Anfrage</strong></div></div><div class="field-grid two"><label class="field"><span>Thema</span><select id="supportCategory"><option value="technical">Technisches Problem</option><option value="billing">Zahlung &amp; Tarif</option><option value="account">Konto &amp; Anmeldung</option><option value="feedback">Idee &amp; Feedback</option></select></label><label class="field"><span>Betreff</span><input id="supportSubject" type="text" maxlength="120" placeholder="Worum geht es?" /></label></div><label class="field"><span>Nachricht</span><textarea id="supportMessage" rows="4" maxlength="3000" placeholder="Was ist passiert und wobei brauchst du Hilfe?"></textarea></label><div class="account-save-row"><button type="button" class="solid-btn" id="sendSupportBtn">Anfrage senden</button><small id="supportStatus"></small></div></section>
           <div class="inline-actions"><button type="button" class="solid-btn" id="syncNowBtn">Jetzt synchronisieren</button><button type="button" class="outline-btn" id="signOutBtn">Abmelden</button></div>
@@ -757,7 +699,7 @@
   <dialog class="cookie-banner" id="cookieBanner" aria-label="Cookie-Hinweis">
     <div class="cookie-banner-box">
       <div><span class="section-kicker">COOKIES</span><h2>Bevor es losgeht</h2></div>
-      <p>Wir verwenden technisch notwendige Cookies, damit Anmeldung und Sitzung funktionieren. Optionale Cookies (z.&nbsp;B. Analyse) setzen wir aktuell nicht ohne deine Zustimmung ein. Mehr dazu in unserer <button type="button" class="link-btn" id="cookieBannerPrivacyLink">Datenschutzerklärung</button>.</p>
+      <p>Wir nutzen nur technisch notwendige Cookies für Anmeldung und Sitzung. Analyse-Cookies setzen wir nicht ohne deine Zustimmung ein. Mehr dazu in der <button type="button" class="link-btn" id="cookieBannerPrivacyLink">Datenschutzerklärung</button>.</p>
       <div class="cookie-banner-settings" id="cookieBannerSettings" hidden>
         <label class="cookie-category"><input type="checkbox" checked disabled /><span><strong>Technisch notwendig</strong><small>Anmeldung, Sitzung, Sicherheit und deine Cookie-Auswahl selbst. Immer aktiv, da die App sonst nicht funktioniert.</small></span></label>
         <label class="cookie-category disabled"><input type="checkbox" disabled /><span><strong>Analyse &amp; Marketing</strong><small>Setzen wir aktuell nicht ein. Es gibt daher nichts zu aktivieren.</small></span></label>
@@ -782,8 +724,8 @@
   <script type="module" src="./cloud.js?v=20260813-2"></script>
   <script src="./maintenance-mode.js?v=20260813-2" defer></script>
   <script src="./entry-gate-ui.js?v=20260814-3" defer></script>
-  <script src="./legal-pages.js?v=20260814-1" defer></script>
-  <script src="./app.js?v=20260815-1" defer></script>
+  <script src="./legal-pages.js?v=20260815-1" defer></script>
+  <script src="./app.js?v=20260815-3" defer></script>
   <script src="./admin-console.js?v=20260814-6" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>

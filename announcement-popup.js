@@ -50,16 +50,15 @@
     box.querySelector('p').textContent=item.body||'';
     try{box.showModal()}catch{current=null}
   }
-  // Two things have to be out of the way first: the boot screen (it hides everything else) and the
-  // gates that open after this one would - the cookie consent and the maintenance blocker. A dialog
-  // opened later lands above this one in the top layer, which would leave an unreachable
-  // announcement underneath. Anything already open (the account/login dialog) is fine: showModal()
-  // puts the announcement on top of it. Waiting is bounded - if a gate stays open for minutes, the
-  // announcement simply returns on the next app open.
+  // Nothing may push the sign-in page aside: the announcement waits for the boot screen, the cookie
+  // bar, the maintenance blocker and the account/login dialog. Coming up on top of the login was
+  // exactly the bug - the visitor accepted cookies, the notice popped, and the sign-in page was
+  // gone. Waiting is bounded: if a gate stays open for minutes the announcement returns on the
+  // next app open.
   function whenVisible(){
     clearTimeout(waiting);
     if(Date.now()>waitUntil)return;
-    const blocked=document.documentElement.classList.contains('prompt-app-booting')||document.querySelector('#cookieBanner[open],#maintenanceDialog[open]');
+    const blocked=document.documentElement.classList.contains('prompt-app-booting')||document.querySelector('#cookieBanner[open],#maintenanceDialog[open],#accountDialog[open]');
     if(blocked){waiting=setTimeout(whenVisible,300);return}
     next();
   }
