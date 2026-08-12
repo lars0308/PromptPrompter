@@ -5,11 +5,11 @@
   // automatisch". Both scripts rebuilt the same <select> on promptai:access, so which version a
   // visitor saw depended on the order the events happened to fire - the label said "automatisch"
   // while the value was a fixed provider, and options appeared and disappeared between renders.
-  // app.js owns the list alone now (plan-gated, HTML default, providers named explicitly), so the
-  // only thing left here is keeping provider names out of the status line.
+  // There is no preview picker any more - the plan decides. All that is left here is keeping
+  // provider names out of the status line.
   const fix=()=>{
-    const select=document.getElementById('previewFormat'),status=document.getElementById('generationStatus');
-    if(!select||!status||status.dataset.previewLabelGuard==='1')return;
+    const status=document.getElementById('generationStatus');
+    if(!status||status.dataset.previewLabelGuard==='1')return;
     status.dataset.previewLabelGuard='1';
     // Assigning textContent always replaces the text node, so writing it unconditionally inside
     // an observer of this very node feeds itself forever. Only write when something changed.

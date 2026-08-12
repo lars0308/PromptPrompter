@@ -240,8 +240,9 @@ async function gemini(key,model,prompt){
   const response=await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'}]},contents:[{role:'user',parts:[{text:prompt}]}]})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'Gemini nicht verfügbar.'),{status:response.status});return cleanFence((data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join(''));
 }
-async function generateWithSystemAi(req,input,{advanced=false}={}){
-  let profiles=await listProfiles('freeprompt',{providers:['gateway','openai','gemini']});if(!profiles.length)profiles=await listProfiles('prompt',{providers:['gateway','openai','gemini']});
+async function generateWithSystemAi(req,input,{advanced=false,plan=''}={}){
+  // The plan decides which AIs are in the chain - the visitor never picks a model.
+  let profiles=await listProfiles('freeprompt',{providers:['gateway','openai','gemini'],plan});if(!profiles.length)profiles=await listProfiles('prompt',{providers:['gateway','openai','gemini'],plan});
   const errors=[],architect=architectPrompt(input,{advanced});
   for(const profile of profiles){
     if(profile.enabled===false)continue;
@@ -265,7 +266,7 @@ module.exports=async function freePromptV2(req,res){
     const normalized=normalizedInput(req.body||{});if(normalized.description.length<12)return res.status(400).json({error:'Beschreibe bitte etwas genauer, was die KI für dich erstellen soll.'});
     const entitlement=await getEntitlements(req),pro=entitlement.isAdmin||['pro','ultimate'].includes(entitlement.plan),input=pro?normalized:freeInput(normalized);
     usage.project={name:'Freier Prompt',type:input.categoryLabel,goal:(input.goal||input.description).slice(0,180)};
-    const result=await generateWithSystemAi(req,input,{advanced:pro});usage.provider=result.provider;usage.model=result.model;
+    const result=await generateWithSystemAi(req,input,{advanced:pro,plan:entitlement.isAdmin?'ultimate':String(entitlement.plan||'free')});usage.provider=result.provider;usage.model=result.model;
     await logUsage(req,{...usage,durationMs:Date.now()-started});
     return res.status(200).json({...result,tier:entitlement.isAdmin?'ultimate':entitlement.plan,advanced:pro,masterVersion:'v2'});
   }catch(error){

@@ -68,3 +68,34 @@ test('the prompt editor is its own admin tab and reuses the admin data that is a
   assert.match(ui,/const WIDE=\(\)=>window\.innerWidth>820;/,'on a phone the area list folds away');
   assert.match(console_,/\.\/admin-prompts-ui\.js\?v=/,'loaded with the other admin extras');
 });
+
+test('a system AI serves the plans it is assigned to, and a profile from before the plans column serves everyone',()=>{
+  const profiles=require('../server/system-ai-profiles.js');
+  assert.deepEqual(profiles.PLANS,['free','pro','ultimate']);
+  assert.equal(profiles.servesPlan({plans:['pro','ultimate']},'free'),false);
+  assert.equal(profiles.servesPlan({plans:['pro','ultimate']},'ultimate'),true);
+  assert.equal(profiles.servesPlan({},'free'),true,'an old row without plans keeps serving every plan');
+  assert.equal(profiles.servesPlan({plans:['pro']},''),true,'admin tooling asks without a plan and sees everything');
+  assert.deepEqual(profiles.cleanPlans(['ultimate','nonsense','free']),['free','ultimate'],'stored in a stable order');
+  assert.deepEqual(profiles.cleanPlans([]),['free','pro','ultimate'],'an empty choice means every plan, never none');
+});
+
+test('every AI route asks for the caller\'s plan, so a free account cannot reach a paid model',async()=>{
+  const router=await text('api/generate.js'),free=await text('server/free-prompt-v2.js'),image=await text('server/preview-image.js'),config=await text('api/config.js'),migration=await text('supabase/migrations/20260815_add_plan_scoped_ai_profiles.sql');
+  assert.match(router,/async function planOf\(req\)\{try\{const ent=await getEntitlements\(req\);return ent\?\.isAdmin\?'ultimate':String\(ent\?\.plan\|\|'free'\)\}catch\{return 'free'\}\}/);
+  assert.match(router,/listProfiles\(task,\{providers:\['gateway','openai','gemini'\],plan\}\)/);
+  assert.match(free,/listProfiles\('freeprompt',\{providers:\['gateway','openai','gemini'\],plan\}\)/);
+  assert.match(image,/listProfiles\('image',\{providers:\['gateway','openai','gemini','cloudflare'\],plan:ent\.isAdmin\?'ultimate':String\(ent\.plan\|\|'free'\)\}\)/);
+  assert.match(config,/plans:cleanPlans\(body\.plans\)/,'the admin console stores the plans of a profile');
+  assert.match(migration,/add column if not exists plans text\[\] not null default '\{free,pro,ultimate\}'/,'existing profiles keep serving everyone');
+  assert.match(migration,/check \(plans <@ '\{free,pro,ultimate\}'::text\[\] and array_length\(plans,1\) >= 1\)/);
+});
+
+test('the AI studio lets an administrator pick the plans of a profile',async()=>{
+  const studio=await text('system-ai-studio.js');
+  assert.match(studio,/const PLANS=\{free:'Kostenlos',pro:'Pro',ultimate:'Ultimate'\};/);
+  assert.match(studio,/data-system-ai-plan/);
+  assert.match(studio,/plans:\$\$\('\[data-system-ai-plan\]:checked'\)\.map\(x=>x\.value\)/);
+  assert.match(studio,/if\(!body\.plans\.length\)return formMsg\('Bitte mindestens einen Tarif auswählen\.','error'\)/);
+  assert.match(studio,/\$\$\('\[data-system-ai-plan\]'\)\.forEach\(x=>x\.checked=\(p\.plans\|\|\['free','pro','ultimate'\]\)\.includes\(x\.value\)\)/,'editing shows the stored plans');
+});

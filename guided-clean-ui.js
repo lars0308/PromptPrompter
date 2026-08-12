@@ -43,7 +43,7 @@
       html[data-clean-project-flow="1"] .streamline-working{min-height:430px!important;margin:auto 0;padding:32px 18px!important}
       html[data-clean-project-flow="1"] .streamline-working strong{font-size:30px!important}.streamline-working small{font-size:12px!important}
       html[data-clean-project-flow="1"] #stepPreviews .preview-step-head{display:block!important}.guided-clean-project-flow #stepPreviews .preview-generation-controls{margin-top:18px}
-      html[data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{display:grid!important;grid-template-columns:minmax(0,1fr) 100px!important;gap:9px;padding:12px!important;border:1px solid #e0e4e7!important;border-radius:10px!important;background:#f8f9fa!important}
+      html[data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{display:grid!important;grid-template-columns:100px minmax(0,1fr)!important;gap:9px;padding:12px!important;border:1px solid #e0e4e7!important;border-radius:10px!important;background:#f8f9fa!important}
       html[data-clean-project-flow="1"] #stepPreviews #generateConceptsBtn{grid-column:1/-1;width:100%}
       html[data-clean-project-flow="1"] #stepPreviews .generation-status{margin:16px 0 8px;color:#66717a;font-size:11px}
       /* The directions are the decision on this screen, so they get the room: one per row, a

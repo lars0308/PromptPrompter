@@ -4,6 +4,10 @@ const sandboxBuild=require('../server/sandbox-build');
 const freePrompt=require('../server/free-prompt-v2');
 const {taskForAction,listProfiles}=require('../server/system-ai-profiles');
 const {getQuotaSummary,assertQuota,consumeWebsiteGeneration,quotaErrorPayload}=require('../server/quota');
+const {getEntitlements}=require('../server/entitlements');
+
+// Which AIs a request may use follows the plan, never a choice in the browser.
+async function planOf(req){try{const ent=await getEntitlements(req);return ent?.isAdmin?'ultimate':String(ent?.plan||'free')}catch{return 'free'}}
 
 function captureResponse(){const state={status:200,body:null,headers:{}};return{state,setHeader(name,value){state.headers[String(name).toLowerCase()]=value;return this},getHeader(name){return state.headers[String(name).toLowerCase()]},status(code){state.status=Number(code)||500;return this},json(value){state.body=value;return this},end(value){state.body=value;return this}}}
 function flush(res,captured){for(const [name,value] of Object.entries(captured.headers||{}))try{res.setHeader(name,value)}catch{}return res.status(captured.status||200).json(captured.body??{})}
@@ -14,7 +18,7 @@ function retryable(captured){
   if(/valid credit card|add-credit-card|payment required|billing|authentication|unauthorized|forbidden|invalid api key|provider (?:is )?unavailable|insufficient quota/i.test(error))return true;
   return [408,429,500,502,503,504].includes(status);
 }
-async function runSystemProfiles(req,res){const task=taskForAction(req.body?.action),profiles=(await listProfiles(task,{providers:['gateway','openai','gemini']})).filter(x=>x.enabled!==false);if(!profiles.length)return core(req,res);const requested=String(req.body?.systemAiProfileId||''),ordered=requested?[...profiles.filter(x=>x.id===requested),...profiles.filter(x=>x.id!==requested)]:profiles,original=req.body;let last=null;for(const profile of ordered){req.body={...original,engine:profile.provider,model:profile.model,systemAiProfileId:profile.id,systemAiProfileLabel:profile.label};const captured=captureResponse();await core(req,captured);last=captured.state;if(last.status<400){res.setHeader('X-Prompt-AI-System-Profile',profile.label||profile.id);req.body=original;return flush(res,last)}if(!retryable(last)){req.body=original;return flush(res,last)}}req.body=original;return flush(res,last||{status:503,body:{error:`Keine System-KI für ${task} war verfügbar.`},headers:{}})}
+async function runSystemProfiles(req,res){const task=taskForAction(req.body?.action),plan=await planOf(req),profiles=(await listProfiles(task,{providers:['gateway','openai','gemini'],plan})).filter(x=>x.enabled!==false);if(!profiles.length)return core(req,res);const requested=String(req.body?.systemAiProfileId||''),ordered=requested?[...profiles.filter(x=>x.id===requested),...profiles.filter(x=>x.id!==requested)]:profiles,original=req.body;let last=null;for(const profile of ordered){req.body={...original,engine:profile.provider,model:profile.model,systemAiProfileId:profile.id,systemAiProfileLabel:profile.label};const captured=captureResponse();await core(req,captured);last=captured.state;if(last.status<400){res.setHeader('X-Prompt-AI-System-Profile',profile.label||profile.id);req.body=original;return flush(res,last)}if(!retryable(last)){req.body=original;return flush(res,last)}}req.body=original;return flush(res,last||{status:503,body:{error:`Keine System-KI für ${task} war verfügbar.`},headers:{}})}
 async function quotaRoute(req,res,action){
   try{
     if(action==='quota-summary')return res.status(200).json(await getQuotaSummary(req));
