@@ -181,6 +181,18 @@ test('one preview selector, HTML by default, and the plan caps how many AI optio
   assert.doesNotMatch(fix,/KI-Bild · automatisch/);
   assert.match(fix,/if\(next!==status\.textContent\)status\.textContent=next;/,'assigning textContent unconditionally inside its own observer loops forever');
 });
+test('the question added for a blocker names the point and can be answered by tapping',async()=>{
+  // It used to read "Wie soll mit dem offenen kritischen Punkt umgegangen werden?" with no
+  // options: the actual point sat only in the reason line and there was nothing to click, so the
+  // required question was effectively unanswerable and appeared on every run.
+  const src=await text('app.js');
+  assert.doesNotMatch(src,/Wie soll mit dem offenen kritischen Punkt umgegangen werden\?/);
+  assert.match(src,/question:subject\?`Noch offen: \$\{subject\}\. Wie möchtest du damit umgehen\?`/);
+  assert.match(src,/const subject=blockerArea\|\|blockerMessage\.split/,'the message carries the point when the area is empty');
+  assert.match(src,/if\(subject\|\|blockerMessage\)\{/,'a blocker with no information at all adds no question');
+  assert.match(src,/const suggestions=\[alternative,"Ich ergänze die Angabe jetzt","Ohne diese Angabe weitermachen","Später klären, zuerst Vorschau ansehen"\]/);
+  assert.match(src,/\.filter\(\(x,i,all\)=>all\.indexOf\(x\)===i\)\.slice\(0,4\)/,'the alternative must not appear twice');
+});
 test('every prompt that produces visible text asks for German',async()=>{
   // The app is German throughout, but only the revision brief said so - the review returned
   // English questions, reasons, suggestions, warnings and blockers, and concept copy would have

@@ -1158,9 +1158,25 @@
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000});const data=await res.json();if(!res.ok)throw new Error(data.error||"Projektprüfung fehlgeschlagen");review=data;
       }
       review.questions=Array.isArray(review.questions)?review.questions.slice(0,state.settings.maxQuestions):[];review.warnings=Array.isArray(review.warnings)?review.warnings:[];review.blockers=Array.isArray(review.blockers)?review.blockers:[];review.assumptions=Array.isArray(review.assumptions)?review.assumptions:[];
+      // When the review reports a blocker but no required question, the user still has to decide
+      // how to proceed - so one is added here. It used to read "Wie soll mit dem offenen kritischen
+      // Punkt umgegangen werden?" with no options: it never named the actual point (that sat in the
+      // reason line) and offered nothing to click, so there was no obvious way to answer it.
       if(state.settings.criticalBehavior==="block" && review.blockers.length && !review.questions.some(q=>q.required)){
-        const blocker=review.blockers[0],blockerArea=(blocker.area||"").trim(),blockerMessage=(blocker.message||"").trim();
-        review.questions.unshift({id:uid("q"),question:blockerArea?`Wie soll mit dem Punkt „${blockerArea}" umgegangen werden?`:"Wie soll mit dem offenen kritischen Punkt umgegangen werden?",reason:blockerMessage||(blockerArea?`Der Bereich „${blockerArea}" wurde als nicht umsetzbar markiert, ohne nähere Begründung. Bitte im Prüfergebnis oben nachsehen oder die Beschreibung ergänzen.`:"Ein kritischer Punkt wurde ohne nähere Begründung markiert. Bitte die Projektbeschreibung ergänzen und erneut prüfen."),suggestedAnswer:state.settings.suggestAlternatives?(blocker.alternative||""):"",required:true});
+        const blocker=review.blockers[0],blockerArea=(blocker.area||"").trim(),blockerMessage=(blocker.message||"").trim(),alternative=(blocker.alternative||"").trim();
+        const subject=blockerArea||blockerMessage.split(/(?<=[.!?])\s|\n/)[0].trim().replace(/[.:;]$/,"").slice(0,90);
+        if(subject||blockerMessage){
+          const suggestions=[alternative,"Ich ergänze die Angabe jetzt","Ohne diese Angabe weitermachen","Später klären, zuerst Vorschau ansehen"]
+            .map(x=>String(x||"").trim()).filter(Boolean).filter((x,i,all)=>all.indexOf(x)===i).slice(0,4);
+          review.questions.unshift({
+            id:uid("q"),
+            question:subject?`Noch offen: ${subject}. Wie möchtest du damit umgehen?`:"Ein wichtiger Punkt ist noch offen. Wie möchtest du damit umgehen?",
+            reason:blockerMessage||`Der Bereich „${subject}“ wurde als offener Punkt markiert. Ergänze die Angabe oder entscheide, dass ohne sie weitergearbeitet wird.`,
+            suggestedAnswer:state.settings.suggestAlternatives?alternative:"",
+            suggestions,
+            required:true
+          });
+        }
       }
       state.projectReview=review;state.reviewSignature=sig;state.reviewDeferred=false;saveState();renderAiReviewCard();if(!workflowIsOpen())return false;renderClarificationDialog(review);return review.questions.length===0 && !(state.settings.criticalBehavior==="block"&&review.blockers.length);
     }catch(err){
