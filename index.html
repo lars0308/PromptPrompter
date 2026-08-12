@@ -643,6 +643,7 @@
               <div class="guest-limit-box" id="guestLimitBox"><strong id="guestLimitTitle">Erst einmal ansehen</strong><p id="guestLimitNote">Du kannst Prompt.ai als Gast dreimal vollständig verwenden.</p><button type="button" class="outline-btn" id="guestContinueBtn">Ohne Konto starten</button></div>
               <div class="auth-plan-heading"><span>WÄHLE, WAS DU BRAUCHST</span><small>Du kannst jederzeit wechseln.</small></div>
               <div class="auth-plan-grid"><article data-auth-plan="free"><strong>Kostenlos starten</strong><small>Drei Richtungen, Master-Prompt und Projektbericht.</small><button type="button" class="outline-btn mini auth-plan-pick" data-auth-plan-pick="free">Auswählen</button></article><article class="featured" data-auth-plan="pro"><strong>Pro für Kundenprojekte</strong><small>Prüfung, Module, Skills, Unterlagen und direkte Vorschau.</small><button type="button" class="outline-btn mini auth-plan-pick" data-auth-plan-pick="pro">Auswählen</button></article><article data-auth-plan="ultimate"><strong>Ultimate für volle Kontrolle</strong><small>Alle Agenten, eigene KI-Verbindungen und GitHub.</small><button type="button" class="outline-btn mini auth-plan-pick" data-auth-plan-pick="ultimate">Auswählen</button></article></div>
+              <button type="button" class="text-btn" id="authViewAllPlansBtn" style="display:block;width:100%;text-align:center;margin-top:14px;padding:8px 0;font-size:11px;color:var(--muted)">Alle Tarife ansehen →</button>
             </aside>
           </div>
         </div>
@@ -750,6 +751,19 @@
       <div class="cookie-banner-actions"><button type="button" class="text-btn" id="cookieBannerSettingsBtn">Einstellungen</button><button type="button" class="outline-btn" id="cookieBannerEssentialBtn">Nur notwendige</button><button type="button" class="solid-btn" id="cookieBannerAcceptBtn">Alle akzeptieren</button></div>
     </div>
   </dialog>
+
+  <footer class="prompt-footer" id="promptFooter">
+    <div class="prompt-footer-content">
+      <nav class="prompt-footer-links">
+        <a href="#" id="footerImpressumLink" class="footer-link">Impressum</a>
+        <span class="footer-divider">·</span>
+        <a href="#" id="footerPrivacyLink" class="footer-link">Datenschutz</a>
+        <span class="footer-divider">·</span>
+        <a href="#" id="footerCookieLink" class="footer-link">Cookies</a>
+      </nav>
+      <small class="prompt-footer-text">© 2024 Prompt.ai. Alle Rechte vorbehalten.</small>
+    </div>
+  </footer>
 
   <script type="module" src="./cloud.js?v=20260813-2"></script>
   <script src="./maintenance-mode.js?v=20260813-2" defer></script>

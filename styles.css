@@ -311,4 +311,20 @@ body.dialog-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}.libra
   .plans-dialog .plan-card-summary>i{display:none}
 }
 
+/* 8 — footer */
+.prompt-footer{position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--paper);border-top:1px solid var(--line);padding:16px clamp(16px,4vw,32px);font-size:11px}
+.prompt-footer-content{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+.prompt-footer-links{display:flex;gap:12px;align-items:center}
+.footer-link{border:0;background:transparent;color:var(--muted);font-size:inherit;text-decoration:none;cursor:pointer;transition:color .18s ease}
+.footer-link:hover{color:var(--ink)}
+.footer-divider{color:var(--line);user-select:none}
+.prompt-footer-text{display:block;color:var(--muted);font-size:10px;white-space:nowrap}
+body{padding-bottom:60px}
+@media(max-width:600px){
+  .prompt-footer-content{flex-direction:column;gap:12px}
+  .prompt-footer-links{order:2;width:100%}
+  .prompt-footer-text{order:1;width:100%;text-align:center}
+  body{padding-bottom:120px}
+}
+
 
