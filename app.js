@@ -460,7 +460,7 @@
     if(el.openAgentBtn)el.openAgentBtn.textContent=`${AGENT_NAMES[state.targetAgent]} öffnen`;
     $$('#agentSelector button').forEach(button=>{const allowed=rules.agents.includes(button.dataset.agent);button.hidden=!allowed;button.disabled=false;button.classList.toggle("active",button.dataset.agent===state.targetAgent)});
     if(el.conceptCount){el.conceptCount.max=String(rules.concepts);if(Number(el.conceptCount.value)>rules.concepts)el.conceptCount.value=String(rules.concepts)}
-    if(el.previewFormat){const current=el.previewFormat.value,options=[['html','HTML-Website']];if(rules.modules||state.ownApiKeys)options.push(['image-cloudflare','Cloudflare-Bild']);if(rules.advanced||state.ownApiKeys)options.push(['image-gemini','Gemini-Bild']);el.previewFormat.innerHTML=options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('');el.previewFormat.value=options.some(([value])=>value===current)?current:'html'}
+    if(el.previewFormat){const current=el.previewFormat.value,options=[['html','HTML-Website']];const hasCloudflare=rules.modules||state.ownApiKeys,hasGemini=rules.advanced||state.ownApiKeys;if(hasCloudflare||hasGemini)options.push(['image-auto','KI-Bild · automatisch']);if(hasCloudflare)options.push(['image-cloudflare','Cloudflare-Bild']);if(hasGemini)options.push(['image-gemini','Gemini-Bild']);el.previewFormat.innerHTML=options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('');el.previewFormat.value=options.some(([value])=>value===current)?current:'html'}
     if(el.currentPlanBadge)el.currentPlanBadge.textContent="PROFIL";
     if(el.currentPlanTitle)el.currentPlanTitle.textContent=state.isAdmin?"Vollzugriff":rules===PLAN_RULES.free?"Kostenloser Tarif":`${rules.label}-Tarif`;
     if(el.currentPlanDescription){const trialEnd=state.subscriptionPeriodEnd?new Intl.DateTimeFormat('de-DE').format(new Date(state.subscriptionPeriodEnd)):'';el.currentPlanDescription.textContent=state.subscriptionStatus==='trialing'?`Kostenlose Testphase aktiv${trialEnd?` bis ${trialEnd}`:''}.`:rules===PLAN_RULES.free?"Gute Ergebnisse mit geführten Standards und drei Richtungen.":rules===PLAN_RULES.pro?"Claude/Codex, Module, Skills, vier Richtungen und Kundenunterlagen.":"Alle Agenten, Modelle, Profile, Einstellungen und fünf Richtungen."}
@@ -1520,7 +1520,9 @@
         }
         state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
         if(el.previewFormat.value.startsWith("image-")){
-          const imageProvider=el.previewFormat.value.replace('image-','');const providerLabel=imageProvider==='cloudflare'?'Cloudflare Workers AI':'Gemini';
+          let imageProvider=el.previewFormat.value.replace('image-','');if(imageProvider==='auto'){imageProvider=aiConnection('gemini')?'gemini':aiConnection('cloudflare')?'cloudflare':'';}
+          if(!imageProvider){el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Für KI-Bilder muss mindestens einer der Provider (Gemini oder Cloudflare) unter Einstellungen → KI-Verbindungen verbunden sein. Bis dahin werden HTML-Vorschauen angezeigt.";return;}
+          const providerLabel=imageProvider==='cloudflare'?'Cloudflare Workers AI':'Gemini';
           if(cloudReady()&&aiConnection(imageProvider)){
             const imageResult=await generateConceptImages(imageProvider);el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt; verfügbare ${providerLabel}-Bilder wurden eingesetzt.`:imageResult?.kind==="quota"?`${providerLabel} ist verbunden, aber das Tageskontingent reicht nicht. Die HTML-Vorschauen bleiben vollständig nutzbar.`:"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
           }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für KI-Bilder muss ${providerLabel} unter Einstellungen → KI-Verbindungen verbunden sein. Bis dahin werden HTML-Vorschauen angezeigt.`;}
@@ -1573,8 +1575,8 @@
   }
   async function regenerateConceptImage(c){
     if(!c?.previewImage||c._imageBusy)return;
-    const imageProvider=(el.previewFormat.value||"").replace("image-","");
-    if(!cloudReady()||!imageProvider||!aiConnection(imageProvider)){el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für ein neues KI-Bild muss ${imageProvider==="cloudflare"?"Cloudflare":"Gemini"} unter Einstellungen → KI-Verbindungen verbunden sein.`;return;}
+    let imageProvider=(el.previewFormat.value||"").replace("image-","");if(imageProvider==='auto'){imageProvider=aiConnection('gemini')?'gemini':aiConnection('cloudflare')?'cloudflare':'';}
+    if(!cloudReady()||!imageProvider||!aiConnection(imageProvider)){el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für ein neues KI-Bild muss mindestens einer der Provider (Gemini oder Cloudflare) unter Einstellungen → KI-Verbindungen verbunden sein.`;return;}
     c._imageBusy=true;renderConcepts();if(lightboxConceptId===c.id)openPreviewLightbox(c);
     try{
       const payload={action:"preview-image",imageProvider,project:project(),concept:conceptForExport(c),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
