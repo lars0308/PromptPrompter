@@ -181,6 +181,21 @@ test('one preview selector, HTML by default, and the plan caps how many AI optio
   assert.doesNotMatch(fix,/KI-Bild · automatisch/);
   assert.match(fix,/if\(next!==status\.textContent\)status\.textContent=next;/,'assigning textContent unconditionally inside its own observer loops forever');
 });
+test('every prompt that produces visible text asks for German',async()=>{
+  // The app is German throughout, but only the revision brief said so - the review returned
+  // English questions, reasons, suggestions, warnings and blockers, and concept copy would have
+  // come back English too whenever the AI actually answered.
+  const core=await text('server/generate-core.js');
+  const rule=/Schreibe alle sichtbaren Textwerte auf Deutsch \(Fragen, Begründungen, Antwortvorschläge, Hinweise, Blocker, Annahmen, Namen und Vorschautexte\)/g;
+  assert.equal((core.match(rule)||[]).length,3,'review, concepts and refine each need the rule');
+  for(const fn of ['makeReviewPrompt','makeConceptPrompt','makeRefinePrompt']){
+    const start=core.indexOf(`function ${fn}(`);
+    assert.ok(start>=0,fn);
+    const body=core.slice(start,core.indexOf('\n}\n',start));
+    assert.match(body,/Schreibe alle sichtbaren Textwerte auf Deutsch/,fn);
+  }
+  assert.doesNotMatch(core,/- ready is true only when there is no required question or blocker preventing useful concept generation\.\nReturn only the requested JSON/);
+});
 test('the preview image request uses the profile the visitor picked',async()=>{
   const src=await text('server/preview-image.js');
   assert.match(src,/const wantedId=String\(body\.imageProfileId\|\|''\)\.trim\(\);/);

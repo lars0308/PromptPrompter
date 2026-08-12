@@ -153,7 +153,10 @@ ${documentText(documents)}
 CONTROLS
 Originality ${controls.originality}/100; avoid AI/template look ${controls.antiSlop}/100; motion ${controls.motion}/100; information density ${controls.density}/100.
 
-For every direction return a memorable project-specific name, a short mood, exactly four valid hex colors, typography concept, layout principle, hero principle, one of the required composition variants, and concrete preview copy. The headline and every other piece of preview copy must read like it was written for this exact business, not a template: use its real name, offering and industry vocabulary directly (a döner shop's headline should reference döner/food, a landscaping business should reference gardens/outdoor work, and so on) instead of a generic tagline that could belong to any project. Every direction must differ in information hierarchy, composition, typography and image treatment — a palette swap is not a distinct direction. Keep preview copy short enough to fit a real mobile layout. No fake statistics, reviews, logos or awards. Avoid default AI/SaaS conventions: badge + centered giant headline + two buttons, gradient orbs, glass cards, repetitive three-card grids, excessive rounded rectangles. Use reference inputs only for user-approved aspects and never copy a reference one-to-one. Use the real industry and project purpose to drive visual decisions; do not fall back to generic agency or portfolio styling. The concept must leave room for all enabled compliance/quality checks, but do not invent legal copy, company facts or claims of compliance. Output only the requested JSON.`;
+For every direction return a memorable project-specific name, a short mood, exactly four valid hex colors, typography concept, layout principle, hero principle, one of the required composition variants, and concrete preview copy. The headline and every other piece of preview copy must read like it was written for this exact business, not a template: use its real name, offering and industry vocabulary directly (a döner shop's headline should reference döner/food, a landscaping business should reference gardens/outdoor work, and so on) instead of a generic tagline that could belong to any project. Every direction must differ in information hierarchy, composition, typography and image treatment — a palette swap is not a distinct direction. Keep preview copy short enough to fit a real mobile layout. No fake statistics, reviews, logos or awards. Avoid default AI/SaaS conventions: badge + centered giant headline + two buttons, gradient orbs, glass cards, repetitive three-card grids, excessive rounded rectangles. Use reference inputs only for user-approved aspects and never copy a reference one-to-one. Use the real industry and project purpose to drive visual decisions; do not fall back to generic agency or portfolio styling. The concept must leave room for all enabled compliance/quality checks, but do not invent legal copy, company facts or claims of compliance.
+
+Schreibe alle sichtbaren Textwerte auf Deutsch (Fragen, Begründungen, Antwortvorschläge, Hinweise, Blocker, Annahmen, Namen und Vorschautexte), auch wenn Projektangaben oder Referenzen in einer anderen Sprache verfasst sind. Feldnamen, Aufzählungswerte und Hex-Farben bleiben unverändert.
+Gib ausschließlich das verlangte JSON zurück.`;
 }
 
 function makeRefinePrompt({project,concept,refinement,references,documents,controls,template,modules,settings,clarifications,projectReview}){
@@ -192,7 +195,10 @@ ${documentText(documents)}
 CONTROLS
 Originality ${controls.originality}/100; avoid AI/template look ${controls.antiSlop}/100; motion ${controls.motion}/100; information density ${controls.density}/100.
 
-Keep the result buildable as a real responsive website. Never add fake statistics, fake reviews, fake logos or generic AI/SaaS decoration. Output only the requested JSON.`;
+Keep the result buildable as a real responsive website. Never add fake statistics, fake reviews, fake logos or generic AI/SaaS decoration.
+
+Schreibe alle sichtbaren Textwerte auf Deutsch (Fragen, Begründungen, Antwortvorschläge, Hinweise, Blocker, Annahmen, Namen und Vorschautexte), auch wenn Projektangaben oder Referenzen in einer anderen Sprache verfasst sind. Feldnamen, Aufzählungswerte und Hex-Farben bleiben unverändert.
+Gib ausschließlich das verlangte JSON zurück.`;
 }
 
 function makeReviewPrompt({project,references,documents,settings,template,modules,clarifications}){
@@ -235,7 +241,9 @@ Rules:
 - For every question, return 2–4 short, mutually distinct clickable suggestions. Use concrete fitting tools where useful (for example Sanity, WordPress, Webflow or no CMS), not vague filler choices.
 - suggestedAnswer may be empty when no safe default exists; suggestions must still contain useful decision options.
 - ready is true only when there is no required question or blocker preventing useful concept generation.
-Return only the requested JSON.`;
+
+Schreibe alle sichtbaren Textwerte auf Deutsch (Fragen, Begründungen, Antwortvorschläge, Hinweise, Blocker, Annahmen, Namen und Vorschautexte), auch wenn Projektangaben oder Referenzen in einer anderen Sprache verfasst sind. Feldnamen, Aufzählungswerte und Hex-Farben bleiben unverändert.
+Gib ausschließlich das verlangte JSON zurück.`;
 }
 
 function makeWebsitePrompt({masterPrompt,sourceDocument,project,concept,outputTarget}){
