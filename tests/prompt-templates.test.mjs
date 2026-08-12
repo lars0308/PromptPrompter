@@ -260,3 +260,14 @@ test('the instructions to the AI are in German, except the image prompt',()=>{
     assert.match(item.body,german,`${item.key} is still English`);
   }
 });
+
+test('copying hands over both documents, so a plain paste is not missing the sources',async()=>{
+  const app=await text('app.js'),html=await text('index.html');
+  assert.match(app,/function copyPayload\(\)\{/);
+  assert.match(app,/===== DATEI 1 VON 2: MASTER-PROMPT\.md =====/);
+  assert.match(app,/===== DATEI 2 VON 2: PROJEKT-QUELLEN\.md =====/);
+  assert.match(app,/navigator\.clipboard\.writeText\(copyPayload\(\)\)/,'the button copies both, not the briefing alone');
+  assert.match(html,/id="copyPromptBtn">Prompt &amp; Quellen kopieren</,'the label says what travels');
+  // The briefing points at the sources file - and says where it is when copied.
+  assert.match(app,/Beim Kopieren aus Prompt\.ai hängt diese Datei direkt unter diesem Auftrag als zweite Datei an\./);
+});

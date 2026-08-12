@@ -1778,7 +1778,7 @@
   };
 
   function referencePromptBlock(){
-    return `Die vollständige Quellenübersicht mit Kundenwebsite, ausgelesenen Unterseiten, Impressum/Datenschutz, Links und Bildern steht in \`PROJEKT-QUELLEN.md\` (siehe Anweisungssicherheit oben). Referenzen sind keine Erlaubnis zum 1:1-Kopieren; übernimm nur ausdrücklich freigegebene Aspekte.`;
+    return `Die vollständige Quellenübersicht mit Kundenwebsite, ausgelesenen Unterseiten, Impressum/Datenschutz, Links und Bildern steht in \`PROJEKT-QUELLEN.md\` (siehe Anweisungssicherheit oben). Beim Kopieren aus Prompt.ai hängt diese Datei direkt unter diesem Auftrag als zweite Datei an. Referenzen sind keine Erlaubnis zum 1:1-Kopieren; übernimm nur ausdrücklich freigegebene Aspekte.`;
   }
 
   function attachmentPromptBlock(){
@@ -1895,6 +1895,14 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
       masterAiRunning=false;
       window.dispatchEvent(new CustomEvent('promptai:master-ai',{detail:{state:'done'}}));
     }
+  }
+  // Copying used to hand over the briefing alone - and that briefing points at PROJEKT-QUELLEN.md,
+  // a file the recipient never got. Both documents now travel together, clearly separated, so a
+  // plain paste is complete. Only the image files cannot travel as text; they are listed by name
+  // and origin.
+  function copyPayload(){
+    const sources=attachmentPromptBlock();
+    return `===== DATEI 1 VON 2: MASTER-PROMPT.md =====\n\n${el.masterPrompt.value}\n\n===== DATEI 2 VON 2: PROJEKT-QUELLEN.md =====\n\n${sources}\n`;
   }
   function updateMasterPrompt(){
     try{
@@ -2193,7 +2201,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     }));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     el.skipReferencesBtn?.addEventListener("click",()=>goStep(3));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
-    el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1300)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
+    el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(copyPayload());const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="2 Dateien kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1600)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
     el.downloadProjectReportBtn?.addEventListener('click',()=>downloadText('sitebrief-projektbericht.md',buildProjectReport(),'text/markdown'));
     el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));[el.buySingleReviewBtn,el.buyReviewInlineBtn].forEach(button=>button?.addEventListener('click',()=>beginCheckout('single_review')));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
