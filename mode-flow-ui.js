@@ -85,7 +85,7 @@
     if(mode==='auto'&&step===7){setStatus('Master-Prompt wird zusammengesetzt','Die automatisch gewählte Richtung wird mit allen Eingaben und Regeln verbunden.',true);const next=activeNext(7);if(next)setTimeout(()=>next.click(),160);return}
     if(mode==='guided'&&step===6)setStatus('Wähle eine Richtung','Prompt.ai erzeugt die Richtungen. Du entscheidest nur noch, welche davon weitergeführt wird.',false);
     if(mode==='guided'&&step===7)setStatus('Gezielt nachschärfen','Nur wenn du möchtest: eine konkrete Änderung ergänzen. Danach entsteht der Master-Prompt.',false);
-    if(step===8){appendInputManifest();$('#modeFlowPanel')?.setAttribute('hidden','')}
+    if(step===8){appendInputManifest();const panel=$('#modeFlowPanel');if(panel&&!panel.hidden)panel.setAttribute('hidden','')}
   }
 
   function waitForConcepts(){
