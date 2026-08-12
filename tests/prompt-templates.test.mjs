@@ -129,3 +129,29 @@ test('the admin console reports what the tokens were spent on',async()=>{
   assert.match(core,/current\.tokens\+=Number\(item\.total_tokens\)\|\|0/,'and per model, with an average per call');
   assert.match(core,/Tokens \(Ø \$\{Math\.round\(data\.tokens\/data\.count\)/);
 });
+
+test('a spent token budget downgrades the AI instead of blocking the request',async()=>{
+  const quota=await text('server/quota.js'),router=await text('api/generate.js'),free=await text('server/free-prompt-v2.js'),image=await text('server/preview-image.js'),migration=await text('supabase/migrations/20260815_add_token_budget.sql');
+  assert.match(migration,/add column if not exists monthly_tokens integer not null default 0/,'0 = no limit until real numbers exist');
+  assert.match(quota,/free:\{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:0\}/);
+  assert.match(quota,/if\(entitlement\.isAdmin\)return off;/,'an administrator is never downgraded');
+  assert.match(quota,/if\(!limit\)return off;/,'no limit means the budget never triggers');
+  assert.match(quota,/exhausted:used>=limit/);
+  // The whole point: reaching the budget must not refuse work, it reorders the chain.
+  assert.match(router,/const chain=saver\?\[\.\.\.profiles\]\.reverse\(\):profiles;/);
+  assert.match(router,/if\(saver\)res\.setHeader\('X-Prompt-AI-Saver','1'\)/);
+  assert.match(free,/if\(saver&&profiles\.length>1\)profiles=\[\.\.\.profiles\]\.reverse\(\);/);
+  assert.match(image,/if\(budget\.exhausted&&candidates\.length>1\)\{candidates=\[\.\.\.candidates\]\.reverse\(\);res\.setHeader\('X-Prompt-AI-Saver','1'\)\}/);
+  assert.doesNotMatch(quota,/MONTHLY_TOKEN_QUOTA_EXHAUSTED/,'no hard stop on tokens - that is what the countable units are for');
+});
+
+test('the saver mode is visible to the user and settable per plan by an administrator',async()=>{
+  const ui=await text('usage-quota-ui.js'),html=await text('index.html'),core=await text('admin-console-core.js'),action=await text('api/admin-action.js');
+  assert.match(ui,/function syncSaverNotice\(\)/);
+  assert.match(ui,/Sparmodus: Dein Token-Kontingent für diesen Monat ist aufgebraucht\./,'never a silent quality drop');
+  assert.match(ui,/renderAll\(\)\{syncPlanCards\(\);syncSubscription\(\);syncSaverNotice\(\)\}/);
+  for(const plan of ['Free','Pro','Ultimate'])assert.match(html,new RegExp(`id="quota${plan}MonthlyTokens"`),`${plan} needs a token budget field`);
+  assert.match(html,/Token-Budget <em>\(0 = kein Limit\)<\/em>/);
+  assert.match(core,/for\(const field of \['FreePrompts','WebsiteGenerations','AiPreviews','MonthlyTokens'\]\)/);
+  assert.match(action,/monthly_tokens:Math\.max\(0,Math\.min\(2000000000,Number\(plans\[plan\]\.monthly_tokens\)\|\|0\)\)/);
+});

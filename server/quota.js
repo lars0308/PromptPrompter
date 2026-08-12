@@ -2,19 +2,22 @@ const {getEntitlements}=require('./entitlements');
 const {authenticatedUser}=require('./supabase-user');
 const {serviceFetch}=require('./admin');
 
+// monthly_tokens is the internal cost guard behind the countable units. 0 = no limit, which is
+// the default until real numbers exist: a budget guessed in advance would throttle accounts for
+// no reason.
 const PLAN_LIMITS=Object.freeze({
-  free:{free_prompts:10,website_generations:3,ai_previews:0},
-  pro:{free_prompts:100,website_generations:25,ai_previews:50},
-  ultimate:{free_prompts:500,website_generations:100,ai_previews:250}
+  free:{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:0},
+  pro:{free_prompts:100,website_generations:25,ai_previews:50,monthly_tokens:0},
+  ultimate:{free_prompts:500,website_generations:100,ai_previews:250,monthly_tokens:0}
 });
 let limitsCache=null,limitsCacheAt=0;
 const LIMITS_CACHE_MS=30000;
 async function loadPlanLimits(){
   if(limitsCache&&Date.now()-limitsCacheAt<LIMITS_CACHE_MS)return limitsCache;
   try{
-    const rows=(await serviceFetch('/rest/v1/sitebrief_quota_limits?select=plan,free_prompts,website_generations,ai_previews')).data||[];
+    const rows=(await serviceFetch('/rest/v1/sitebrief_quota_limits?select=plan,free_prompts,website_generations,ai_previews,monthly_tokens')).data||[];
     const merged={free:{...PLAN_LIMITS.free},pro:{...PLAN_LIMITS.pro},ultimate:{...PLAN_LIMITS.ultimate}};
-    for(const row of rows){if(merged[row.plan])merged[row.plan]={free_prompts:Number(row.free_prompts)||0,website_generations:Number(row.website_generations)||0,ai_previews:Number(row.ai_previews)||0}}
+    for(const row of rows){if(merged[row.plan])merged[row.plan]={free_prompts:Number(row.free_prompts)||0,website_generations:Number(row.website_generations)||0,ai_previews:Number(row.ai_previews)||0,monthly_tokens:Math.max(0,Number(row.monthly_tokens)||0)}}
     limitsCache=merged;limitsCacheAt=Date.now();return merged;
   }catch{return limitsCache||PLAN_LIMITS}
 }
@@ -44,6 +47,28 @@ async function usageRows(userId,start,end){
   return (await serviceFetch(path)).data||[];
 }
 
+async function tokensUsed(userId,start,end){
+  const path=`/rest/v1/sitebrief_usage_events?select=total_tokens&user_id=eq.${encodeURIComponent(userId)}&total_tokens=gt.0&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=5000`;
+  const rows=(await serviceFetch(path)).data||[];
+  return rows.reduce((sum,row)=>sum+(Number(row.total_tokens)||0),0);
+}
+// Reaching the budget never blocks a request - it switches the routing to the cheapest AI of the
+// plan (see api/generate.js). Administrators are never downgraded, so the console keeps testing
+// against the real chain.
+async function getTokenBudget(req){
+  const off={limit:0,used:0,remaining:0,exhausted:false,resetAt:monthWindow().end.toISOString()};
+  try{
+    const entitlement=await getEntitlements(req);
+    if(entitlement.isAdmin)return off;
+    const limits=await limitsFor(entitlement.plan||'free'),limit=Math.max(0,Number(limits.monthly_tokens)||0);
+    if(!limit)return off;
+    const user=await authenticatedUser(req);
+    if(!user?.id)return off;
+    const {start,end}=monthWindow(),used=await tokensUsed(user.id,start,end);
+    return {limit,used,remaining:Math.max(0,limit-used),exhausted:used>=limit,resetAt:end.toISOString()};
+  }catch{return off}
+}
+
 async function getQuotaSummary(req){
   const entitlement=await getEntitlements(req),plan=entitlement.plan||'free',limits=await limitsFor(plan),{start,end}=monthWindow();
   let user=null;try{user=await authenticatedUser(req)}catch{}
@@ -52,7 +77,8 @@ async function getQuotaSummary(req){
   const counts={free_prompts:0,website_generations:0,ai_previews:0};
   for(const row of rows){for(const [metric,action] of Object.entries(METRIC_ACTIONS))if(row?.action===action)counts[metric]++}
   const metrics={};for(const key of Object.keys(counts))metrics[key]=metricResult(limits[key],counts[key]);
-  return {plan,isAdmin:Boolean(entitlement.isAdmin),authenticated:Boolean(user),available,enforced:Boolean(user)&&available&&!entitlement.isAdmin,periodStart:start.toISOString(),periodEnd:end.toISOString(),metrics};
+  const tokens=await getTokenBudget(req);
+  return {plan,isAdmin:Boolean(entitlement.isAdmin),authenticated:Boolean(user),available,enforced:Boolean(user)&&available&&!entitlement.isAdmin,periodStart:start.toISOString(),periodEnd:end.toISOString(),metrics,tokens};
 }
 
 async function assertQuota(req,metric){
@@ -80,4 +106,4 @@ async function consumeWebsiteGeneration(req){
 
 function quotaErrorPayload(error){return {error:error?.message||'Monatskontingent nicht verfügbar.',code:error?.code||'QUOTA_ERROR',metric:error?.metric||null,quota:error?.quota||null}}
 
-module.exports={PLAN_LIMITS,METRIC_ACTIONS,getQuotaSummary,assertQuota,consumeWebsiteGeneration,quotaErrorPayload};
+module.exports={PLAN_LIMITS,METRIC_ACTIONS,getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,quotaErrorPayload};

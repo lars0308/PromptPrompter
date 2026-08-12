@@ -8,11 +8,14 @@ const text=p=>readFile(path.join(root,p),'utf8');
 
 test('monthly quotas match the public Free Pro and Ultimate allowances',async()=>{
   const server=await text('server/quota.js'),ui=await text('usage-quota-ui.js');
+  // The server additionally carries monthly_tokens as the internal cost guard; the countable
+  // allowances the visitor sees are the same on both sides.
   for(const src of [server,ui]){
-    assert.match(src,/free:\{free_prompts:10,website_generations:3,ai_previews:0\}/);
-    assert.match(src,/pro:\{free_prompts:100,website_generations:25,ai_previews:50\}/);
-    assert.match(src,/ultimate:\{free_prompts:500,website_generations:100,ai_previews:250\}/);
+    assert.match(src,/free:\{free_prompts:10,website_generations:3,ai_previews:0/);
+    assert.match(src,/pro:\{free_prompts:100,website_generations:25,ai_previews:50/);
+    assert.match(src,/ultimate:\{free_prompts:500,website_generations:100,ai_previews:250/);
   }
+  assert.match(server,/monthly_tokens:0\}/,'no token limit until an administrator sets one');
 });
 
 test('existing generate endpoint exposes and enforces quota actions without another serverless function',async()=>{

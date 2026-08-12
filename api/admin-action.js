@@ -110,7 +110,7 @@ module.exports=async function(req,res){
     }
     if(action==='save-quota-limits'){
       const plans=body.plans&&typeof body.plans==='object'?body.plans:{};
-      const rows=['free','pro','ultimate'].filter(plan=>plans[plan]).map(plan=>({plan,free_prompts:Math.max(0,Math.min(100000,Number(plans[plan].free_prompts)||0)),website_generations:Math.max(0,Math.min(100000,Number(plans[plan].website_generations)||0)),ai_previews:Math.max(0,Math.min(100000,Number(plans[plan].ai_previews)||0)),updated_by:admin.id,updated_at:new Date().toISOString()}));
+      const rows=['free','pro','ultimate'].filter(plan=>plans[plan]).map(plan=>({plan,free_prompts:Math.max(0,Math.min(100000,Number(plans[plan].free_prompts)||0)),website_generations:Math.max(0,Math.min(100000,Number(plans[plan].website_generations)||0)),ai_previews:Math.max(0,Math.min(100000,Number(plans[plan].ai_previews)||0)),updated_by:admin.id,updated_at:new Date().toISOString(),monthly_tokens:Math.max(0,Math.min(2000000000,Number(plans[plan].monthly_tokens)||0))}));
       if(!rows.length)return res.status(400).json({error:'Keine gültigen Tarifkontingente übergeben.'});
       await serviceFetch('/rest/v1/sitebrief_quota_limits?on_conflict=plan',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:rows});
       await audit(admin.id,action,null,{plans:rows.map(r=>r.plan)});

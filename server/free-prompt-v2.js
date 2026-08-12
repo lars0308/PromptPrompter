@@ -1,4 +1,5 @@
 const {getEntitlements}=require('./entitlements');
+const {getTokenBudget}=require('./quota');
 const {resolveProviderKey}=require('./provider-key');
 const {listProfiles}=require('./system-ai-profiles');
 const {rateLimit}=require('./rate-limit');
@@ -242,9 +243,11 @@ async function gemini(key,model,prompt,tokens){
   const response=await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'}]},contents:[{role:'user',parts:[{text:prompt}]}]})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'Gemini nicht verfügbar.'),{status:response.status});addTokens(tokens,data.usageMetadata);return cleanFence((data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join(''));
 }
-async function generateWithSystemAi(req,input,{advanced=false,plan=''}={}){
+async function generateWithSystemAi(req,input,{advanced=false,plan='',saver=false}={}){
   // The plan decides which AIs are in the chain - the visitor never picks a model.
   let profiles=await listProfiles('freeprompt',{providers:['gateway','openai','gemini'],plan});if(!profiles.length)profiles=await listProfiles('prompt',{providers:['gateway','openai','gemini'],plan});
+  // Token budget spent: start from the back of the chain, so the cheapest AI answers.
+  if(saver&&profiles.length>1)profiles=[...profiles].reverse();
   const errors=[],architect=architectPrompt(input,{advanced}),tokens=tokenSink();
   for(const profile of profiles){
     if(profile.enabled===false)continue;
@@ -268,7 +271,9 @@ module.exports=async function freePromptV2(req,res){
     const normalized=normalizedInput(req.body||{});if(normalized.description.length<12)return res.status(400).json({error:'Beschreibe bitte etwas genauer, was die KI für dich erstellen soll.'});
     const entitlement=await getEntitlements(req),pro=entitlement.isAdmin||['pro','ultimate'].includes(entitlement.plan),input=pro?normalized:freeInput(normalized);
     usage.project={name:'Freier Prompt',type:input.categoryLabel,goal:(input.goal||input.description).slice(0,180)};
-    const result=await generateWithSystemAi(req,input,{advanced:pro,plan:entitlement.isAdmin?'ultimate':String(entitlement.plan||'free')});usage.provider=result.provider;usage.model=result.model;usage.tokens=result.tokens;
+    const budget=await getTokenBudget(req);
+    const result=await generateWithSystemAi(req,input,{advanced:pro,plan:entitlement.isAdmin?'ultimate':String(entitlement.plan||'free'),saver:budget.exhausted});
+    if(budget.exhausted)res.setHeader('X-Prompt-AI-Saver','1');usage.provider=result.provider;usage.model=result.model;usage.tokens=result.tokens;
     await logUsage(req,{...usage,durationMs:Date.now()-started});
     return res.status(200).json({...result,tier:entitlement.isAdmin?'ultimate':entitlement.plan,advanced:pro,masterVersion:'v2'});
   }catch(error){

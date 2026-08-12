@@ -17,7 +17,7 @@ module.exports=async function(req,res){
       listAll('sitebrief_support_requests','id,user_id,category,subject,message,status,created_at,updated_at','&order=created_at.desc&limit=200').catch(()=>[]),
       listAll('sitebrief_system_ai_connections','provider,last4,enabled,default_model,route_role,updated_at','&order=provider.asc').catch(()=>[]),
       listAll('sitebrief_preview_ai_routes','id,label,provider,model,priority,enabled,created_at,updated_at','&order=priority.asc').catch(()=>[]),
-      listAll('sitebrief_quota_limits','plan,free_prompts,website_generations,ai_previews,updated_at').catch(()=>[]),
+      listAll('sitebrief_quota_limits','plan,free_prompts,website_generations,ai_previews,monthly_tokens,updated_at').catch(()=>[]),
       listAll('sitebrief_maintenance','id,enabled,reason,eta,updated_at').catch(()=>[]),
       listAll('sitebrief_admins','user_id').catch(()=>[]),
       // Bodies stay out of the overview - they are loaded per version when the editor opens one.
