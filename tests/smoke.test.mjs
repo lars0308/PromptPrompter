@@ -78,6 +78,15 @@ test('the three tiers are shown side by side and fully readable without expandin
   assert.match(css,/\.plan-card-summary>strong\{display:block;max-width:none/,'the narrow-screen price cap must be reset for the stacked header');
   assert.doesNotMatch(app,/addEventListener\('toggle',\(\)=>\{if\(!card\.open\)return;/,'the accordion handler has no cards to collapse anymore');
 });
+test('the top menu cannot republish entries the app has hidden',async()=>{
+  // The hidden attribute only carries the user-agent display:none, so an unconditional
+  // display:...!important on menu children wins over it. That put Verwaltung (admin only),
+  // Projekte, Abonnement, App installieren and Abmelden in front of signed-out visitors.
+  const src=await text('unified-ui-v1.js');
+  assert.match(src,/\.topbar-menu>\[hidden\]\{display:none!important\}/,'hidden menu entries need an explicit guard');
+  assert.match(src,/\.topbar-menu>button:not\(\[hidden\]\)\{display:flex!important/);
+  assert.doesNotMatch(src,/\.topbar-menu>button\{display:flex!important/,'the unguarded rule overrode the hidden attribute');
+});
 test('the login page opens the tier comparison and gets the visitor back afterwards',async()=>{
   const gate=await text('entry-gate-ui.js'),fix=await text('ui-regression-fixes.js');
   assert.match(gate,/class="gate-plans-copy"/,'all copy shares one grid cell so the arrow cannot land between the lines');

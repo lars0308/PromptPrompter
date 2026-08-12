@@ -27,8 +27,13 @@
       body.prompt-unified-ui .topbar-menu{position:fixed!important;z-index:220!important;right:16px!important;top:90px!important;display:none!important;width:min(360px,calc(100vw - 32px))!important;padding:12px!important;border:1px solid var(--ui-line)!important;border-radius:18px!important;background:var(--ui-card)!important;box-shadow:var(--ui-shadow)!important;overflow:auto!important}
       body.prompt-unified-ui .topbar-menu.open,body.prompt-unified-ui .topbar-menu[data-open="true"]{display:grid!important;gap:5px!important}
       body.prompt-unified-ui .topbar-menu:before{content:'MENÜ';display:block;padding:7px 9px 9px;color:var(--ui-blue);font-size:9px;font-weight:850;letter-spacing:.11em}
-      body.prompt-unified-ui .topbar-menu>button{display:flex!important;min-height:48px!important;width:100%!important;align-items:center!important;justify-content:flex-start!important;padding:0 13px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:var(--ink)!important;text-decoration:none!important;font-size:13px!important;font-weight:700!important;text-align:left!important}
-      body.prompt-unified-ui .topbar-menu>button:hover{background:var(--ui-soft)!important;transform:none!important;box-shadow:none!important}
+      /* :not([hidden]) is required. The hidden attribute only carries the user-agent's
+         display:none, so an unconditional display:flex!important here republished every gated
+         entry - Verwaltung, Projekte, Abonnement, App installieren and Abmelden were all visible
+         to guests even though the app had explicitly hidden them. */
+      body.prompt-unified-ui .topbar-menu>[hidden]{display:none!important}
+      body.prompt-unified-ui .topbar-menu>button:not([hidden]){display:flex!important;min-height:48px!important;width:100%!important;align-items:center!important;justify-content:flex-start!important;padding:0 13px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:var(--ink)!important;text-decoration:none!important;font-size:13px!important;font-weight:700!important;text-align:left!important}
+      body.prompt-unified-ui .topbar-menu>button:not([hidden]):hover{background:var(--ui-soft)!important;transform:none!important;box-shadow:none!important}
       body.prompt-unified-ui .topbar-menu .theme-toggle{border:0!important;box-shadow:none!important}.topbar-menu .theme-toggle span{margin-right:4px}
       body.prompt-unified-ui .topbar-menu-backdrop:not([hidden]){position:fixed!important;display:block!important;z-index:210!important;inset:0!important;background:rgba(15,20,25,.24)!important;backdrop-filter:blur(3px)!important}
 
