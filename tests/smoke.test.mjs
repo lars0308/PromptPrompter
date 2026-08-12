@@ -334,7 +334,7 @@ test('AI preview images are framed as a flat UI screenshot, not a photo of a dev
 test('AI-generated concept copy is required to use real industry vocabulary from the project, not a generic tagline',async()=>{
   // Lives in the editable quality rules now; the built-in default still has to carry it.
   const src=await text('server/prompt-templates.js');
-  assert.match(src,/a döner shop's headline should reference döner\/food, a landscaping business should reference gardens\/outdoor work/);
+  assert.match(src,/die Überschrift eines Dönerladens spricht von Döner und Essen, ein Garten- und Landschaftsbau von Gärten und Arbeit im Freien/);
 });
 test('reference links and images are capped per plan tier (Free 1/0, Pro 3/3, Ultimate 5/5), independent of the paid own-API-keys add-on',async()=>{
   const src=await text('app.js');

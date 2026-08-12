@@ -1868,10 +1868,39 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     return `# PROMPT.AI MASTER-PROMPT — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhältst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fünf neue Richtungen. Setze die ausgewählte Richtung konsequent um und nutze Referenzen nur für die ausdrücklich freigegebenen Eigenschaften.\n\n## ROLLE, AUFTRAG & SPIELRAUM\n${rolePromptBlock()}\n${templateBlock}\n## 1. PROJEKT\nName: ${p.name||"nicht festgelegt"}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${p.audience||"nicht ausdrücklich angegeben"}\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusätzlicher Wunsch."}\n\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritäten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}\n\n## 3. PROJEKTPRÜFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÜFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese Entwicklungsprüfung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen Prüfpunkt statt Sicherheit vorzutäuschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Übernimm nur die jeweils ausgewählten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÄHLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nKomposition: ${c.layoutVariant}\nLayoutprinzip: ${c.layout}\nHero: ${c.hero}\nTypografie: ${c.type}\nPalette: ${c.palette.join(" / ")}\nPreview-Headline: ${c.headline}\nPreview-Subline: ${c.subline}`:"Es wurde noch keine Designrichtung ausgewählt."}\n\n## 7. FEINSCHLIFF NACH DER VORSCHAU\n${refinementBlock}\n\n## 8. DESIGNREGLER\n- Originalität: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und drei Karten; keine austauschbare Navigationsfolge oder künstliche Kennzahlenzeile.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-Flächen, Glow-Effekte, Farbverläufe, pillenförmigen Dauer-Buttons, symmetrischen Standardkarten, starren Text-Bild-Zickzackfolgen oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als Standardlösung für beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Preise, Öffnungszeiten, Kundenlogos, Zertifikate, Kunden, Referenzen, Auszeichnungen oder sonstige Unternehmensfakten. Fehlende Inhalte als offene Punkte kennzeichnen.\n- Keine generischen Marketingfloskeln oder künstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewählten Richtung gehören.\n- Bildsprache und Typografie müssen den Charakter tragen; Container dürfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenständig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÜR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n## 11. UMSETZUNGSANFORDERUNGEN\n- Responsive ab kleinen Mobilgeräten bis große Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und Bildgrößen bewusst behandeln; unnötige Abhängigkeiten vermeiden.\n- Zentrale Design-Tokens für Farben, Typografie, Abstände, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. die gewählte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist,\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berücksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster übrig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsächlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen.${finalCompliance}\n\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`;
   }
 
+  // The app assembles every fact deterministically; with a cloud connection the AI then writes the
+  // finished briefing from that raw material along the template stored in the admin console. The
+  // assembled version stays as the fallback and as the safety net if the answer comes back short.
+  let masterAiSignature='',masterAiRunning=false;
+  async function writeMasterPromptWithAi(assembled){
+    if(!cloudReady()||masterAiRunning)return;
+    const signature=`${projectSignature()}|${state.selectedConceptId}|${assembled.length}`;
+    if(masterAiSignature===signature)return;
+    masterAiRunning=true;
+    window.dispatchEvent(new CustomEvent('promptai:master-ai',{detail:{state:'start'}}));
+    try{
+      const response=await sitebriefApiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'master-prompt',assembled,project:project(),concept:conceptForExport(selectedConcept()),engine:state.engine}),timeoutMs:90000});
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.error||'Master-Prompt konnte nicht ausformuliert werden.');
+      const written=String(data.prompt||'').trim();
+      // Never accept a version that lost half the briefing on the way.
+      if(written.length>=Math.round(assembled.length*0.6)){
+        masterAiSignature=signature;
+        el.masterPrompt.value=written;
+        renderPromptHandoff();
+        saveState();
+      }
+    }catch{/* the assembled prompt is already in place */}
+    finally{
+      masterAiRunning=false;
+      window.dispatchEvent(new CustomEvent('promptai:master-ai',{detail:{state:'done'}}));
+    }
+  }
   function updateMasterPrompt(){
     try{
       const prompt=buildMasterPrompt();
       el.masterPrompt.value=prompt;
+      writeMasterPromptWithAi(prompt);
       const c=selectedConcept();
       el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} · ${escapeHtml(c?.name||"keine Richtung")}</span><span>${prompt.length.toLocaleString("de-DE")} Zeichen · Quellen separat · ${selectedModules().length} Module · ${selectedSkills().length} Skills</span>`;
       renderPromptHandoff();

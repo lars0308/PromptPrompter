@@ -50,7 +50,14 @@
     };
     masterTimer=setTimeout(check,120);
   }
+  // The AI writes the final master prompt from the assembled material; the overlay stays up for
+  // that pass instead of showing a briefing that is about to be replaced.
+  function masterAiOverlay(state){
+    const step=$('#stepPrompt');if(!step||!step.classList.contains('active'))return;
+    if(state==='start'){window.PromptAiFill?.reset($('#masterGeneration strong'));step.classList.add('master-generating');return}
+    window.PromptAiFill?.finish($('#masterGeneration strong'),()=>step.classList.remove('master-generating'));
+  }
   function settle(){styles();clean();previews();previewPage()}
-  function init(){settle();masterLoader();observer=new MutationObserver(()=>{clearTimeout(observer._t);observer._t=setTimeout(settle,60)});observer.observe(document.body,{childList:true});setTimeout(()=>observer?.disconnect(),5000);window.addEventListener('promptai:access',()=>setTimeout(settle,0));window.addEventListener('promptai:system-ai-ready',previews)}
+  function init(){settle();masterLoader();observer=new MutationObserver(()=>{clearTimeout(observer._t);observer._t=setTimeout(settle,60)});observer.observe(document.body,{childList:true});setTimeout(()=>observer?.disconnect(),5000);window.addEventListener('promptai:access',()=>setTimeout(settle,0));window.addEventListener('promptai:system-ai-ready',previews);window.addEventListener('promptai:master-ai',event=>masterAiOverlay(event.detail?.state))}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
