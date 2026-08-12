@@ -312,8 +312,19 @@ body.dialog-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}.libra
   .topbar-menu #accountBtn .account-btn-meta{display:block;max-width:100%;margin-top:2px;overflow:hidden;color:var(--muted)!important;font-size:10px!important;font-weight:600!important;line-height:1.35!important;letter-spacing:0;text-overflow:ellipsis;white-space:nowrap}
 }
 
-.admin-quota-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0 0 16px}.admin-quota-col{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}.admin-quota-col>strong{display:block;margin-bottom:12px;font-size:13px}.admin-quota-col .field{margin-bottom:12px}.admin-quota-col .field:last-child{margin-bottom:0}
-@media(max-width:820px){.admin-quota-grid{grid-template-columns:1fr}}
+/* One collapsed row per tier, stacked: the three tiers open as nine number fields at once
+   otherwise, which buried the user list underneath them. */
+.admin-quota-grid{display:grid;grid-template-columns:1fr;gap:10px;margin:0 0 16px}
+.admin-quota-col{padding:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.admin-quota-col>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;list-style:none}
+.admin-quota-col>summary::-webkit-details-marker{display:none}
+.admin-quota-col>summary>strong{font-size:13px}
+.admin-quota-col>summary>i{font-style:normal;font-size:18px;line-height:1;color:var(--muted)}
+.admin-quota-col[open]>summary{border-bottom:1px solid var(--line)}
+.admin-quota-col[open]>summary>i{transform:rotate(45deg)}
+.admin-quota-col .field{margin:12px 16px}
+.admin-quota-col .field:last-child{margin-bottom:16px}
+.admin-user-status .admin-pill{background:var(--accent);color:#fff}
 
 /* The plan cards used to be <details> accordions, so a visitor had to expand each tier to find out
    what it contains. They are plain always-open cards now: everything is readable at a glance and

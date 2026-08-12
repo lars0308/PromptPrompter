@@ -1,5 +1,4 @@
 const {authenticatedUser,ownSubscription,ownApiAddon}=require('./supabase-user');
-const ADMIN_EMAIL=String(process.env.PROMPT_AI_ADMIN_EMAIL||'service.battermann@gmx.de').trim().toLowerCase();
 
 async function ownRow(req, table, select){
   const authorization=req?.headers?.authorization||req?.headers?.Authorization||'';
@@ -17,9 +16,12 @@ async function getEntitlements(req){
     ownRow(req,'sitebrief_admins','user_id'),
     ownRow(req,'sitebrief_addons','addon,status')
   ]);
+  // The row is read with the caller's own token under an own-row RLS policy; comparing the ids
+  // keeps that guarantee even if the policy is ever changed. Membership in sitebrief_admins is
+  // what grants admin now - the owner address is one entry in that table, not the only way in.
   let isAdmin=false;
   if(admin?.user_id){
-    try{const user=await authenticatedUser(req);isAdmin=String(user?.email||'').trim().toLowerCase()===ADMIN_EMAIL&&String(user?.id||'')===String(admin.user_id)}catch{isAdmin=false}
+    try{const user=await authenticatedUser(req);const id=String(user?.id||'');isAdmin=Boolean(id)&&id===String(admin.user_id)}catch{isAdmin=false}
   }
   const active=['active','trialing'].includes(subscription?.status);
   const paidPlan=active&&['pro','ultimate'].includes(subscription?.plan)?subscription.plan:'free';

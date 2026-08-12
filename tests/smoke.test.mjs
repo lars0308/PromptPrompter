@@ -122,6 +122,42 @@ test('hiding the topbar upgrade button on mobile does not hit every upgrade butt
   assert.match(src,/body\.prompt-unified-ui \.topbar \.upgrade-btn\{display:none!important\}/);
   assert.doesNotMatch(src,/strong\{font-size:17px!important\}\.upgrade-btn\{display:none!important\}/,'the unscoped rule also hid the login card CTA');
 });
+test('the home page puts the three secondary tools in one row and only sells to free accounts',async()=>{
+  const home=await text('home-entry-ui.js');
+  assert.match(home,/#welcomePage \.welcome-quick-actions\{display:grid!important;grid-template-columns:repeat\(6,minmax\(0,1fr\)\)!important/,'an ID selector is required - promptai-experience-v1 forces 1fr with body.prompt-unified-ui');
+  assert.match(home,/#workspacePreviewBtn,\.welcome-quick-actions>#workspaceLastProjectBtn,\.welcome-quick-actions>#workspaceLibraryBtn\{grid-column:span 2\}/);
+  assert.match(home,/const plans=\$\('#showPlansBtn'\);if\(plans\)plans\.hidden=!free;/,'paid plans and admins have nothing to subscribe to here');
+  assert.doesNotMatch(home,/free-workflow-upgrade/,'the removed fixed upsell bar leaves no styles behind');
+});
+test('the entry gate fills the page and its plans card carries no arrow button',async()=>{
+  const gate=await text('entry-gate-ui.js');
+  assert.doesNotMatch(gate,/gate-plans-arrow/,'the blue circle with the arrow is gone');
+  assert.match(gate,/\.account-body\{display:flex;flex-direction:column;min-height:100dvh/);
+  assert.match(gate,/#gateActions\{display:grid;gap:18px;max-width:420px;margin-top:auto;margin-bottom:auto/,'leftover height is split above and below the actions');
+  assert.match(gate,/#gateLegalRow\{margin-top:auto/,'the legal row sits on the bottom edge');
+});
+test('admin quota tiers are collapsed accordions and accounts can be promoted to admin',async()=>{
+  const html=await text('index.html'),css=await text('styles.css'),core=await text('admin-console-core.js'),api=await text('api/admin-action.js'),overview=await text('api/admin-overview.js');
+  for(const tier of ['Kostenlos','Pro','Ultimate'])assert.match(html,new RegExp(`<details class="admin-quota-col"><summary><strong>${tier}</strong>`),tier);
+  assert.doesNotMatch(html,/<details class="admin-quota-col"[^>]*\sopen/,'the tiers start collapsed');
+  assert.match(css,/\.admin-quota-grid\{display:grid;grid-template-columns:1fr/,'stacked, not three across');
+  assert.match(core,/data-admin-action="\$\{user\.isAdmin\?'revoke-admin':'make-admin'\}"/);
+  assert.match(core,/action:'set-admin',userId,admin:true/);
+  assert.match(overview,/isAdmin:adminIds\.has\(user\.id\)/,'the list needs to know who already is an admin');
+  assert.match(api,/if\(action==='set-admin'\)\{/);
+  assert.match(api,/if\(!makeAdmin&&email===ADMIN_EMAIL\)return res\.status\(400\)/,'the owner account can never be demoted');
+});
+test('admin rights are granted by the admins table, not by a single hard-coded address',async()=>{
+  // Promoting an account only means something if the server stops requiring one fixed e-mail.
+  // sitebrief_admins is service-role-write-only with an own-row select policy, and every write
+  // goes through requireAdmin, so the table is a safe source of truth.
+  const admin=await text('server/admin.js'),ent=await text('server/entitlements.js'),sql=await text('supabase/migrations/20260809_add_plans_and_admins.sql');
+  assert.match(sql,/revoke insert, update, delete on public\.sitebrief_subscriptions, public\.sitebrief_admins from authenticated;/);
+  assert.match(sql,/create policy "admins read own" on public\.sitebrief_admins for select to authenticated\s*\nusing \(\(select auth\.uid\(\)\) = user_id\);/);
+  assert.match(admin,/if\(String\(user\.email\|\|''\)\.trim\(\)\.toLowerCase\(\)===ADMIN_EMAIL\)return user;/,'the owner stays admin so the console cannot lock itself out');
+  assert.match(ent,/isAdmin=Boolean\(id\)&&id===String\(admin\.user_id\)/);
+  assert.doesNotMatch(ent,/ADMIN_EMAIL/,'entitlements no longer gate on one address');
+});
 test('the top menu cannot republish entries the app has hidden',async()=>{
   // The hidden attribute only carries the user-agent display:none, so an unconditional
   // display:...!important on menu children wins over it. That put Verwaltung (admin only),

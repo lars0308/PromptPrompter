@@ -15,9 +15,14 @@ async function serviceFetch(path,{method='GET',body,headers={}}={}){
   return {data,headers:response.headers};
 }
 
+// Admin rights come from sitebrief_admins, which only the service role can write (authenticated
+// holds SELECT on an own-row policy and no INSERT/UPDATE/DELETE), and every write goes through
+// requireAdmin below. The owner address stays admin unconditionally so the console can never be
+// locked out by an empty or mis-edited table.
 async function requireAdmin(req){
   const user=await authenticatedUser(req);
-  if(String(user?.email||'').trim().toLowerCase()!==ADMIN_EMAIL)throw Object.assign(new Error('Dieser Bereich ist nur für Administratoren verfügbar.'),{status:403});
+  if(!user?.id)throw Object.assign(new Error('Dieser Bereich ist nur für Administratoren verfügbar.'),{status:403});
+  if(String(user.email||'').trim().toLowerCase()===ADMIN_EMAIL)return user;
   const response=await fetch(`${SUPABASE_URL}/rest/v1/sitebrief_admins?select=user_id&user_id=eq.${encodeURIComponent(user.id)}&limit=1`,{headers:{apikey:serviceKey(),Authorization:`Bearer ${serviceKey()}`}});
   const rows=response.ok?await response.json():[];
   if(!rows?.[0])throw Object.assign(new Error('Dieser Bereich ist nur für Administratoren verfügbar.'),{status:403});

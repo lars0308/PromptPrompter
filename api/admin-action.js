@@ -3,6 +3,7 @@ const {SUPABASE_URL,PUBLISHABLE_KEY}=require('../server/supabase-user');
 const {stripeRequest,stripeGet}=require('../server/stripe-rest');
 
 const uuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
+const ADMIN_EMAIL=String(process.env.PROMPT_AI_ADMIN_EMAIL||'service.battermann@gmx.de').trim().toLowerCase();
 const AI_PROVIDERS=['gateway','openai','gemini','cloudflare'];
 const validAiProvider=value=>{const provider=String(value||'').toLowerCase();if(!AI_PROVIDERS.includes(provider))throw Object.assign(new Error('Unbekannter KI-Anbieter.'),{status:400});return provider};
 async function audit(adminId,action,targetId,details={}){try{await serviceFetch('/rest/v1/sitebrief_admin_audit',{method:'POST',headers:{Prefer:'return=minimal'},body:{admin_user_id:adminId,action,target_user_id:uuid(targetId)?targetId:null,details}})}catch{}}
@@ -47,7 +48,17 @@ module.exports=async function(req,res){
       if(!uuid(body.id))return res.status(400).json({error:'Ungültige Vorschau-KI.'});await serviceFetch(`/rest/v1/sitebrief_preview_ai_routes?id=eq.${encodeURIComponent(body.id)}`,{method:'DELETE'});await audit(admin.id,action,null,{id:body.id});return res.status(200).json({ok:true});
     }
 
-    if(['suspend','unsuspend','set-plan','send-password-reset','cancel-subscription','refund-latest'].includes(action)&&!uuid(body.userId))return res.status(400).json({error:'Ungültiger Benutzer.'});
+    if(['suspend','unsuspend','set-plan','send-password-reset','cancel-subscription','refund-latest','set-admin'].includes(action)&&!uuid(body.userId))return res.status(400).json({error:'Ungültiger Benutzer.'});
+    if(action==='set-admin'){
+      const makeAdmin=body.admin!==false;
+      // The owner address always keeps its rights, so the console can never lock itself out.
+      const target=await serviceFetch(`/auth/v1/admin/users/${body.userId}`);
+      const email=String(target.data?.email||'').trim().toLowerCase();
+      if(!makeAdmin&&email===ADMIN_EMAIL)return res.status(400).json({error:'Dem Eigentümer-Konto können die Administratorrechte nicht entzogen werden.'});
+      if(makeAdmin)await serviceFetch('/rest/v1/sitebrief_admins?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:{user_id:body.userId}});
+      else await serviceFetch(`/rest/v1/sitebrief_admins?user_id=eq.${encodeURIComponent(body.userId)}`,{method:'DELETE'});
+      await audit(admin.id,action,body.userId,{admin:makeAdmin,email});return res.status(200).json({ok:true});
+    }
     if(action==='suspend'){
       const days=Math.max(1,Math.min(3650,Number(body.days)||30)),until=new Date(Date.now()+days*86400000).toISOString();
       await serviceFetch(`/auth/v1/admin/users/${body.userId}`,{method:'PUT',body:{ban_duration:`${days*24}h`}});
