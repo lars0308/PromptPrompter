@@ -135,7 +135,7 @@ test('a spent token budget downgrades the AI instead of blocking the request',as
   assert.match(migration,/add column if not exists monthly_tokens integer not null default 0/,'0 = no limit until real numbers exist');
   assert.match(quota,/free:\{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:0\}/);
   assert.match(quota,/if\(entitlement\.isAdmin\)return off;/,'an administrator is never downgraded');
-  assert.match(quota,/if\(!limit\)return off;/,'no limit means the budget never triggers');
+  assert.match(quota,/if\(!planLimit\)return off;/,'no limit means the budget never triggers');
   assert.match(quota,/exhausted:used>=limit/);
   // The whole point: reaching the budget must not refuse work, it reorders the chain.
   assert.match(router,/const chain=saver\?\[\.\.\.profiles\]\.reverse\(\):profiles;/);
@@ -146,14 +146,17 @@ test('a spent token budget downgrades the AI instead of blocking the request',as
 });
 
 test('the saver mode is visible to the user and settable per plan by an administrator',async()=>{
-  const ui=await text('usage-quota-ui.js'),html=await text('index.html'),core=await text('admin-console-core.js'),action=await text('api/admin-action.js');
+  const ui=await text('usage-quota-ui.js'),tokens=await text('admin-tokens-ui.js'),action=await text('api/admin-action.js');
   assert.match(ui,/function syncSaverNotice\(\)/);
   assert.match(ui,/Sparmodus: Dein Token-Kontingent für diesen Monat ist aufgebraucht\./,'never a silent quality drop');
   assert.match(ui,/renderAll\(\)\{syncPlanCards\(\);syncSubscription\(\);syncSaverNotice\(\)\}/);
-  for(const plan of ['Free','Pro','Ultimate'])assert.match(html,new RegExp(`id="quota${plan}MonthlyTokens"`),`${plan} needs a token budget field`);
-  assert.match(html,/Token-Budget <em>\(0 = kein Limit\)<\/em>/);
-  assert.match(core,/for\(const field of \['FreePrompts','WebsiteGenerations','AiPreviews','MonthlyTokens'\]\)/);
-  assert.match(action,/monthly_tokens:Math\.max\(0,Math\.min\(2000000000,Number\(plans\[plan\]\.monthly_tokens\)\|\|0\)\)/);
+  // The budgets live in the Tokens area, next to the consumption they are meant to limit.
+  assert.match(tokens,/const PLANS=\['free','pro','ultimate'\]/,'one budget field per plan');
+  assert.match(tokens,/id="adminTokenBudget-\$\{plan\}"/);
+  assert.match(tokens,/\$\(`#adminTokenBudget-\$\{plan\}`\)/,'and it is what gets saved');
+  assert.match(tokens,/0 bedeutet: kein Limit/);
+  assert.match(tokens,/Sparmodus ab \$\{num\(limit\)\} Tokens/,'the field says what the number does');
+  assert.match(action,/monthly_tokens:Math\.max\(0,Math\.min\(2000000000,Number\(plans\[plan\]\)\|\|0\)\)/);
 });
 
 test('the fixed rule sets of every free-prompt area are editable too, and default to the built-in list',()=>{

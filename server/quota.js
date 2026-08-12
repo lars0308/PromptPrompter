@@ -55,17 +55,28 @@ async function tokensUsed(userId,start,end){
 // Reaching the budget never blocks a request - it switches the routing to the cheapest AI of the
 // plan (see api/generate.js). Administrators are never downgraded, so the console keeps testing
 // against the real chain.
+// An administrator can grant a single account extra tokens for the month from the token area. The
+// bonus is added on top of the plan budget, so it postpones the saver downgrade without changing
+// what the plan includes.
+async function tokenBonus(userId){
+  try{
+    const path=`/rest/v1/sitebrief_user_admin_state?select=monthly_token_bonus&user_id=eq.${encodeURIComponent(userId)}&limit=1`;
+    const rows=(await serviceFetch(path)).data||[];
+    return Math.max(0,Number(rows[0]?.monthly_token_bonus)||0);
+  }catch{return 0}
+}
 async function getTokenBudget(req){
-  const off={limit:0,used:0,remaining:0,exhausted:false,resetAt:monthWindow().end.toISOString()};
+  const off={limit:0,used:0,remaining:0,bonus:0,exhausted:false,resetAt:monthWindow().end.toISOString()};
   try{
     const entitlement=await getEntitlements(req);
     if(entitlement.isAdmin)return off;
-    const limits=await limitsFor(entitlement.plan||'free'),limit=Math.max(0,Number(limits.monthly_tokens)||0);
-    if(!limit)return off;
+    const limits=await limitsFor(entitlement.plan||'free'),planLimit=Math.max(0,Number(limits.monthly_tokens)||0);
+    if(!planLimit)return off;
     const user=await authenticatedUser(req);
     if(!user?.id)return off;
+    const bonus=await tokenBonus(user.id),limit=planLimit+bonus;
     const {start,end}=monthWindow(),used=await tokensUsed(user.id,start,end);
-    return {limit,used,remaining:Math.max(0,limit-used),exhausted:used>=limit,resetAt:end.toISOString()};
+    return {limit,used,bonus,remaining:Math.max(0,limit-used),exhausted:used>=limit,resetAt:end.toISOString()};
   }catch{return off}
 }
 

@@ -56,6 +56,33 @@ test('quota queries only load relevant successful monthly usage events',async()=
   assert.match(server,/created_at=lt/);
 });
 
+test('everything about tokens lives in one admin area: consumption, plan budgets and extra tokens',async()=>{
+  const ui=await text('admin-tokens-ui.js'),loader=await text('admin-console.js'),sw=await text('sw.js'),html=await text('index.html'),core=await text('admin-console-core.js');
+  assert.match(ui,/tab\.dataset\.adminTab='tokens'/);
+  assert.match(ui,/window\.addEventListener\('promptai:admin-data'/,'one request feeds every admin console');
+  for(const part of ['adminTokenStats','adminTokenBudgets','adminTokenModels','adminTokenActions','adminTokenAccounts','adminTokenDays'])assert.ok(ui.includes(part),part);
+  assert.match(ui,/action:'save-token-budgets'/);
+  assert.match(ui,/action:'set-token-bonus'/);
+  assert.match(ui,/SPARMODUS/,'an account running on the cheapest AI is visible as such');
+  assert.match(loader,/\.\/admin-tokens-ui\.js\?v=\d{8}-\d+/);
+  assert.ok(sw.includes('/admin-tokens-ui.js'));
+  // The budgets have exactly one owner now, so saving the countable quotas cannot reset them.
+  assert.doesNotMatch(html,/quotaFreeMonthlyTokens|quotaProMonthlyTokens|quotaUltimateMonthlyTokens/);
+  assert.match(core,/monthly_tokens:Math\.max\(0,Number\(stored\.monthly_tokens\)\|\|0\)/);
+});
+
+test('token budgets and the extra tokens of a single account are saved on their own',async()=>{
+  const action=await text('api/admin-action.js'),overview=await text('api/admin-overview.js'),server=await text('server/quota.js'),migration=await text('supabase/migrations/20260815_add_token_bonus.sql');
+  assert.match(action,/action==='save-token-budgets'/);
+  assert.match(action,/action==='set-token-bonus'/);
+  assert.match(action,/Math\.min\(2000000000,Number\(plans\[plan\]\)\|\|0\)/,'budgets are clamped');
+  assert.match(migration,/add column if not exists monthly_token_bonus integer not null default 0/);
+  assert.match(server,/const bonus=await tokenBonus\(user\.id\),limit=planLimit\+bonus;/,'extra tokens postpone the downgrade');
+  assert.match(overview,/monthly_token_bonus/);
+  assert.match(overview,/tokenEvents,tokenPeriod/,'the token area counts the running calendar month');
+  assert.match(overview,/total_tokens=gt\.0&created_at=gte\./);
+});
+
 test('administrators can test without being blocked while normal accounts are enforced',async()=>{
   const server=await text('server/quota.js');
   assert.match(server,/!entitlement\.isAdmin/);

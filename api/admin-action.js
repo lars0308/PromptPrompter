@@ -116,6 +116,28 @@ module.exports=async function(req,res){
       await audit(admin.id,action,null,{plans:rows.map(r=>r.plan)});
       return res.status(200).json({ok:true});
     }
+    // Token budgets live in their own admin area and are saved on their own, so a change there can
+    // never overwrite the countable monthly quotas and the other way round.
+    if(action==='save-token-budgets'){
+      const plans=body.plans&&typeof body.plans==='object'?body.plans:{};
+      const known=(await serviceFetch('/rest/v1/sitebrief_quota_limits?select=plan,free_prompts,website_generations,ai_previews')).data||[];
+      const byPlan=Object.fromEntries(known.map(row=>[row.plan,row]));
+      const rows=['free','pro','ultimate'].filter(plan=>plans[plan]!==undefined).map(plan=>{
+        const current=byPlan[plan]||{};
+        return {plan,free_prompts:Math.max(0,Number(current.free_prompts)||0),website_generations:Math.max(0,Number(current.website_generations)||0),ai_previews:Math.max(0,Number(current.ai_previews)||0),monthly_tokens:Math.max(0,Math.min(2000000000,Number(plans[plan])||0)),updated_by:admin.id,updated_at:new Date().toISOString()};
+      });
+      if(!rows.length)return res.status(400).json({error:'Keine gültigen Token-Budgets übergeben.'});
+      await serviceFetch('/rest/v1/sitebrief_quota_limits?on_conflict=plan',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:rows});
+      await audit(admin.id,action,null,Object.fromEntries(rows.map(row=>[row.plan,row.monthly_tokens])));
+      return res.status(200).json({ok:true});
+    }
+    if(action==='set-token-bonus'){
+      if(!uuid(body.userId))return res.status(400).json({error:'Ungültiger Benutzer.'});
+      const bonus=Math.max(0,Math.min(2000000000,Number(body.tokens)||0));
+      await serviceFetch('/rest/v1/sitebrief_user_admin_state?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:{user_id:body.userId,monthly_token_bonus:bonus,updated_at:new Date().toISOString()}});
+      await audit(admin.id,action,body.userId,{tokens:bonus});
+      return res.status(200).json({ok:true,tokens:bonus});
+    }
     if(action==='save-maintenance'){
       const row={id:'main',enabled:Boolean(body.enabled),reason:String(body.reason||'').trim().slice(0,500),eta:String(body.eta||'').trim().slice(0,200),updated_by:admin.id,updated_at:new Date().toISOString()};
       await serviceFetch('/rest/v1/sitebrief_maintenance?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:row});
