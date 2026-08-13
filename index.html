@@ -569,6 +569,19 @@
             </article>
           </div>
           </section>
+        <section class="settings-section" id="userPreferenceSection">
+          <div class="settings-heading"><strong>Darstellung &amp; Voreinstellungen</strong></div>
+          <p class="settings-note">Gilt auf diesem Gerät und für neue Projekte. Laufende Projekte bleiben unverändert.</p>
+          <div class="field-grid two">
+            <label class="field"><span>Farbschema</span><select id="setColorScheme"><option value="system">Automatisch (Gerät)</option><option value="light">Immer hell</option><option value="dark">Immer dunkel</option></select></label>
+            <label class="field"><span>Ziel-KI für neue Projekte</span><select id="setDefaultAgent"></select></label>
+            <label class="field"><span>Projektbeziehung für neue Projekte</span><select id="setDefaultClientType"><option value="kunde">Kundenprojekt</option><option value="eigenes">Eigenes Projekt</option></select></label>
+            <label class="field"><span>Startseite beim Öffnen</span><select id="setStartView"><option value="home">Startseite</option><option value="last">Letztes Projekt fortsetzen</option></select></label>
+          </div>
+          <label class="check-row"><input id="setConfirmBeforePrompt" type="checkbox" checked /><span><strong>Vor dem Master-Prompt noch einmal bestätigen</strong><small>Zeigt die Zusammenfassung der Projektdaten, bevor der Auftrag erstellt wird.</small></span></label>
+          <label class="check-row"><input id="setReduceMotion" type="checkbox" /><span><strong>Bewegung reduzieren</strong><small>Blendet Animationen in Ladebildschirmen und Übergängen aus.</small></span></label>
+          <div class="settings-danger-row"><div><strong>Lokale Projektdaten löschen</strong><small>Entfernt Entwurf, Bibliothek und Einstellungen von diesem Gerät. In der Cloud gespeicherte Projekte bleiben erhalten.</small></div><button type="button" class="text-btn danger" id="clearLocalDataBtn">Auf diesem Gerät löschen</button></div>
+        </section>
         <section class="settings-section">
           <div class="settings-heading"><strong>GitHub-Verbindung</strong></div>
           <div class="connection-login-row" id="githubLoginRow" hidden><span>Zum Verbinden von GitHub zuerst anmelden.</span><button type="button" class="outline-btn mini" id="githubSettingsLoginBtn">Zum Speichern anmelden</button></div>
@@ -807,8 +820,8 @@
   <script src="./maintenance-mode.js?v=20260813-2" defer></script>
   <script src="./entry-gate-ui.js?v=20260814-3" defer></script>
   <script src="./legal-pages.js?v=20260815-1" defer></script>
-  <script src="./app.js?v=20260815-14" defer></script>
-  <script src="./admin-console.js?v=20260814-12" defer></script>
+  <script src="./app.js?v=20260815-15" defer></script>
+  <script src="./admin-console.js?v=20260814-13" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>
 </html>

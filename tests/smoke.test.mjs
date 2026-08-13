@@ -796,3 +796,41 @@ test('the footer year does not depend on an inline script at the end of a cached
   assert.match(theme,/addEventListener\('pageshow',setYear\)/);
   assert.doesNotMatch(html,/<span id="currentYear">2024<\/span>/,'the fallback is not a year from the past');
 });
+
+test('the settings sell a connection slot instead of showing key fields nobody may fill',async()=>{
+  const ui=await text('settings-connections-ui.js'),html=await text('index.html'),access=await text('stability-ui.js');
+  assert.match(ui,/Platz für eine eigene KI – 5,99 € \/ Monat/);
+  assert.match(ui,/Ohne gebuchten Platz gibt es hier nichts einzutragen/);
+  assert.match(ui,/const MAX_SLOTS=PROVIDERS\.length;/,'one key per provider per account, so a slot is a provider');
+  assert.match(ui,/data-conn-name="\$\{index\}"/,'the visitor names the connection');
+  assert.match(ui,/data-conn-provider="\$\{index\}"/,'and picks the provider behind it');
+  // The provider cards are moved, not rebuilt, so app.js keeps its save/test/disconnect handlers.
+  assert.match(ui,/if\(mount&&card\)mount\.appendChild\(card\)/);
+  assert.match(ui,/if\(card&&card\.parentElement!==park\)park\.appendChild\(card\)/,'parked before innerHTML is rewritten, or the card is deleted');
+  // GitHub publishing is Ultimate, and the note used to claim Pro.
+  assert.match(ui,/Für die eigene GitHub-Verbindung ist ein Ultimate-Abo erforderlich\./);
+  assert.match(ui,/const a=access\(\),allowed=a\.isAdmin\|\|a\.plan==='ultimate';/);
+  assert.match(access,/apiKeySlots:Math\.max\(0,Number\(sub\.apiKeySlots\)\|\|0\)/,'the slot count has to reach the UI');
+  assert.match(html,/id="userPreferenceSection"/);
+});
+
+test('the added settings all do something measurable',async()=>{
+  const prefs=await text('user-preferences-ui.js'),app=await text('app.js');
+  assert.match(prefs,/function applyColorScheme\(scheme\)/);
+  assert.match(prefs,/html\.prompt-reduce-motion \*/,'reduced motion really switches animations off');
+  assert.match(prefs,/localStorage\.clear\(\);sessionStorage\.clear\(\)/,'local deletion really deletes');
+  assert.match(prefs,/if\(keep\)localStorage\.setItem\(THEME_KEY,keep\)/,'but keeps the chosen colour scheme');
+  assert.match(prefs,/sessionStorage\.setItem\(START_KEY,'1'\)/,'"continue last project" uses the flag the workflow already knows');
+  assert.match(app,/if\(window\.PromptAiPreferences&&window\.PromptAiPreferences\.confirmBeforePrompt===false\)return true;/);
+});
+
+test('the project stays identifiable: name on the tile, name in the top bar, price behind a lock',async()=>{
+  const home=await text('home-entry-ui.js'),context=await text('project-context-ui.js');
+  assert.match(home,/function lastProjectName\(\)/);
+  assert.match(home,/Weiter mit „\$\{label\.length>38\?`\$\{label\.slice\(0,37\)\}…`:label\}“/);
+  // A locked tile used to swallow the click without a word.
+  assert.match(home,/if\(isFree\(\)\)\{e\.preventDefault\(\);e\.stopImmediatePropagation\(\);document\.querySelector\('#plansDialog'\)\?\.showModal\(\);return\}/);
+  assert.match(context,/box\.id='topbarProject'/);
+  assert.match(context,/function currentName\(\)/);
+  assert.match(context,/\.topbar-project\.is-on\{display:flex;order:9/,'on a phone it becomes its own strip');
+});

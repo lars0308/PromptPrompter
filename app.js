@@ -2242,6 +2242,7 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
   }
   async function confirmProjectData(){
     if(state.mode!=='guided')return true;
+    if(window.PromptAiPreferences&&window.PromptAiPreferences.confirmBeforePrompt===false)return true;
     const p=project(),issues=projectConsistency();
     const sources=usableSources();
     const lines=[`Projekt: ${p.name||'ohne Namen'}`,`Kunde: ${p.client?.name||'nicht angegeben'}`,`Beschreibung: ${String(p.description||'').slice(0,120)}${String(p.description||'').length>120?'…':''}`,
