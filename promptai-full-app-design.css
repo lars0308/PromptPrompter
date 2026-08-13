@@ -1089,3 +1089,35 @@ html.prompt-full-redesign[data-theme="dark"] .prompt-command-panel{
   html.prompt-full-redesign .prompt-home-intro h1{font-size:26px!important}
   html.prompt-full-redesign .prompt-command-input{min-height:78px!important}
 }
+
+/* Die Eingabeschrift trägt das Logoblau. Auf dem dunklen Grund der Konsole
+   kommt #2d93c9 auf gut 5:1 - lesbar, und es bindet Feld, Cursor und Knopf zu
+   einem Element zusammen. */
+html.prompt-full-redesign .prompt-command-input,
+html.prompt-full-redesign .prompt-command-input:focus{
+  color:var(--logo-blue)!important;-webkit-text-fill-color:var(--logo-blue);
+}
+/* Kein weißer Kasten mehr um die Eingabe: die Konsole ist eine Fläche, nicht
+   ein heller Kasten in einem dunklen Rahmen. Im Hellmodus kam der Kasten von
+   der allgemeinen Feldregel (--input ist dort fast weiß). */
+html.prompt-full-redesign .prompt-command-input,
+html.prompt-full-redesign .prompt-command-panel>div:has(>.prompt-command-input),
+html.prompt-full-redesign .prompt-command-panel .prompt-command-field{
+  background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important;
+}
+
+/* Das × im Modus-Dialog stand links über der Überschrift statt oben rechts:
+   es ist absolut positioniert, aber sein Bezugsrahmen hatte kein position, also
+   fiel es in den normalen Textfluss zurück - und dort steht es vor allem. */
+html.prompt-full-redesign :is(.project-mode-frame,.simple-intake-shell,.dialog-frame){position:relative!important}
+html.prompt-full-redesign :is(.project-mode-close,.simple-intake-close){
+  position:absolute!important;top:14px!important;right:14px!important;left:auto!important;bottom:auto!important;z-index:6!important;
+}
+html.prompt-full-redesign :is(.project-mode-head,.simple-intake-head){padding-right:66px!important}
+
+/* Die Auswahl (Internetseite / freier Prompt / überarbeiten) saß zu tief - der
+   Abstand zwischen Begrüßung und Konsole war größer als nötig. */
+@media(max-width:820px){
+  html.prompt-full-redesign .prompt-home-intro{padding-bottom:var(--sp-3)!important}
+  html.prompt-full-redesign .prompt-command-top{padding-top:var(--sp-3)!important}
+}

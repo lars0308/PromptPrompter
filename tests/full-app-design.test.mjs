@@ -88,3 +88,31 @@ test('the phone home page fits one screen: every block gives height, none disapp
   assert.match(css,/@media\(max-width:820px\) and \(max-height:720px\)/,'flat devices get one more step');
   assert.match(css,/\.prompt-home-tools\{grid-template-columns:repeat\(4,1fr\)!important/,'four tools in one row, not two by two');
 });
+
+test('the drawer reshapes the existing menu instead of building a second one',async()=>{
+  const nav=await read('promptai-nav-drawer.js');
+  // A rebuilt menu means maintaining every plan gate twice, and the copy is the one that goes wrong.
+  assert.match(nav,/const menu=\$\('#topbarMenu'\)/);
+  assert.doesNotMatch(nav,/\.insertBefore\(/,'no existing entry may be re-parented');
+  // The only append is the drawer's own new button; nothing that was already there is touched.
+  assert.deepEqual([...nav.matchAll(/menu\.appendChild\((\w+)\)/g)].map(m=>m[1]),['button']);
+  // Moving nodes threw: other layers insertBefore relative to them. Ordering is CSS now.
+  assert.match(nav,/const rank=sortEntry\(node\);/);
+  assert.match(nav,/node\.style\.order=String\(rank\);/);
+  assert.match(nav,/\$\$\(':scope > \*',menu\)/,'containers other layers add must be ranked too');
+  // Late arrivals default to order 0 and would jump to the top without a re-sort.
+  assert.match(nav,/new MutationObserver\(\(\)=>\{clearTimeout\(pending\);pending=setTimeout\(shell,60\)\}\)\.observe\(menu,\{childList:true\}\)/);
+  // The four work paths click the real home buttons, so the plan gate stays in one place.
+  assert.match(nav,/\['Bibliothek','workspaceLibraryBtn'/);
+  assert.match(nav,/\['Verlauf','projectHistoryBtn'/);
+  assert.match(nav,/setTimeout\(\(\)=>\$\('#'\+targetId\)\?\.click\(\),60\)/);
+  assert.match(nav,/#accountBtn:not\(\[hidden\]\)\{[\s\S]{0,60}margin-top:auto/,'profile is the one entry pinned to the bottom');
+});
+test('the close button in the mode dialog is anchored again',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  // It is position:absolute, but its frame carried no position, so it fell back into the
+  // normal flow - and there it renders first, on top of the heading.
+  assert.match(css,/:is\(\.project-mode-frame,\.simple-intake-shell,\.dialog-frame\)\{position:relative!important\}/);
+  assert.match(css,/:is\(\.project-mode-close,\.simple-intake-close\)\{[\s\S]{0,120}right:14px!important/);
+  assert.match(css,/:is\(\.project-mode-head,\.simple-intake-head\)\{padding-right:66px!important\}/,'the heading must not run under it');
+});

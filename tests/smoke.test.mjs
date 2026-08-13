@@ -905,7 +905,9 @@ test('one brand layer owns the palette, and it is the last stylesheet to speak',
   assert.match(brand,/backdrop-filter:none!important/);
   assert.match(brand,/transform:none!important/);
   // It has to load last and stay last: dialogs append their styles when they first open.
-  assert.match(console_,/'\.\/brand-werkstatt\.js\?v=[^']+'\];/,'registered as the final critical script');
+  // It no longer has to be the last script: under the full redesign it stands down entirely
+  // (see the redesign test), so what matters is only that it is still registered and loaded.
+  assert.match(console_,/'\.\/brand-werkstatt\.js\?v=[^']+'/,'still registered as a critical script');
   assert.match(brand,/new MutationObserver\(install\)\.observe\(document\.head,\{childList:true\}\)/);
   assert.match(sw,/'\/brand-werkstatt\.js'/,'offline shell ships it too');
 });
