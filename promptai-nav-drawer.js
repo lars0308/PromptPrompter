@@ -61,6 +61,11 @@
       }
       html.prompt-full-redesign .topbar-menu button:hover:not(:disabled){background:var(--surface-soft)!important}
       html.prompt-full-redesign .topbar-menu button svg{flex:0 0 auto;width:19px;height:19px;color:var(--logo-blue,var(--accent))}
+      /* Einträge ohne Symbol (Projekte, Einstellungen, Abmelden ...) begannen 30px
+         weiter links als die mit - die Schrift steht jetzt bei allen auf einer Linie.
+         Ihnen Symbole einzusetzen hieße, in fremde Knöpfe zu schreiben, deren Text
+         andere Ebenen laufend neu setzen. */
+      html.prompt-full-redesign .topbar-menu>button:not(:has(svg)):not(#accountBtn):not(.upgrade-btn){padding-left:42px!important}
       /* Profil ist der eine Knopf unten - Einstellungen und Abmelden hängen daran. */
       html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){
         margin-top:auto!important;min-height:56px!important;
@@ -93,7 +98,7 @@
   // umgehängt - und prompt eine Ausnahme ausgelöst: andere Skripte fügen ihre Einträge relativ zu
   // diesen Knoten ein (insertBefore), und deren Bezugspunkt war plötzlich kein direktes Kind des
   // Menüs mehr. Die Reihenfolge macht jetzt CSS über `order`, die Knöpfe bleiben, wo sie sind.
-  const ORDER={accountBtn:90,openSettingsBtn:60,adminBtn:65,subscriptionMenuBtn:55,installAppBtn:70,upgradeMenuBtn:50,resetBtn:75};
+  const ORDER={accountBtn:90,openSettingsBtn:60,themeToggleBtn:61,adminBtn:65,subscriptionMenuBtn:55,installAppBtn:70,upgradeMenuBtn:50,resetBtn:75};
   function sortEntry(node){
     const text=(node.textContent||'').trim();
     if(node.dataset.drawerTarget)return 10;          // die vier Arbeitswege zuerst
