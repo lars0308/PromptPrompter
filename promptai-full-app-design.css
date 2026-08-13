@@ -962,3 +962,130 @@ html.prompt-full-redesign[data-theme="dark"] :is(#upgradeBtn,#upgradeMenuBtn){
   background:color-mix(in srgb,var(--orange) 82%,#000)!important;
   border-color:color-mix(in srgb,var(--orange) 82%,#000)!important;
 }
+
+/* ═══ Korrekturen aus dem Gerätetest ═══════════════════════════════════════ */
+
+/* 1) „Upgrade auf Pro" stand über einem Ultimate-Konto.
+   app.js setzt das Attribut hidden, sobald der Tarif nicht mehr free ist. Das
+   hidden-Attribut trägt aber nur das display:none des Browsers - und die Regel
+   weiter oben setzt display:inline-flex!important. !important schlägt den
+   Browser-Standard, also blieb der Knopf stehen. Genau derselbe Fehler wie beim
+   Schließen-Kreuz der Anmeldeseite: eine !important-Anzeige über einem hidden. */
+html.prompt-full-redesign :is(#upgradeBtn,#upgradeMenuBtn)[hidden],
+html.prompt-full-redesign .top-actions>[hidden],
+html.prompt-full-redesign .topbar-menu>[hidden]{display:none!important}
+
+/* 2) Im Hellmodus war der getippte Text unsichtbar.
+   Die Konsole ist in beiden Modi dunkel, ihre Schrift folgte aber --ink - und
+   das ist im Hellmodus fast schwarz. Die Konsole führt ihre eigene Schrift,
+   unabhängig vom Modus, weil ihr Grund unabhängig vom Modus dunkel ist. */
+html.prompt-full-redesign .prompt-command-input,
+html.prompt-full-redesign .prompt-command-input:focus{
+  color:#eef6fb!important;
+  -webkit-text-fill-color:#eef6fb;
+  caret-color:var(--logo-blue)!important;
+}
+html.prompt-full-redesign .prompt-command-input::placeholder{color:#7d8f9e!important;-webkit-text-fill-color:#7d8f9e}
+html.prompt-full-redesign :is(.prompt-command-meta,.prompt-command-top,.prompt-mode-button){color:#cfdbe4!important}
+html.prompt-full-redesign .prompt-mode-button{border-color:rgba(255,255,255,.14)!important}
+
+/* 3) Das Blau der Bildmarke führt die Konsole. */
+html.prompt-full-redesign{--logo-blue:#2d93c9;--logo-blue-deep:#124f7c}
+html.prompt-full-redesign .prompt-command-submit{background:var(--logo-blue)!important}
+html.prompt-full-redesign .prompt-command-submit:hover:not(:disabled){background:#3aa6de!important}
+html.prompt-full-redesign .prompt-command-panel:focus-within{border-color:color-mix(in srgb,var(--logo-blue) 58%,#000)!important}
+html.prompt-full-redesign .prompt-command-meta strong,
+html.prompt-full-redesign .prompt-command-meta b{color:var(--logo-blue)!important}
+
+/* 4) Der Grund: kein flaches Feld, sondern ein Studiohintergrund.
+   Ein einzelnes, sehr weites Licht von oben - kein Farbklecks, kein Verlauf
+   quer über die Seite. Der Unterschied ist klein genug, dass man ihn nicht als
+   Verlauf liest, und groß genug, dass die Fläche nicht tot wirkt. */
+html.prompt-full-redesign body{
+  background-color:var(--paper)!important;
+  background-image:
+    radial-gradient(140% 78% at 50% -18%,rgba(45,147,201,.09) 0%,rgba(45,147,201,.03) 42%,transparent 72%),
+    linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,0) 340px)!important;
+  background-repeat:no-repeat!important;
+  background-attachment:fixed!important;
+}
+
+/* 5) Dunkelmodus: Graphit statt Schwarz.
+   Reines Schwarz lässt jede Fläche darüber wie ein Aufkleber wirken, weil es
+   keine Stufe darunter mehr gibt. Graphit gibt der Oberfläche Platz nach unten. */
+html.prompt-full-redesign[data-theme="dark"]{
+  --paper:#14181d;
+  --paper-2:#1b2026;
+  --surface:#1b2026;
+  --surface-soft:#232a31;
+  --input:#12161b;
+  --ink:#e9eff4;
+  --muted:#9aa8b4;
+  --line:#2d353d;
+  --line-dark:#485662;
+  --panel:#11161b;
+  --glass:#1b2026;
+  --glass-strong:#1b2026;
+  --glass-line:#2d353d;
+  --scrim:rgba(10,13,16,.76);
+}
+html.prompt-full-redesign[data-theme="dark"] body{
+  background-image:
+    radial-gradient(140% 76% at 50% -16%,rgba(45,147,201,.11) 0%,rgba(45,147,201,.035) 44%,transparent 74%),
+    linear-gradient(180deg,rgba(255,255,255,.032) 0%,rgba(255,255,255,0) 320px)!important;
+}
+/* Die Konsole liegt jetzt eine Stufe unter dem Graphit statt darüber - sie ist
+   die Vertiefung, in die geschrieben wird, nicht der Aufkleber darauf. */
+html.prompt-full-redesign[data-theme="dark"] .prompt-command-panel{
+  background:#0f141a!important;
+  border-color:color-mix(in srgb,var(--logo-blue) 22%,var(--line))!important;
+}
+
+/* ═══ Alles auf einen Bildschirm ═══════════════════════════════════════════
+   Auf dem Telefon lag die Hälfte der Startseite unter der Kante: begrüßen,
+   schreiben, weitermachen - dafür musste man scrollen. Die Höhe kommt aus vier
+   Blöcken, und jeder gibt hier ab, ohne dass etwas verschwindet.
+
+   Das Textfeld ist der größte Posten: 185px Mindesthöhe für eine Zeile, die
+   man tippt. Es startet jetzt niedrig und wächst beim Schreiben mit. */
+@media(max-width:820px){
+  html.prompt-full-redesign #welcomePage{padding-top:var(--sp-5)!important;padding-bottom:var(--sp-5)!important}
+  html.prompt-full-redesign .prompt-home-intro{min-height:0!important;padding:0 var(--sp-1) var(--sp-5)!important}
+  html.prompt-full-redesign .prompt-home-intro h1{font-size:clamp(28px,8vw,38px)!important;margin:var(--sp-2) 0 0!important}
+  html.prompt-full-redesign .prompt-home-intro p{font-size:14px!important;margin-top:var(--sp-2)!important}
+  html.prompt-full-redesign .prompt-command-input{min-height:96px!important;padding:var(--sp-4) 68px var(--sp-3) var(--sp-4)!important;font-size:16px!important}
+  html.prompt-full-redesign .prompt-command-submit{bottom:auto!important;top:calc(var(--sp-4) + 44px)!important;right:var(--sp-3)!important;width:44px!important;height:44px!important;min-height:44px!important}
+  html.prompt-full-redesign .prompt-command-meta{min-height:42px!important;padding:0 var(--sp-4)!important}
+
+  /* Das letzte Projekt war drei Zeilen hoch für eine Information. Eine Zeile:
+     Symbol, Name, Pfeil - antippbar in ganzer Breite. */
+  html.prompt-full-redesign .prompt-latest{
+    grid-template-columns:auto minmax(0,1fr) auto!important;
+    margin-top:var(--sp-3)!important;padding:var(--sp-3)!important;gap:var(--sp-3)!important;
+  }
+  html.prompt-full-redesign .prompt-latest-icon{width:36px!important;height:36px!important;border-radius:var(--r-sm)!important}
+  html.prompt-full-redesign .prompt-latest-copy strong{font-size:13px!important}
+  html.prompt-full-redesign .prompt-latest-copy small,
+  html.prompt-full-redesign .prompt-latest-copy span{font-size:11px!important}
+  html.prompt-full-redesign .prompt-latest-action{
+    grid-column:3!important;grid-row:1!important;min-height:36px!important;
+    padding:0 var(--sp-2)!important;border-top:0!important;font-size:0!important;
+  }
+  html.prompt-full-redesign .prompt-latest-action::after{content:"→";font-size:18px}
+
+  /* Vier Werkzeuge in einer Reihe statt in zwei - Symbol über Wort. */
+  html.prompt-full-redesign .prompt-home-tools{grid-template-columns:repeat(4,1fr)!important;margin-top:var(--sp-3)!important}
+  html.prompt-full-redesign .prompt-home-tool{
+    min-height:62px!important;flex-direction:column!important;gap:var(--sp-1)!important;
+    padding:var(--sp-2) var(--sp-1)!important;font-size:10px!important;
+  }
+  html.prompt-full-redesign .prompt-home-tool svg{width:19px;height:19px}
+  html.prompt-full-redesign .prompt-footer{padding:var(--sp-2) var(--sp-4)!important}
+  html.prompt-full-redesign body{padding-bottom:64px!important}
+}
+/* Sehr flache Geräte: die Begrüßung tritt weiter zurück, das Feld bleibt. */
+@media(max-width:820px) and (max-height:720px){
+  html.prompt-full-redesign .prompt-home-intro{padding-bottom:var(--sp-4)!important}
+  html.prompt-full-redesign .prompt-home-intro h1{font-size:26px!important}
+  html.prompt-full-redesign .prompt-command-input{min-height:78px!important}
+}

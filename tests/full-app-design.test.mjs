@@ -62,3 +62,29 @@ test('the Werkstatt layer stands down under the full redesign instead of fightin
   const css=await read('promptai-full-app-design.css');
   assert.match(css,/html\.prompt-full-redesign body\{background-image:none!important\}/);
 });
+
+test('an !important display never outranks the hidden attribute again',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  // app.js hides the upgrade button by setting [hidden] once the plan is not free.
+  // [hidden] only carries the user agent's display:none, which loses to !important -
+  // the same trap that kept the close button on the login gate.
+  assert.match(css,/:is\(#upgradeBtn,#upgradeMenuBtn\)\[hidden\][\s\S]{0,120}display:none!important/);
+});
+test('the console keeps its own type colour, because its ground is dark in both themes',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  assert.match(css,/\.prompt-command-input,[\s\S]{0,80}color:#eef6fb!important/,'--ink would be near-black in light mode, on a dark panel');
+  assert.match(css,/--logo-blue:#2d93c9/,'the caret and submit take the blue from the mark itself');
+  assert.match(css,/caret-color:var\(--logo-blue\)!important/);
+});
+test('dark mode is graphite, not black, so surfaces still have a step below them',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  assert.match(css,/\[data-theme="dark"\]\{\s*--paper:#14181d;/);
+  assert.doesNotMatch(css,/--paper:#080d13;[\s\S]{0,400}--paper:#14181d/,'the near-black value must be superseded, not duplicated after');
+});
+test('the phone home page fits one screen: every block gives height, none disappears',async()=>{
+  const css=await read('promptai-full-app-design.css'),home=await read('promptai-home-final.js');
+  assert.match(home,/\.prompt-command-input\{[^}]*min-height:185px/,'the component still ships the tall default');
+  assert.match(css,/\.prompt-command-input\{min-height:96px!important/,'which the phone layer has to bring down');
+  assert.match(css,/@media\(max-width:820px\) and \(max-height:720px\)/,'flat devices get one more step');
+  assert.match(css,/\.prompt-home-tools\{grid-template-columns:repeat\(4,1fr\)!important/,'four tools in one row, not two by two');
+});
