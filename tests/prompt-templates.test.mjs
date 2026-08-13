@@ -138,7 +138,7 @@ test('a spent token budget downgrades the AI instead of blocking the request',as
   assert.match(quota,/if\(!planLimit\)return off;/,'no limit means the budget never triggers');
   assert.match(quota,/exhausted:used>=limit/);
   // The whole point: reaching the budget must not refuse work, it reorders the chain.
-  assert.match(router,/const chain=saver\?\[\.\.\.profiles\]\.reverse\(\):profiles;/);
+  assert.match(router,/const planChain=saver\?\[\.\.\.profiles\]\.reverse\(\):profiles;/);
   assert.match(router,/if\(saver\)res\.setHeader\('X-Prompt-AI-Saver','1'\)/);
   assert.match(free,/if\(saver&&profiles\.length>1\)profiles=\[\.\.\.profiles\]\.reverse\(\);/);
   assert.match(image,/if\(budget\.exhausted&&candidates\.length>1\)\{candidates=\[\.\.\.candidates\]\.reverse\(\);res\.setHeader\('X-Prompt-AI-Saver','1'\)\}/);

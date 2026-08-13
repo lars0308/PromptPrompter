@@ -42,9 +42,9 @@
   // Three previews, for every plan. More was a choice nobody could judge; fewer is not a real set.
   const PREVIEW_COUNT=3;
   const PLAN_RULES = {
-    free:{label:"Free",modes:["guided"],concepts:3,previewRetries:1,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,aiPreviews:false,maxRefUrls:1,maxRefImages:0},
-    pro:{label:"Pro",modes:["guided","auto"],concepts:3,previewRetries:2,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false,existing:true,aiPreviews:true,maxRefUrls:3,maxRefImages:3},
-    ultimate:{label:"Ultimate",modes:["guided","auto","expert"],concepts:3,previewRetries:3,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true,existing:true,aiPreviews:true,maxRefUrls:5,maxRefImages:5}
+    free:{label:"Free",modes:["guided"],libraryItems:0,concepts:3,previewRetries:1,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,aiPreviews:false,maxRefUrls:1,maxRefImages:0},
+    pro:{label:"Pro",modes:["guided","auto"],libraryItems:10,concepts:3,previewRetries:2,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false,existing:true,aiPreviews:true,maxRefUrls:3,maxRefImages:3},
+    ultimate:{label:"Ultimate",modes:["guided","auto","expert"],libraryItems:Infinity,concepts:3,previewRetries:3,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true,existing:true,aiPreviews:true,maxRefUrls:5,maxRefImages:5}
   };
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
@@ -383,6 +383,17 @@
     // A cancel token lets the user abort a running generation instead of waiting it out.
     const onCancel=()=>controller.abort('cancelled');
     cancelToken?.addEventListener?.('abort',onCancel);
+    // The visitor's own connection travels with every AI request, so their model - not the plan's
+    // profile - answers first. One place, so no route can forget it.
+    const own=window.PromptAiOwnConnection;
+    if(own?.provider&&own?.model&&typeof rest.body==='string'&&rest.body.startsWith('{')){
+      try{
+        const payload=JSON.parse(rest.body);
+        if(payload&&typeof payload==='object'&&!('useOwnApi' in payload)){
+          rest.body=JSON.stringify({...payload,useOwnApi:true,ownProvider:own.provider,ownModel:own.model,ownLabel:own.label||''});
+        }
+      }catch{}
+    }
     try{
       return await fetch(url,{...rest,headers:{...(rest.headers||{}),...auth},signal:controller.signal});
     }catch(err){
@@ -1485,6 +1496,21 @@
     return score;
   }
 
+  // Pro keeps ten of each kind, Ultimate is open. Editing an existing entry is always allowed -
+  // the limit is about how much is stored, not about being locked out of your own work.
+  const LIBRARY_LABEL={template:'Prompt-Vorlagen',module:'Module',skill:'Agent-Skills'};
+  function libraryLimit(){const value=planRules().libraryItems;return value===undefined?0:value}
+  function libraryCount(kind){return (kind==='template'?state.templates:kind==='module'?state.modules:state.skills).length}
+  function libraryFull(kind,editingId){
+    if(editingId)return false;
+    const limit=libraryLimit();
+    return Number.isFinite(limit)&&libraryCount(kind)>=limit;
+  }
+  async function libraryLimitReached(kind){
+    const limit=libraryLimit();
+    await customAlert(`In deinem Tarif kannst du ${limit} ${LIBRARY_LABEL[kind]||'Einträge'} speichern – diese Grenze ist erreicht. Lösche einen Eintrag, oder schalte mit Ultimate unbegrenzt viele frei.`,{title:'Bibliothek voll'});
+    return false;
+  }
   function recommendModules(apply=false){
     // Locked plans never interrupt the flow with a modal here: goStep(4) and the automatic
     // mode routing both call this, so a modal would trap free users mid-workflow. The lock is
@@ -1540,11 +1566,13 @@
           arr.forEach(raw=>{
             if(!raw)return;const item=typeof raw==="string"?{name:raw}:raw;const name=String(item.name||item.title||"").trim();if(!name)return;
             const generatedPrompt=item.prompt||item.content||item.instructions||`Wende den Agent-Skill „${name}“ an, sobald seine Aufgabe oder sein Themenbereich für das Projekt relevant ist.`;
+            if(libraryFull('skill'))return;
             state.skills.push({id:uid("skill"),name,agent:AGENT_NAMES[item.agent]?item.agent:(item.agent==="all"?"all":state.targetAgent),trigger:item.trigger||item.when||"Bei passender Aufgabe anwenden",prompt:generatedPrompt,sourceFile:file.name,activation:"manual"});added++;
           });
         }else{
           const fm=parseFrontmatter(text); const heading=(text.match(/^#\s+(.+)$/m)||[])[1];
           const agent=AGENT_NAMES[fm.agent]?fm.agent:(fm.agent==="all"?"all":inferAgentFromFilename(file.name));
+          if(libraryFull('skill'))continue;
           state.skills.push({id:uid("skill"),name:fm.name||heading||file.name.replace(/\.[^.]+$/,"")||"Importierter Skill",agent,trigger:fm.trigger||fm.when||"Aus importierter Agent-/Skill-Datei; bei passender Aufgabe anwenden",prompt:text.trim(),sourceFile:file.name,activation:"manual"});added++;
         }
       }catch{}
@@ -2413,11 +2441,11 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
   async function saveLibraryItem(type){
     let item=null;
     if(type==="template"){
-      const name=el.libTemplateName.value.trim(),prompt=el.libTemplatePrompt.value.trim();if(!name||!prompt)return;item={id:state.editing.template||uid("tpl"),name,tag:el.libTemplateTag.value.trim(),summary:el.libTemplateSummary.value.trim(),prompt};state.templates=state.editing.template?state.templates.map(x=>x.id===item.id?item:x):[...state.templates,item];clearLibraryEditor("template");
+      const name=el.libTemplateName.value.trim(),prompt=el.libTemplatePrompt.value.trim();if(!name||!prompt)return;if(libraryFull('template',state.editing.template))return libraryLimitReached('template');item={id:state.editing.template||uid("tpl"),name,tag:el.libTemplateTag.value.trim(),summary:el.libTemplateSummary.value.trim(),prompt};state.templates=state.editing.template?state.templates.map(x=>x.id===item.id?item:x):[...state.templates,item];clearLibraryEditor("template");
     }else if(type==="module"){
-      const name=el.libModuleName.value.trim(),prompt=el.libModulePrompt.value.trim();if(!name||!prompt)return;const old=state.modules.find(x=>x.id===state.editing.module);item={id:state.editing.module||uid("mod"),name,tag:el.libModuleTag.value.trim(),summary:el.libModuleSummary.value.trim(),prompt,activation:old?.activation||"manual"};state.modules=state.editing.module?state.modules.map(x=>x.id===item.id?item:x):[...state.modules,item];clearLibraryEditor("module");
+      const name=el.libModuleName.value.trim(),prompt=el.libModulePrompt.value.trim();if(!name||!prompt)return;if(libraryFull('module',state.editing.module))return libraryLimitReached('module');const old=state.modules.find(x=>x.id===state.editing.module);item={id:state.editing.module||uid("mod"),name,tag:el.libModuleTag.value.trim(),summary:el.libModuleSummary.value.trim(),prompt,activation:old?.activation||"manual"};state.modules=state.editing.module?state.modules.map(x=>x.id===item.id?item:x):[...state.modules,item];clearLibraryEditor("module");
     }else{
-      const name=el.libSkillName.value.trim(),prompt=el.libSkillPrompt.value.trim();if(!name||!prompt)return;const old=state.skills.find(x=>x.id===state.editing.skill);item={id:state.editing.skill||uid("skill"),name,agent:el.libSkillAgent.value,trigger:el.libSkillTrigger.value.trim(),prompt,sourceFile:old?.sourceFile||null,activation:old?.activation||"manual"};state.skills=state.editing.skill?state.skills.map(x=>x.id===item.id?item:x):[...state.skills,item];clearLibraryEditor("skill");
+      const name=el.libSkillName.value.trim(),prompt=el.libSkillPrompt.value.trim();if(!name||!prompt)return;if(libraryFull('skill',state.editing.skill))return libraryLimitReached('skill');const old=state.skills.find(x=>x.id===state.editing.skill);item={id:state.editing.skill||uid("skill"),name,agent:el.libSkillAgent.value,trigger:el.libSkillTrigger.value.trim(),prompt,sourceFile:old?.sourceFile||null,activation:old?.activation||"manual"};state.skills=state.editing.skill?state.skills.map(x=>x.id===item.id?item:x):[...state.skills,item];clearLibraryEditor("skill");
     }
     saveLibrary();renderLibrary();renderDefaultActivationSettings();recommendModules(false);updateGuide();saveState();
     if(cloudReady())try{await window.SiteBriefCloud.saveLibraryItem(type,item);setSyncState("Cloud","synced")}catch(err){state.cloud.error=err?.message||"Bibliothek konnte nicht synchronisiert werden";setSyncState("Sync-Fehler","error")}

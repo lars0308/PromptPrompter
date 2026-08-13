@@ -487,7 +487,7 @@ test('the "Prompt genauer einstellen" free-prompt settings step is consolidated 
   assert.match(src,/<span>Ziel, Zielgruppe &amp; Kontext<\/span><textarea id="freePromptContext"/);
   assert.match(src,/<span>Stil, Muss enthalten &amp; Vermeiden<\/span><textarea id="freePromptStyle"/);
   assert.match(src,/<span>Ausgabeformat, Sprache &amp; Grenzen<\/span><textarea id="freePromptFormat"/);
-  assert.match(src,/function payload\(\)\{return \{action:'free-prompt',category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:\$\('#freePromptDescription'\)\.value,context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
+  assert.match(src,/category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:\$\('#freePromptDescription'\)\.value,context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
 });
 test('opening the hamburger menu re-syncs plan UI from window.PromptAiAccess, so a stale Upgrade button can never survive a menu open even if a promptai:access event was missed',async()=>{
   const src=await text('app.js');
@@ -833,4 +833,34 @@ test('the project stays identifiable: name on the tile, name in the top bar, pri
   assert.match(context,/box\.id='topbarProject'/);
   assert.match(context,/function currentName\(\)/);
   assert.match(context,/\.topbar-project\.is-on\{display:flex;order:9/,'on a phone it becomes its own strip');
+});
+
+test('the library holds ten entries per kind in Pro and is open in Ultimate',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/free:\{label:"Free",modes:\["guided"\],libraryItems:0,/);
+  assert.match(app,/pro:\{label:"Pro",modes:\["guided","auto"\],libraryItems:10,/);
+  assert.match(app,/ultimate:\{label:"Ultimate",modes:\["guided","auto","expert"\],libraryItems:Infinity,/);
+  // Editing an existing entry is never blocked - the limit is about how much is stored.
+  assert.match(app,/function libraryFull\(kind,editingId\)\{\n    if\(editingId\)return false;/);
+  for(const kind of ['template','module','skill'])assert.ok(app.includes(`libraryFull('${kind}',state.editing.${kind})`),`${kind} is unchecked`);
+  assert.match(app,/if\(libraryFull\('skill'\)\)continue;/,'the .md import respects the same limit');
+  assert.match(app,/Lösche einen Eintrag, oder schalte mit Ultimate unbegrenzt viele frei\./);
+});
+
+test('a bought slot is the visitors own AI: their provider, their model, their version',async()=>{
+  const ui=await text('settings-connections-ui.js'),app=await text('app.js'),router=await text('api/generate.js'),free=await text('server/free-prompt-v2.js');
+  assert.match(ui,/data-conn-model="\$\{index\}"/,'the model name is typed, not picked from a fixed list');
+  assert.match(ui,/data-conn-load="\$\{index\}"/,'and can be filled from the provider list');
+  assert.match(ui,/\/api\/models\?provider=/);
+  assert.match(ui,/function activeConnection\(\)/);
+  assert.match(ui,/if\(!model\)return null;/,'a slot without a model never overrides the plan');
+  // One place adds it to every AI request, so no route can forget it.
+  assert.match(app,/const own=window\.PromptAiOwnConnection;/);
+  assert.match(app,/useOwnApi:true,ownProvider:own\.provider,ownModel:own\.model/);
+  // Server side: own connection first, plan profiles stay behind it as a fallback.
+  assert.match(router,/function ownConnection\(body=\{\}\)/);
+  assert.match(router,/!\/\^\[a-zA-Z0-9@\._:\/-\]\+\$\/\.test\(model\)\)return null;/,'the model string is validated before it is sent on');
+  assert.match(router,/const chain=own\?\[own,\.\.\.planChain\]:planChain;/);
+  assert.match(free,/if\(own\)profiles=\[own,\.\.\.profiles\];/);
+  assert.match(free,/systemOnly:profile\.own!==true/,'the own slot resolves the account key, not the central one');
 });

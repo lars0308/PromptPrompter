@@ -18,9 +18,20 @@ function retryable(captured){
   if(/valid credit card|add-credit-card|payment required|billing|authentication|unauthorized|forbidden|invalid api key|provider (?:is )?unavailable|insufficient quota/i.test(error))return true;
   return [408,429,500,502,503,504].includes(status);
 }
-async function runSystemProfiles(req,res){const task=taskForAction(req.body?.action),plan=await planOf(req),profiles=(await listProfiles(task,{providers:['gateway','openai','gemini'],plan})).filter(x=>x.enabled!==false);if(!profiles.length)return core(req,res);const budget=await getTokenBudget(req),saver=Boolean(budget.exhausted&&profiles.length>1);// Budget spent: run the plan's chain from the back, so the cheapest AI answers first instead of
+// A bought connection slot is the visitor's own AI: their key, their provider, their model name and
+// version. When they mark it as the one to use, it goes to the front of the chain - the plan's
+// profiles stay behind it as a fallback, so a typo in a model name costs a retry, not the run.
+const OWN_PROVIDERS=['gateway','openai','gemini'];
+function ownConnection(body={}){
+  if(body.useOwnApi!==true)return null;
+  const provider=String(body.ownProvider||'').toLowerCase();
+  const model=String(body.ownModel||'').trim();
+  if(!OWN_PROVIDERS.includes(provider)||!model||model.length>190||!/^[a-zA-Z0-9@._:/-]+$/.test(model))return null;
+  return {id:'own-connection',provider,model,label:String(body.ownLabel||'Eigene Verbindung').slice(0,80),enabled:true,own:true};
+}
+async function runSystemProfiles(req,res){const task=taskForAction(req.body?.action),plan=await planOf(req),profiles=(await listProfiles(task,{providers:['gateway','openai','gemini'],plan})).filter(x=>x.enabled!==false);const own=ownConnection(req.body);if(!profiles.length&&!own)return core(req,res);const budget=await getTokenBudget(req),saver=Boolean(budget.exhausted&&profiles.length>1&&!own);// Budget spent: run the plan's chain from the back, so the cheapest AI answers first instead of
 // the request being refused. The stronger ones stay as fallbacks.
-const chain=saver?[...profiles].reverse():profiles;const requested=String(req.body?.systemAiProfileId||''),ordered=requested?[...chain.filter(x=>x.id===requested),...chain.filter(x=>x.id!==requested)]:chain,original=req.body;let last=null;for(const profile of ordered){req.body={...original,engine:profile.provider,model:profile.model,systemAiProfileId:profile.id,systemAiProfileLabel:profile.label};const captured=captureResponse();await core(req,captured);last=captured.state;if(last.status<400){res.setHeader('X-Prompt-AI-System-Profile',profile.label||profile.id);if(saver)res.setHeader('X-Prompt-AI-Saver','1');req.body=original;return flush(res,last)}if(!retryable(last)){req.body=original;return flush(res,last)}}req.body=original;return flush(res,last||{status:503,body:{error:`Keine System-KI für ${task} war verfügbar.`},headers:{}})}
+const planChain=saver?[...profiles].reverse():profiles;const chain=own?[own,...planChain]:planChain;const requested=String(req.body?.systemAiProfileId||''),ordered=requested?[...chain.filter(x=>x.id===requested),...chain.filter(x=>x.id!==requested)]:chain,original=req.body;let last=null;for(const profile of ordered){req.body={...original,engine:profile.provider,model:profile.model,systemAiProfileId:profile.own?'':profile.id,systemAiProfileLabel:profile.label,useOwnApi:profile.own===true};const captured=captureResponse();await core(req,captured);last=captured.state;if(last.status<400){res.setHeader('X-Prompt-AI-System-Profile',profile.label||profile.id);if(saver)res.setHeader('X-Prompt-AI-Saver','1');req.body=original;return flush(res,last)}if(!retryable(last)){req.body=original;return flush(res,last)}}req.body=original;return flush(res,last||{status:503,body:{error:`Keine System-KI für ${task} war verfügbar.`},headers:{}})}
 async function quotaRoute(req,res,action){
   try{
     if(action==='quota-summary')return res.status(200).json(await getQuotaSummary(req));

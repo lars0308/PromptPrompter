@@ -260,16 +260,25 @@ async function gemini(key,model,prompt,tokens){
   const response=await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'}]},contents:[{role:'user',parts:[{text:prompt}]}]})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'Gemini nicht verfügbar.'),{status:response.status});addTokens(tokens,data.usageMetadata);return cleanFence((data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join(''));
 }
-async function generateWithSystemAi(req,input,{advanced=false,plan='',saver=false}={}){
+const OWN_PROVIDERS=['gateway','openai','gemini'];
+function ownConnection(body={}){
+  if(body.useOwnApi!==true)return null;
+  const provider=String(body.ownProvider||'').toLowerCase(),model=String(body.ownModel||'').trim();
+  if(!OWN_PROVIDERS.includes(provider)||!model||model.length>190||!/^[a-zA-Z0-9@._:/-]+$/.test(model))return null;
+  return {id:'own-connection',provider,model,label:String(body.ownLabel||'Eigene Verbindung').slice(0,80),enabled:true,own:true};
+}
+async function generateWithSystemAi(req,input,{advanced=false,plan='',saver=false,own=null}={}){
   // The plan decides which AIs are in the chain - the visitor never picks a model.
   let profiles=await listProfiles('freeprompt',{providers:['gateway','openai','gemini'],plan});if(!profiles.length)profiles=await listProfiles('prompt',{providers:['gateway','openai','gemini'],plan});
+  // The visitor's own connection answers first; the plan's AIs stay behind it as a fallback.
+  if(own)profiles=[own,...profiles];
   // Token budget spent: start from the back of the chain, so the cheapest AI answers.
   if(saver&&profiles.length>1)profiles=[...profiles].reverse();
   const errors=[],architect=architectPrompt(input,{advanced}),tokens=tokenSink();
   for(const profile of profiles){
     if(profile.enabled===false)continue;
     try{
-      const resolved=await resolveProviderKey(req,profile.provider,{systemOnly:true});if(!resolved.key)continue;
+      const resolved=await resolveProviderKey(req,profile.provider,{systemOnly:profile.own!==true});if(!resolved.key)continue;
       const model=profile.model||resolved.defaultModel||'';
       const result=profile.provider==='gateway'?await gateway(resolved.key,model,architect,tokens):profile.provider==='openai'?await openai(resolved.key,model,architect,tokens):await gemini(resolved.key,model,architect,tokens);
       if(result.length<180)throw new Error('Antwort war zu kurz.');
@@ -289,7 +298,7 @@ module.exports=async function freePromptV2(req,res){
     const entitlement=await getEntitlements(req),pro=entitlement.isAdmin||['pro','ultimate'].includes(entitlement.plan),input=pro?normalized:freeInput(normalized);
     usage.project={name:'Freier Prompt',type:input.categoryLabel,goal:(input.goal||input.description).slice(0,180)};
     const budget=await getTokenBudget(req);
-    const result=await generateWithSystemAi(req,input,{advanced:pro,plan:entitlement.isAdmin?'ultimate':String(entitlement.plan||'free'),saver:budget.exhausted});
+    const result=await generateWithSystemAi(req,input,{advanced:pro,plan:entitlement.isAdmin?'ultimate':String(entitlement.plan||'free'),saver:budget.exhausted,own:entitlement.ownApiKeys?ownConnection(req.body||{}):null});
     if(budget.exhausted)res.setHeader('X-Prompt-AI-Saver','1');usage.provider=result.provider;usage.model=result.model;usage.tokens=result.tokens;
     await logUsage(req,{...usage,durationMs:Date.now()-started});
     return res.status(200).json({...result,tier:entitlement.isAdmin?'ultimate':entitlement.plan,advanced:pro,masterVersion:'v2'});

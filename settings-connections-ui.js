@@ -36,6 +36,12 @@
       .conn-slot .ai-connection-head>div>span,.conn-slot .ai-connection-head>div>strong{display:none!important}
       .conn-slot .ai-connection-head{justify-content:flex-end!important}
       .conn-empty-note{margin:12px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
+      .conn-model{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;margin-top:11px}
+      .conn-model .field{margin:0}
+      .conn-model small{grid-column:1/-1;margin-top:-2px;color:var(--muted);font-size:11px;line-height:1.45}
+      .conn-active-row{display:flex;gap:10px;align-items:center;margin-top:11px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--paper)}
+      .conn-active-row span{flex:1 1 auto;font-size:12px;line-height:1.45}
+      .conn-active-row b{color:var(--accent);font-weight:800}
       @media(max-width:700px){.conn-slot-head{grid-template-columns:1fr}.conn-offer-actions>*{flex:1 1 100%}}
     `;document.head.appendChild(el);
   }
@@ -66,7 +72,9 @@
     const slotHtml=Array.from({length:count},(_,index)=>{
       const provider=PROVIDERS.find(([id])=>saved[`slot${index}`]===id)?.[0]||PROVIDERS.find(([id])=>!used.has(id))?.[0]||PROVIDERS[0][0];
       used.add(provider);assigned.push({index,provider});
-      return `<div class="conn-slot" data-conn-slot="${index}"><span class="conn-slot-index">PLATZ ${index+1}</span><div class="conn-slot-head"><label class="field"><span>Name dieser Verbindung</span><input type="text" maxlength="60" data-conn-name="${index}" value="${esc(saved[`name${index}`]||'')}" placeholder="z. B. Mein OpenAI-Zugang" /></label><label class="field"><span>Anbieter</span><select data-conn-provider="${index}">${PROVIDERS.map(([id,label])=>`<option value="${id}" ${id===provider?'selected':''}>${esc(label)}</option>`).join('')}</select></label></div><div data-conn-mount="${index}"></div></div>`;
+      const model=saved[`model${index}`]||'';
+      const isActive=String(saved.active||'')===String(index);
+      return `<div class="conn-slot" data-conn-slot="${index}"><span class="conn-slot-index">PLATZ ${index+1}</span><div class="conn-slot-head"><label class="field"><span>Name dieser Verbindung</span><input type="text" maxlength="60" data-conn-name="${index}" value="${esc(saved[`name${index}`]||'')}" placeholder="z. B. Mein OpenAI-Zugang" /></label><label class="field"><span>Anbieter</span><select data-conn-provider="${index}">${PROVIDERS.map(([id,label])=>`<option value="${id}" ${id===provider?'selected':''}>${esc(label)}</option>`).join('')}</select></label></div><div data-conn-mount="${index}"></div><div class="conn-model"><label class="field"><span>Modell und Version</span><input type="text" list="connModels${index}" maxlength="190" data-conn-model="${index}" value="${esc(model)}" placeholder="z. B. openai/gpt-5.4 oder claude-sonnet-4.5" /><datalist id="connModels${index}"></datalist></label><button type="button" class="outline-btn mini" data-conn-load="${index}">Modelle laden</button><small>Genau der Name, den dein Anbieter verwendet – inklusive Version. Prompt.ai schickt ihn unverändert weiter.</small></div><label class="conn-active-row"><input type="checkbox" data-conn-active="${index}" ${isActive?'checked':''} /><span>${isActive?'<b>Diese Verbindung wird für deine Projekte verwendet.</b>':'Für meine Projekte verwenden'}</span></label></div>`;
     }).join('');
     box.innerHTML=`${offer}${slotHtml}${count?'':'<p class="conn-empty-note">Ohne gebuchten Platz gibt es hier nichts einzutragen – Prompt.ai nutzt dann die zentralen Verbindungen.</p>'}`;
     // The real provider cards are moved into their slot, so their handlers keep working.
@@ -89,13 +97,37 @@
     },true);
     document.addEventListener('input',event=>{
       const name=event.target.closest?.('[data-conn-name]');
-      if(name)setName(`name${name.dataset.connName}`,name.value.trim());
+      if(name){setName(`name${name.dataset.connName}`,name.value.trim());publish();return}
+      const model=event.target.closest?.('[data-conn-model]');
+      if(model){setName(`model${model.dataset.connModel}`,model.value.trim());publish()}
+    },true);
+    document.addEventListener('click',async event=>{
+      const load=event.target.closest?.('[data-conn-load]');if(!load)return;
+      event.preventDefault();
+      const index=load.dataset.connLoad,provider=$(`[data-conn-provider="${index}"]`)?.value||'gateway';
+      load.disabled=true;const original=load.textContent;load.textContent='Lädt…';
+      try{
+        const headers=await window.SiteBriefCloud?.authHeaders?.()||{};
+        const response=await fetch(`/api/models?provider=${encodeURIComponent(provider)}`,{headers});
+        const data=await response.json().catch(()=>({}));
+        const list=Array.isArray(data.models)?data.models:[];
+        const box=$(`#connModels${index}`);
+        if(box)box.innerHTML=list.slice(0,400).map(id=>`<option value="${esc(id)}"></option>`).join('');
+        load.textContent=list.length?`${list.length} Modelle`:'Keine Liste verfügbar';
+      }catch{load.textContent='Liste nicht erreichbar'}
+      setTimeout(()=>{load.disabled=false;load.textContent=original},2600);
     },true);
     document.addEventListener('change',event=>{
+      const active=event.target.closest?.('[data-conn-active]');
+      if(active){
+        // Exactly one connection drives the projects, otherwise the order would be arbitrary.
+        setName('active',active.checked?active.dataset.connActive:'');
+        render();publish();return;
+      }
       const picker=event.target.closest?.('[data-conn-provider]');
       if(!picker)return;
       setName(`slot${picker.dataset.connProvider}`,picker.value);
-      render();
+      render();publish();
     },true);
     window.addEventListener('promptai:access',render);
     const dialog=$('#settingsDialog');
@@ -114,9 +146,23 @@
     if(text)text.textContent='Für die eigene GitHub-Verbindung ist ein Ultimate-Abo erforderlich.';
   }
 
-  function init(){styles();render();github();bind();window.addEventListener('promptai:access',github);
+  function init(){styles();render();github();bind();publish();window.addEventListener('promptai:access',github);
     let n=0;const timer=setInterval(()=>{render();github();if(++n>=10)clearInterval(timer)},400);
   }
-  window.PromptAiConnectionSlots={render};
+  // What the request layer reads: provider, the exact model string and the label of the connection
+  // the visitor marked as active - or null, which means "use the plan's AIs".
+  function activeConnection(){
+    const saved=names(),index=String(saved.active||'');
+    if(!index||Number(index)>=slots())return null;
+    const provider=saved[`slot${index}`]||PROVIDERS[Number(index)]?.[0]||'gateway';
+    const model=String(saved[`model${index}`]||'').trim();
+    if(!model)return null;
+    return {provider,model,label:String(saved[`name${index}`]||'Eigene Verbindung')};
+  }
+  function publish(){
+    window.PromptAiOwnConnection=activeConnection();
+    window.dispatchEvent(new CustomEvent('promptai:own-connection',{detail:window.PromptAiOwnConnection}));
+  }
+  window.PromptAiConnectionSlots={render,activeConnection};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
