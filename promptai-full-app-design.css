@@ -1221,29 +1221,22 @@ html.prompt-full-redesign :is(.library-tools,.settings-footer,.inline-actions) .
   }
 }
 
-/* Ohne die Werkzeugreihe endete die Seite auf halber Höhe und darunter stand
-   Leere. Statt sie mit etwas zu füllen, bekommt sie der Teil, der sie brauchen
-   kann: die Konsole wächst bis zur unteren Kante, Vorschläge und letztes
-   Projekt bleiben darunter stehen. Das Feld ist damit der größte Gegenstand
-   auf dem Bildschirm - genau das, was hier getan wird. */
+/* Ohne die Werkzeugreihe endete die Seite auf halber Höhe. Der erste Versuch war,
+   die Seite auf Bildschirmhöhe zu zwingen und den letzten Block unten festzuhalten -
+   das hat ihn auf dem Telefon aus dem Bild geschoben. Die sichtbare Höhe wandert mit
+   der Adressleiste, und keine Rechnung trifft sie zuverlässig: dvh misst ohne sie,
+   svh mit ihr, dazwischen liegt genau der Betrag, der unten fehlte. Jetzt gibt es gar
+   keine erzwungene Höhe mehr. Das Feld bekommt eine ruhige feste Größe, alles darunter
+   steht im normalen Fluss - und was im Fluss steht, kann nicht unter die Kante rutschen. */
 @media(max-width:820px){
-  html.prompt-full-redesign #welcomePage{
-    display:flex!important;flex-direction:column!important;
-    min-height:calc(100svh - 140px)!important;
-  }
-  html.prompt-full-redesign .prompt-command-home,
-  html.prompt-full-redesign .prompt-command-panel{
-    display:flex!important;flex-direction:column!important;flex:1 1 auto!important;min-height:0!important;
-  }
-  html.prompt-full-redesign :is(.prompt-home-intro,.prompt-command-top,.prompt-command-meta,.prompt-latest){flex:0 0 auto!important}
-  html.prompt-full-redesign .prompt-command-input{flex:1 1 auto!important;height:auto!important}
-  /* Aber nicht grenzenlos: über etwa der halben Höhe wird aus dem Feld eine
-     schwarze Fläche. Was darüber hinausgeht, bekommen die Zeilen darunter. */
-  html.prompt-full-redesign .prompt-command-panel{max-height:54vh!important}
-  html.prompt-full-redesign .prompt-latest{margin-top:auto!important}
+  html.prompt-full-redesign .prompt-command-input{min-height:172px!important}
+  html.prompt-full-redesign .prompt-latest{margin-top:var(--sp-3)!important}
   /* Der Sockel von 64px stammt von der Fußzeile, die auf dem Telefon gar nicht
      erscheint - auf der Startseite hat er nur den letzten Block hochgedrückt. */
   html.prompt-full-redesign.prompt-home-surface body{padding-bottom:14px!important}
+}
+@media(max-width:820px) and (max-height:720px){
+  html.prompt-full-redesign .prompt-command-input{min-height:120px!important}
 }
 
 /* Das Enter-Zeichen statt des Pfeils: der Knopf tut, was die Taste tut. */
@@ -1261,3 +1254,22 @@ html.prompt-full-redesign.prompt-home-surface:not([data-theme="dark"]){
 html[data-theme="dark"].prompt-full-redesign.prompt-home-surface{
   --home-muted:var(--mist);
 }
+
+/* ═══ Die alte Startseite darf nirgends mehr durchscheinen ═════════════════
+
+   Sie ist noch im Dokument - die Konsole ersetzt nur ihre Darstellung, und ihre
+   Knöpfe (#workspaceLibraryBtn und die anderen) werden weiter angeklickt, damit
+   Tarifsperren an einer Stelle bleiben. Versteckt wurde sie bisher aber nur
+   unter .prompt-home-surface, und die Klasse fällt weg, sobald der Ablauf
+   startet: dann stand plötzlich "Wähle deinen Arbeitsbereich" über dem
+   laufenden Projekt. Sie bleibt jetzt in jedem Zustand unsichtbar - und da sie
+   im Layout bleibt statt display:none zu bekommen, funktionieren die Klicks
+   weiter. */
+html.prompt-full-redesign #welcomePage>.welcome-hero,
+html.prompt-full-redesign #welcomePage>.welcome-workspace{
+  position:absolute!important;width:1px!important;height:1px!important;
+  padding:0!important;margin:0!important;overflow:hidden!important;
+  clip-path:inset(50%)!important;white-space:nowrap!important;pointer-events:none!important;
+}
+/* Und solange ein Ablauf läuft, hat die Startseite gar nichts zu zeigen. */
+html.prompt-full-redesign body:has(#workflowApp:not([hidden])) #welcomePage{display:none!important}

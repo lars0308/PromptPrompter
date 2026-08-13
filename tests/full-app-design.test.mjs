@@ -87,9 +87,10 @@ test('the phone home page fits one screen: every block gives height, none disapp
   const css=await read('promptai-full-app-design.css'),home=await read('promptai-home-final.js');
   assert.match(home,/\.prompt-command-input\{[^}]*min-height:185px/,'the component still ships the tall default');
   assert.match(css,/\.prompt-command-input\{min-height:96px!important/,'which the phone layer has to bring down');
-  // 100dvh wächst, sobald die Adressleiste verschwindet - unten wurde abgeschnitten.
-  assert.match(css,/#welcomePage\{[\s\S]{0,120}min-height:calc\(100svh - 140px\)!important/,'the page claims the screen, so nothing floats in a void');
-  assert.match(css,/\.prompt-command-panel\{max-height:54vh!important\}/,'and the console stops before it becomes a black slab');
+  // Keine erzwungene Bildschirmhöhe mehr: dvh misst ohne Adressleiste, svh mit ihr, und
+  // genau dieser Unterschied hat den letzten Block unter die Kante geschoben.
+  assert.doesNotMatch(css,/#welcomePage\{[\s\S]{0,140}min-height:calc\(100[ds]vh/,'nothing may be pinned to a height that moves');
+  assert.match(css,/\.prompt-command-input\{min-height:172px!important\}/,'the field carries the height instead');
 });
 
 test('the start page drops the bottom tools and puts the writing surface in the middle',async()=>{
@@ -183,4 +184,23 @@ test('writing in the console does not draw a second box inside it',async()=>{
   // element name in front of the class.
   assert.match(css,/html\.prompt-full-redesign textarea\.prompt-command-input:focus,/);
   assert.match(css,/textarea\.prompt-command-input:focus-visible\{\s*box-shadow:none!important/);
+});
+
+test('the old start page never shows through, and the handoff loader gets to finish',async()=>{
+  const css=await read('promptai-full-app-design.css'),home=await read('promptai-home-final.js');
+  // The old markup stays in the document because its buttons carry the plan gates and the
+  // console clicks them - so it is hidden by clipping, not by display:none, and no longer
+  // only while .prompt-home-surface is set (that class drops the moment a flow starts).
+  assert.match(css,/html\.prompt-full-redesign #welcomePage>\.welcome-workspace\{[\s\S]{0,200}clip-path:inset\(50%\)!important/);
+  assert.doesNotMatch(css,/#welcomePage>\.welcome-workspace\{[\s\S]{0,200}display:none/);
+  assert.match(css,/body:has\(#workflowApp:not\(\[hidden\]\)\) #welcomePage\{display:none!important\}/);
+  // The step advances after ~50ms, so the loader was gone before its first line had run.
+  const loader=await read('promptai-loading-v2.js');
+  assert.match(loader,/overlay\.dataset\.runFor=String\(runFor\)/);
+  assert.match(loader,/overlay\.dataset\.closing!=='1'/,'and it must not schedule its exit twice');
+  assert.match(loader,/const rest=Math\.max\(0,Number\(overlay\.dataset\.startedAt/);
+  // Last project only appears once there is one; the meta line carries live numbers.
+  assert.match(home,/if\(latest\)latest\.hidden=!title/);
+  assert.match(home,/text\?`\$\{text\.length\} Zeichen · ≈\$\{tokenGuess\(text\)\} Token`:quotaLine/);
+  assert.doesNotMatch(home,/Modell automatisch/,'the label said nothing that changes');
 });

@@ -9,6 +9,10 @@
   let cache=null,cacheAt=0,inFlight=null,websitePass=false,websitePending=false;
 
   const plan=()=>window.PromptAiAccess?.plan||cache?.plan||'free';
+  // Der Stand wird woanders gebraucht (Startseite), soll aber nur an einer Stelle geholt
+  // werden - deshalb ein Blick auf den Zwischenspeicher statt einer zweiten Abfrage.
+  const emit=()=>{try{window.dispatchEvent(new CustomEvent('promptai:quota',{detail:cache}))}catch{}};
+  window.PromptAiQuota={summary:()=>cache||null,limits:()=>LIMITS[plan()]||null,refresh:()=>loadSummary(true)};
   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const setHtml=(node,value)=>{if(node&&node.innerHTML!==value)node.innerHTML=value};
   const resetDate=value=>value?new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(value)):'zum nächsten Monatsanfang';
@@ -30,7 +34,7 @@
   function localSummary(){const p=plan(),limits=LIMITS[p]||LIMITS.free;return {plan:p,authenticated:Boolean(window.SiteBriefCloud?.user),available:false,isAdmin:Boolean(window.PromptAiAccess?.isAdmin),periodEnd:new Date(Date.UTC(new Date().getUTCFullYear(),new Date().getUTCMonth()+1,1)).toISOString(),metrics:Object.fromEntries(ORDER.map(k=>[k,{limit:limits[k],used:0,remaining:limits[k]}]))}}
   async function loadSummary(force=false){
     if(!force&&cache&&Date.now()-cacheAt<30000)return cache;if(inFlight)return inFlight;
-    inFlight=quotaApi('quota-summary').then(data=>{cache=data;cacheAt=Date.now();renderAll();return data}).catch(()=>{if(!cache)cache=localSummary();renderAll();return cache}).finally(()=>{inFlight=null});return inFlight;
+    inFlight=quotaApi('quota-summary').then(data=>{cache=data;cacheAt=Date.now();renderAll();return data}).catch(()=>{if(!cache)cache=localSummary();renderAll();return cache}).finally(()=>{inFlight=null;emit()});return inFlight;
   }
 
   function quotaSummaryText(p){const q=LIMITS[p]||LIMITS.free;return `${q.free_prompts} Prompts · ${q.website_generations} Websites · ${q.ai_previews?`${q.ai_previews} KI-Vorschauen`:'KI-Vorschauen nicht enthalten'}`}
