@@ -740,3 +740,14 @@ test('one loading screen carries the run from the questions to the finished prev
   assert.ok(gallery>0&&controls>gallery,'the regenerate control sits below the previews');
   assert.doesNotMatch(html,/<div class="preview-step-head">[\s\S]{0,200}preview-generation-controls/,'and no longer in the step head');
 });
+
+test('a loading screen always finishes its fill, and its headline is not clipped',async()=>{
+  const loader=await text('transition-polish.js'),handoff=await text('mode-handoff-fix.js');
+  // A passing sync() used to remove the login screen ~120ms after hide(), so it flashed by.
+  assert.match(loader,/function hide\(immediate=false,force=false\)/);
+  assert.match(loader,/if\(!force&&flashTimer&&box\.classList\.contains\('is-complete'\)\)return;/);
+  assert.match(loader,/#promptWorkflowLoaderClose'\)\)\{userExited=true;pendingFromReferences=false;hide\(true,true\)/,'only the user may cut the blink short');
+  assert.match(loader,/if\(!shownAt\|\|box\.classList\.contains\('is-complete'\)\)shownAt=Date\.now\(\);/,'the login screen gets the shared minimum showtime too');
+  // background-clip:text paints the glyphs inside the line box: 1.02 cut the tails off g and p.
+  for(const src of [loader,handoff])assert.match(src,/padding-bottom:\.06em;font-size:clamp\(31px,8vw,4[78]px\);line-height:1\.14/);
+});

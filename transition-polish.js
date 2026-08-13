@@ -70,7 +70,9 @@
       #promptWorkflowLoaderClose{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--ui-line,var(--line));border-radius:50%;background:var(--ui-card,var(--surface));color:var(--ink);font:700 21px/1 Arial,sans-serif;box-shadow:none}
       #promptWorkflowLoaderClose:hover{background:var(--ui-soft,var(--surface-soft));border-color:color-mix(in srgb,var(--ui-blue,var(--accent)) 45%,var(--ui-line,var(--line)))}
       #promptWorkflowLoader .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}
-      #promptWorkflowLoader strong{display:block;margin-top:9px;font-size:clamp(31px,8vw,47px);line-height:1.02;letter-spacing:-.05em;color:var(--ui-blue,var(--accent,#1689c7))}
+      /* line-height has to leave room for the descenders: with background-clip:text the glyphs are
+         painted inside the line box, and 1.02 cut the tails off g, p and j ("Briefing wird geprüft"). */
+      #promptWorkflowLoader strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,47px);line-height:1.14;letter-spacing:-.05em;color:var(--ui-blue,var(--accent,#1689c7))}
       .prompt-loader-sentence{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}
       .prompt-loader-sentence.is-changing{opacity:0;transform:translateY(4px)}
       /* Same treatment as the handoff screen: the progress runs through the headline itself. */
@@ -129,7 +131,12 @@
     if(kind==='preview'&&stageText){setSentence(stageText,true);return}
     let index=0;setSentence(data.sentences[index],true);cycleTimer=setInterval(()=>{const box=$('#promptWorkflowLoader');if(!box||activeKind!==kind){clearInterval(cycleTimer);return}index=(index+1)%data.sentences.length;setSentence(data.sentences[index])},SENTENCE_MS+240)}
   function show(kind){const data=copy[kind];if(!data)return;if(kind!=='login'&&(userExited||!workflowVisible()||!cleanMode()))return;const box=loader();clearTimeout(flashTimer);if(!shownAt||box.classList.contains('is-complete'))shownAt=Date.now();box.classList.remove('is-leaving','is-complete');box.style.removeProperty('--prompt-flash-count');document.documentElement.classList.add('prompt-workflow-loading');const kicker=$('.kicker',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;setTitle(box,data.title);if(activeKind!==kind){activeKind=kind;startCycle(kind);startFillLoop()}}
-  function hide(immediate=false){loginActive=false;clearInterval(cycleTimer);cycleTimer=0;activeKind='';stageText='';const box=$('#promptWorkflowLoader');document.documentElement.classList.remove('prompt-workflow-loading');if(!box){stopFillLoop();return}stopFillLoop(true);if(immediate){clearTimeout(flashTimer);shownAt=0;box.remove();return}
+  // force=true is the user asking to get out (× or leaving the workflow) - only that may cut a
+  // closing blink short. A passing sync() must not: it used to remove the login screen ~120ms after
+  // hide(), so the screen flashed by without the fill ever finishing.
+  function hide(immediate=false,force=false){loginActive=false;clearInterval(cycleTimer);cycleTimer=0;activeKind='';stageText='';const box=$('#promptWorkflowLoader');document.documentElement.classList.remove('prompt-workflow-loading');if(!box){stopFillLoop();return}
+    if(!force&&flashTimer&&box.classList.contains('is-complete'))return;
+    stopFillLoop(true);if(immediate){clearTimeout(flashTimer);flashTimer=0;shownAt=0;box.remove();return}
     // Fill to full, blink once, then leave. sync() may call hide() again while the blink runs, so
     // a running blink is never restarted - that would keep the screen up forever. show() cancels it.
     if(box.classList.contains('is-complete'))return;
@@ -137,7 +144,7 @@
     // blinks until then.
     const wait=window.PromptAiFill?.tail?.(shownAt)??FLASH_MS;
     box.style.setProperty('--prompt-flash-count',String(Math.max(1,Math.round(wait/(FLASH_MS||420)))));
-    box.classList.add('is-complete');flashTimer=setTimeout(()=>{box.classList.add('is-leaving');setTimeout(()=>{box.remove();shownAt=0},250)},wait)}
+    box.classList.add('is-complete');flashTimer=setTimeout(()=>{flashTimer=0;box.classList.add('is-leaving');setTimeout(()=>{box.remove();shownAt=0},250)},wait)}
 
   function closeLateWorkflowUi(){const dialog=$('#clarificationDialog');if(dialog?.open){try{dialog.close('cancel')}catch{dialog.removeAttribute('open')}}$('#promptCompletionFlash')?.remove();document.documentElement.classList.remove('prompt-review-transition','prompt-clarification-exit')}
 
@@ -149,7 +156,11 @@
 
   function showLogin(){
     loginActive=true;installStyles();
-    const data=copy.login;const box=loader();box.classList.remove('is-leaving');document.documentElement.classList.add('prompt-workflow-loading');
+    const data=copy.login;const box=loader();clearTimeout(flashTimer);flashTimer=0;
+    // Without this the shared minimum showtime was measured from zero, and the screen left on the
+    // bare blink instead of staying up long enough to read.
+    if(!shownAt||box.classList.contains('is-complete'))shownAt=Date.now();
+    box.classList.remove('is-leaving','is-complete');box.style.removeProperty('--prompt-flash-count');document.documentElement.classList.add('prompt-workflow-loading');
     const kicker=$('.kicker',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;
     setTitle(box,data.title);
     if(activeKind!=='login'){activeKind='login';startCycle('login');startFillLoop()}
@@ -167,8 +178,8 @@
   function onClick(event){
     const refNext=event.target.closest?.('#stepReferences .next-btn,#skipReferencesBtn');if(refNext&&workflowVisible()&&cleanMode()){userExited=false;reviewAnswered=false;pendingFromReferences=true;show('review');schedule(180);return}
     if(event.target.closest?.('#saveClarificationsBtn,#deferClarificationsBtn')){reviewAnswered=true;schedule(120);return}
-    if(event.target.closest?.('#promptWorkflowLoaderClose')){userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();$('#brandHome')?.click();return}
-    if(event.target.closest?.('#brandHome,.guided-clean-exit')){userExited=true;pendingFromReferences=false;hide(true);closeLateWorkflowUi();return}
+    if(event.target.closest?.('#promptWorkflowLoaderClose')){userExited=true;pendingFromReferences=false;hide(true,true);closeLateWorkflowUi();$('#brandHome')?.click();return}
+    if(event.target.closest?.('#brandHome,.guided-clean-exit')){userExited=true;pendingFromReferences=false;hide(true,true);closeLateWorkflowUi();return}
     if(event.target.closest?.('#clarificationDialog .close-dialog')){pendingFromReferences=false;hide();return}
   }
   function blockLateHiddenClicks(event){if(workflowVisible())return;const button=event.target.closest?.('#workflowApp .next-btn,#workflowApp .back-btn');if(button&&!event.isTrusted){event.preventDefault();event.stopImmediatePropagation()}}

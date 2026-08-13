@@ -27,7 +27,7 @@
       .prompt-mode-handoff.is-leaving{opacity:0;pointer-events:none}
       /* Closing blink, shared with the boot and workflow screens. */
       .prompt-mode-handoff.is-complete strong{animation:promptFillFlash .42s ease-out var(--prompt-flash-count,1)}
-      .prompt-mode-handoff>div{width:min(560px,100%);text-align:center}.prompt-mode-handoff .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}.prompt-mode-handoff strong{display:block;margin-top:9px;font-size:clamp(31px,8vw,48px);line-height:1.02;letter-spacing:-.05em}
+      .prompt-mode-handoff>div{width:min(560px,100%);text-align:center}.prompt-mode-handoff .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}.prompt-mode-handoff strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,48px);line-height:1.14;letter-spacing:-.05em}
       .prompt-mode-handoff-status{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}.prompt-mode-handoff-status.is-changing{opacity:0;transform:translateY(4px)}
       .prompt-mode-handoff-bar{display:none}
       /* The progress runs through the headline itself: a two-stop gradient clipped to the glyphs,
