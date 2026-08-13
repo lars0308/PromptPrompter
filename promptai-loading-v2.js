@@ -87,7 +87,10 @@
     let overlay=$('#promptBriefHandoff');if(!overlay){overlay=document.createElement('section');overlay.id='promptBriefHandoff';overlay.className='prompt-handoff-loader';overlay.setAttribute('aria-live','polite');overlay.innerHTML='<div><span class="prompt-process-kicker">PROMPT.AI</span><strong class="prompt-process-title">Beschreibung übernommen</strong></div>';document.body.appendChild(overlay);
       // Wie lange die Zeilen laufen, steht hier - und nur hier. renderLines rechnet mit
       // demselben Mindestwert, und das Ende unten wartet darauf, statt vorher abzubrechen.
-      const runFor=Math.max(2600,durationFor(inputLength()));
+      // Fest, nicht aus der Textlänge gerechnet: durationFor() geht bis 11 Sekunden, und
+      // so lange stehenzubleiben ist kein Übergang mehr, sondern ein Hänger. Der Schritt
+      // ist längst gewechselt - der Schirm zeigt nur noch, dass etwas übernommen wurde.
+      const runFor=2800;
       overlay.dataset.startedAt=String(Date.now());overlay.dataset.runFor=String(runFor);
       renderLines(overlay,lineSet('briefing'),runFor);
     }

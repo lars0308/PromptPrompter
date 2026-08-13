@@ -289,3 +289,34 @@ test('the boot mark traces the blue once around the inside of the letter',async(
   // And the mark is back in the start page header, without a plate.
   assert.match(css,/\.prompt-home-surface \.topbar \.brand-mark\{[\s\S]{0,140}background:transparent!important/);
 });
+
+test('light mode is a calm grey, and the watermark stays off it',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  assert.match(css,/--paper:#e7eaee;/,'the ground is grey, not near-white');
+  assert.match(css,/--surface:#f5f7f9;/,'and the cards sit one step above it, still not white');
+  assert.doesNotMatch(css,/--surface:#ffffff;/);
+  // The start page carries its own colour names and sets them with !important.
+  assert.match(css,/\.prompt-home-surface:not\(\[data-theme="dark"\]\)\{[\s\S]{0,200}--home-bg:var\(--paper\)/);
+  // A large flat shape at 2% reads as a stain on grey; on near-white it did not.
+  assert.match(css,/:not\(\[data-theme="dark"\]\) body::after,[\s\S]{0,400}display:none!important/);
+});
+
+test('the handoff screen is a transition, not a progress bar for the whole brief',async()=>{
+  const loader=await read('promptai-loading-v2.js');
+  // durationFor() scales with the text and goes up to 11 seconds - tying the screen's
+  // lifetime to it turned a transition into a hang.
+  assert.match(loader,/const runFor=2800;/);
+  assert.match(loader,/durationFor\(length=0\)/,'the line timing itself stays as it was');
+});
+
+test('the references step reads as two purposes, not five equal blocks',async()=>{
+  const css=await read('promptai-full-app-design.css'),clean=await read('guided-clean-ui.js');
+  assert.match(css,/#stepReferences \.reference-url-add\{[\s\S]{0,140}grid-template-columns:minmax\(0,1fr\) auto!important/);
+  assert.match(css,/#stepReferences \.reference-url-add \.outline-btn::after\{\s*content:"\+"/,'on a phone the button becomes a sign, not a second row');
+  assert.match(css,/#stepReferences \.reference-limit-note\{[\s\S]{0,160}text-align:right!important/,'counters are a side note');
+  assert.match(css,/#stepReferences \.dropzone\{[\s\S]{0,140}grid-template-columns:auto minmax\(0,1fr\) auto!important/);
+  assert.match(css,/#stepReferences \.client-context-card\{[\s\S]{0,200}border-left:3px solid var\(--accent\)!important/,'the second purpose gets its own edge');
+  // Two paragraphs became one line each - the list of possible documents said nothing.
+  assert.match(clean,/const short='PDF, PNG, JPG, WebP, TXT, MD, CSV oder JSON · max\. 12 MB'/);
+  assert.match(clean,/clientLead\.textContent='Echte Fakten statt Stil/);
+});

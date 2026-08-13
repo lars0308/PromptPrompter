@@ -137,6 +137,14 @@
       // Uploads are hidden on plans without image references, so the lead must not promise them.
       const uploads=$('#stepReferences .dropzone');
       lead(panel,uploads&&uploads.offsetParent!==null?c[2]:'Optional: Link zu einer Website oder einem Google-Eintrag hinzufügen.');
+      // Zwei Texte auf dieser Seite waren Absätze, wo eine Zeile reicht. Die Aufzählung
+      // möglicher Unterlagen ("Speisekarten, Sitzpläne, Preislisten ...") sagt nichts, was
+      // man nicht selbst weiß; die Formate und die Grenze dagegen schon.
+      const formats=$('#uploadZone small');
+      const short='PDF, PNG, JPG, WebP, TXT, MD, CSV oder JSON · max. 12 MB';
+      if(formats&&formats.textContent!==short)formats.textContent=short;
+      const clientLead=$('.client-context-lead');
+      if(clientLead)clientLead.textContent='Echte Fakten statt Stil: aus der Website oder dem Google-Eintrag deines Kunden übernimmt Prompt.ai Adresse, Zeiten und Leistungen.';
     }
     if(n===6){const back=$('#stepPreviews .back-btn');if(back)back.textContent='← Referenzen'}
     if(n===7){const back=$('#stepRefine .back-btn');if(back)back.textContent='← Vorschau'}

@@ -5,15 +5,18 @@ html.prompt-full-redesign{
   /* Zwei Farben aus dem Vorschlag: Marine trägt die Schrift, Dunst das Beiläufige. */
   --navy:#1e3a5f;
   --mist:#8b9dc3;
-  --paper:#f3f7fa;
-  --paper-2:#ffffff;
-  --surface:#ffffff;
-  --surface-soft:#eaf1f6;
-  --input:#f8fbfd;
+  /* Kein Weiß im Hellmodus. Der Grund ist ein ruhiges, leicht kühles Grau, die
+     Karten stehen eine Stufe heller darüber - so entsteht die Tiefe aus Flächen
+     statt aus Schatten, und nichts blendet. */
+  --paper:#e7eaee;
+  --paper-2:#f5f7f9;
+  --surface:#f5f7f9;
+  --surface-soft:#edf0f4;
+  --input:#f1f4f7;
   --ink:#1e3a5f;
   --muted:#687684;
-  --line:#d7e0e8;
-  --line-dark:#a8b6c2;
+  --line:#d1d6dd;
+  --line-dark:#a4acb7;
   --accent:#2f8fc8;
   --accent-strong:#216994;
   --good:#27856b;
@@ -1515,3 +1518,117 @@ html.prompt-full-redesign body.prompt-unified-ui>.topbar{
     border-left:0!important;border-right:0!important;
   }
 }
+
+/* Die Startseite führt eigene Farbnamen und setzt sie mit !important - ohne diese
+   Zeilen bliebe sie weiß, während der Rest der App in Grau steht. */
+html.prompt-full-redesign.prompt-home-surface:not([data-theme="dark"]){
+  --home-bg:var(--paper);
+  --home-card:var(--surface);
+  --home-soft:var(--surface-soft);
+  --home-line:var(--line);
+}
+
+/* Das Zeichen im Hintergrund war auf einen fast weißen Grund abgestimmt. Auf dem
+   Grau tritt es zu deutlich hervor - auf einer ruhigen Fläche fällt jede Kante
+   mehr auf als auf einer hellen. Es bleibt eine Ahnung, kein Bild. */
+/* Auf dem Grau wird aus dem Zeichen im Hintergrund ein Fleck: eine große, flache
+   Form mit vier Helligkeitsstufen Unterschied fällt auf einer ruhigen Fläche auf,
+   auf fast weißem Grund tat sie das nicht. Im Hellmodus bleibt der Grund leer -
+   im Dunkelmodus, wo es als feine Aufhellung sitzt, bleibt es. */
+html.prompt-full-redesign:not([data-theme="dark"]) body::after,
+html.prompt-full-redesign:not([data-theme="dark"]) .workspace::before,
+html.prompt-full-redesign:not([data-theme="dark"]) .prompt-command-home::before,
+html.prompt-full-redesign:not([data-theme="dark"]) .dialog-frame::after,
+html.prompt-full-redesign:not([data-theme="dark"]) .project-mode-frame::after,
+html.prompt-full-redesign:not([data-theme="dark"]) .history-frame::after{
+  display:none!important;
+}
+
+/* ═══ Referenzen: ein Weg pro Block, kein Absatz, wo eine Zeile reicht ══════
+
+   Die Seite bestand aus fünf gleich lauten Blöcken untereinander: Feld, Knopf,
+   Zähler, ein großer gestrichelter Kasten mit einer Aufzählung möglicher
+   Unterlagen, noch ein Zähler, ein Hinweis, ein Ausweg, und darunter noch eine
+   Karte mit demselben Aufbau. Nichts davon war falsch - aber nichts stand vor
+   dem anderen, und zwei Felder für zwei verschiedene Zwecke sahen gleich aus.
+
+   Geändert wird nur die Darstellung: Feld und Knopf teilen sich eine Zeile, die
+   Zähler werden zu einer stillen Zeile rechts, der Kasten wird eine Reihe statt
+   einer Fläche, und die beiden Bereiche bekommen sichtbar verschiedene Kanten. */
+html.prompt-full-redesign #stepReferences .reference-url-add{
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  gap:var(--sp-3)!important;align-items:end!important;margin-bottom:var(--sp-2)!important;
+}
+html.prompt-full-redesign #stepReferences .reference-url-add .field{margin-bottom:0!important}
+html.prompt-full-redesign #stepReferences .reference-url-add .outline-btn{white-space:nowrap!important;padding:0 var(--sp-4)!important}
+/* Die Zähler sind eine Randnotiz, keine Meldung. */
+html.prompt-full-redesign #stepReferences .reference-limit-note{
+  display:block!important;margin:0 0 var(--sp-5)!important;text-align:right!important;
+  color:var(--muted)!important;font-size:11px!important;letter-spacing:.02em!important;
+}
+html.prompt-full-redesign #stepReferences .reference-limit-note:empty{display:none!important}
+/* Aus dem gestrichelten Kasten wird eine Reihe: Zeichen, Sache, Knopf. */
+html.prompt-full-redesign #stepReferences .dropzone{
+  display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;
+  gap:var(--sp-4)!important;align-items:center!important;text-align:left!important;
+  padding:var(--sp-4)!important;border:1px dashed var(--line-dark)!important;
+  border-radius:var(--r-md)!important;background:var(--surface)!important;
+}
+html.prompt-full-redesign #stepReferences .dropzone .drop-icon{
+  display:grid!important;place-items:center!important;width:40px!important;height:40px!important;
+  border:0!important;border-radius:var(--r-sm)!important;background:var(--surface-soft)!important;
+  color:var(--accent)!important;font-size:17px!important;
+}
+html.prompt-full-redesign #stepReferences .dropzone strong{font-size:14px!important}
+html.prompt-full-redesign #stepReferences .dropzone small{
+  display:block!important;margin-top:2px!important;color:var(--muted)!important;font-size:11px!important;line-height:1.45!important;
+}
+html.prompt-full-redesign #stepReferences .dropzone .outline-btn{white-space:nowrap!important}
+/* Der Rechtehinweis ist eine Fußnote, keine Karte. */
+html.prompt-full-redesign #stepReferences .reference-note-block{
+  margin-top:var(--sp-5)!important;padding:0 0 0 var(--sp-4)!important;
+  border:0!important;border-left:2px solid var(--line)!important;background:transparent!important;
+}
+html.prompt-full-redesign #stepReferences .reference-note-block span{
+  display:block!important;margin-bottom:var(--sp-1)!important;color:var(--muted)!important;
+  font:850 9px/1 ui-monospace,monospace!important;letter-spacing:.15em!important;
+}
+html.prompt-full-redesign #stepReferences .reference-note-block p{margin:0!important;color:var(--muted)!important;font-size:11px!important;line-height:1.5!important}
+/* Der Ausweg steht für sich, damit man ihn findet, ohne zu suchen. */
+html.prompt-full-redesign #stepReferences .no-references-note{
+  display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between!important;
+  gap:var(--sp-2)!important;margin-top:var(--sp-5)!important;padding:var(--sp-4)!important;
+  border:1px solid var(--line)!important;border-radius:var(--r-md)!important;background:var(--surface-soft)!important;
+}
+html.prompt-full-redesign #stepReferences .no-references-note span{color:var(--muted)!important;font-size:12px!important}
+html.prompt-full-redesign #stepReferences .no-references-note .text-btn{color:var(--accent)!important;font-weight:700!important;padding:0!important}
+/* Die Kundeninformationen sind der zweite Zweck - sie bekommen sichtbar eine
+   eigene Fläche, damit ihr Feld nicht mit dem der Stil-Referenz verwechselt wird. */
+html.prompt-full-redesign #stepReferences .client-context-card{
+  margin-top:var(--sp-6)!important;padding:var(--sp-5)!important;
+  border:1px solid var(--line)!important;border-left:3px solid var(--accent)!important;
+  border-radius:var(--r-md)!important;background:var(--surface)!important;
+}
+html.prompt-full-redesign #stepReferences .client-context-card .selection-head span{
+  color:var(--accent)!important;font:850 10px/1 ui-monospace,monospace!important;letter-spacing:.15em!important;
+}
+html.prompt-full-redesign #stepReferences .client-context-lead{
+  margin:var(--sp-2) 0 var(--sp-5)!important;color:var(--muted)!important;font-size:13px!important;line-height:1.5!important;
+}
+@media(max-width:560px){
+  /* Feld und Knopf bleiben in einer Zeile - der Knopf wird zum Zeichen. Eine eigene
+     Zeile nur für "URL hinzufügen" war der Block, der die Seite lang gemacht hat. */
+  html.prompt-full-redesign #stepReferences .reference-url-add .outline-btn{
+    width:52px!important;min-width:52px!important;padding:0!important;font-size:0!important;
+  }
+  html.prompt-full-redesign #stepReferences .reference-url-add .outline-btn::after{
+    content:"+";font-size:24px;font-weight:500;line-height:1;
+  }
+  html.prompt-full-redesign #stepReferences .dropzone{grid-template-columns:auto minmax(0,1fr)!important}
+  html.prompt-full-redesign #stepReferences .dropzone .outline-btn{grid-column:1/-1!important;width:100%!important}
+}
+
+/* Zwischen Überschrift und erstem Feld fehlte die Luft, sobald der Vorsatz kurz ist. */
+html.prompt-full-redesign .step-panel>h1{margin-bottom:var(--sp-5)!important}
+html.prompt-full-redesign .step-panel>h1+.field,
+html.prompt-full-redesign .step-panel>h1+.reference-url-add{margin-top:var(--sp-2)!important}
