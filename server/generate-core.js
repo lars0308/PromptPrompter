@@ -118,8 +118,30 @@ function reviewText(projectReview={}){
   return `Previous review warnings:\n${warnings}\nPrevious blockers:\n${blockers}`;
 }
 
+// VARIANTS.slice(0,count) handed every project the same three skeletons in the same order -
+// split, poster, ledger - so a doner shop, a bowling alley and a florist were structurally
+// identical and "stacked", "editorial" and "minimal" were never offered at all. The starting point
+// now rotates with the project: stable for one project (a repeat run gives the same three), but
+// different between projects.
+function projectSeed(project={}){
+  const seed=`${project.name||''}|${project.type||''}|${String(project.description||'').slice(0,160)}`;
+  // 32-bit FNV-1a: plain hash*31 loses precision above 2^53 and made long briefings converge on
+  // the same value, which is exactly the sameness this is meant to break.
+  let hash=0x811c9dc5;
+  for(let i=0;i<seed.length;i++){hash^=seed.charCodeAt(i);hash=Math.imul(hash,0x01000193)>>>0}
+  return hash>>>0;
+}
+// A rotation would only ever produce six different sequences. Shuffling the whole set and taking
+// the first three gives 120, so two unrelated projects rarely share a skeleton - while the same
+// project keeps its own three across repeated runs.
+function variantsFor(project,count){
+  const list=[...VARIANTS];let state=projectSeed(project)||1;
+  const next=()=>{state^=state<<13;state>>>=0;state^=state>>>17;state^=state<<5;state>>>=0;return state};
+  for(let i=list.length-1;i>0;i--){const j=next()%(i+1);[list[i],list[j]]=[list[j],list[i]]}
+  return list.slice(0,Math.min(count,list.length));
+}
 function makeConceptPrompt({count,project,references,documents,controls,template,modules,settings,clarifications,projectReview,tier='free',baseConcept=null}){
-  const variants=VARIANTS.slice(0,count);
+  const variants=variantsFor(project,count);
   return `${promptText('concepts-role',{count})}
 
 LAYOUT INSTRUCTION PRIORITY: check the project's special wish and description for an explicit, literal layout or header instruction, for example "large hero with one image and no normal nav bar, only a logo and a hamburger menu on the right", "image on the left, big wide text on the right, a completely normal header on top", or "nothing else, just one image with a small headline inside it". If such an instruction is present, EVERY direction must honor it literally — pick the closest matching layoutVariant and set navStyle/mirror to match instead of forcing artificial variety. Available layoutVariant values: ${VARIANTS.join(", ")}. "minimal" means one full-bleed image and a small headline only — no navigation bar, no sections, no footer. Set navStyle to "logo-hamburger" when the instruction wants a header with only a logo plus a hamburger/burger menu instead of a normal nav bar with menu items; otherwise use "full". Set mirror to true when the instruction explicitly wants the image on the left and the text on the right (or another mirrored order) inside a two-column layout like "split". If no explicit layout instruction is given, instead maximize structural variety: use each of these layoutVariant values once, in this order, across the ${count} directions, and use navStyle "full" with mirror false: ${variants.join(", ")}.

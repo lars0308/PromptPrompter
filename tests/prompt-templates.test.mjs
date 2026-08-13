@@ -482,3 +482,23 @@ test('the crawler spends its budget on pages, not on stylesheets, and names link
   assert.match(app,/if\(extracted\.length<120\)throw new Error/,'a scan yields no text and must not look imported');
   assert.match(app,/const documentRead=url=>state\.documents\.some/,'a document that was read is no longer an open point');
 });
+
+test('two unrelated projects do not get the same three layout skeletons',async()=>{
+  const src=await text('server/generate-core.js');
+  const cut=src.slice(src.indexOf('const VARIANTS'),src.indexOf('function makeConceptPrompt'));
+  const api=new Function(cut+'return {VARIANTS,variantsFor};')();
+  const project=(name,description)=>({name,type:'Website',description});
+  const doner=api.variantsFor(project('Dönerhaus','Dönerladen in Lindhorst'),3).join('|');
+  const bowling=api.variantsFor(project('Bowlingcenter','Bowlingbahn mit acht Bahnen'),3).join('|');
+  const florist=api.variantsFor(project('Blumen Meier','Blumenladen mit Floristik'),3).join('|');
+  assert.notEqual(doner,bowling);assert.notEqual(bowling,florist);assert.notEqual(doner,florist);
+  // The same project has to keep its own three, otherwise a repeat run looks like a different site.
+  assert.equal(doner,api.variantsFor(project('Dönerhaus','Dönerladen in Lindhorst'),3).join('|'));
+  // A rotation would only ever yield six sequences; shuffling yields 120.
+  const seen=new Set();
+  for(let i=0;i<400;i++)seen.add(api.variantsFor(project(`P${i}`,`Testprojekt ${i}`),3).join('|'));
+  assert.ok(seen.size>100,`only ${seen.size} distinct combinations`);
+  // Every skeleton stays reachable - "stacked", "editorial" and "minimal" were never offered.
+  const used=new Set([...seen].flatMap(entry=>entry.split('|')));
+  for(const variant of api.VARIANTS)assert.ok(used.has(variant),`${variant} is never offered`);
+});
