@@ -1,0 +1,759 @@
+/* Prompt.ai full application design layer.
+   This file changes presentation only. Existing IDs, controls and workflows stay untouched. */
+
+html.prompt-full-redesign{
+  --paper:#f3f7fa;
+  --paper-2:#ffffff;
+  --surface:#ffffff;
+  --surface-soft:#eaf1f6;
+  --input:#f8fbfd;
+  --ink:#111a24;
+  --muted:#687684;
+  --line:#d7e0e8;
+  --line-dark:#a8b6c2;
+  --accent:#2f8fc8;
+  --accent-strong:#216994;
+  --good:#27856b;
+  --warn:#b06a23;
+  --danger:#bd4c3d;
+  --orange:#ed7c24;
+  --panel:#101923;
+  --glass:#ffffff;
+  --glass-strong:#ffffff;
+  --glass-line:#d7e0e8;
+  --scrim:rgba(5,11,17,.64);
+  --shadow:0 28px 90px rgba(17,31,44,.16);
+  --shadow-soft:0 10px 32px rgba(25,43,60,.07);
+  --frost-shadow:0 18px 55px rgba(17,31,44,.1);
+  background:var(--paper);
+  color-scheme:light;
+}
+
+html.prompt-full-redesign[data-theme="dark"]{
+  --paper:#080d13;
+  --paper-2:#101720;
+  --surface:#101720;
+  --surface-soft:#15202a;
+  --input:#0c131b;
+  --ink:#eef5fa;
+  --muted:#93a3b1;
+  --line:#263542;
+  --line-dark:#405362;
+  --accent:#65b8ed;
+  --accent-strong:#65b8ed;
+  --good:#63c5a1;
+  --warn:#f0a253;
+  --danger:#ff8d78;
+  --orange:#ff923d;
+  --panel:#0c131b;
+  --glass:#101720;
+  --glass-strong:#101720;
+  --glass-line:#263542;
+  --scrim:rgba(0,3,7,.78);
+  --shadow:0 30px 100px rgba(0,0,0,.48);
+  --shadow-soft:0 12px 38px rgba(0,0,0,.2);
+  --frost-shadow:0 22px 65px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+
+html.prompt-full-redesign body{
+  position:relative;
+  min-height:100dvh;
+  background:var(--paper)!important;
+  color:var(--ink)!important;
+  font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  letter-spacing:-.015em;
+}
+
+html.prompt-full-redesign body::after{
+  content:"";
+  position:fixed;
+  z-index:0;
+  right:-180px;
+  bottom:-190px;
+  width:620px;
+  height:620px;
+  pointer-events:none;
+  background:url("./sitebrief-logo.svg?v=5") center/contain no-repeat;
+  opacity:.025;
+  filter:grayscale(1);
+}
+
+html.prompt-full-redesign[data-theme="dark"] body::after{opacity:.038;filter:grayscale(1) invert(1)}
+html.prompt-full-redesign body>*{position:relative;z-index:1}
+html.prompt-full-redesign button:focus-visible,
+html.prompt-full-redesign a:focus-visible,
+html.prompt-full-redesign input:focus-visible,
+html.prompt-full-redesign select:focus-visible,
+html.prompt-full-redesign textarea:focus-visible,
+html.prompt-full-redesign summary:focus-visible{outline:2px solid var(--accent)!important;outline-offset:3px}
+
+/* Header and navigation */
+html.prompt-full-redesign .topbar{
+  position:sticky!important;
+  z-index:40!important;
+  top:10px!important;
+  width:min(1180px,calc(100% - 28px))!important;
+  height:66px!important;
+  margin:10px auto 0!important;
+  padding:0 12px!important;
+  border:1px solid var(--line)!important;
+  border-radius:17px!important;
+  background:color-mix(in srgb,var(--surface) 96%,transparent)!important;
+  box-shadow:0 14px 45px rgba(21,37,53,.08)!important;
+  backdrop-filter:blur(18px)!important;
+}
+html.prompt-full-redesign .brand{height:100%!important;padding:0!important;border:0!important;gap:11px!important}
+html.prompt-full-redesign .brand-mark{width:39px!important;height:39px!important;border:1px solid var(--line)!important;border-radius:11px!important;background:var(--surface-soft)!important;box-shadow:none!important;overflow:hidden}
+html.prompt-full-redesign .brand-mark img{width:100%;height:100%;object-fit:cover}
+html.prompt-full-redesign .brand-copy strong{font-size:19px!important;font-weight:760!important;letter-spacing:-.045em}
+html.prompt-full-redesign .brand-copy small{color:var(--accent-strong)!important;font:750 8px/1.2 ui-monospace,SFMono-Regular,monospace!important;letter-spacing:.08em!important}
+html.prompt-full-redesign .top-actions{gap:7px!important;padding-right:0!important}
+html.prompt-full-redesign #upgradeBtn,
+html.prompt-full-redesign #upgradeMenuBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;min-height:40px!important;padding:0 14px!important;border:1px solid var(--orange)!important;border-radius:11px!important;background:var(--orange)!important;color:#fff!important;box-shadow:none!important;font-size:11px!important;font-weight:800!important}
+html.prompt-full-redesign .theme-toggle,
+html.prompt-full-redesign .home-theme-toggle,
+html.prompt-full-redesign #topbarMenuToggle{width:40px!important;height:40px!important;min-height:40px!important;border:1px solid var(--line)!important;border-radius:11px!important;background:var(--surface)!important;color:var(--ink)!important;box-shadow:none!important}
+html.prompt-full-redesign .topbar-menu:not([hidden]){border:1px solid var(--line)!important;border-radius:18px!important;background:var(--surface)!important;box-shadow:var(--shadow)!important}
+html.prompt-full-redesign .topbar-menu button{border-radius:10px!important}
+
+/* Main workflow */
+html.prompt-full-redesign .app-shell{max-width:1500px;margin:18px auto 0;gap:0}
+html.prompt-full-redesign .progress-rail,
+html.prompt-full-redesign .guide-panel{top:94px!important;height:calc(100dvh - 104px)!important;background:transparent!important;border-color:var(--line)!important}
+html.prompt-full-redesign .progress-rail{margin-left:10px;border:1px solid var(--line)!important;border-radius:18px 0 0 18px!important;overflow:hidden}
+html.prompt-full-redesign .guide-panel{margin-right:10px;border:1px solid var(--line)!important;border-radius:0 18px 18px 0!important;overflow:auto}
+html.prompt-full-redesign .rail-head{padding:23px 20px 16px!important}
+html.prompt-full-redesign .rail-head span,
+html.prompt-full-redesign .rail-head strong,
+html.prompt-full-redesign .section-kicker,
+html.prompt-full-redesign .block-title>span,
+html.prompt-full-redesign .dialog-head>div>span,
+html.prompt-full-redesign .tool-heading>span{color:var(--accent-strong)!important;font-family:ui-monospace,SFMono-Regular,monospace!important;font-size:10px!important;font-weight:800!important;letter-spacing:.12em!important;text-transform:uppercase}
+html.prompt-full-redesign .step-nav{min-height:57px!important;padding:11px 18px!important;border-color:var(--line)!important;color:var(--muted)!important}
+html.prompt-full-redesign .step-nav:hover{background:var(--surface-soft)!important;color:var(--ink)!important}
+html.prompt-full-redesign .step-nav.active{background:var(--surface)!important;color:var(--ink)!important;box-shadow:inset 3px 0 0 var(--accent)!important}
+html.prompt-full-redesign .step-nav.done i{background:var(--good)!important;border-color:var(--good)!important}
+html.prompt-full-redesign .workspace{position:relative;width:min(920px,calc(100vw - var(--rail) - var(--guide)))!important;padding:68px 58px 120px!important;background:color-mix(in srgb,var(--surface) 35%,transparent)!important;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+html.prompt-full-redesign .workspace::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  right:-100px;
+  top:80px;
+  width:360px;
+  height:360px;
+  pointer-events:none;
+  background:url("./sitebrief-logo.svg?v=5") center/contain no-repeat;
+  opacity:.025;
+  filter:grayscale(1);
+}
+html.prompt-full-redesign[data-theme="dark"] .workspace::before{opacity:.035;filter:grayscale(1) invert(1)}
+html.prompt-full-redesign .step-panel h1,
+html.prompt-full-redesign .tool-heading h1{max-width:820px!important;font-family:Inter,ui-sans-serif,sans-serif!important;font-size:clamp(42px,5vw,68px)!important;font-weight:720!important;line-height:.98!important;letter-spacing:-.06em!important;text-wrap:balance}
+html.prompt-full-redesign .lead{max-width:690px!important;color:var(--muted)!important;font-size:14px!important;line-height:1.65!important}
+html.prompt-full-redesign .guide-card,
+html.prompt-full-redesign .project-profile-card,
+html.prompt-full-redesign .ai-review-card,
+html.prompt-full-redesign .client-context-card,
+html.prompt-full-redesign .client-result-card,
+html.prompt-full-redesign .export-result-card,
+html.prompt-full-redesign .feature-lock-note,
+html.prompt-full-redesign .workflow-upgrade,
+html.prompt-full-redesign .settings-upgrade-note,
+html.prompt-full-redesign .completion-summary,
+html.prompt-full-redesign .revision-studio,
+html.prompt-full-redesign .prompt-handoff{border:1px solid var(--line)!important;border-radius:16px!important;background:var(--surface)!important;box-shadow:var(--shadow-soft)!important}
+
+/* Controls */
+html.prompt-full-redesign .field{gap:9px!important;margin-bottom:22px!important}
+html.prompt-full-redesign .field>span,
+html.prompt-full-redesign .compact-field>span{color:var(--muted)!important;font-size:10px!important;font-weight:750!important;letter-spacing:.055em!important}
+html.prompt-full-redesign .field input,
+html.prompt-full-redesign .field select,
+html.prompt-full-redesign .field textarea,
+html.prompt-full-redesign .compact-field select,
+html.prompt-full-redesign .clarification-question textarea,
+html.prompt-full-redesign #adminUserSearch{
+  border:1px solid var(--line)!important;
+  border-radius:11px!important;
+  background:var(--input)!important;
+  color:var(--ink)!important;
+  box-shadow:none!important;
+}
+html.prompt-full-redesign .field input,
+html.prompt-full-redesign .field select{height:48px!important;padding:0 14px!important}
+html.prompt-full-redesign .field textarea{padding:15px!important;line-height:1.55!important}
+html.prompt-full-redesign .field input:focus,
+html.prompt-full-redesign .field select:focus,
+html.prompt-full-redesign .field textarea:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 13%,transparent)!important}
+html.prompt-full-redesign .solid-btn,
+html.prompt-full-redesign .outline-btn,
+html.prompt-full-redesign .text-btn,
+html.prompt-full-redesign .close-dialog{
+  border-radius:11px!important;
+  transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease!important;
+}
+html.prompt-full-redesign .solid-btn{border-color:var(--panel)!important;background:var(--panel)!important;color:#edf6fd!important;box-shadow:none!important}
+html.prompt-full-redesign .solid-btn:hover{background:color-mix(in srgb,var(--panel) 88%,var(--accent))!important;transform:translateY(-1px)}
+html.prompt-full-redesign .outline-btn{border-color:var(--line-dark)!important;background:var(--surface)!important;color:var(--ink)!important;box-shadow:none!important}
+html.prompt-full-redesign .outline-btn:hover{border-color:var(--accent)!important;background:var(--surface-soft)!important;color:var(--accent-strong)!important;transform:translateY(-1px)}
+html.prompt-full-redesign .text-btn{color:var(--muted)!important;text-decoration:none!important}
+html.prompt-full-redesign .text-btn:hover{color:var(--accent-strong)!important}
+html.prompt-full-redesign button:disabled{opacity:.42!important;cursor:not-allowed!important;transform:none!important}
+html.prompt-full-redesign .step-actions{border-color:var(--line)!important}
+html.prompt-full-redesign .dropzone{border:1px dashed var(--line-dark)!important;border-radius:14px!important;background:var(--surface)!important}
+html.prompt-full-redesign .dropzone.drag{border-color:var(--accent)!important;background:var(--surface-soft)!important}
+html.prompt-full-redesign .agent-selector button,
+html.prompt-full-redesign .output-target-selector button,
+html.prompt-full-redesign .concept-option,
+html.prompt-full-redesign .aspect-chip,
+html.prompt-full-redesign .quick-refinements button{border-color:var(--line)!important;border-radius:11px!important;background:var(--surface)!important;color:var(--ink)!important}
+html.prompt-full-redesign .agent-selector button.active,
+html.prompt-full-redesign .output-target-selector button.active,
+html.prompt-full-redesign .aspect-chip.active{border-color:var(--accent)!important;background:var(--surface-soft)!important;color:var(--accent-strong)!important;box-shadow:inset 0 -2px 0 var(--accent)!important}
+html.prompt-full-redesign .selection-head,
+html.prompt-full-redesign .block-title,
+html.prompt-full-redesign .understanding,
+html.prompt-full-redesign .blueprint,
+html.prompt-full-redesign .prompt-meta{border-color:var(--line)!important}
+html.prompt-full-redesign .master-prompt{border:1px solid #2c3b48!important;border-radius:15px!important;background:#0e1720!important;color:#eaf3fa!important;box-shadow:none!important}
+
+/* Home: remove decorative line/orbits, use the mark once */
+html.prompt-full-redesign .prompt-home-intro::before,
+html.prompt-full-redesign .prompt-home-intro::after{display:none!important}
+html.prompt-full-redesign .prompt-command-home{position:relative}
+html.prompt-full-redesign .prompt-command-home::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  right:-115px;
+  top:-90px;
+  width:420px;
+  height:420px;
+  background:url("./sitebrief-logo.svg?v=5") center/contain no-repeat;
+  opacity:.035;
+  filter:grayscale(1);
+  pointer-events:none;
+}
+html.prompt-full-redesign[data-theme="dark"] .prompt-command-home::before{opacity:.052;filter:grayscale(1) invert(1)}
+
+/* Dialog shell shared by every current and dynamically created dialog */
+html.prompt-full-redesign dialog{color:var(--ink)}
+html.prompt-full-redesign dialog::backdrop{background:var(--scrim)!important;backdrop-filter:blur(8px)!important}
+html.prompt-full-redesign .dialog-frame,
+html.prompt-full-redesign .simple-intake-shell,
+html.prompt-full-redesign .project-mode-frame,
+html.prompt-full-redesign .project-preview-shell,
+html.prompt-full-redesign .history-frame,
+html.prompt-full-redesign .free-prompt-frame,
+html.prompt-full-redesign .free-prompt-result-frame,
+html.prompt-full-redesign .subscription-overview-frame{
+  position:relative;
+  border:1px solid var(--line)!important;
+  border-radius:20px!important;
+  background:var(--paper-2)!important;
+  color:var(--ink)!important;
+  box-shadow:var(--shadow)!important;
+  overflow-x:hidden!important;
+}
+html.prompt-full-redesign dialog.prompt-system-dialog>.dialog-frame,
+html.prompt-full-redesign dialog.prompt-system-dialog>.simple-intake-shell,
+html.prompt-full-redesign dialog.prompt-system-dialog>.project-mode-frame,
+html.prompt-full-redesign dialog.prompt-system-dialog>.project-preview-shell,
+html.prompt-full-redesign dialog.prompt-system-dialog>.history-frame,
+html.prompt-full-redesign dialog.prompt-system-dialog>.free-prompt-frame,
+html.prompt-full-redesign dialog.prompt-system-dialog>.free-prompt-result-frame,
+html.prompt-full-redesign dialog.prompt-system-dialog>.subscription-overview-frame{width:100%!important;max-width:100%!important}
+html.prompt-full-redesign .dialog-frame::after,
+html.prompt-full-redesign .simple-intake-shell::after,
+html.prompt-full-redesign .project-mode-frame::after,
+html.prompt-full-redesign .history-frame::after{
+  content:"";
+  position:absolute;
+  z-index:0;
+  right:-130px;
+  bottom:-150px;
+  width:380px;
+  height:380px;
+  pointer-events:none;
+  background:url("./sitebrief-logo.svg?v=5") center/contain no-repeat;
+  opacity:.018;
+  filter:grayscale(1);
+}
+html.prompt-full-redesign[data-theme="dark"] .dialog-frame::after,
+html.prompt-full-redesign[data-theme="dark"] .simple-intake-shell::after,
+html.prompt-full-redesign[data-theme="dark"] .project-mode-frame::after,
+html.prompt-full-redesign[data-theme="dark"] .history-frame::after{opacity:.03;filter:grayscale(1) invert(1)}
+html.prompt-full-redesign .dialog-frame>*,
+html.prompt-full-redesign .simple-intake-shell>*,
+html.prompt-full-redesign .project-mode-frame>*,
+html.prompt-full-redesign .history-frame>*{position:relative;z-index:1}
+html.prompt-full-redesign .dialog-head,
+html.prompt-full-redesign .simple-intake-head,
+html.prompt-full-redesign .project-preview-head,
+html.prompt-full-redesign .history-head,
+html.prompt-full-redesign .free-prompt-head{min-height:82px;padding:18px 26px!important;border-bottom:1px solid var(--line)!important;background:color-mix(in srgb,var(--surface) 96%,transparent)!important}
+html.prompt-full-redesign .dialog-head h2,
+html.prompt-full-redesign .simple-intake-head h2,
+html.prompt-full-redesign .project-preview-head h2,
+html.prompt-full-redesign .history-head h2{font-family:Inter,ui-sans-serif,sans-serif!important;font-size:clamp(25px,3.2vw,38px)!important;font-weight:720!important;letter-spacing:-.045em!important}
+html.prompt-full-redesign .close-dialog,
+html.prompt-full-redesign .simple-intake-close,
+html.prompt-full-redesign .project-mode-close,
+html.prompt-full-redesign .project-preview-close,
+html.prompt-full-redesign .history-close,
+html.prompt-full-redesign .free-prompt-close{width:42px!important;height:42px!important;border:1px solid var(--line)!important;border-radius:12px!important;background:var(--surface-soft)!important;color:var(--ink)!important;box-shadow:none!important}
+
+/* Account, sign-in and registration */
+html.prompt-full-redesign .account-dialog .dialog-frame{background:var(--paper)!important}
+html.prompt-full-redesign .account-dialog .dialog-frame::before{display:none!important}
+html.prompt-full-redesign .account-dialog .account-body{padding:clamp(20px,4vw,52px)!important}
+html.prompt-full-redesign .auth-hero h1{font-size:clamp(43px,7vw,78px)!important;font-weight:740!important;letter-spacing:-.065em!important}
+html.prompt-full-redesign .auth-brand img{border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:none!important}
+html.prompt-full-redesign .auth-form-card,
+html.prompt-full-redesign .auth-access-card,
+html.prompt-full-redesign .guest-limit-box,
+html.prompt-full-redesign .auth-subscribe-compact,
+html.prompt-full-redesign .account-profile-settings,
+html.prompt-full-redesign .api-addon-card,
+html.prompt-full-redesign .account-tool-card,
+html.prompt-full-redesign .account-support-card{border:1px solid var(--line)!important;border-radius:17px!important;background:var(--surface)!important;box-shadow:var(--shadow-soft)!important;backdrop-filter:none!important}
+html.prompt-full-redesign .gate-guest-btn{border:1px solid var(--accent)!important;border-radius:12px!important;background:var(--accent)!important;color:#07131c!important;box-shadow:none!important}
+html.prompt-full-redesign .gate-plans-pick{border:1px solid var(--line)!important;border-radius:14px!important;background:var(--surface)!important}
+
+/* Libraries, settings, plans, administration and history */
+html.prompt-full-redesign .library-tabs,
+html.prompt-full-redesign .admin-tabs,
+html.prompt-full-redesign .history-tabs{border-color:var(--line)!important;background:var(--surface)!important}
+html.prompt-full-redesign .library-tabs button,
+html.prompt-full-redesign .admin-tabs button,
+html.prompt-full-redesign .history-tabs button{min-height:48px!important;border-radius:0!important;color:var(--muted)!important}
+html.prompt-full-redesign .library-tabs button.active,
+html.prompt-full-redesign .admin-tabs button.active,
+html.prompt-full-redesign .history-tabs button.active{border-color:var(--accent)!important;background:var(--surface-soft)!important;color:var(--ink)!important}
+html.prompt-full-redesign .settings-section,
+html.prompt-full-redesign .admin-pane,
+html.prompt-full-redesign .library-pane{border-color:var(--line)!important}
+html.prompt-full-redesign .ai-connection-card,
+html.prompt-full-redesign .admin-stat,
+html.prompt-full-redesign .admin-quota-col,
+html.prompt-full-redesign .admin-editor,
+html.prompt-full-redesign .admin-users article,
+html.prompt-full-redesign .admin-runs article,
+html.prompt-full-redesign .admin-announcements article,
+html.prompt-full-redesign .library-item,
+html.prompt-full-redesign .history-list article,
+html.prompt-full-redesign .subscription-card,
+html.prompt-full-redesign .plan-card{border:1px solid var(--line)!important;border-radius:14px!important;background:var(--surface)!important;box-shadow:none!important}
+html.prompt-full-redesign .ai-connection-card.recommended,
+html.prompt-full-redesign .plan-card.recommended{border-color:var(--accent)!important;box-shadow:inset 0 3px 0 var(--accent)!important}
+html.prompt-full-redesign .plan-card-summary{min-height:82px!important}
+html.prompt-full-redesign .plan-card[open] .plan-card-summary{background:var(--surface-soft)!important}
+html.prompt-full-redesign .admin-body,
+html.prompt-full-redesign .settings-body,
+html.prompt-full-redesign .library-body,
+html.prompt-full-redesign .history-body{background:var(--paper)!important}
+html.prompt-full-redesign .admin-pane.active{display:block}
+
+/* Project mode, revisions, prompt tools and live preview */
+html.prompt-full-redesign .project-mode-card,
+html.prompt-full-redesign .quick-revision-result,
+html.prompt-full-redesign .free-prompt-advanced,
+html.prompt-full-redesign .free-prompt-upgrade,
+html.prompt-full-redesign .free-prompt-result-box,
+html.prompt-full-redesign .sandbox-card{border:1px solid var(--line)!important;border-radius:15px!important;background:var(--surface)!important;color:var(--ink)!important;box-shadow:none!important}
+html.prompt-full-redesign .project-mode-card:hover{border-color:var(--accent)!important;background:var(--surface-soft)!important}
+html.prompt-full-redesign .website-build-progress,
+html.prompt-full-redesign #reviewProgress,
+html.prompt-full-redesign #previewProgress{border:1px solid var(--line)!important;border-radius:16px!important;background:var(--surface)!important;box-shadow:none!important}
+html.prompt-full-redesign .build-progress-track{background:var(--surface-soft)!important}
+html.prompt-full-redesign .build-progress-track i{background:var(--accent)!important}
+html.prompt-full-redesign .build-stage-list li.active{border-color:var(--line)!important;background:var(--surface-soft)!important}
+html.prompt-full-redesign .build-live-preview{border-color:var(--line)!important;background:var(--surface-soft)!important}
+
+/* Loading: retain the real word-by-word progress and one completion flash */
+html.prompt-full-redesign .prompt-handoff-loader,
+html.prompt-full-redesign .prompt-completion-flash,
+html.prompt-full-redesign #promptAiThinkingStage{
+  background:var(--paper)!important;
+  color:var(--ink)!important;
+}
+html.prompt-full-redesign .prompt-handoff-loader>div,
+html.prompt-full-redesign .prompt-completion-flash>div{position:relative;padding:32px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-soft)}
+html.prompt-full-redesign .prompt-handoff-loader>div::before,
+html.prompt-full-redesign .prompt-completion-flash>div::before{
+  content:"";
+  display:block;
+  width:52px;
+  height:52px;
+  margin:0 auto 24px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--surface-soft) url("./sitebrief-logo.svg?v=5") center/44px no-repeat;
+}
+html.prompt-full-redesign .prompt-process-title{font-family:Inter,ui-sans-serif,sans-serif!important;font-weight:740!important;letter-spacing:-.05em!important}
+html.prompt-full-redesign .prompt-process-line{padding:10px 0;border-bottom:1px solid var(--line);font-size:14px!important}
+html.prompt-full-redesign .prompt-process-line:last-child{border-bottom:0}
+html.prompt-full-redesign .prompt-process-fill{color:var(--accent)!important}
+html.prompt-full-redesign .prompt-process-lines.complete .prompt-process-fill,
+html.prompt-full-redesign .prompt-completion-flash .prompt-process-fill{animation:promptSystemFinish .48s ease both!important}
+@keyframes promptSystemFinish{0%,100%{filter:none;text-shadow:none}45%{filter:brightness(1.22);text-shadow:0 0 20px color-mix(in srgb,var(--accent) 42%,transparent)}}
+
+/* Legal, privacy, cookies and maintenance */
+html.prompt-full-redesign .legal-body{width:100%!important;max-width:none!important;padding:26px 30px 44px!important;overflow-x:hidden!important;color:var(--ink)!important}
+html.prompt-full-redesign .legal-body h3{padding-top:18px;border-top:1px solid var(--line);color:var(--accent-strong)!important;font-family:ui-monospace,SFMono-Regular,monospace!important}
+html.prompt-full-redesign .legal-placeholder-note{border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line))!important;border-radius:12px!important;background:color-mix(in srgb,var(--warn) 8%,var(--surface))!important}
+html.prompt-full-redesign .cookie-banner{background:var(--paper)!important;color:var(--ink)!important}
+html.prompt-full-redesign .cookie-banner-box{max-width:620px!important;padding:28px!important;border:1px solid var(--line)!important;border-radius:18px!important;background:var(--surface)!important;box-shadow:var(--shadow-soft)!important}
+html.prompt-full-redesign #promptMaintenanceOverlay{background:var(--paper)!important;color:var(--ink)!important}
+html.prompt-full-redesign #promptMaintenanceOverlay>div{position:relative;padding:34px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-soft)}
+
+/* Footer */
+html.prompt-full-redesign .prompt-footer{border-color:var(--line)!important;background:var(--paper)!important}
+html.prompt-full-redesign .footer-link{color:var(--muted)!important;text-decoration:none!important}
+html.prompt-full-redesign .footer-link:hover{color:var(--accent-strong)!important}
+
+/* Complete interface coverage: every control and every app-owned surface */
+html.prompt-full-redesign button,
+html.prompt-full-redesign input,
+html.prompt-full-redesign textarea,
+html.prompt-full-redesign select{font:inherit}
+html.prompt-full-redesign input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.prompt-full-redesign textarea,
+html.prompt-full-redesign select,
+html.prompt-full-redesign .quick-variant-controls input,
+html.prompt-full-redesign .quick-variant-controls select,
+html.prompt-full-redesign .free-prompt-output{
+  max-width:100%;
+  border:1px solid var(--line)!important;
+  border-radius:11px!important;
+  background:var(--input)!important;
+  color:var(--ink)!important;
+  box-shadow:none!important;
+}
+html.prompt-full-redesign input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.prompt-full-redesign select{min-height:46px;padding:0 13px!important}
+html.prompt-full-redesign textarea{padding:14px!important;line-height:1.55!important;resize:vertical}
+html.prompt-full-redesign input::placeholder,
+html.prompt-full-redesign textarea::placeholder{color:color-mix(in srgb,var(--muted) 72%,transparent)!important}
+html.prompt-full-redesign input[type="checkbox"],
+html.prompt-full-redesign input[type="radio"]{accent-color:var(--accent)}
+html.prompt-full-redesign input[type="range"]{accent-color:var(--accent)}
+html.prompt-full-redesign input[type="file"]{max-width:100%;color:var(--muted)}
+html.prompt-full-redesign input[type="file"]::file-selector-button{
+  min-height:38px;
+  margin-right:10px;
+  padding:0 12px;
+  border:1px solid var(--line-dark);
+  border-radius:9px;
+  background:var(--surface);
+  color:var(--ink);
+  font-weight:750;
+}
+html.prompt-full-redesign :is(input,textarea,select):focus{
+  border-color:var(--accent)!important;
+  outline:none!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)!important;
+}
+html.prompt-full-redesign :is(.toggle-row,.check-row,.remember-login,.cookie-category){
+  border-color:var(--line)!important;
+  border-radius:12px!important;
+  background:var(--surface)!important;
+  color:var(--ink)!important;
+}
+html.prompt-full-redesign :is(.toggle-row,.check-row,.cookie-category) small{color:var(--muted)!important}
+
+html.prompt-full-redesign :is(
+  .library-editor,.profile-dialog-body,.clarification-question,.clarification-warning,
+  .settings-upgrade-note,.settings-section,.connection-login-row,.plan-current,
+  .single-check-note,.api-addon-card,.account-tool-card,.account-support-card,
+  .quick-tier-block,.quick-upgrade-note,.tier-path span,.quick-variant-tools,
+  .project-profile-card,.understanding,.blueprint,.reference-item,.source-list article,
+  .selection-card,.concept-option,.concept-card,.selected-preview-large,.refinement-history article,
+  .completion-summary,.prompt-handoff,.client-result-card,.export-result-card,.revision-studio,
+  .subscription-card,.sub-section,.sub-addon,.sub-security,.sub-trial,.sub-empty,.sub-error,
+  .admin-offer-editor,.admin-support article,.admin-usage article,.admin-users article,
+  .admin-runs article,.admin-announcements article,.history-list article,.welcome-project-card
+){
+  border-color:var(--line)!important;
+  background:var(--surface)!important;
+  color:var(--ink)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+html.prompt-full-redesign :is(.settings-section,.quick-tier-block,.library-editor,.admin-offer-editor,.quick-variant-tools){border-radius:14px!important}
+html.prompt-full-redesign :is(.connection-status,.generation-status,.website-build-status,.auth-message,.connection-message,.free-prompt-status,#quickRevisionStatus,#revisionStatus){color:var(--muted)!important}
+html.prompt-full-redesign :is(.good,.success,[data-status="ready"]){color:var(--good)!important}
+html.prompt-full-redesign :is(.error,.danger,[data-status="error"]){color:var(--danger)!important}
+
+/* Menus, tabs and compact navigation use one interaction language */
+html.prompt-full-redesign :is(.topbar-menu,.library-tabs,.admin-tabs,.history-tabs,.mode-switch,.quick-refinements,.guide-suggestions) button{
+  min-height:42px;
+  border:1px solid transparent!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  color:var(--muted)!important;
+  box-shadow:none!important;
+}
+html.prompt-full-redesign :is(.topbar-menu,.library-tabs,.admin-tabs,.history-tabs,.mode-switch,.quick-refinements,.guide-suggestions) button:hover{
+  border-color:var(--line)!important;
+  background:var(--surface-soft)!important;
+  color:var(--ink)!important;
+}
+html.prompt-full-redesign :is(.library-tabs,.admin-tabs,.history-tabs,.mode-switch) button.active{
+  border-color:var(--accent)!important;
+  background:var(--surface-soft)!important;
+  color:var(--accent-strong)!important;
+  box-shadow:inset 0 -2px 0 var(--accent)!important;
+}
+html.prompt-full-redesign .danger-btn,
+html.prompt-full-redesign .solid-btn.danger,
+html.prompt-full-redesign .text-btn.danger{border-color:var(--danger)!important;color:var(--danger)!important}
+html.prompt-full-redesign .solid-btn.danger{background:var(--danger)!important;color:#fff!important}
+html.prompt-full-redesign .link-btn{color:var(--accent-strong)!important;text-decoration:underline;text-underline-offset:3px}
+
+/* Full-screen and compact dialogs, including dynamically created tools */
+html.prompt-full-redesign :is(
+  .free-prompt-shell,.preview-lightbox-frame,.project-preview-shell,.subscription-overview-frame
+){background:var(--paper)!important;color:var(--ink)!important}
+html.prompt-full-redesign :is(
+  .app-action-body,.agent-launch-body,.quick-revision-body,.library-pane,.library-tools,
+  .settings-body,.account-body,.profile-dialog-body,.clarification-body,.plans-grid,.plans-footer,
+  .admin-body,.generating-body,.legal-body,.history-body,.subscription-overview-body,
+  .free-prompt-body,.free-prompt-result-frame,.project-mode-frame,.project-preview-body
+){color:var(--ink)!important}
+html.prompt-full-redesign :is(.app-action-dialog,.agent-launch-dialog,.preview-lightbox){background:transparent!important}
+html.prompt-full-redesign .preview-lightbox-frame{
+  border:1px solid var(--line)!important;
+  border-radius:18px!important;
+  box-shadow:var(--shadow)!important;
+  overflow:hidden;
+}
+html.prompt-full-redesign .preview-lightbox-head,
+html.prompt-full-redesign .preview-lightbox-actions{
+  border-color:var(--line)!important;
+  background:var(--surface)!important;
+}
+html.prompt-full-redesign .preview-lightbox-media{background:var(--input)!important}
+html.prompt-full-redesign :is(.lightbox-close,.prompt-thinking-close,#promptWorkflowLoaderClose,[data-sub-close]){
+  display:grid!important;
+  place-items:center!important;
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  padding:0!important;
+  border:1px solid var(--line)!important;
+  border-radius:12px!important;
+  background:var(--surface-soft)!important;
+  color:var(--ink)!important;
+  box-shadow:none!important;
+}
+html.prompt-full-redesign .free-prompt-shell{border:0!important;border-radius:0!important;box-shadow:none!important}
+html.prompt-full-redesign .free-prompt-head,
+html.prompt-full-redesign .project-preview-head{background:color-mix(in srgb,var(--surface) 96%,transparent)!important;backdrop-filter:blur(18px)!important}
+html.prompt-full-redesign .free-prompt-advanced,
+html.prompt-full-redesign .free-prompt-upgrade{border-color:var(--line)!important;background:var(--surface)!important}
+html.prompt-full-redesign .free-prompt-output,
+html.prompt-full-redesign #masterPrompt,
+html.prompt-full-redesign #revisionPrompt,
+html.prompt-full-redesign #quickRevisionPrompt{
+  border-color:#314352!important;
+  background:#0d1720!important;
+  color:#edf7ff!important;
+  caret-color:var(--accent)!important;
+}
+
+/* Auth, plans, checkout and subscription */
+html.prompt-full-redesign .auth-plan-grid article,
+html.prompt-full-redesign .gate-plans-pick,
+html.prompt-full-redesign .plan-card,
+html.prompt-full-redesign .subscription-card{
+  border:1px solid var(--line)!important;
+  border-radius:14px!important;
+  background:var(--surface)!important;
+  color:var(--ink)!important;
+  box-shadow:none!important;
+}
+html.prompt-full-redesign .auth-plan-grid article.featured,
+html.prompt-full-redesign .plan-card.recommended{border-color:var(--accent)!important;box-shadow:inset 0 3px 0 var(--accent)!important}
+html.prompt-full-redesign .api-addon-card{border-color:color-mix(in srgb,var(--orange) 45%,var(--line))!important}
+html.prompt-full-redesign :is(.sub-fact,.sub-invoice,.sub-addon,.sub-security){border-color:var(--line)!important;background:var(--surface-soft)!important}
+html.prompt-full-redesign .sub-loading i,
+html.prompt-full-redesign .generating-spinner,
+html.prompt-full-redesign .master-generation-spinner{border-color:var(--line)!important;border-top-color:var(--accent)!important}
+
+/* Preview cards, images and generated project screens */
+html.prompt-full-redesign :is(.concept-card,.concept-option,.selected-preview-large,.build-live-preview,.sandbox-card){
+  border:1px solid var(--line)!important;
+  border-radius:14px!important;
+  background:var(--surface)!important;
+  box-shadow:none!important;
+  overflow:hidden;
+}
+html.prompt-full-redesign :is(.concept-card,.concept-option).selected{border-color:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
+html.prompt-full-redesign :is(.concept-screen,.preview-lightbox-media,.build-preview-canvas){border-color:var(--line)!important;background:var(--input)!important}
+html.prompt-full-redesign img{max-width:100%}
+
+/* Every loading and route-change state keeps the real word progress */
+html.prompt-full-redesign :is(
+  #promptWorkflowLoader,#promptAiThinkingStage,.prompt-handoff-loader,.prompt-completion-flash,
+  .history-restore-shield,.prompt-route-shield,.streamline-working,.master-generation
+){background:var(--paper)!important;color:var(--ink)!important}
+html.prompt-full-redesign #promptWorkflowLoader>div,
+html.prompt-full-redesign #promptAiThinkingStage>div,
+html.prompt-full-redesign .streamline-working-inner,
+html.prompt-full-redesign .master-generation-inner{
+  width:min(590px,100%)!important;
+  padding:30px!important;
+  border:1px solid var(--line)!important;
+  border-radius:18px!important;
+  background:var(--surface)!important;
+  box-shadow:var(--shadow-soft)!important;
+}
+html.prompt-full-redesign :is(.prompt-loader-bar,.prompt-thinking-bar,.task-progress-track,.master-generation-track){background:var(--surface-soft)!important}
+html.prompt-full-redesign :is(.prompt-loader-bar,.prompt-thinking-bar,.task-progress-track,.master-generation-track)>i{background:var(--accent)!important}
+html.prompt-full-redesign :is(.prompt-loader-sentence,.prompt-thinking-status,.prompt-thinking-line,.prompt-process-line){color:var(--ink)!important}
+html.prompt-full-redesign :is(.prompt-thinking-line .fill,.prompt-process-fill){color:var(--accent)!important}
+html.prompt-full-redesign .prompt-completion-flash{animation:promptSystemFlash .52s ease both!important}
+@keyframes promptSystemFlash{0%{opacity:0}20%,72%{opacity:1}100%{opacity:0}}
+
+/* Offers, cookies, legal and maintenance */
+html.prompt-full-redesign .offer-banner{
+  border-color:color-mix(in srgb,var(--orange) 46%,var(--line))!important;
+  background:color-mix(in srgb,var(--orange) 7%,var(--surface))!important;
+  color:var(--ink)!important;
+}
+html.prompt-full-redesign .offer-close{border-color:var(--line)!important;background:var(--surface)!important;color:var(--ink)!important}
+html.prompt-full-redesign .cookie-banner-settings{border-color:var(--line)!important}
+html.prompt-full-redesign .legal-body :is(p,li,dd){overflow-wrap:anywhere}
+html.prompt-full-redesign #promptMaintenanceOverlay>div::before{
+  content:"";
+  display:block;
+  width:52px;
+  height:52px;
+  margin:0 auto 22px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--surface-soft) url("./sitebrief-logo.svg?v=5") center/44px no-repeat;
+}
+
+/* Current d052fcb feature surfaces */
+html.prompt-full-redesign :is(
+  .intro-dialog,.announcement-dialog,.project-extras-dialog,.install-invite,
+  .connection-slot-card,.admin-prompt-editor,.admin-prompt-version,.admin-token-budget,
+  .admin-token-row,.admin-token-stats article,.project-extras-row,.project-context-card,
+  .website-builder-card,.save-toast
+){
+  border-color:var(--line)!important;
+  background:var(--surface)!important;
+  color:var(--ink)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+html.prompt-full-redesign :is(.intro-dialog,.announcement-dialog){border:1px solid var(--line)!important;border-radius:18px!important;box-shadow:var(--shadow)!important}
+html.prompt-full-redesign :is(.intro-frame,.announcement-frame,.project-extras-body){color:var(--ink)!important}
+html.prompt-full-redesign :is(.intro-kicker,.announcement-kicker,.admin-prompt-group,.project-extras-mark){color:var(--accent-strong)!important}
+html.prompt-full-redesign .intro-steps b{background:var(--surface-soft)!important;color:var(--accent-strong)!important}
+html.prompt-full-redesign .install-invite{border:1px solid var(--line)!important;border-radius:14px!important;box-shadow:var(--shadow-soft)!important}
+html.prompt-full-redesign .save-toast{border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:var(--shadow-soft)!important}
+html.prompt-full-redesign .admin-prompt-layout,
+html.prompt-full-redesign .admin-token-stats,
+html.prompt-full-redesign .admin-token-budgets{gap:10px!important}
+html.prompt-full-redesign :is(.admin-prompt-picker,.admin-fold,.admin-prompt-editor){border-color:var(--line)!important;background:var(--surface)!important}
+html.prompt-full-redesign :is(.admin-prompt-picker button.active,.admin-prompt-version.is-active){border-color:var(--accent)!important;background:var(--surface-soft)!important}
+html.prompt-full-redesign .admin-token-bar{background:var(--surface-soft)!important}
+html.prompt-full-redesign .admin-token-bar i{background:var(--accent)!important}
+html.prompt-full-redesign .connection-slot-card[open],
+html.prompt-full-redesign .admin-fold[open]{border-color:var(--accent)!important}
+html.prompt-full-redesign .project-extras-switch{background:var(--line-dark)!important}
+html.prompt-full-redesign .project-extras-switch[aria-pressed="true"]{background:var(--accent)!important}
+html.prompt-full-redesign .topbar-project{color:var(--muted)!important}
+
+@media(max-width:820px){
+  html.prompt-full-redesign :is(.intro-dialog,.announcement-dialog){width:100vw!important;max-width:none!important;margin:0!important;border-left:0!important;border-right:0!important;border-radius:0!important}
+  html.prompt-full-redesign :is(.intro-frame,.announcement-frame,.project-extras-body){padding-left:18px!important;padding-right:18px!important}
+  html.prompt-full-redesign .prompt-home-tools{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html.prompt-full-redesign .prompt-home-tool:nth-child(2){border-right:0!important}
+  html.prompt-full-redesign .prompt-home-tool:nth-child(-n+2){border-bottom:1px solid var(--line)!important}
+}
+
+@media(max-width:1100px){
+  html.prompt-full-redesign .workspace{padding:58px 38px 110px!important}
+  html.prompt-full-redesign .app-shell{grid-template-columns:205px minmax(0,1fr)!important}
+  html.prompt-full-redesign .guide-panel{display:none!important}
+}
+
+@media(max-width:820px){
+  html.prompt-full-redesign body::after{right:-215px;bottom:-210px;width:520px;height:520px}
+  html.prompt-full-redesign .topbar{top:6px!important;width:calc(100% - 20px)!important;height:60px!important;margin-top:7px!important;padding:0 8px!important;border-radius:15px!important}
+  html.prompt-full-redesign .brand-mark{width:36px!important;height:36px!important}
+  html.prompt-full-redesign .brand-copy strong{font-size:17px!important}
+  html.prompt-full-redesign .brand-copy small{display:none!important}
+  html.prompt-full-redesign #upgradeBtn{min-height:36px!important;padding:0 10px!important;font-size:10px!important}
+  html.prompt-full-redesign .theme-toggle,
+  html.prompt-full-redesign .home-theme-toggle,
+  html.prompt-full-redesign #topbarMenuToggle{width:36px!important;height:36px!important;min-height:36px!important}
+  html.prompt-full-redesign .app-shell{display:block!important;margin-top:8px!important}
+  html.prompt-full-redesign .progress-rail{margin:0!important;border-radius:0!important}
+  html.prompt-full-redesign .workspace{width:100%!important;padding:48px 20px 100px!important;border-left:0;border-right:0}
+  html.prompt-full-redesign .workspace::before{right:-140px;top:90px;width:300px;height:300px}
+  html.prompt-full-redesign .step-panel h1,
+  html.prompt-full-redesign .tool-heading h1{font-size:clamp(40px,12vw,58px)!important}
+  html.prompt-full-redesign .field-grid.two,
+  html.prompt-full-redesign .field-grid.three,
+  html.prompt-full-redesign .auth-layout,
+  html.prompt-full-redesign .admin-quota-grid,
+  html.prompt-full-redesign .ai-connection-grid,
+  html.prompt-full-redesign .admin-split,
+  html.prompt-full-redesign .build-progress-body{grid-template-columns:1fr!important}
+  html.prompt-full-redesign .dialog-frame,
+  html.prompt-full-redesign .simple-intake-shell,
+  html.prompt-full-redesign .project-mode-frame,
+  html.prompt-full-redesign .project-preview-shell,
+  html.prompt-full-redesign .history-frame,
+  html.prompt-full-redesign .free-prompt-frame,
+  html.prompt-full-redesign .free-prompt-result-frame{border-radius:0!important;border-left:0!important;border-right:0!important}
+  html.prompt-full-redesign .dialog-head,
+  html.prompt-full-redesign .simple-intake-head,
+  html.prompt-full-redesign .project-preview-head,
+  html.prompt-full-redesign .history-head{padding:14px 18px!important;min-height:72px}
+  html.prompt-full-redesign .dialog-head h2{font-size:27px!important}
+  html.prompt-full-redesign .settings-body,
+  html.prompt-full-redesign .admin-body,
+  html.prompt-full-redesign .library-body,
+  html.prompt-full-redesign .account-dialog .account-body{padding-left:18px!important;padding-right:18px!important}
+  html.prompt-full-redesign .prompt-handoff-loader>div,
+  html.prompt-full-redesign .prompt-completion-flash>div{padding:24px 18px}
+  html.prompt-full-redesign .prompt-command-home::before{right:-180px;top:-70px;width:350px;height:350px}
+  html.prompt-full-redesign :is(.library-tabs,.admin-tabs,.history-tabs){
+    display:flex!important;
+    max-width:100%;
+    overflow-x:auto!important;
+    overscroll-behavior-inline:contain;
+    scrollbar-width:none;
+  }
+  html.prompt-full-redesign :is(.library-tabs,.admin-tabs,.history-tabs)::-webkit-scrollbar{display:none}
+  html.prompt-full-redesign :is(.library-tabs,.admin-tabs,.history-tabs) button{flex:0 0 auto;padding-left:16px!important;padding-right:16px!important;white-space:nowrap}
+  html.prompt-full-redesign :is(.preview-lightbox-frame,.cookie-banner-box){border-radius:0!important;border-left:0!important;border-right:0!important}
+  html.prompt-full-redesign :is(.plans-grid,.plans-footer,.clarification-body,.profile-dialog-body,.subscription-overview-body){padding-left:16px!important;padding-right:16px!important}
+  html.prompt-full-redesign :is(.app-action-body,.agent-launch-body){padding:26px 18px!important}
+  html.prompt-full-redesign :is(.app-action-buttons,.agent-launch-options,.cookie-banner-actions,.preview-lightbox-actions){align-items:stretch!important;grid-template-columns:1fr!important;flex-direction:column!important}
+  html.prompt-full-redesign :is(.app-action-buttons,.agent-launch-options,.cookie-banner-actions,.preview-lightbox-actions) button{width:100%!important}
+  html.prompt-full-redesign #promptWorkflowLoader>div,
+  html.prompt-full-redesign #promptAiThinkingStage>div,
+  html.prompt-full-redesign .streamline-working-inner,
+  html.prompt-full-redesign .master-generation-inner{padding:24px 18px!important;border-left:0!important;border-right:0!important;border-radius:0!important}
+}
+
+@media(max-width:390px){
+  html.prompt-full-redesign #upgradeBtn{font-size:0!important}
+  html.prompt-full-redesign #upgradeBtn::after{content:"Pro";font-size:10px}
+  html.prompt-full-redesign .top-actions{gap:5px!important}
+  html.prompt-full-redesign .workspace{padding-left:15px!important;padding-right:15px!important}
+  html.prompt-full-redesign .step-panel h1{font-size:40px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html.prompt-full-redesign *,html.prompt-full-redesign *::before,html.prompt-full-redesign *::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
