@@ -393,9 +393,7 @@ html.prompt-full-redesign .prompt-completion-flash>div::before{
   width:52px;
   height:52px;
   margin:0 auto 24px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:var(--surface-soft) url("./sitebrief-logo.svg?v=6") center/44px no-repeat;
+  background:url("./sitebrief-logo.svg?v=6") center/contain no-repeat;
 }
 html.prompt-full-redesign .prompt-process-title{font-family:Inter,ui-sans-serif,sans-serif!important;font-weight:740!important;letter-spacing:-.05em!important}
 html.prompt-full-redesign .prompt-process-line{padding:10px 0;border-bottom:1px solid var(--line);font-size:14px!important}
@@ -638,9 +636,7 @@ html.prompt-full-redesign #promptMaintenanceOverlay>div::before{
   width:52px;
   height:52px;
   margin:0 auto 22px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:var(--surface-soft) url("./sitebrief-logo.svg?v=6") center/44px no-repeat;
+  background:url("./sitebrief-logo.svg?v=6") center/contain no-repeat;
 }
 
 /* Current d052fcb feature surfaces */
@@ -1402,10 +1398,15 @@ html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>d
   color:#eef6fb!important;
   box-shadow:none!important;
 }
+/* Ohne Plättchen: die Marke steht frei. Die Ladeflächen sind in beiden Modi dunkel,
+   also trägt sie dort ihre helle Fassung - dasselbe Zeichen, heller Körper, gleiches
+   Blau. Ein Filter hätte auch das Blau umgefärbt. */
 html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner)::before{
   content:"";display:block;width:46px;height:46px;margin:0 auto 20px;
-  border:1px solid rgba(255,255,255,.12);border-radius:12px;
-  background:rgba(255,255,255,.04) url("./sitebrief-logo.svg?v=6") center/38px no-repeat;
+  background:url("./sitebrief-logo-light.svg?v=6") center/contain no-repeat;
+}
+html.prompt-full-redesign :is(.prompt-handoff-loader>div,.prompt-completion-flash>div)::before{
+  background-image:url("./sitebrief-logo-light.svg?v=6")!important;
 }
 /* Auf dunklem Grund braucht der Fortschritt im Wort einen hellen Rest, sonst
    verschwindet der noch nicht gefüllte Teil. Der Füllstand selbst kommt

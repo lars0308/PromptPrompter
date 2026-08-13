@@ -219,7 +219,9 @@ test('the start page header carries the word only, the loaders keep the mark',as
   assert.match(css,/\.prompt-home-surface \.topbar \.brand-mark\{display:none!important\}/);
   // Scoped to the start page: the loading screens are the one place where the mark
   // is the only thing identifying the surface.
-  assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\)::before\{[\s\S]{0,200}sitebrief-logo\.svg/);
+  // Auf den Ladeflächen steht sie frei, ohne Plättchen - und in ihrer hellen Fassung,
+  // weil diese Flächen in beiden Modi dunkel sind.
+  assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\)::before\{[\s\S]{0,200}sitebrief-logo-light\.svg/);
 });
 
 test('the mode list belongs to the console: dark, and shown whole',async()=>{
@@ -250,4 +252,17 @@ test('one edge for the whole app: header, console, greeting and every card start
   assert.match(css,/body>\.topbar,[\s\S]{0,120}width:calc\(100% - var\(--dlg-x\)\*2\)!important/);
   // On the desktop the header was 1180px wide over 1040px of content.
   assert.match(css,/width:min\(1040px,calc\(100% - var\(--dlg-x\)\*2\)\)!important/);
+});
+
+test('the mark ships without a plate, and stays readable on the dark loading surfaces',async()=>{
+  const mark=await read('sitebrief-logo.svg'),light=await read('sitebrief-logo-light.svg');
+  assert.doesNotMatch(mark,/<rect/,'no background plate in the artwork itself');
+  assert.match(mark,/fill="#21262e"/);
+  // Same geometry, lighter body, same blue - a filter would have recoloured the blue too.
+  assert.match(light,/fill="#eef5fb"/);
+  assert.equal(mark.replace(/#21262e/g,'X').replace(/Ein geometrisches P/,''),
+               light.replace(/#eef5fb/g,'X').replace(/Helle Fassung: ein geometrisches P/,''),
+               'both files must stay the same drawing');
+  const sw=await read('sw.js');
+  assert.match(sw,/sitebrief-logo-light\.svg/,'the light variant belongs in the offline shell');
 });
