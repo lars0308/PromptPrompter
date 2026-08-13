@@ -1,24 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Prompt.ai</title>
-  <desc id="desc">Ein klares P aus verbundenen blauen Knoten.</desc>
-  <rect width="512" height="512" rx="104" fill="#f8fafb"/>
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M143 96V416" stroke="#124f7c" stroke-width="26"/>
-    <path d="M143 96L282 94 380 151 402 247 348 319 245 363 143 416" stroke="#278bc2" stroke-width="8"/>
-    <path d="M143 96L246 158 380 151M143 96L258 246 282 94M143 246L246 158 402 247M143 246L258 246 348 319M143 246L245 363 258 246M143 416L245 363 348 319M246 158L258 246 380 151M282 94L258 246 402 247M380 151L348 319 258 246" stroke="#1b76aa" stroke-width="7"/>
-  </g>
-  <g fill="#124f7c">
-    <circle cx="143" cy="96" r="24"/>
-    <circle cx="143" cy="246" r="15"/>
-    <circle cx="143" cy="416" r="24"/>
-    <circle cx="258" cy="246" r="31"/>
-  </g>
-  <g fill="#2d93c9">
-    <circle cx="282" cy="94" r="20"/>
-    <circle cx="246" cy="158" r="17"/>
-    <circle cx="380" cy="151" r="20"/>
-    <circle cx="402" cy="247" r="20"/>
-    <circle cx="348" cy="319" r="20"/>
-    <circle cx="245" cy="363" r="18"/>
-  </g>
+  <desc id="desc">Ein präzises geometrisches P als Prompt.ai Markenzeichen.</desc>
+  <rect width="512" height="512" rx="112" fill="#F7FAFC"/>
+  <path d="M132 92h142c79 0 130 43 130 112 0 68-51 111-130 111h-70v105h-72V92Zm72 64v96h66c37 0 59-17 59-48s-22-48-59-48h-66Z" fill="#173B56"/>
+  <path d="M204 315h70c30 0 57-6 79-18l-149 123V315Z" fill="#58A9DE"/>
+  <path d="M204 156h66c37 0 59 17 59 48 0 5-.6 10-1.7 14.5L204 252v-96Z" fill="#86C9F0"/>
 </svg>

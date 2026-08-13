@@ -86,6 +86,8 @@
 
   function openLegal(kind){
     const dialog=$('#legalDialog');if(!dialog)return;
+    const menu=$('#topbarMenu'),toggle=$('#topbarMenuToggle');
+    menu?.classList.remove('open');toggle?.setAttribute('aria-expanded','false');
     const title=$('#legalTitle'),content=$('#legalContent');
     if(kind==='privacy'){title.textContent='Datenschutzerklärung';content.innerHTML=PRIVACY_HTML}
     else{title.textContent='Impressum';content.innerHTML=IMPRINT_HTML}
