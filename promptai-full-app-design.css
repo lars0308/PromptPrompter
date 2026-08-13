@@ -1210,12 +1210,25 @@ html.prompt-full-redesign :is(#settingsDialog,body) :is(
   .dialog-head,.library-tools,.library-items,.library-editor,
   .settings-body,.admin-body,.history-body,.account-body,.clarification-body,
   .plans-grid,.plans-footer,.profile-dialog-body,.subscription-overview-body,
-  .history-head,.history-list
+  .history-head,.history-list,.legal-body,.quick-revision-body,.free-prompt-body,
+  .library-pane>.welcome-project-list
 ){padding-left:var(--dlg-x)!important;padding-right:var(--dlg-x)!important}
+/* Der Rand wird genau einmal vergeben, vom äußeren Behälter. Alles, was darin
+   noch einmal einrückt, stand doppelt so weit innen - im Profil und in der
+   Verwaltung waren das 32 statt 16 Pixel. */
+html.prompt-full-redesign :is(#settingsDialog,body) :is(
+  .settings-body,.account-body,.admin-body,.profile-dialog-body,.legal-body,
+  .quick-revision-body,.clarification-body,.history-body,.free-prompt-body
+) :is(.library-items,.library-editor,.library-list,.welcome-project-list,.admin-tabs,.history-tabs,.legal-placeholder-note,.plans-grid,.plans-footer){
+  padding-left:0!important;padding-right:0!important;margin-left:0!important;margin-right:0!important;
+}
 /* Reiter tragen ihre eigene Fläche: dort setzt die Pille auf der Linie auf,
    nicht die Schrift - sonst stünde die aktive Pille links davor. */
 html.prompt-full-redesign :is(#settingsDialog,body) :is(.library-tabs,.admin-tabs,.history-tabs){padding-left:calc(var(--dlg-x) - 2px)!important;padding-right:calc(var(--dlg-x) - 2px)!important}
 html.prompt-full-redesign :is(.library-tabs,.admin-tabs,.history-tabs) button{margin:0 2px!important}
+/* Sitzt die Reiterzeile schon in einem eingerückten Körper, trägt der die Linie -
+   die 2px Luft der Pille würden sie sonst um genau diesen Betrag verschieben. */
+html.prompt-full-redesign :is(.admin-body,.history-body) :is(.admin-tabs,.history-tabs) button:first-child{margin-left:0!important}
 /* Die Bibliotheksspalte war doppelt eingerückt: erst der Bereich, dann die
    Liste und der Editor darin. Den Rand trägt nur die innere Ebene. */
 html.prompt-full-redesign :is(#settingsDialog,body) .library-pane{padding-left:0!important;padding-right:0!important}

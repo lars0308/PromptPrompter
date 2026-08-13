@@ -231,3 +231,12 @@ test('the mode list belongs to the console: dark, and shown whole',async()=>{
   assert.match(css,/\.prompt-mode-menu\{[\s\S]{0,220}background:#141e28!important/);
   assert.match(css,/\.prompt-mode-option\{color:#dfe9f2!important/);
 });
+
+test('the inset is handed out once per dialog, not once per nesting level',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  // Library lists, editors, admin tabs and the legal note each carried their own inset on
+  // top of the body's - 32px instead of 16 in the profile and the admin area.
+  assert.match(css,/\) :is\(\.library-items,\.library-editor,\.library-list,\.welcome-project-list,\.admin-tabs,\.history-tabs,\.legal-placeholder-note,\.plans-grid,\.plans-footer\)\{[\s\S]{0,140}padding-left:0!important/);
+  // And the containers that had none at all now get it from the same token.
+  assert.match(css,/\.legal-body,\.quick-revision-body,\.free-prompt-body,\s*\.library-pane>\.welcome-project-list/);
+});
