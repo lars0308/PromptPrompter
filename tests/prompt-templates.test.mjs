@@ -203,8 +203,8 @@ test('regenerating builds on the selected direction and is capped per plan',asyn
   // A regeneration is the same project: it books a preview run, not another website generation.
   assert.match(router,/const regenerate=req\.body\?\.regenerate===true;/);
   assert.match(router,/try\{if\(!regenerate\)await assertQuota\(req,'website_generations'\)\}/);
-  assert.match(router,/try\{await consumePreviewRun\(req\)\}catch\{\}/);
-  assert.match(quota,/async function consumePreviewRun\(req\)/);
+  assert.match(router,/try\{await consumePreviewRun\(req,keySource\)\}catch\{\}/);
+  assert.match(quota,/async function consumePreviewRun\(req,keySource='system'\)/);
   assert.match(image,/let usage=\{action:'preview-image-call'/,'single images no longer count as a preview unit');
 });
 

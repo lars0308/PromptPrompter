@@ -282,7 +282,7 @@ async function generateWithSystemAi(req,input,{advanced=false,plan='',saver=fals
       const model=profile.model||resolved.defaultModel||'';
       const result=profile.provider==='gateway'?await gateway(resolved.key,model,architect,tokens):profile.provider==='openai'?await openai(resolved.key,model,architect,tokens):await gemini(resolved.key,model,architect,tokens);
       if(result.length<180)throw new Error('Antwort war zu kurz.');
-      return {prompt:result,provider:profile.provider,model:model||resolved.defaultModel||'',profile:profile.label||'',polished:true,tokens};
+      return {prompt:result,provider:profile.provider,model:model||resolved.defaultModel||'',profile:profile.label||'',polished:true,tokens,keySource:resolved.source};
     }catch(error){errors.push(`${profile.label||profile.provider}: ${error.message}`)}
   }
   return {prompt:localFallback(input,{advanced}),provider:'local',model:'',profile:'Lokaler Master-Prompt-Fallback',fallbackErrors:errors.slice(0,3),polished:false,tokens};
@@ -299,7 +299,7 @@ module.exports=async function freePromptV2(req,res){
     usage.project={name:'Freier Prompt',type:input.categoryLabel,goal:(input.goal||input.description).slice(0,180)};
     const budget=await getTokenBudget(req);
     const result=await generateWithSystemAi(req,input,{advanced:pro,plan:entitlement.isAdmin?'ultimate':String(entitlement.plan||'free'),saver:budget.exhausted,own:entitlement.ownApiKeys?ownConnection(req.body||{}):null});
-    if(budget.exhausted)res.setHeader('X-Prompt-AI-Saver','1');usage.provider=result.provider;usage.model=result.model;usage.tokens=result.tokens;
+    if(budget.exhausted)res.setHeader('X-Prompt-AI-Saver','1');usage.provider=result.provider;usage.model=result.model;usage.tokens=result.tokens;usage.keySource=result.keySource||'system';
     await logUsage(req,{...usage,durationMs:Date.now()-started});
     return res.status(200).json({...result,tier:entitlement.isAdmin?'ultimate':entitlement.plan,advanced:pro,masterVersion:'v2'});
   }catch(error){

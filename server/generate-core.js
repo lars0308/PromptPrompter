@@ -530,7 +530,7 @@ module.exports = async function handler(req,res){
     if(entitlement.plan==="pro" && !entitlement.ownApiKeys && !["openai","gateway"].includes(engine) && action!=="preview-image") return res.status(403).json({error:"Dieser KI-Anbieter ist in Ultimate oder mit dem API-Key-Add-on verfügbar."});
     if(action==="preview-image"){
       if(entitlement.plan==="pro"&&!entitlement.ownApiKeys&&body.imageProvider!=="cloudflare")return res.status(403).json({error:"Gemini-Bildvorschauen sind in Ultimate oder mit dem API-Key-Add-on verfügbar."});
-      const imageProvider=body.imageProvider==='cloudflare'?'cloudflare':'gemini';usageEvent={action:'preview-image',provider:imageProvider,model:imageProvider==='cloudflare'?'flux-1-schnell':model||'',project};const resolved=await resolveProviderKey(req,imageProvider);if(entitlement.plan==='free'&&entitlement.ownApiKeys&&resolved.source!=='account')throw Object.assign(new Error('Für dieses Add-on muss ein eigener API-Key verbunden sein.'),{status:403});if(!resolved.key)throw Object.assign(new Error(`Kein ${imageProvider==='cloudflare'?'Cloudflare':'Gemini'} API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.`),{status:503});const result=imageProvider==='cloudflare'?await callCloudflarePreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan}):await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);await logUsage(req,{...usageEvent,durationMs:Date.now()-startedAt});return res.status(200).json(result);
+      const imageProvider=body.imageProvider==='cloudflare'?'cloudflare':'gemini';usageEvent={action:'preview-image',provider:imageProvider,model:imageProvider==='cloudflare'?'flux-1-schnell':model||'',project};const resolved=await resolveProviderKey(req,imageProvider);if(entitlement.plan==='free'&&entitlement.ownApiKeys&&resolved.source!=='account')throw Object.assign(new Error('Für dieses Add-on muss ein eigener API-Key verbunden sein.'),{status:403});if(!resolved.key)throw Object.assign(new Error(`Kein ${imageProvider==='cloudflare'?'Cloudflare':'Gemini'} API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.`),{status:503});const result=imageProvider==='cloudflare'?await callCloudflarePreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan}):await callGeminiPreviewImage({key:resolved.key,project,concept:body.concept||{},tier:entitlement.plan});res.setHeader("X-SiteBrief-AI-Key-Source",resolved.source);await logUsage(req,{...usageEvent,keySource:resolved.source,durationMs:Date.now()-startedAt});return res.status(200).json(result);
     }
     if(!["gateway","openai","gemini"].includes(engine)) return res.status(400).json({error:"Use the browser's local generator for local mode"});
     let prompt,schema,name;
@@ -541,7 +541,9 @@ module.exports = async function handler(req,res){
       if(!body.assembled||String(body.assembled).length<400)return res.status(400).json({error:'Der zusammengestellte Auftrag fehlt.'});
       prompt=makeMasterPromptPrompt({assembled:body.assembled,project,concept:body.concept||null});schema=masterPromptSchema();name="prompt_ai_master_prompt";
     }else if(action==="website"){
-      if(entitlement.plan==='free'&&!entitlement.isAdmin)return res.status(403).json({error:'Die direkte Website-Erstellung ist ab Pro verfügbar.'});
+      // The build is the most expensive call in the product and it is a proof, not a deliverable -
+      // it belongs to the plan that pays for it.
+      if(entitlement.plan!=='ultimate'&&!entitlement.isAdmin)return res.status(403).json({error:'Der Website-Probelauf ist in Ultimate enthalten.'});
       if(!body.masterPrompt||String(body.masterPrompt).length<500)return res.status(400).json({error:'Der vollständige Master-Prompt fehlt.'});
       prompt=makeWebsitePrompt({masterPrompt:body.masterPrompt,sourceDocument:body.sourceDocument,project,concept:body.concept||{},outputTarget:body.outputTarget});schema=websiteSchema();name="sitebrief_website_package";
     }else if(action==="review"){
@@ -565,7 +567,7 @@ module.exports = async function handler(req,res){
     if(!resolved.key) throw Object.assign(new Error(engine==="openai"?"Kein OpenAI API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":engine==="gemini"?"Kein Gemini API-Key verbunden. Öffne Einstellungen → KI-Verbindungen.":"Kein Vercel AI Gateway Key verbunden. Öffne Einstellungen → KI-Verbindungen."),{status:503});
     const tokens=tokenSink();
     const result=engine==="openai" ? await callOpenAI({key:resolved.key,model,prompt,images,schema,name,tokens}) : engine==="gemini" ? await callGemini({key:resolved.key,model,prompt,images,tokens}) : await callGateway({key:resolved.key,model,prompt,images,schema,name,tokens});
-    res.setHeader('X-SiteBrief-AI-Key-Source', resolved.source);
+    res.setHeader('X-SiteBrief-AI-Key-Source', resolved.source);usageEvent.keySource=resolved.source;
     res.setHeader('X-Prompt-AI-Tokens', String(tokens.total||0));
     await logUsage(req,{...usageEvent,tokens,durationMs:Date.now()-startedAt});
     return res.status(200).json(result);

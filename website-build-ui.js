@@ -6,7 +6,9 @@
   // references and every handler that was already bound to those buttons stays intact.
   const $=(s,r=document)=>r.querySelector(s);
   const access=()=>window.PromptAiAccess||{plan:'free',isAdmin:false};
-  const isFree=()=>{const a=access();return !a.isAdmin&&a.plan==='free'};
+  // The build is Ultimate: the most expensive call in the product, and a proof rather than a
+  // finished website.
+  const isLocked=()=>{const a=access();return !a.isAdmin&&a.plan!=='ultimate'};
 
   function styles(){
     if($('#websiteBuildUiStyles'))return;
@@ -54,7 +56,7 @@
       if(tile){
         event.preventDefault();
         // A free account sees the tile locked; the plans dialog is the honest next step.
-        if(isFree()){$('#showPlansBtn')?.click();return}
+        if(isLocked()){$('#plansDialog')?.showModal();return}
         open();return;
       }
       const jump=event.target.closest?.('[data-build-open]');

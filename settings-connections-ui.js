@@ -42,6 +42,23 @@
       .conn-active-row{display:flex;gap:10px;align-items:center;margin-top:11px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--paper)}
       .conn-active-row span{flex:1 1 auto;font-size:12px;line-height:1.45}
       .conn-active-row b{color:var(--accent);font-weight:800}
+      /* One fold per key: five open forms below each other were impossible to scan. The summary
+         carries the name the visitor gave the connection. */
+      .conn-slot{padding:0!important;overflow:hidden}
+      .conn-slot>summary{display:flex;align-items:center;gap:11px;padding:14px 15px;cursor:pointer;list-style:none}
+      .conn-slot>summary::-webkit-details-marker{display:none}
+      .conn-slot>summary strong{flex:1 1 auto;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .conn-slot>summary em{flex:0 0 auto;font-style:normal;font:700 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.09em;color:var(--muted)}
+      .conn-slot>summary i{flex:0 0 auto;font-style:normal;font-size:17px;color:var(--muted);transition:transform .15s ease}
+      .conn-slot[open]>summary i{transform:rotate(45deg)}
+      .conn-slot[open]>summary{border-bottom:1px solid var(--line)}
+      .conn-slot-body{padding:15px}
+      .conn-dot{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--line)}
+      .conn-dot.is-on{background:var(--good,#2e9e6b)}
+      .conn-purpose{margin-top:12px}
+      .conn-purpose>span{display:block;margin-bottom:7px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+      .conn-purpose label{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;font-size:12.5px}
+      .conn-purpose label+label{margin-top:6px}
       @media(max-width:700px){.conn-slot-head{grid-template-columns:1fr}.conn-offer-actions>*{flex:1 1 100%}}
     `;document.head.appendChild(el);
   }
@@ -74,7 +91,11 @@
       used.add(provider);assigned.push({index,provider});
       const model=saved[`model${index}`]||'';
       const isActive=String(saved.active||'')===String(index);
-      return `<div class="conn-slot" data-conn-slot="${index}"><span class="conn-slot-index">PLATZ ${index+1}</span><div class="conn-slot-head"><label class="field"><span>Name dieser Verbindung</span><input type="text" maxlength="60" data-conn-name="${index}" value="${esc(saved[`name${index}`]||'')}" placeholder="z. B. Mein OpenAI-Zugang" /></label><label class="field"><span>Anbieter</span><select data-conn-provider="${index}">${PROVIDERS.map(([id,label])=>`<option value="${id}" ${id===provider?'selected':''}>${esc(label)}</option>`).join('')}</select></label></div><div data-conn-mount="${index}"></div><div class="conn-model"><label class="field"><span>Modell und Version</span><input type="text" list="connModels${index}" maxlength="190" data-conn-model="${index}" value="${esc(model)}" placeholder="z. B. openai/gpt-5.4 oder claude-sonnet-4.5" /><datalist id="connModels${index}"></datalist></label><button type="button" class="outline-btn mini" data-conn-load="${index}">Modelle laden</button><small>Genau der Name, den dein Anbieter verwendet – inklusive Version. Prompt.ai schickt ihn unverändert weiter.</small></div><label class="conn-active-row"><input type="checkbox" data-conn-active="${index}" ${isActive?'checked':''} /><span>${isActive?'<b>Diese Verbindung wird für deine Projekte verwendet.</b>':'Für meine Projekte verwenden'}</span></label></div>`;
+      const title=String(saved[`name${index}`]||'').trim()||`API-Key ${index+1}`;
+      const connected=Boolean(saved[`model${index}`]);
+      const purposes=String(saved[`use${index}`]??'text,image,website').split(',').filter(Boolean);
+      const purpose=(id,label,hint)=>`<label><input type="checkbox" data-conn-use="${index}" value="${id}" ${purposes.includes(id)?'checked':''} /><span><b>${esc(label)}</b> — ${esc(hint)}</span></label>`;
+      return `<details class="conn-slot" data-conn-slot="${index}" ${isActive?'open':''}><summary><span class="conn-dot ${connected?'is-on':''}"></span><strong>${esc(title)}</strong><em>${isActive?'AKTIV':`PLATZ ${index+1}`}</em><i aria-hidden="true">+</i></summary><div class="conn-slot-body"><div class="conn-slot-head"><label class="field"><span>Name dieser Verbindung</span><input type="text" maxlength="60" data-conn-name="${index}" value="${esc(saved[`name${index}`]||'')}" placeholder="z. B. Mein OpenAI-Zugang" /></label><label class="field"><span>Anbieter</span><select data-conn-provider="${index}">${PROVIDERS.map(([id,label])=>`<option value="${id}" ${id===provider?'selected':''}>${esc(label)}</option>`).join('')}</select></label></div><div data-conn-mount="${index}"></div><div class="conn-model"><label class="field"><span>Modell und Version</span><input type="text" list="connModels${index}" maxlength="190" data-conn-model="${index}" value="${esc(model)}" placeholder="z. B. openai/gpt-5.4 oder claude-sonnet-4.5" /><datalist id="connModels${index}"></datalist></label><button type="button" class="outline-btn mini" data-conn-load="${index}">Modelle laden</button><small>Genau der Name, den dein Anbieter verwendet – inklusive Version. Prompt.ai schickt ihn unverändert weiter.</small></div><div class="conn-purpose"><span>Wofür diese Verbindung gilt</span>${purpose('text','Texte & Prompts','Briefing, Rückfragen, Master-Prompt')}${purpose('image','Bilder','Vorschauen und Bildaufträge')}${purpose('website','Website bauen','Der Probelauf aus dem Briefing')}</div><label class="conn-active-row"><input type="checkbox" data-conn-active="${index}" ${isActive?'checked':''} /><span>${isActive?'<b>Diese Verbindung wird für deine Projekte verwendet.</b>':'Für meine Projekte verwenden'}</span></label></div></details>`;
     }).join('');
     box.innerHTML=`${offer}${slotHtml}${count?'':'<p class="conn-empty-note">Ohne gebuchten Platz gibt es hier nichts einzutragen – Prompt.ai nutzt dann die zentralen Verbindungen.</p>'}`;
     // The real provider cards are moved into their slot, so their handlers keep working.
@@ -118,6 +139,12 @@
       setTimeout(()=>{load.disabled=false;load.textContent=original},2600);
     },true);
     document.addEventListener('change',event=>{
+      const use=event.target.closest?.('[data-conn-use]');
+      if(use){
+        const index=use.dataset.connUse;
+        const chosen=$$(`[data-conn-use="${index}"]`).filter(box=>box.checked).map(box=>box.value);
+        setName(`use${index}`,chosen.join(','));publish();return;
+      }
       const active=event.target.closest?.('[data-conn-active]');
       if(active){
         // Exactly one connection drives the projects, otherwise the order would be arbitrary.
@@ -136,6 +163,11 @@
 
   // GitHub publishing is an Ultimate feature - the note said "ab Pro", and the form was offered to
   // accounts that could never use it.
+  function loginRow(){
+    const row=$('#connectionLoginRow');if(!row)return;
+    const signedIn=Boolean(window.SiteBriefCloud?.user?.id||window.PromptAiAccess?.plan&&window.PromptAiAccess.plan!=='free');
+    row.hidden=Boolean(window.SiteBriefCloud?.user?.id)||signedIn;
+  }
   function github(){
     const grid=$('#githubConnectionGrid'),row=$('#githubUpgradeRow');
     if(!grid||!row)return;
@@ -146,8 +178,9 @@
     if(text)text.textContent='Für die eigene GitHub-Verbindung ist ein Ultimate-Abo erforderlich.';
   }
 
-  function init(){styles();render();github();bind();publish();window.addEventListener('promptai:access',github);
-    let n=0;const timer=setInterval(()=>{render();github();if(++n>=10)clearInterval(timer)},400);
+  function init(){styles();render();github();loginRow();bind();publish();window.addEventListener('promptai:access',()=>{github();loginRow()});
+    window.SiteBriefCloud?.subscribe?.(()=>{loginRow();render()});
+    let n=0;const timer=setInterval(()=>{render();github();loginRow();if(++n>=10)clearInterval(timer)},400);
   }
   // What the request layer reads: provider, the exact model string and the label of the connection
   // the visitor marked as active - or null, which means "use the plan's AIs".
@@ -157,7 +190,8 @@
     const provider=saved[`slot${index}`]||PROVIDERS[Number(index)]?.[0]||'gateway';
     const model=String(saved[`model${index}`]||'').trim();
     if(!model)return null;
-    return {provider,model,label:String(saved[`name${index}`]||'Eigene Verbindung')};
+    const uses=String(saved[`use${index}`]??'text,image,website').split(',').filter(Boolean);
+    return {provider,model,label:String(saved[`name${index}`]||'Eigene Verbindung'),uses};
   }
   function publish(){
     window.PromptAiOwnConnection=activeConnection();

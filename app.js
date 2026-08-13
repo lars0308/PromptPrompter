@@ -43,7 +43,7 @@
   const PREVIEW_COUNT=3;
   const PLAN_RULES = {
     free:{label:"Free",modes:["guided"],libraryItems:0,concepts:3,previewRetries:1,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,aiPreviews:false,maxRefUrls:1,maxRefImages:0},
-    pro:{label:"Pro",modes:["guided","auto"],libraryItems:10,concepts:3,previewRetries:2,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:true,github:false,existing:true,aiPreviews:true,maxRefUrls:3,maxRefImages:3},
+    pro:{label:"Pro",modes:["guided","auto"],libraryItems:10,concepts:3,previewRetries:2,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:false,github:false,existing:true,aiPreviews:true,maxRefUrls:3,maxRefImages:3},
     ultimate:{label:"Ultimate",modes:["guided","auto","expert"],libraryItems:Infinity,concepts:3,previewRetries:3,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true,existing:true,aiPreviews:true,maxRefUrls:5,maxRefImages:5}
   };
   const DEFAULT_SETTINGS = {

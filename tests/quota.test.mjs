@@ -30,7 +30,7 @@ test('website generations are counted server-side only after a successful concep
   const router=await text('api/generate.js'),ui=await text('usage-quota-ui.js');
   assert.match(router,/websiteConceptRoute/);
   assert.match(router,/captured\.state\.status<400/);
-  assert.match(router,/consumeWebsiteGeneration\(req\)/);
+  assert.match(router,/consumeWebsiteGeneration\(req,keySource\)/);
   assert.match(ui,/watchWebsiteResult/);
   assert.match(ui,/concept-option/);
   assert.doesNotMatch(ui,/quotaApi\('quota-consume'/);
@@ -88,4 +88,48 @@ test('administrators can test without being blocked while normal accounts are en
   assert.match(server,/!entitlement\.isAdmin/);
   assert.match(server,/summary\.isAdmin/);
   assert.match(server,/MONTHLY_QUOTA_EXHAUSTED/);
+});
+
+test('own calls count half, own tokens not at all',async()=>{
+  const quota=await text('server/quota.js'),usage=await text('server/usage.js'),router=await text('api/generate.js'),migration=await text('supabase/migrations/20260815_add_usage_key_source.sql');
+  assert.match(migration,/add column if not exists key_source text not null default 'system'/);
+  assert.match(usage,/key_source:event\.keySource==='account'\?'account':'system'/);
+  // Two runs on the visitor's own key use up one unit of the monthly allowance.
+  assert.match(quota,/const OWN_KEY_WEIGHT=0\.5;/);
+  assert.match(quota,/const rowWeight=row=>row\?\.key_source==='account'\?OWN_KEY_WEIGHT:1;/);
+  assert.match(quota,/metricResult\(limits\[key\],Math\.floor\(counts\[key\]\)\)/,'halves never cost a whole unit');
+  // The budget exists to cap our cost, so tokens the visitor paid for are excluded entirely.
+  assert.match(quota,/key_source=neq\.account/);
+  assert.match(router,/const keySource=String\(captured\.state\.headers/,'the bookkeeping event knows whose key answered');
+});
+
+test('the website build is Ultimate, on the client and on the server',async()=>{
+  const app=await text('app.js'),core=await text('server/generate-core.js'),ui=await text('website-build-ui.js'),home=await text('home-entry-ui.js');
+  assert.match(app,/pro:\{label:"Pro"[^}]*zip:false/,'Pro no longer carries the build');
+  assert.match(app,/ultimate:\{label:"Ultimate"[^}]*zip:true/);
+  assert.match(core,/if\(entitlement\.plan!=='ultimate'&&!entitlement\.isAdmin\)return res\.status\(403\)/);
+  assert.match(core,/Der Website-Probelauf ist in Ultimate enthalten\./);
+  assert.match(ui,/const isLocked=\(\)=>\{const a=access\(\);return !a\.isAdmin&&a\.plan!=='ultimate'\}/);
+  assert.match(home,/'Probelauf: Prompt\.ai baut aus deinem Briefing eine Testseite\.',false,'ULTIMATE'/);
+});
+
+test('a connection slot folds, carries its own name and says what it is used for',async()=>{
+  const ui=await text('settings-connections-ui.js'),access=await text('stability-ui.js');
+  assert.match(ui,/<details class="conn-slot"/,'one fold per key instead of five open forms');
+  assert.match(ui,/const title=String\(saved\[`name\$\{index\}`\]\|\|''\)\.trim\(\)\|\|`API-Key \$\{index\+1\}`;/);
+  for(const use of ['text','image','website'])assert.ok(ui.includes(`purpose('${use}'`),`${use} cannot be assigned`);
+  assert.match(ui,/setName\(`use\$\{index\}`,chosen\.join\(','\)\)/);
+  assert.match(ui,/uses\}/,'the purposes travel with the connection');
+  // Ultimate brings two slots without buying anything.
+  assert.match(access,/\+\(plan==='ultimate'\|\|isOwner\?2:0\)/);
+  assert.match(ui,/function loginRow\(\)/,'the login hint follows the real session');
+});
+
+test('every save says so',async()=>{
+  const toast=await text('save-toast-ui.js'),loader=await text('admin-console.js'),sw=await text('sw.js');
+  assert.match(toast,/node\.className='save-toast'/);
+  assert.match(toast,/const SKIP=/,'delete and checkout keep their own feedback');
+  assert.match(toast,/auth-message\.error/,'a failed save never reports success');
+  assert.match(loader,/\.\/save-toast-ui\.js\?v=\d{8}-\d+/);
+  assert.ok(sw.includes('/save-toast-ui.js'));
 });

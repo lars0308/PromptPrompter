@@ -43,12 +43,18 @@ function nextResetText(value){return new Intl.DateTimeFormat('de-DE',{day:'2-dig
 
 async function usageRows(userId,start,end){
   const actions=Object.values(METRIC_ACTIONS).join(',');
-  const path=`/rest/v1/sitebrief_usage_events?select=action&user_id=eq.${encodeURIComponent(userId)}&success=eq.true&action=in.(${encodeURIComponent(actions).replace(/%2C/g,',')})&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=2000`;
+  const path=`/rest/v1/sitebrief_usage_events?select=action,key_source&user_id=eq.${encodeURIComponent(userId)}&success=eq.true&action=in.(${encodeURIComponent(actions).replace(/%2C/g,',')})&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=2000`;
   return (await serviceFetch(path)).data||[];
 }
+// A run on the visitor's own key costs us nothing but the orchestration, so it counts half: two of
+// them use up one unit of the monthly allowance. Whole numbers stay whole - only own runs bring
+// halves into the sum, and the display rounds them down.
+const OWN_KEY_WEIGHT=0.5;
+const rowWeight=row=>row?.key_source==='account'?OWN_KEY_WEIGHT:1;
 
+// Tokens paid by the visitor never touch the budget: the budget exists to cap our cost.
 async function tokensUsed(userId,start,end){
-  const path=`/rest/v1/sitebrief_usage_events?select=total_tokens&user_id=eq.${encodeURIComponent(userId)}&total_tokens=gt.0&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=5000`;
+  const path=`/rest/v1/sitebrief_usage_events?select=total_tokens&user_id=eq.${encodeURIComponent(userId)}&total_tokens=gt.0&key_source=neq.account&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=5000`;
   const rows=(await serviceFetch(path)).data||[];
   return rows.reduce((sum,row)=>sum+(Number(row.total_tokens)||0),0);
 }
@@ -85,9 +91,9 @@ async function getQuotaSummary(req){
   let user=null;try{user=await authenticatedUser(req)}catch{}
   let available=true,rows=[];
   if(user){try{rows=await usageRows(user.id,start,end)}catch{available=false}}
-  const counts={free_prompts:0,website_generations:0,ai_previews:0};
-  for(const row of rows){for(const [metric,action] of Object.entries(METRIC_ACTIONS))if(row?.action===action)counts[metric]++}
-  const metrics={};for(const key of Object.keys(counts))metrics[key]=metricResult(limits[key],counts[key]);
+  const counts={free_prompts:0,website_generations:0,ai_previews:0},ownRuns={free_prompts:0,website_generations:0,ai_previews:0};
+  for(const row of rows)for(const [metric,action] of Object.entries(METRIC_ACTIONS))if(row?.action===action){counts[metric]+=rowWeight(row);if(rowWeight(row)!==1)ownRuns[metric]++}
+  const metrics={};for(const key of Object.keys(counts))metrics[key]={...metricResult(limits[key],Math.floor(counts[key])),exact:counts[key],ownRuns:ownRuns[key]};
   const tokens=await getTokenBudget(req);
   return {plan,isAdmin:Boolean(entitlement.isAdmin),authenticated:Boolean(user),available,enforced:Boolean(user)&&available&&!entitlement.isAdmin,periodStart:start.toISOString(),periodEnd:end.toISOString(),metrics,tokens};
 }
@@ -109,19 +115,19 @@ async function assertQuota(req,metric){
 
 // One preview run = three images. Counting every image would have made a project with two
 // regenerations eat nine of them, so the run is what is booked - written server-side, once.
-async function consumePreviewRun(req){
+async function consumePreviewRun(req,keySource='system'){
   const checked=await assertQuota(req,'ai_previews');
   if(!checked.summary.authenticated||!checked.summary.available)return checked.summary;
   const user=await authenticatedUser(req);
-  await serviceFetch('/rest/v1/sitebrief_usage_events',{method:'POST',headers:{Prefer:'return=minimal'},body:{user_id:user.id,action:METRIC_ACTIONS.ai_previews,provider:'prompt-ai',model:'',success:true,error_message:'',project_name:'Vorschau-Durchlauf',project_type:'Website',project_goal:''}});
+  await serviceFetch('/rest/v1/sitebrief_usage_events',{method:'POST',headers:{Prefer:'return=minimal'},body:{user_id:user.id,action:METRIC_ACTIONS.ai_previews,provider:'prompt-ai',model:'',success:true,error_message:'',project_name:'Vorschau-Durchlauf',project_type:'Website',project_goal:'',key_source:keySource==='account'?'account':'system'}});
   return getQuotaSummary(req);
 }
 
-async function consumeWebsiteGeneration(req){
+async function consumeWebsiteGeneration(req,keySource='system'){
   const checked=await assertQuota(req,'website_generations');
   if(!checked.summary.authenticated||!checked.summary.available)return getQuotaSummary(req);
   const user=await authenticatedUser(req);
-  await serviceFetch('/rest/v1/sitebrief_usage_events',{method:'POST',headers:{Prefer:'return=minimal'},body:{user_id:user.id,action:METRIC_ACTIONS.website_generations,provider:'prompt-ai',model:'',success:true,error_message:'',project_name:'Website-Projekt',project_type:'Website',project_goal:''}});
+  await serviceFetch('/rest/v1/sitebrief_usage_events',{method:'POST',headers:{Prefer:'return=minimal'},body:{user_id:user.id,action:METRIC_ACTIONS.website_generations,provider:'prompt-ai',model:'',success:true,error_message:'',project_name:'Website-Projekt',project_type:'Website',project_goal:'',key_source:keySource==='account'?'account':'system'}});
   return getQuotaSummary(req);
 }
 

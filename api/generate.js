@@ -53,8 +53,10 @@ async function websiteConceptRoute(req,res){
   const captured=captureResponse();
   if(req.body?.systemAiProfileId&&req.body?.useOwnApi!==true)await runSystemProfiles(req,captured);else await core(req,captured);
   if(captured.state.status<400){
-    if(!regenerate){try{await consumeWebsiteGeneration(req)}catch{}}
-    try{await consumePreviewRun(req)}catch{}
+    // Whose key answered decides how much of the monthly allowance this run costs.
+    const keySource=String(captured.state.headers?.['X-SiteBrief-AI-Key-Source']||captured.state.headers?.['x-sitebrief-ai-key-source']||'system');
+    if(!regenerate){try{await consumeWebsiteGeneration(req,keySource)}catch{}}
+    try{await consumePreviewRun(req,keySource)}catch{}
   }
   return flush(res,captured.state);
 }
