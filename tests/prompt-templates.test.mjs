@@ -316,7 +316,7 @@ test('sources are deduplicated, unusable crawls stay out of the prompt, and the 
   assert.match(app,/const usable=usableSources\(\),skipped=state\.sourceUrls\.length-usable\.length;/,'failed crawls are counted, not printed');
   assert.match(app,/website:el\.clientWebsite\?\.value\.trim\(\)\|\|usableSources\(\)\[0\]\?\.url\|\|""/,'the existing website is the one entered here, not the first crawl');
   assert.match(app,/async function pendingNameSuggestion\(found\)/,'a found company name is offered, never written over silently');
-  assert.match(app,/liegt dem Übergabe-ZIP als Datei bei und ist dann die verbindliche visuelle Grundlage/,'the preview is only binding when it travels with the package');
+  assert.match(app,/liegt dem Übergabe-ZIP als Datei bei\. Verbindlich sind daran ausschließlich Komposition/,'the preview is only binding when it travels with the package - and only for the look');
 });
 
 test('lessons from earlier projects reach the questions, where they can still change the briefing',async()=>{
@@ -332,4 +332,60 @@ test('lessons from earlier projects reach the questions, where they can still ch
   assert.match(core,/const learning=await learningBlock\(project\);/);
   assert.match(core,/makeReviewPrompt\(\{project,references:[^}]*learning\}\)/);
   assert.match(core,/function makeReviewPrompt\(\{project,references,documents,settings,template,modules,clarifications,learning\}\)/);
+});
+
+// The fact sheet is sliced out of app.js and executed against real crawled data, so this test
+// fails when the extraction stops working - not only when the source text changes.
+async function factHarness(){
+  const src=await text('app.js');
+  const cut=(start,end)=>{const a=src.indexOf(start);const b=src.indexOf(end,a);assert.ok(a>=0&&b>a,`marker missing: ${start}`);return src.slice(a,b)};
+  const body=`let state={sourceUrls:[]},PROJECT={};function project(){return PROJECT}\n`
+    +cut('  const UNUSABLE_SOURCE=','  const usableSources=')
+    +'  const usableSources=()=>state.sourceUrls.filter(sourceUsable);\n'
+    +cut('  const FACT_MAIL=','  function buildMasterPrompt(){')
+    +'return {set:(s,p)=>{state=s;PROJECT=p},verifiedFactsBlock,masterBrandName,projectAudience,usableSources};';
+  return new Function(body)();
+}
+
+test('the master prompt carries the facts the customer site already answers',async()=>{
+  const api=await factHarness();
+  const page={url:'https://beispiel.de/kontakt',title:'Kontakt',summary:'Kontakt Familie Aslan bereitet hier schon seit 1999 Gerichte zu. Das Restaurant bietet bis zu 50 Sitzplaetze. Tel.: +49 (0)5725 88 85 E-Mail: post@beispiel.de Rechtliches: Impressum Weitere Informationen zu unseren Leistungen finden Sie auf dieser Seite.'};
+  api.set({sourceUrls:[{url:'https://beispiel.de',title:'Beispiel',pages:[page],links:['https://beispiel.de/wp-content/uploads/speisekarte.pdf','https://www.facebook.com/beispiel/']}],clarifications:[]},{name:'Beispiel',description:'Laden in 31698 Lindhorst'});
+  const block=api.verifiedFactsBlock();
+  assert.match(block,/- Telefon: \+49 \(0\)5725 88 85 \(Quelle: https:\/\/beispiel\.de\/kontakt\)/);
+  assert.match(block,/- E-Mail: post@beispiel\.de/);
+  assert.match(block,/- PLZ \/ Ort: 31698 Lindhorst/);
+  assert.match(block,/- Bestehend seit: 1999/);
+  // What is missing has to be named as missing, otherwise the model fills the gap itself.
+  assert.match(block,/- Öffnungszeiten: nicht in den Quellen gefunden/);
+  // A linked PDF lives under wp-content; the boilerplate filter must not swallow it.
+  assert.match(block,/NICHT AUSGEWERTETE UNTERLAGEN[\s\S]*speisekarte\.pdf/);
+});
+
+test('a blocked search page is not a customer source, and its title never becomes the brand',async()=>{
+  const api=await factHarness();
+  const google={url:'https://www.google.com/search?q=x',title:'Google Search',pages:[
+    {url:'https://www.google.com/search?q=x',title:'Google Search',summary:'Google Search Wenn du Probleme beim Zugriff auf die Google Suche hast, klicke hier oder gib uns Feedback . Das ist der gesamte Inhalt dieser Seite und trotzdem laenger als hundert Zeichen.'},
+    {url:'https://www.google.com/httpservice/retry/enablejs',title:'Enable JavaScript to use search',summary:'Enable JavaScript to use search Turn on JavaScript to keep searching The browser you are using has JavaScript turned off. To continue your search, turn it on.'}
+  ],links:[]};
+  const real={url:'https://kunde.de',title:'Kunde',pages:[{url:'https://kunde.de',title:'Kunde',summary:'x'.repeat(300)}],links:[]};
+  api.set({sourceUrls:[google,real],clarifications:[]},{name:'Google Search',client:{name:'Lindhorster Grill &#038; Dönerhaus &#8211; Komme als Gast, gehe als Freund..'}});
+  assert.equal(api.usableSources().length,1,'the blocked search page is dropped');
+  // The page title of an import must never end up as the brand on the finished website.
+  assert.equal(api.masterBrandName(),'Lindhorster Grill & Dönerhaus');
+});
+
+test('an answered question becomes project data instead of staying a transcript line',async()=>{
+  const api=await factHarness();
+  api.set({sourceUrls:[],clarifications:[{question:'Welche Zielgruppe soll mit der Website angesprochen werden?',answer:'Lokale Einwohner und Passanten'}]},{name:'X',audience:''});
+  assert.equal(api.projectAudience(),'Lokale Einwohner und Passanten');
+  api.set({sourceUrls:[],clarifications:[{question:'Welche Zielgruppe?',answer:'aus der Rückfrage'}]},{name:'X',audience:'vom Nutzer selbst gesetzt'});
+  assert.equal(api.projectAudience(),'vom Nutzer selbst gesetzt','an own entry always wins');
+});
+
+test('the preview image is binding for the look, never for facts',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/Alle Texte, Namen, Zahlen und Preise im Bild sind Artefakte des Bildmodells und dürfen niemals übernommen werden/);
+  assert.match(app,/Jede angezeigte Telefonnummer, E-Mail, Adresse, Öffnungszeit, Preis- und Jahresangabe stammt aus „Gesicherte Fakten/);
+  assert.match(app,/8\. jede angezeigte Kontakt-, Orts-, Zeit- und Preisangabe auf eine benannte Quelle zurückführbar ist/);
 });
