@@ -751,3 +751,48 @@ test('a loading screen always finishes its fill, and its headline is not clipped
   // background-clip:text paints the glyphs inside the line box: 1.02 cut the tails off g and p.
   for(const src of [loader,handoff])assert.match(src,/padding-bottom:\.06em;font-size:clamp\(31px,8vw,4[78]px\);line-height:1\.14/);
 });
+
+test('modules and skills reach the prompt in every mode, not only in the expert one',async()=>{
+  const app=await text('app.js'),ui=await text('project-extras-ui.js'),html=await text('index.html');
+  // Guided skipped step 4, so nothing was ever activated - an uploaded Claude/Codex skill did nothing.
+  assert.match(app,/if\(state\.mode!=="expert"\)recommendModules\(true\)/);
+  // "always active" was only applied when a dropdown in the library changed.
+  assert.match(app,/function applyLibraryDefaults\(\)/);
+  assert.match(app,/state\.selectedModuleIds=\[\];state\.selectedSkillIds=\[\];state\.recommendedModuleIds=\[\];\n    applyLibraryDefaults\(\);/,'a new project starts from the library defaults');
+  assert.match(app,/window\.PromptAiProjectExtras=\{list:projectExtrasList,set:setProjectExtra,active:activeExtraNames\}/);
+  // Never a silent activation: the confirmation names what travels with the briefing.
+  assert.match(app,/Bausteine & Skills: \$\{activeExtraNames\(\)\.join\(', '\)\|\|'keine aktiv'\}/);
+  assert.match(ui,/role="switch" aria-pressed/,'one switch per entry, on and off per project');
+  assert.match(ui,/eine Skill-Datei aus Claude oder Codex hoch/,'an empty library says what to do');
+  assert.match(html,/<dialog id="projectExtrasDialog"/);
+  assert.match(html,/id="projectConfirmExtras"/);
+});
+
+test('the modes are named after what they do',async()=>{
+  const html=await text('index.html'),start=await text('project-start-ui.js'),flow=await text('mode-flow-ui.js');
+  assert.match(html,/data-mode="guided" class="active">Mit Rückfragen</);
+  assert.match(html,/data-mode="auto">Ohne Rückfragen</);
+  assert.match(html,/data-mode="expert">Selbst einstellen</);
+  assert.match(start,/<b>Mit Rückfragen<\/b>/);
+  assert.match(start,/<b>Ohne Rückfragen<\/b>/);
+  assert.match(start,/<b>Selbst einstellen<\/b>/);
+  assert.match(flow,/guided:\['Mit Rückfragen/);
+  assert.doesNotMatch(html,/data-mode="[a-z]+"[^>]*>Geführt</,'the old names are gone from the switch');
+});
+
+test('a first-time visitor gets three sentences before the first empty field',async()=>{
+  const intro=await text('welcome-intro-ui.js'),loader=await text('admin-console.js'),sw=await text('sw.js');
+  assert.match(intro,/#gateGuestBtn,#gateSignUpPick,#signUpBtn,#startFreeBtn,#offerCta/,'shown on register and on free trial');
+  assert.match(intro,/const SEEN_KEY='prompt-ai-intro-seen-v1'/);
+  assert.match(intro,/if\(seen\(\)\)return;/,'once per device, never again');
+  assert.match(intro,/#cookieBanner\[open\],#maintenanceDialog\[open\]/,'never on top of something that has to be answered first');
+  assert.match(loader,/\.\/welcome-intro-ui\.js\?v=\d{8}-\d+/);
+  assert.ok(sw.includes('/welcome-intro-ui.js'));
+});
+
+test('the footer year does not depend on an inline script at the end of a cached document',async()=>{
+  const theme=await text('theme-init.js'),html=await text('index.html');
+  assert.match(theme,/const setYear=\(\)=>\{const node=document\.getElementById\('currentYear'\)/);
+  assert.match(theme,/addEventListener\('pageshow',setYear\)/);
+  assert.doesNotMatch(html,/<span id="currentYear">2024<\/span>/,'the fallback is not a year from the past');
+});

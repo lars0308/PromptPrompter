@@ -29,9 +29,9 @@
   function syncMode(){
     const mode=currentMode();document.documentElement.dataset.promptMode=mode;
     const card=$('#modeRouteCard'),copy={
-      guided:['Geführt · KI-Interview','Du beschreibst das Projekt und ergänzt Referenzen. Prompt.ai richtet die technischen Startwerte ein, stellt nur relevante Rückfragen und zeigt dir danach Blueprint, Richtungen und Feinschliff.'],
-      auto:['Auto · Briefing rein, Prompt raus','Du beschreibst das Projekt und kannst Referenzen ergänzen. Die KI wählt Startwerte, Regeln und Richtungsumfang; nur echte Blocker werden noch gefragt. Danach entsteht der Master-Prompt automatisch.'],
-      expert:['Experte · volle Kontrolle','Alle acht Schritte bleiben offen. Agent, Modell, Ausgabeziel, Module, Skills, Regler, Vorschauen und Feinschliff werden von dir bewusst bestimmt und wirken direkt auf den Master-Prompt.']
+      guided:['Mit Rückfragen · KI-Interview','Du beschreibst das Projekt und ergänzt Referenzen. Prompt.ai richtet die technischen Startwerte ein, stellt nur relevante Rückfragen und zeigt dir danach Blueprint, Richtungen und Feinschliff.'],
+      auto:['Ohne Rückfragen · Briefing rein, Prompt raus','Du beschreibst das Projekt und kannst Referenzen ergänzen. Die KI wählt Startwerte, Regeln und Richtungsumfang; nur echte Blocker werden noch gefragt. Danach entsteht der Master-Prompt automatisch.'],
+      expert:['Selbst einstellen · volle Kontrolle','Alle acht Schritte bleiben offen. Agent, Modell, Ausgabeziel, Module, Skills, Regler, Vorschauen und Feinschliff werden von dir bewusst bestimmt und wirken direkt auf den Master-Prompt.']
     }[mode];if(card){card.querySelector('strong').textContent=copy[0];card.querySelector('small').textContent=copy[1]}
     if(mode==='expert')$('#modeFlowPanel')?.setAttribute('hidden','');else $('#modeFlowPanel')?.removeAttribute('hidden');
     scheduleRoute();

@@ -16,6 +16,13 @@
       setTimeout(()=>document.documentElement.classList.remove('prompt-handoff-pending'),9000);
     }
   }catch{}
+  // The footer year lived in an inline script at the very end of index.html. On a device with a
+  // cached shell that script is the cached one too, so the year froze. Setting it here - in the
+  // first script of the page - keeps it correct as soon as any newer file is loaded.
+  const setYear=()=>{const node=document.getElementById('currentYear');if(node)node.textContent=String(new Date().getFullYear())};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setYear,{once:true});else setYear();
+  addEventListener('pageshow',setYear);
+
   // Shared driver for the "headline fills blue" loading language. Loading screens report the
   // progress they actually have instead of running a fixed-length animation, and finish() closes
   // the screen the same way everywhere: snap to full, blink blue once, then hand back.

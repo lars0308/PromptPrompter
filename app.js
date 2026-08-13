@@ -795,6 +795,10 @@
     state.clarifications=[];state.projectReview=null;state.reviewSignature="";state.reviewDeferred=false;
     state.concepts=[];state.selectedConceptId="";state.refinements=[];state.previewRuns=0;
     state.currentStep=1;state.maxVisited=1;
+    // A new project starts from the library defaults, not from what the previous project happened
+    // to have switched on.
+    state.selectedModuleIds=[];state.selectedSkillIds=[];state.recommendedModuleIds=[];
+    applyLibraryDefaults();
   }
   // Changing the brief, the customer or the website invalidates everything the AI derived from the
   // old wording: an analysis of a handyman business must not survive into a doner shop. The result
@@ -1061,7 +1065,7 @@
     if(!c){el.profileImpact.innerHTML='<span class="empty">Wähle ein Profil, um den enthaltenen Projektaufbau zu sehen.</span>';return;}
     const mods=(c.selectedModuleIds||[]).filter(id=>state.modules.some(x=>x.id===id)).length;
     const skills=(c.selectedSkillIds||[]).filter(id=>state.skills.some(x=>x.id===id)).length;
-    const values=[AGENT_NAMES[c.targetAgent]||c.targetAgent||'Codex',c.engine==='gemini'?'Gemini direkt':c.engine==='openai'?'OpenAI direkt':c.engine==='gateway'?'AI Gateway':'Lokal',c.model||'Standardmodell',OUTPUT_TARGETS[c.outputTarget]||OUTPUT_TARGETS['next-vercel'],c.mode==='expert'?'Experte':c.mode==='auto'?'Auto':'Geführt','Drei Vorschauen',`${mods} Module`,`${skills} Skills`];
+    const values=[AGENT_NAMES[c.targetAgent]||c.targetAgent||'Codex',c.engine==='gemini'?'Gemini direkt':c.engine==='openai'?'OpenAI direkt':c.engine==='gateway'?'AI Gateway':'Lokal',c.model||'Standardmodell',OUTPUT_TARGETS[c.outputTarget]||OUTPUT_TARGETS['next-vercel'],c.mode==='expert'?'Selbst einstellen':c.mode==='auto'?'Ohne Rückfragen':'Mit Rückfragen','Drei Vorschauen',`${mods} Module`,`${skills} Skills`];
     el.profileImpact.innerHTML=values.map(x=>`<span>${escapeHtml(x)}</span>`).join('');
   }
 
@@ -1082,6 +1086,14 @@
     });
   }
 
+  // Called at project start and on every mode change, not only when a dropdown in the library is
+  // touched. "always" and "default" both mean on-by-default; the project dialog may switch either
+  // of them off for this one project.
+  function applyLibraryDefaults(){
+    if(!planRules().modules)return;
+    applyAlwaysActiveItems(true);
+    saveState();
+  }
   function applyAlwaysActiveItems(includeDefaults=false){
     const moduleIds=state.modules.filter(x=>x.activation==="always" || (includeDefaults&&x.activation==="default")).map(x=>x.id);
     const skillIds=state.skills.filter(x=>(x.agent==="all"||x.agent===state.targetAgent) && (x.activation==="always" || (includeDefaults&&x.activation==="default"))).map(x=>x.id);
@@ -2234,10 +2246,36 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     const sources=usableSources();
     const lines=[`Projekt: ${p.name||'ohne Namen'}`,`Kunde: ${p.client?.name||'nicht angegeben'}`,`Beschreibung: ${String(p.description||'').slice(0,120)}${String(p.description||'').length>120?'…':''}`,
       `Bestehende Website: ${p.client?.website||'keine'}`,`Quellen: ${sources.length} Kundenquelle${sources.length===1?'':'n'}, ${state.urls.length} Referenz${state.urls.length===1?'':'en'}`,
-      `Vorschau gewählt: ${selectedConcept()?'ja':'nein'}`];
+      `Vorschau gewählt: ${selectedConcept()?'ja':'nein'}`,
+      `Bausteine & Skills: ${activeExtraNames().join(', ')||'keine aktiv'}`];
     const warning=issues.length?`\n\nAchtung: ${issues.map(x=>`${x.label} („${x.value}") passt nicht zur Beschreibung`).join('; ')}.`:'';
     return Boolean(await customConfirm(`${lines.join('\n')}${warning}\n\nSind diese Projektdaten korrekt?`,{title:issues.length?'Projektdaten prüfen':'Projektdaten bestätigen',confirmLabel:'Passt, Master-Prompt erstellen',cancelLabel:'Zurück und korrigieren',danger:issues.length>0}));
   }
+  // The dialog needs one flat view over both lists, with the state that really applies right now.
+  function projectExtrasList(){
+    const allowed=planRules().modules;
+    const modules=(allowed?state.modules:[]).map(item=>({id:item.id,name:item.name,info:item.summary||item.tag||'Eigener Baustein',
+      on:state.selectedModuleIds.includes(item.id),recommended:state.recommendedModuleIds?.includes(item.id)||false,source:false}));
+    const skills=(allowed?visibleSkills():[]).map(item=>({id:item.id,name:item.name,
+      info:[item.trigger||'Bei passender Aufgabe anwenden',item.sourceFile?`Quelle: ${item.sourceFile}`:''].filter(Boolean).join(' · '),
+      on:state.selectedSkillIds.includes(item.id),recommended:false,source:Boolean(item.sourceFile)}));
+    return {modules,skills};
+  }
+  function setProjectExtra(kind,id,on){
+    const key=kind==='module'?'selectedModuleIds':'selectedSkillIds';
+    const current=new Set(state[key]);
+    if(on)current.add(id);else current.delete(id);
+    state[key]=[...current];
+    if(kind==='module')renderModuleSelection();else renderSkillSelection();
+    saveState();updateGuide();
+    window.dispatchEvent(new CustomEvent('promptai:project-extras'));
+  }
+  function activeExtraNames(){
+    const {modules,skills}=projectExtrasList();
+    return [...modules,...skills].filter(item=>item.on).map(item=>item.name);
+  }
+  window.PromptAiProjectExtras={list:projectExtrasList,set:setProjectExtra,active:activeExtraNames};
+
   function updateMasterPrompt(){
     try{
       const prompt=buildMasterPrompt();
@@ -2288,7 +2326,7 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     $$('.step-nav').forEach(btn=>{const n=Number(btn.dataset.step);btn.classList.toggle("active",n===step);btn.classList.toggle("done",n<step || n<state.maxVisited)});
     el.progressText.textContent=`${step} / 8`;
     if(step===1) renderUnderstanding();
-    if(step===4){renderTemplateSelect();recommendModules(false);renderSkillSelection();if(state.mode==="auto")recommendModules(true)}
+    if(step===4){renderTemplateSelect();recommendModules(false);renderSkillSelection();if(state.mode!=="expert")recommendModules(true)}
     if(step===5) renderBlueprint();
     // No button any more: arriving at the preview step starts the run. The loading screen of the
     // step before stays up until the three directions are there.
@@ -2305,7 +2343,9 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     if(!planRules().modes.includes(mode)){el.plansDialog?.showModal();return;}
     state.mode=mode;$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
     if(mode==="expert") state.maxVisited=8;
+    applyLibraryDefaults();
     renderModeDescription();updateGuide();saveState();
+    window.dispatchEvent(new CustomEvent('promptai:project-extras'));
   }
 
   function renderLibrary(){

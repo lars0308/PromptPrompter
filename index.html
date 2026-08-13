@@ -11,7 +11,7 @@
   <link rel="icon" href="./sitebrief-logo.svg?v=4" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
-  <script src="./theme-init.js?v=5"></script>
+  <script src="./theme-init.js?v=6"></script>
   <link rel="stylesheet" href="./styles.css?v=20260815-4" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
@@ -47,9 +47,9 @@
     </a>
 
     <div class="mode-switch" id="modeSwitch" aria-label="Arbeitsmodus" hidden>
-      <button type="button" data-mode="guided" class="active">Geführt</button>
-      <button type="button" data-mode="auto">Auto</button>
-      <button type="button" data-mode="expert">Experte</button>
+      <button type="button" data-mode="guided" class="active">Mit Rückfragen</button>
+      <button type="button" data-mode="auto">Ohne Rückfragen</button>
+      <button type="button" data-mode="expert">Selbst einstellen</button>
     </div>
 
     <div class="top-actions">
@@ -170,6 +170,7 @@
         </div>
 
         <div class="no-references-note"><span>Keine Referenzen zur Hand? Kein Problem — einfach weiter.</span><button type="button" class="text-btn" id="skipReferencesBtn">Nein, weiter ohne Referenzen <i>→</i></button></div>
+        <p class="project-extras-note" id="projectConfirmExtras"></p>
 
         <section class="client-context-card" id="clientContextCard"><div class="selection-head"><div><span>KUNDENINFORMATIONEN</span></div></div><p class="client-context-lead">Hier geht es um echte Fakten, nicht um Stil: die eigene Website deines Kunden, ein Google-Eintrag oder eine andere Datenquelle, aus der Prompt.ai Adresse, Öffnungszeiten oder Leistungen übernehmen darf.</p><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" autocomplete="off" type="text" placeholder="z. B. Prompt.ai Studio" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Website, Google-Link oder Datenquelle</span><input id="clientWebsite" autocomplete="off" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" autocomplete="off" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Quelle hinzufügen & auslesen</button><small id="clientImportStatus"></small></div><div id="clientSources" class="source-list"></div></section>
 
@@ -705,7 +706,7 @@
       <div class="plans-grid">
         <article class="plan-card" data-plan-card="free">
           <div class="plan-card-summary"><span><b>Kostenlos</b><small>Für eigene Ideen und erste Projekte</small></span><strong>0 €</strong></div>
-          <div class="plan-card-detail"><p class="plan-card-includes">Das ist immer dabei:</p><ul><li>Geführter Ablauf mit Codex als Ziel-Agent</li><li>Drei responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Website-Grundscan und einfache Überarbeitung</li><li>Kurze Grundprüfung zu Datenschutz und Impressum</li></ul><aside class="single-check-note"><strong>Erweiterte Prüfung für ein Projekt – 3,99 €</strong><small>Ein einmaliges Prüfguthaben ohne Abo. Prompt.ai untersucht dein Briefing genauer auf fehlende Angaben und Widersprüche, stellt gezielte Rückfragen und ergänzt Prüfhinweise zu Datenschutz, Impressum, Barrierefreiheit, Sicherheit, Performance und SEO. Das Guthaben wird erst verbraucht, wenn du die erweiterte Prüfung startest.</small><button type="button" class="solid-btn mini" id="buySingleReviewBtn">Einmalig für 3,99 € prüfen</button></aside><button type="button" class="outline-btn plan-card-buy" id="startFreeBtn">Kostenlos starten</button></div>
+          <div class="plan-card-detail"><p class="plan-card-includes">Das ist immer dabei:</p><ul><li>Ablauf mit Rückfragen und Codex als Ziel-Agent</li><li>Drei responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Website-Grundscan und einfache Überarbeitung</li><li>Kurze Grundprüfung zu Datenschutz und Impressum</li></ul><aside class="single-check-note"><strong>Erweiterte Prüfung für ein Projekt – 3,99 €</strong><small>Ein einmaliges Prüfguthaben ohne Abo. Prompt.ai untersucht dein Briefing genauer auf fehlende Angaben und Widersprüche, stellt gezielte Rückfragen und ergänzt Prüfhinweise zu Datenschutz, Impressum, Barrierefreiheit, Sicherheit, Performance und SEO. Das Guthaben wird erst verbraucht, wenn du die erweiterte Prüfung startest.</small><button type="button" class="solid-btn mini" id="buySingleReviewBtn">Einmalig für 3,99 € prüfen</button></aside><button type="button" class="outline-btn plan-card-buy" id="startFreeBtn">Kostenlos starten</button></div>
         </article>
         <article class="plan-card recommended" data-plan-card="pro">
           <b class="plan-card-badge">EMPFOHLEN</b>
@@ -714,10 +715,20 @@
         </article>
         <article class="plan-card" data-plan-card="ultimate">
           <div class="plan-card-summary"><span><b>Ultimate</b><small>Für Agenturen und volle Kontrolle</small></span><strong id="ultimatePriceLabel">25,99 € / Monat</strong></div>
-          <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Pro</b>, plus:</p><ul><li>Alle Ziel-Agenten und fünf Richtungen</li><li>Prompt-Werkstatt mit Technik-, Design- und Abnahmeregeln</li><li>Mehrere Prompts als benannte Schnellvarianten</li><li>Eigene KI-Verbindungen inklusive</li><li>Expertenmodus mit allen acht Schritten</li><li>GitHub-Veröffentlichung</li></ul><button type="button" class="outline-btn plan-card-buy" id="startUltimateCheckoutBtn">Jetzt kaufen</button></div>
+          <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Pro</b>, plus:</p><ul><li>Alle Ziel-Agenten und fünf Richtungen</li><li>Prompt-Werkstatt mit Technik-, Design- und Abnahmeregeln</li><li>Mehrere Prompts als benannte Schnellvarianten</li><li>Eigene KI-Verbindungen inklusive</li><li>„Selbst einstellen“ mit allen acht Schritten</li><li>GitHub-Veröffentlichung</li></ul><button type="button" class="outline-btn plan-card-buy" id="startUltimateCheckoutBtn">Jetzt kaufen</button></div>
         </article>
       </div>
       <div class="plans-footer"><button type="button" class="text-btn" id="manageSubscriptionBtn">Bestehendes Abo verwalten</button><small>Die Zahlung und Aboverwaltung erfolgt sicher über Stripe.</small></div>
+    </form>
+  </dialog>
+
+  <dialog id="projectExtrasDialog" class="library-dialog project-extras-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head"><div><span>FÜR DIESES PROJEKT</span><h2>Bausteine &amp; Skills</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
+      <div class="project-extras-body">
+        <p class="project-extras-lead">Was hier an ist, wird in den Master-Prompt geschrieben. Die Voreinstellung kommt aus deiner Bibliothek – hier gilt sie nur für dieses eine Projekt.</p>
+        <div id="projectExtrasList"></div>
+      </div>
     </form>
   </dialog>
 
@@ -788,7 +799,7 @@
         <span class="footer-divider">·</span>
         <a href="#" id="footerCookieLink" class="footer-link">Cookies</a>
       </nav>
-      <small class="prompt-footer-text">© <span id="currentYear">2024</span> Prompt.ai. Alle Rechte vorbehalten.</small>
+      <small class="prompt-footer-text">© <span id="currentYear">2026</span> Prompt.ai. Alle Rechte vorbehalten.</small>
     </div>
   </footer>
 
@@ -796,8 +807,8 @@
   <script src="./maintenance-mode.js?v=20260813-2" defer></script>
   <script src="./entry-gate-ui.js?v=20260814-3" defer></script>
   <script src="./legal-pages.js?v=20260815-1" defer></script>
-  <script src="./app.js?v=20260815-13" defer></script>
-  <script src="./admin-console.js?v=20260814-11" defer></script>
+  <script src="./app.js?v=20260815-14" defer></script>
+  <script src="./admin-console.js?v=20260814-12" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>
 </html>
