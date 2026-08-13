@@ -18,11 +18,11 @@
   // Menü fehlt - Bibliotheken, Projekte und Projektstände liegen bereits drin.
   // Dieselben vier Wege wie die Werkzeugreihe der Startseite - sie lösen genau deren Knopf aus,
   // damit Tarifsperre und Ablauf an einer Stelle geprüft bleiben.
+  // Nur was im Menü wirklich fehlt. "Bibliothek" und "Verlauf" standen doppelt drin:
+  // sie öffnen dieselben Fenster wie die vorhandenen Einträge "Projekte" und
+  // "Projektstände". "Projekt prüfen" ist in die Auswahlliste am Textfeld gewandert.
   const WORK=[
-    ['Bibliothek','workspaceLibraryBtn',ICONS.library],
-    ['Probelauf','workspaceBuildSiteBtn',ICONS.build],
-    ['Projekt prüfen','workspacePreviewBtn',ICONS.check],
-    ['Verlauf','projectHistoryBtn',ICONS.history]
+    ['Probelauf','workspaceBuildSiteBtn',ICONS.build]
   ];
 
   function styles(){

@@ -8,7 +8,7 @@
       const link=document.createElement('link');
       link.id='promptFullAppDesign';
       link.rel='stylesheet';
-      link.href='./promptai-full-app-design.css?v=20260816-7';
+      link.href='./promptai-full-app-design.css?v=20260816-8';
       document.head.appendChild(link);
     }
   }

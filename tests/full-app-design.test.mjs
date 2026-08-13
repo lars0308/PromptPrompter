@@ -74,7 +74,9 @@ test('the console keeps its own type colour, because its ground is dark in both 
   const css=await read('promptai-full-app-design.css');
   assert.match(css,/\.prompt-command-input,[\s\S]{0,80}color:#eef6fb!important/,'--ink would be near-black in light mode, on a dark panel');
   assert.match(css,/--logo-blue:#2d93c9/,'the caret and submit take the blue from the mark itself');
-  assert.match(css,/caret-color:var\(--logo-blue\)!important/);
+  // Der Schreibbalken ist orange - das einzige Warme im Feld und dadurch sofort zu finden.
+  assert.match(css,/caret-color:var\(--caret\)!important/);
+  assert.match(css,/--caret:#ff8a34\}/);
 });
 test('dark mode is graphite, not black, so surfaces still have a step below them',async()=>{
   const css=await read('promptai-full-app-design.css');
@@ -85,7 +87,8 @@ test('the phone home page fits one screen: every block gives height, none disapp
   const css=await read('promptai-full-app-design.css'),home=await read('promptai-home-final.js');
   assert.match(home,/\.prompt-command-input\{[^}]*min-height:185px/,'the component still ships the tall default');
   assert.match(css,/\.prompt-command-input\{min-height:96px!important/,'which the phone layer has to bring down');
-  assert.match(css,/#welcomePage\{[\s\S]{0,120}min-height:calc\(100dvh - 112px\)!important/,'the page claims the screen, so nothing floats in a void');
+  // 100dvh wächst, sobald die Adressleiste verschwindet - unten wurde abgeschnitten.
+  assert.match(css,/#welcomePage\{[\s\S]{0,120}min-height:calc\(100svh - 140px\)!important/,'the page claims the screen, so nothing floats in a void');
   assert.match(css,/\.prompt-command-panel\{max-height:54vh!important\}/,'and the console stops before it becomes a black slab');
 });
 
@@ -95,7 +98,15 @@ test('the start page drops the bottom tools and puts the writing surface in the 
   // with the field for attention.
   assert.doesNotMatch(home,/prompt-home-tools/,'the tool row is gone from the component');
   assert.doesNotMatch(css,/\.prompt-home-tool\b/,'and from the design layer');
-  for(const id of ['workspaceLibraryBtn','workspaceBuildSiteBtn','workspacePreviewBtn','projectHistoryBtn'])assert.ok(nav.includes(id),`${id} must still be reachable from the drawer`);
+  // Every path stays reachable, but each from exactly one place: the app's own menu already
+  // carries Projekte (#openLibraryBtn) and Projektstände (#projectHistoryBtn), so the drawer
+  // adds only the one that was missing, and Projekt prüfen moved into the mode list.
+  assert.match(nav,/\['Probelauf','workspaceBuildSiteBtn'/);
+  for(const gone of ['workspaceLibraryBtn','workspacePreviewBtn','projectHistoryBtn'])assert.ok(!nav.includes(gone),`${gone} must not be duplicated in the drawer`);
+  const html=await read('index.html');
+  for(const id of ['openLibraryBtn'])assert.ok(html.includes(id),id);
+  assert.match(home,/data-command-mode="check"[\s\S]{0,120}Projekt prüfen/);
+  assert.match(home,/if\(mode==='check'\)\{closeModeMenu\(home\);proxy\('workspacePreviewBtn'\);return\}/,'checking is an action, not a writing mode');
   // The mode picker stays the dropdown it was: three tiles took the whole width of the
   // console for a choice that is made once, and suggestion chips added a second row below.
   assert.match(home,/id="promptModeButton"[\s\S]{0,300}id="promptModeMenu"/);
@@ -128,8 +139,7 @@ test('the drawer reshapes the existing menu instead of building a second one',as
   // Late arrivals default to order 0 and would jump to the top without a re-sort.
   assert.match(nav,/new MutationObserver\(\(\)=>\{clearTimeout\(pending\);pending=setTimeout\(shell,60\)\}\)\.observe\(menu,\{childList:true\}\)/);
   // The four work paths click the real home buttons, so the plan gate stays in one place.
-  assert.match(nav,/\['Bibliothek','workspaceLibraryBtn'/);
-  assert.match(nav,/\['Verlauf','projectHistoryBtn'/);
+  assert.match(nav,/\['Probelauf','workspaceBuildSiteBtn'/);
   assert.match(nav,/setTimeout\(\(\)=>\$\('#'\+targetId\)\?\.click\(\),60\)/);
   assert.match(nav,/#accountBtn:not\(\[hidden\]\)\{[\s\S]{0,60}margin-top:auto/,'profile is the one entry pinned to the bottom');
 });
