@@ -264,12 +264,11 @@ test('the instructions to the AI are in German, except the image prompt',()=>{
   }
 });
 
-test('copying hands over both documents, so a plain paste is not missing the sources',async()=>{
+test('copying hands over every document, so a plain paste is not missing the sources',async()=>{
   const app=await text('app.js'),html=await text('index.html');
   assert.match(app,/function copyPayload\(\)\{/);
-  assert.match(app,/===== DATEI 1 VON 2: MASTER-PROMPT\.md =====/);
-  assert.match(app,/===== DATEI 2 VON 2: PROJEKT-QUELLEN\.md =====/);
-  assert.match(app,/navigator\.clipboard\.writeText\(copyPayload\(\)\)/,'the button copies both, not the briefing alone');
+  assert.match(app,/===== DATEI \$\{index\+1\} VON \$\{files\.length\}: \$\{name\} =====/);
+  assert.match(app,/navigator\.clipboard\.writeText\(copyPayload\(\)\)/,'the button copies all of them, not the briefing alone');
   assert.match(html,/id="copyPromptBtn">Prompt &amp; Quellen kopieren</,'the label says what travels');
   // The briefing points at the sources file - and says where it is when copied.
   assert.match(app,/Beim Kopieren aus Prompt\.ai hängt diese Datei direkt unter diesem Auftrag als zweite Datei an\./);
@@ -339,11 +338,11 @@ test('lessons from earlier projects reach the questions, where they can still ch
 async function factHarness(){
   const src=await text('app.js');
   const cut=(start,end)=>{const a=src.indexOf(start);const b=src.indexOf(end,a);assert.ok(a>=0&&b>a,`marker missing: ${start}`);return src.slice(a,b)};
-  const body=`let state={sourceUrls:[]},PROJECT={};function project(){return PROJECT}\n`
+  const body=`let state={sourceUrls:[],settings:{checks:{}}},PROJECT={};function project(){return PROJECT}\n`
     +cut('  const UNUSABLE_SOURCE=','  const usableSources=')
     +'  const usableSources=()=>state.sourceUrls.filter(sourceUsable);\n'
     +cut('  const FACT_MAIL=','  function buildMasterPrompt(){')
-    +'return {set:(s,p)=>{state=s;PROJECT=p},verifiedFactsBlock,masterBrandName,projectAudience,usableSources};';
+    +'return {set:(s,p)=>{state=s;PROJECT=p},verifiedFactsBlock,masterBrandName,projectAudience,usableSources,structureDocument};';
   return new Function(body)();
 }
 
@@ -388,4 +387,38 @@ test('the preview image is binding for the look, never for facts',async()=>{
   assert.match(app,/Alle Texte, Namen, Zahlen und Preise im Bild sind Artefakte des Bildmodells und dürfen niemals übernommen werden/);
   assert.match(app,/Jede angezeigte Telefonnummer, E-Mail, Adresse, Öffnungszeit, Preis- und Jahresangabe stammt aus „Gesicherte Fakten/);
   assert.match(app,/8\. jede angezeigte Kontakt-, Orts-, Zeit- und Preisangabe auf eine benannte Quelle zurückführbar ist/);
+});
+
+test('the page list is derived from the existing site, not decided again on every run',async()=>{
+  const api=await factHarness();
+  api.set({settings:{checks:{imprint:true,privacy:true}},clarifications:[],sourceUrls:[{
+    url:'https://kunde.de',title:'Kunde',
+    pages:[
+      {url:'https://kunde.de/',title:'Kunde – Slogan',summary:'x'.repeat(300)},
+      {url:'https://kunde.de/speisekarte/',title:'Speisekarte',summary:'y'.repeat(300)}
+    ],
+    links:['https://kunde.de/kontakt/','https://kunde.de/anfahrt/','https://kunde.de/wp-content/uploads/karte.pdf','https://kunde.de/wp-json/','https://kunde.de/style.css']
+  }]},{name:'Kunde'});
+  const doc=api.structureDocument();
+  // A crawled "/" is the home page - it used to match nothing and vanish from the list.
+  assert.match(doc,/## 1\. Startseite\nEmpfohlener Pfad: \/\nZweck:[^\n]*\nInhaltsquelle: ausgelesene Seite: https:\/\/kunde\.de\//);
+  assert.match(doc,/## 2\. Angebot \/ Leistungen[\s\S]*ausgelesene Seite: https:\/\/kunde\.de\/speisekarte\//);
+  // The linked PDF is the content of the offer page, and it is flagged as unread there.
+  assert.match(doc,/karte\.pdf[\s\S]*erfinde keine Positionen und keine Preise/);
+  // A link that was seen but never read must say so instead of being treated as content.
+  assert.match(doc,/Kontakt[\s\S]*verlinkt, nicht ausgelesen: https:\/\/kunde\.de\/kontakt\//);
+  // Mandatory pages appear even when the old site has none.
+  assert.match(doc,/## \d+\. Impressum[\s\S]*Pflichttext liegt nicht vor/);
+  assert.match(doc,/## \d+\. Datenschutz/);
+  // WordPress plumbing is not a page.
+  assert.doesNotMatch(doc,/wp-json|style\.css/);
+  assert.match(doc,/Baue keine Seite, die hier nicht steht, und lasse keine hier genannte Seite weg\./);
+});
+
+test('copying hands over the same files the package contains',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/const files=\[\['MASTER-PROMPT\.md',el\.masterPrompt\.value\],\['SEITENSTRUKTUR\.md',structureDocument\(\)\],\['PROJEKT-QUELLEN\.md',attachmentPromptBlock\(\)\]\];/);
+  assert.match(app,/DATEI \$\{index\+1\} VON \$\{files\.length\}/,'the count follows the list instead of a hard-coded 2');
+  assert.match(app,/'MASTER-PROMPT\.md':el\.masterPrompt\.value,'SEITENSTRUKTUR\.md':structureDocument\(\)/,'the ZIP carries it too');
+  assert.match(app,/Es gilt die Liste in \\`SEITENSTRUKTUR\.md\\`/,'the master prompt stops deciding the site map itself');
 });
