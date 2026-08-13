@@ -60,6 +60,9 @@
       html[data-prompt-mode="guided"] #stepReferences .next-btn:after,
       html[data-prompt-mode="auto"] #stepReferences .next-btn:after{content:'→';margin-left:18px;font-size:18px;font-weight:600;line-height:1}
       html.prompt-workflow-loading,html.prompt-workflow-loading body{overflow:hidden!important}
+      /* While the full screen is up, the small bar underneath it is a second progress display for
+         the same run. It stays in the DOM for the modes that never show the full screen. */
+      html.prompt-workflow-loading #previewProgress{display:none!important}
       html.prompt-workflow-loading #guidedCleanHead{visibility:hidden!important}
       #promptWorkflowLoader{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       #promptWorkflowLoader.is-leaving{opacity:0;pointer-events:none}
@@ -154,6 +157,12 @@
     if(step===4||step===5||(step===6&&document.body.dataset.previewGenerating==='1')){pendingFromReferences=false;if(cleanMode())show('preview');else hide();return}
     if(step===1||step>=6){pendingFromReferences=false;reviewAnswered=false;hide();return}}
 
+  // Regenerating previews is a new run, so the screen belongs on top again - also for someone who
+  // closed it with × during the previous run.
+  function showPreviewRun(){
+    userExited=false;pendingFromReferences=false;
+    installStyles();show('preview');schedule(60);
+  }
   function showLogin(){
     loginActive=true;installStyles();
     const data=copy.login;const box=loader();clearTimeout(flashTimer);flashTimer=0;
@@ -189,7 +198,14 @@
   const fromLoader=node=>{const el=node?.nodeType===1?node:node?.parentElement;return Boolean(el?.closest?.('#promptWorkflowLoader'))};
   function observe(){new MutationObserver(records=>{if(records.some(record=>!fromLoader(record.target)))schedule()}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style','data-preview-generating']});
     // app.js reports what the run is really doing - which step, which of the three images.
-    window.addEventListener('promptai:preview-stage',event=>{stageText=String(event.detail?.text||'');if(activeKind==='preview'&&stageText){clearInterval(cycleTimer);cycleTimer=0;setSentence(stageText)}});window.addEventListener('pageshow',()=>schedule(0));window.addEventListener('promptai:access',()=>schedule(0))}
+    window.addEventListener('promptai:preview-stage',event=>{
+      stageText=String(event.detail?.text||'');
+      const ratio=event.detail?.ratio;
+      // While the three images are made, the headline fills by images finished instead of by
+      // elapsed time - so "Bild 2 von 3" and the bar say the same thing.
+      if(typeof ratio==='number'&&Number.isFinite(ratio)){stopFillLoop();applyFill(Math.max(.08,Math.min(.99,ratio)))}
+      if(activeKind==='preview'&&stageText){clearInterval(cycleTimer);cycleTimer=0;setSentence(stageText)}
+    });window.addEventListener('pageshow',()=>schedule(0));window.addEventListener('promptai:access',()=>schedule(0))}
   function observeClarification(){
     const watch=dialog=>{if(!dialog||dialog.__promptLoaderWatched)return;dialog.__promptLoaderWatched=true;new MutationObserver(()=>{if(dialog.open){pendingFromReferences=false;hide()}else sync()}).observe(dialog,{attributes:true,attributeFilter:['open']})};
     watch($('#clarificationDialog'));
@@ -197,6 +213,6 @@
   }
   function bind(){document.addEventListener('click',onClick,true);document.addEventListener('click',blockLateHiddenClicks,true)}
   function init(){installStyles();bind();observe();observeClarification();sync()}
-  window.PromptAiTransitionLoader={show:showLogin,hide:hideLogin};
+  window.PromptAiTransitionLoader={show:showLogin,hide:hideLogin,previewRun:showPreviewRun};
   installStyles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

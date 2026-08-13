@@ -768,7 +768,7 @@
   // sources, master prompt) then belonged to the old project.
   function clearRestoredProjectFields(){
     let fresh=false;try{fresh=sessionStorage.getItem(FRESH_PROJECT_KEY)==='1'}catch{}
-    if(!fresh)return;
+    if(!fresh)return false;
     try{sessionStorage.removeItem(FRESH_PROJECT_KEY)}catch{}
     const wipe=(skipDescription=false)=>{
       for(const id of PROJECT_INPUT_IDS){
@@ -785,10 +785,13 @@
     // filled into it right about now.
     addEventListener('load',()=>wipe(true),{once:true});
     [200,700,1500].forEach(delay=>setTimeout(()=>wipe(true),delay));
-    resetProjectScopedState();
+    // The reset itself must NOT happen here: restoreState() runs right after this function and
+    // would read the previous project's crawled sources straight back out of storage. That is why
+    // a doner project still listed the handyman website after a step back.
+    return true;
   }
   // Everything that belongs to one project and must never travel to the next one.
-  function resetProjectScopedState(){
+  function resetProjectScopedState({persist=false}={}){
     state.currentProjectId=uid("project");
     state.urls=[];state.images=[];state.documents=[];state.sourceUrls=[];state.clientContext="";
     state.understanding=null;state.understandingConfirmed=false;
@@ -799,6 +802,7 @@
     // to have switched on.
     state.selectedModuleIds=[];state.selectedSkillIds=[];state.recommendedModuleIds=[];
     applyLibraryDefaults();
+    if(persist)try{saveState({cloud:false})}catch{}
   }
   // Changing the brief, the customer or the website invalidates everything the AI derived from the
   // old wording: an analysis of a handyman business must not survive into a doner shop. The result
@@ -1246,7 +1250,7 @@
   // stage is pinned the elapsed-time ticker stops writing, otherwise it overwrote "Bild 2 von 3"
   // 400ms later and the honest text was never readable.
   const progressStages={};
-  function previewStage(text,{pin=false}={}){progressStages.preview=String(text||"");if(pin)clearInterval(progressTimers.preview);if(text){const label=el.previewProgressText;if(label&&label.textContent!==text)label.textContent=text}window.dispatchEvent(new CustomEvent("promptai:preview-stage",{detail:{text:String(text||"")}}))}
+  function previewStage(text,{pin=false,ratio=null,done=false}={}){progressStages.preview=String(text||"");if(pin)clearInterval(progressTimers.preview);if(text){const label=el.previewProgressText;if(label&&label.textContent!==text)label.textContent=text}window.dispatchEvent(new CustomEvent("promptai:preview-stage",{detail:{text:String(text||""),ratio,done}}))}
   // Same ending as the full-screen loaders: full fill, one blue blink, then the box disappears.
   function finishTaskProgress(kind,text="Abgeschlossen"){clearInterval(progressTimers[kind]);setTaskProgress(kind,100,text);el[`${kind}ProgressText`]?.classList.add('prompt-fill-complete');setTimeout(()=>{if(el[`${kind}Progress`])el[`${kind}Progress`].hidden=true},1000);}
 
@@ -1684,8 +1688,10 @@
     if(conceptsGenerating)return;
     if(regenerate&&previewRetriesLeft()<=0){el.generationStatus.className='generation-status notice';el.generationStatus.textContent=`In deinem Tarif kannst du die Vorschauen ${planRules().previewRetries||0}× neu erstellen lassen.`;return}
     conceptsGenerating=true;previewCancel=new AbortController();
-    // The loading screen of the step before stays up while the three directions are built.
+    // The loading screen of the step before stays up while the three directions are built - and a
+    // regeneration puts it back up instead of running behind the page in a small bar.
     document.body.dataset.previewGenerating='1';
+    window.PromptAiTransitionLoader?.previewRun?.();
     if(el.cancelPreviewBtn)el.cancelPreviewBtn.hidden=false;
     try{
       if(!cloudReady()&&guestRunsRemaining()===0){showAccountGate();return;}
@@ -1693,7 +1699,21 @@
         const ready=await runProjectReview(false);
         if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}
       }
-      const count=PREVIEW_COUNT; if(el.regenerateConceptsBtn)el.regenerateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";startTaskProgress("preview",cloudReady()?Math.max(24,count*12):4);previewStage("Briefing wird verarbeitet.");
+      const count=PREVIEW_COUNT; if(el.regenerateConceptsBtn)el.regenerateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy";
+      // Regenerating does not re-read the briefing: the directions are already understood and stay.
+      // Only the three images are made again, which is both faster and cheaper.
+      const imagesOnly=regenerate&&state.concepts.length===count&&planRules().aiPreviews&&cloudReady();
+      el.generationStatus.textContent=imagesOnly?"Neue Bilder werden erstellt…":"Vorschauen werden vorbereitet…";
+      startTaskProgress("preview",cloudReady()?(imagesOnly?Math.max(18,count*8):Math.max(24,count*12)):4);
+      previewStage(imagesOnly?`Bild 1 von ${count} wird erstellt.`:"Briefing wird verarbeitet.");
+      if(imagesOnly){
+        for(const concept of state.concepts)concept.previewImage="";
+        renderConcepts();renderSelectedPreview();
+        const result=await generateConceptImages();
+        el.generationStatus.className=result?.kind==="quota"?"generation-status notice":"generation-status";
+        el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${count} neue Bilder erstellt.${state.isAdmin&&lastImageRoute?` [Bildmodell: ${lastImageRoute}]`:''}`:"Neue Bilder waren nicht verfügbar. Die bisherigen Richtungen bleiben nutzbar.";
+        return;
+      }
       let concepts=[];
       try{
         if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
@@ -1734,9 +1754,9 @@
     if(!total)return {kind:"success"};
     lastImageRoute='';
     let quotaError=false,otherError=false,done=0,firstMessage="";
-    previewStage(`Bild 1 von ${total} wird erstellt.`,{pin:true});
+    previewStage(`Bild 1 von ${total} wird erstellt.`,{pin:true,ratio:0});
     const note=(className,text)=>{if(firstMessage)return;firstMessage=text;el.generationStatus.className=className;el.generationStatus.textContent=text};
-    const tick=()=>{done++;const text=done>=total?`${total} von ${total} Bildern fertig.`:`Bild ${Math.min(done+1,total)} von ${total} wird erstellt.`;setTaskProgress("preview",Math.round(38+(done/total)*54),text);previewStage(text,{pin:true});renderConcepts();renderSelectedPreview()};
+    const tick=()=>{done++;const text=done>=total?`${total} von ${total} Bildern fertig.`:`Bild ${Math.min(done+1,total)} von ${total} wird erstellt.`;setTaskProgress("preview",Math.round(38+(done/total)*54),text);previewStage(text,{pin:true,ratio:done/total,done:done>=total});renderConcepts();renderSelectedPreview()};
 
     const run=async concept=>{
       if(previewCancel?.signal?.aborted)return;
@@ -2255,14 +2275,24 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
   // The dialog needs one flat view over both lists, with the state that really applies right now.
   function projectExtrasList(){
     const allowed=planRules().modules;
+    // The template picker lived on step 4 too, so guided and auto could never choose one either.
+    const templates=(allowed?state.templates:[]).map(item=>({id:item.id,name:item.name,info:item.summary||item.tag||'Eigene Prompt-Vorlage',on:state.templateId===item.id}));
     const modules=(allowed?state.modules:[]).map(item=>({id:item.id,name:item.name,info:item.summary||item.tag||'Eigener Baustein',
       on:state.selectedModuleIds.includes(item.id),recommended:state.recommendedModuleIds?.includes(item.id)||false,source:false}));
     const skills=(allowed?visibleSkills():[]).map(item=>({id:item.id,name:item.name,
       info:[item.trigger||'Bei passender Aufgabe anwenden',item.sourceFile?`Quelle: ${item.sourceFile}`:''].filter(Boolean).join(' · '),
       on:state.selectedSkillIds.includes(item.id),recommended:false,source:Boolean(item.sourceFile)}));
-    return {modules,skills};
+    return {templates,modules,skills};
   }
   function setProjectExtra(kind,id,on){
+    if(kind==='template'){
+      // Exactly one template can be active, so switching one on switches the others off.
+      state.templateId=on?id:'';
+      if(el.templateSelect)el.templateSelect.value=state.templateId;
+      saveState();updateGuide();
+      window.dispatchEvent(new CustomEvent('promptai:project-extras'));
+      return;
+    }
     const key=kind==='module'?'selectedModuleIds':'selectedSkillIds';
     const current=new Set(state[key]);
     if(on)current.add(id);else current.delete(id);
@@ -2272,8 +2302,8 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     window.dispatchEvent(new CustomEvent('promptai:project-extras'));
   }
   function activeExtraNames(){
-    const {modules,skills}=projectExtrasList();
-    return [...modules,...skills].filter(item=>item.on).map(item=>item.name);
+    const {templates,modules,skills}=projectExtrasList();
+    return [...templates,...modules,...skills].filter(item=>item.on).map(item=>item.name);
   }
   window.PromptAiProjectExtras={list:projectExtrasList,set:setProjectExtra,active:activeExtraNames};
 
@@ -2674,7 +2704,15 @@ el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBt
     renderProjectOptions();
     const rememberedEmail=localStorage.getItem(REMEMBERED_EMAIL_KEY)||"";if(rememberedEmail){el.authEmail.value=rememberedEmail;el.rememberEmail.checked=true;}
     const hadSavedProject=Boolean(localStorage.getItem(STORAGE_KEY));
-    loadLibrary();loadSettings();loadProfiles();clearRestoredProjectFields();restoreState();
+    loadLibrary();loadSettings();loadProfiles();
+    const freshProject=clearRestoredProjectFields();
+    restoreState();
+    if(freshProject){
+      resetProjectScopedState();
+      // Written through immediately: an unsaved reset is undone by the next restore.
+      saveState({cloud:false});
+      renderClientSources();renderReferences();
+    }
     if(!hadSavedProject){
       if(!state.activeProfileId)state.activeProfileId=state.settings.activeProfileId||"system-standard";
       if(!applyProfileById(state.activeProfileId,{persist:false,forNewProject:true})){

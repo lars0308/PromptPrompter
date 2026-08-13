@@ -282,8 +282,8 @@ test('a new project starts empty even though browsers restore form values across
   assert.match(app,/const FRESH_PROJECT_KEY='prompt-ai-fresh-project-v1';/);
   assert.match(app,/addEventListener\('load',\(\)=>wipe\(true\),\{once:true\}\);/,'the browser writes its values back after the first pass');
   assert.match(app,/\[200,700,1500\]\.forEach\(delay=>setTimeout\(\(\)=>wipe\(true\),delay\)\);/);
-  assert.match(app,/loadLibrary\(\);loadSettings\(\);loadProfiles\(\);clearRestoredProjectFields\(\);restoreState\(\);/);
-  assert.match(app,/function resetProjectScopedState\(\)/);
+  assert.match(app,/const freshProject=clearRestoredProjectFields\(\);/);
+  assert.match(app,/function resetProjectScopedState\(\{persist=false\}=\{\}\)/);
   for(const id of ['projectName','clientName','clientWebsite','projectDescription'])
     assert.match(html,new RegExp(`id="${id}" autocomplete="off"`),`${id} must not be autofilled from another project`);
 });
@@ -501,4 +501,38 @@ test('two unrelated projects do not get the same three layout skeletons',async()
   // Every skeleton stays reachable - "stacked", "editorial" and "minimal" were never offered.
   const used=new Set([...seen].flatMap(entry=>entry.split('|')));
   for(const variant of api.VARIANTS)assert.ok(used.has(variant),`${variant} is never offered`);
+});
+
+test('a fresh project cannot inherit the previous crawl, and the reset survives the restore',async()=>{
+  const app=await text('app.js');
+  // resetProjectScopedState() used to run inside clearRestoredProjectFields(), one line before
+  // restoreState() read the previous project's sources straight back out of localStorage - which
+  // is why a doner project still listed the handyman website after a step back.
+  assert.match(app,/const freshProject=clearRestoredProjectFields\(\);\n    restoreState\(\);\n    if\(freshProject\)\{/);
+  assert.match(app,/resetProjectScopedState\(\);\n      \/\/ Written through immediately: an unsaved reset is undone by the next restore\.\n      saveState\(\{cloud:false\}\);/);
+  assert.match(app,/renderClientSources\(\);renderReferences\(\);/,'the source list on screen has to follow the reset');
+  assert.doesNotMatch(app,/\[200,700,1500\]\.forEach\(delay=>setTimeout\(\(\)=>wipe\(true\),delay\)\);\n    resetProjectScopedState\(\);/,'the reset no longer sits before the restore');
+});
+
+test('regenerating previews reuses the understood briefing and only makes new images',async()=>{
+  const app=await text('app.js'),loader=await text('transition-polish.js');
+  assert.match(app,/const imagesOnly=regenerate&&state\.concepts\.length===count&&planRules\(\)\.aiPreviews&&cloudReady\(\);/);
+  assert.match(app,/for\(const concept of state\.concepts\)concept\.previewImage="";/);
+  assert.match(app,/\$\{count\} neue Bilder erstellt\./);
+  // The full screen comes back for the new run instead of a small bar behind the page.
+  assert.match(app,/window\.PromptAiTransitionLoader\?\.previewRun\?\.\(\);/);
+  assert.match(loader,/function showPreviewRun\(\)/);
+  assert.match(loader,/html\.prompt-workflow-loading #previewProgress\{display:none!important\}/);
+  // "Bild 2 von 3" and the bar have to say the same thing.
+  assert.match(app,/ratio:done\/total,done:done>=total/);
+  assert.match(loader,/if\(typeof ratio==='number'&&Number\.isFinite\(ratio\)\)\{stopFillLoop\(\);applyFill/);
+});
+
+test('a prompt template can be chosen in every mode, not only on the skipped step',async()=>{
+  const app=await text('app.js'),ui=await text('project-extras-ui.js');
+  assert.match(app,/const templates=\(allowed\?state\.templates:\[\]\)\.map/);
+  assert.match(app,/if\(kind==='template'\)\{/);
+  assert.match(app,/state\.templateId=on\?id:'';/,'exactly one template at a time');
+  assert.match(ui,/group\('Prompt-Vorlage'/);
+  assert.match(ui,/in der Bibliothek eine Prompt-Vorlage an/);
 });

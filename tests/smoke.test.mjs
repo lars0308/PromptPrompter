@@ -731,9 +731,9 @@ test('one loading screen carries the run from the questions to the finished prev
   // Steps 4 and 5 are skipped automatically, so the screen must not blink away between them.
   assert.match(loader,/if\(step===4\|\|step===5\|\|\(step===6&&document\.body\.dataset\.previewGenerating==='1'\)\)\{pendingFromReferences=false;if\(cleanMode\(\)\)show\('preview'\);else hide\(\)/);
   assert.match(loader,/promptai:preview-stage/,'the screen says what the run is really doing');
-  assert.match(app,/previewStage\("Briefing wird verarbeitet\."\)/);
+  assert.match(app,/previewStage\(imagesOnly\?`Bild 1 von \$\{count\} wird erstellt\.`:"Briefing wird verarbeitet\."\)/);
   assert.match(app,/Bild \$\{Math\.min\(done\+1,total\)\} von \$\{total\} wird erstellt\./);
-  assert.match(app,/previewStage\(`Bild 1 von \$\{total\} wird erstellt\.`,\{pin:true\}\)/,'the elapsed ticker must not overwrite the image stages');
+  assert.match(app,/previewStage\(`Bild 1 von \$\{total\} wird erstellt\.`,\{pin:true,ratio:0\}\)/,'the elapsed ticker must not overwrite the image stages');
   assert.match(app,/progressStages\[kind\]\?`\$\{progressStages\[kind\]\} · noch ca\./);
   // Nothing above the three results may look like the button that starts them.
   const gallery=html.indexOf('id="conceptGallery"'),controls=html.indexOf('class="preview-generation-controls"');

@@ -43,8 +43,9 @@
     if(!host||!data)return;
     const group=(title,hint,items,kind)=>`<section class="project-extras-group"><h3>${esc(title)}</h3><p>${esc(hint)}</p>${
       items.length?items.map(item=>`<div class="project-extras-row"><div><strong>${esc(item.name)}${item.recommended&&!item.on?'<span class="project-extras-mark">PASST</span>':''}${item.source?'<span class="project-extras-mark">DATEI</span>':''}</strong><small>${esc(item.info||'')}</small></div><button type="button" class="project-extras-switch" role="switch" aria-pressed="${item.on?'true':'false'}" aria-label="${esc(item.name)}" data-extra-kind="${kind}" data-extra-id="${esc(item.id)}"></button></div>`).join('')
-        :`<p class="project-extras-empty">Noch nichts in der Bibliothek. Lege ${kind==='module'?'einen Baustein an':'eine Skill-Datei aus Claude oder Codex hoch'} – danach steht er hier für jedes Projekt bereit.</p>`}</section>`;
-    host.innerHTML=group('Bausteine','Worin dieses Projekt besonders gut sein muss.',data.modules,'module')
+        :`<p class="project-extras-empty">Noch nichts in der Bibliothek. Lege ${kind==='module'?'einen Baustein an':kind==='template'?'in der Bibliothek eine Prompt-Vorlage an':'eine Skill-Datei aus Claude oder Codex hoch'} – danach steht er hier für jedes Projekt bereit.</p>`}</section>`;
+    host.innerHTML=group('Prompt-Vorlage','Dein eigenes Grundgerüst für den Master-Prompt. Es kann immer nur eine aktiv sein.',data.templates||[],'template')
+      +group('Bausteine','Worin dieses Projekt besonders gut sein muss.',data.modules,'module')
       +group('Skills','Arbeitsregeln für den Ziel-Agenten – auch hochgeladene .md-Dateien aus Claude oder Codex.',data.skills,'skill');
   }
 
@@ -54,7 +55,7 @@
   function syncNote(){
     const data=api()?.list?.();if(!data)return;
     const host=$('#projectConfirmExtras');if(!host)return;
-    const active=[...data.modules,...data.skills].filter(item=>item.on);
+    const active=[...(data.templates||[]),...data.modules,...data.skills].filter(item=>item.on);
     host.innerHTML=active.length
       ? `<strong>Zusätzlich aktiv:</strong> ${active.map(item=>esc(item.name)).join(' · ')}<button type="button" data-extras-open>ändern</button>`
       : `Für dieses Projekt sind keine Bausteine oder Skills aktiv.<button type="button" data-extras-open>auswählen</button>`;
