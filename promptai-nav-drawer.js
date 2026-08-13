@@ -7,22 +7,13 @@
   // Einträge dazu. Ein nachgebautes Menü hätte bedeutet, jede Berechtigung ein zweites Mal zu
   // pflegen, und die zweite Kopie wäre die gewesen, die irgendwann falsch ist.
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  const ICON=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${n}</svg>`;
-  const ICONS={
-    library:ICON('<path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>'),
-    build:ICON('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/>'),
-    check:ICON('<path d="M12 3l7 3v6c0 4-3 7-7 9c-4-2-7-5-7-9V6z"/><path d="M9 12l2 2l4-4"/>'),
-    history:ICON('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/>')
-  };
-  // Was in der Schublade oben stehen soll und welcher vorhandene Knopf es auslöst. Nur was im
-  // Menü fehlt - Bibliotheken, Projekte und Projektstände liegen bereits drin.
-  // Dieselben vier Wege wie die Werkzeugreihe der Startseite - sie lösen genau deren Knopf aus,
-  // damit Tarifsperre und Ablauf an einer Stelle geprüft bleiben.
-  // Nur was im Menü wirklich fehlt. "Bibliothek" und "Verlauf" standen doppelt drin:
-  // sie öffnen dieselben Fenster wie die vorhandenen Einträge "Projekte" und
-  // "Projektstände". "Projekt prüfen" ist in die Auswahlliste am Textfeld gewandert.
+  // Nur was im Menü wirklich fehlt, und es löst den echten Knopf der Startseite aus, damit
+  // Tarifsperre und Ablauf an einer Stelle geprüft bleiben. "Bibliothek" und "Verlauf"
+  // standen hier doppelt: sie öffnen dieselben Fenster wie die vorhandenen Einträge
+  // "Projekte" und "Projektstände". "Projekt prüfen" ist in die Auswahlliste am Textfeld
+  // gewandert.
   const WORK=[
-    ['Probelauf','workspaceBuildSiteBtn',ICONS.build]
+    ['Probelauf','workspaceBuildSiteBtn']
   ];
 
   function styles(){
@@ -60,12 +51,11 @@
         justify-content:flex-start!important;
       }
       html.prompt-full-redesign .topbar-menu button:hover:not(:disabled){background:var(--surface-soft)!important}
-      html.prompt-full-redesign .topbar-menu button svg{flex:0 0 auto;width:19px;height:19px;color:var(--logo-blue,var(--accent))}
-      /* Einträge ohne Symbol (Projekte, Einstellungen, Abmelden ...) begannen 30px
-         weiter links als die mit - die Schrift steht jetzt bei allen auf einer Linie.
-         Ihnen Symbole einzusetzen hieße, in fremde Knöpfe zu schreiben, deren Text
-         andere Ebenen laufend neu setzen. */
-      html.prompt-full-redesign .topbar-menu>button:not(:has(svg)):not(#accountBtn):not(.upgrade-btn){padding-left:42px!important}
+      /* Keine Symbole in der Schublade: zwei Zeichen unter zehn Wörtern sahen aus wie
+         Reste, nicht wie System. Jetzt beginnt jede Zeile auf derselben Linie. */
+      html.prompt-full-redesign .topbar-menu button svg{display:none!important}
+      /* Der Schalter für Hell/Dunkel steht in promptai-full-app-design.css: diese Ebene
+         wird als <link> nach diesem <style> eingehängt und gewinnt jeden Gleichstand. */
       /* Profil ist der eine Knopf unten - Einstellungen und Abmelden hängen daran. */
       html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){
         margin-top:auto!important;min-height:56px!important;
@@ -112,13 +102,13 @@
     const menu=$('#topbarMenu');if(!menu)return false;
     // Die zwei fehlenden Arbeitswege: sie klicken den echten Knopf der Startseite, damit
     // Tarifsperre und Ablauf dort bleiben, wo sie schon geprüft werden.
-    for(const [label,targetId,icon] of WORK){
+    for(const [label,targetId] of WORK){
       if($(`[data-drawer-target="${targetId}"]`,menu))continue;
       // Kein zweiter Eintrag für etwas, das das Menü schon führt.
       if($$(':scope > button',menu).some(b=>b.textContent.trim().toLowerCase()===label.toLowerCase()))continue;
       const button=document.createElement('button');
       button.type='button';button.className='text-btn';button.dataset.drawerTarget=targetId;
-      button.innerHTML=`${icon}<span>${label}</span>`;
+      button.innerHTML=`<span>${label}</span>`;
       button.addEventListener('click',()=>{close();setTimeout(()=>$('#'+targetId)?.click(),60)});
       menu.appendChild(button);
     }

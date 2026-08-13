@@ -143,6 +143,15 @@ test('the drawer reshapes the existing menu instead of building a second one',as
   assert.match(nav,/\['Probelauf','workspaceBuildSiteBtn'/);
   assert.match(nav,/setTimeout\(\(\)=>\$\('#'\+targetId\)\?\.click\(\),60\)/);
   assert.match(nav,/#accountBtn:not\(\[hidden\]\)\{[\s\S]{0,60}margin-top:auto/,'profile is the one entry pinned to the bottom');
+  // Eine Liste aus Wörtern: zwei Zeilen mit Zeichen unter acht ohne sahen aus wie Reste.
+  assert.match(nav,/\.topbar-menu button svg\{display:none!important\}/);
+  // Hell/Dunkel ist eine Einstellung - Wort links, Schalter rechts, kein Zeichen davor.
+  // Die Regeln stehen in der Design-Ebene: sie wird als <link> nach dem <style> dieser
+  // Datei eingehängt und gewinnt deshalb jeden Gleichstand.
+  const design=await read('promptai-full-app-design.css');
+  assert.match(design,/\.theme-toggle>span\{display:none!important\}/);
+  assert.match(design,/\.theme-toggle,[\s\S]{0,120}justify-content:space-between!important/);
+  assert.match(design,/\[data-theme="dark"\] \.topbar-menu \.theme-toggle::after\{[\s\S]{0,120}calc\(100% - 11px\)/,'the knob moves with the theme');
 });
 test('the close button in the mode dialog is anchored again',async()=>{
   const css=await read('promptai-full-app-design.css');

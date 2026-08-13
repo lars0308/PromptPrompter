@@ -1159,16 +1159,26 @@ html.prompt-full-redesign .topbar .menu-theme-quick{display:none!important}
 /* In der Schublade bleibt er ein vollwertiger Eintrag. */
 html.prompt-full-redesign .topbar-menu .theme-toggle,
 html.prompt-full-redesign .topbar-menu #themeToggleBtn{
-  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
   gap:11px!important;width:100%!important;min-height:46px!important;padding:0 12px!important;
   border:0!important;border-radius:8px!important;background:transparent!important;
   color:var(--ink)!important;font-size:14px!important;font-weight:650!important;
 }
-/* Er soll wie jeder andere Eintrag aussehen: Symbol links, Wort daneben. */
-html.prompt-full-redesign .topbar-menu .theme-toggle>span{
-  flex:0 0 auto;width:19px;text-align:center;font-size:17px;color:var(--logo-blue)!important;
-}
+/* Hell/Dunkel ist eine Einstellung, kein Befehl. Also steht das Wort links und rechts
+   ein Schalter - und das Zeichen davor fällt weg, wie bei allen anderen Einträgen auch.
+   Der Knopf selbst bleibt unangetastet; der Schalter ist gezeichnet, nicht gebaut. */
+html.prompt-full-redesign .topbar-menu .theme-toggle>span{display:none!important}
 html.prompt-full-redesign .topbar-menu .theme-toggle>b{font-size:14px!important;font-weight:650!important;letter-spacing:0!important}
+html.prompt-full-redesign .topbar-menu .theme-toggle::after{
+  content:"";flex:0 0 auto;width:40px;height:22px;
+  border:1px solid var(--line);border-radius:999px;background:var(--surface-soft);
+  background-image:radial-gradient(circle 7px at 11px 50%,var(--logo-blue) 98%,transparent 100%);
+  background-repeat:no-repeat;
+  transition:background-image var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
+}
+html.prompt-full-redesign[data-theme="dark"] .topbar-menu .theme-toggle::after{
+  background-image:radial-gradient(circle 7px at calc(100% - 11px) 50%,var(--logo-blue) 98%,transparent 100%);
+}
 
 @media(max-width:700px){
   html.prompt-full-redesign #topbarMenuToggle{left:8px!important}
@@ -1273,3 +1283,141 @@ html.prompt-full-redesign #welcomePage>.welcome-workspace{
 }
 /* Und solange ein Ablauf läuft, hat die Startseite gar nichts zu zeigen. */
 html.prompt-full-redesign body:has(#workflowApp:not([hidden])) #welcomePage{display:none!important}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EIN STIL FÜR ALLE SEITEN
+
+   Die Startseite gibt drei Dinge vor, und die gelten ab hier überall:
+
+   1. Der Kopf ist immer gleich gebaut: eine kleine blaue Zeile in Versalien,
+      darunter eine eng gesetzte Überschrift, darunter ein ruhiger Satz.
+   2. Das Feld, in das man den Auftrag schreibt, ist eine dunkle Konsole -
+      unabhängig davon, ob die Seite hell oder dunkel ist. Es ist die einzige
+      Fläche, die in beiden Modi gleich aussieht, und genau daran erkennt man
+      sie wieder.
+   3. Flächen sind Karten mit Haarlinie, kein Schlagschatten, ein Rastermaß.
+
+   Geändert wird nur die Darstellung. Kein Ablauf, keine Sperre, keine
+   Ladelogik - die Ladeschirme behalten ihren Wortfortschritt und ihr einmaliges
+   Aufblinken, sie bekommen nur denselben Rahmen wie die Konsole.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ---- 1. Der Kopf: Kicker, Überschrift, Vorsatz ---------------------------- */
+html.prompt-full-redesign :is(
+  .step-panel>.section-kicker,.section-kicker,
+  .dialog-head>div>span,.free-prompt-head>div>span,.history-head>div>span,
+  .simple-intake-head>div>span,.project-mode-head>div>span,
+  .free-prompt-result-head>div>span,.project-preview-head>div>span,
+  .prompt-process-kicker,#promptWorkflowLoader .kicker,.prompt-system-line
+){
+  display:block!important;
+  color:var(--logo-blue)!important;
+  font:850 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace!important;
+  letter-spacing:.15em!important;
+  text-transform:uppercase!important;
+}
+html.prompt-full-redesign :is(
+  .step-panel>h1,.tool-heading h1,
+  .dialog-head h2,.free-prompt-head h2,.history-head h2,
+  .simple-intake-head h2,.project-mode-head h2,
+  .free-prompt-result-head h2,.project-preview-head h2,
+  .prompt-process-title
+){
+  margin:10px 0 0!important;
+  font-family:Inter,ui-sans-serif,system-ui,sans-serif!important;
+  font-weight:800!important;
+  font-size:clamp(26px,5.2vw,34px)!important;
+  line-height:1.06!important;
+  letter-spacing:-.045em!important;
+  color:var(--ink)!important;
+}
+/* Der Vorsatz unter der Überschrift - ein Satz, nicht zwei Absätze. */
+html.prompt-full-redesign :is(.guided-clean-lead,.free-prompt-intro,.account-intro,.clarification-intro,.step-panel>p.lead){
+  max-width:60ch!important;margin:var(--sp-3) 0 var(--sp-6)!important;
+  color:var(--muted)!important;font-size:15px!important;line-height:1.5!important;
+}
+
+/* ---- 2. Das Auftragsfeld ist überall die Konsole -------------------------- */
+/* Nur das eine große Feld je Seite, in das der Auftrag geschrieben wird. Die
+   kleinen Formularfelder daneben bleiben helle Felder - sonst würde jede
+   Einstellungsseite zu einer Wand aus schwarzen Kästen. */
+html.prompt-full-redesign :is(#projectDescription,#simpleIntakeText,#freePromptDescription,#quickRevisionDescription,#freePromptOutput,.master-prompt){
+  min-height:150px!important;
+  padding:18px!important;
+  border:1px solid color-mix(in srgb,var(--logo-blue) 20%,#000)!important;
+  border-radius:var(--r-md)!important;
+  background:#111923!important;
+  color:#eef6fb!important;-webkit-text-fill-color:#eef6fb;
+  caret-color:var(--caret)!important;
+  font-size:16px!important;line-height:1.55!important;
+  box-shadow:none!important;resize:vertical!important;
+}
+html.prompt-full-redesign :is(#projectDescription,#simpleIntakeText,#freePromptDescription,#quickRevisionDescription)::placeholder{
+  color:#7a8ba7!important;-webkit-text-fill-color:#7a8ba7;
+}
+html.prompt-full-redesign :is(#projectDescription,#simpleIntakeText,#freePromptDescription,#quickRevisionDescription,#freePromptOutput,.master-prompt):focus{
+  border-color:color-mix(in srgb,var(--logo-blue) 58%,#000)!important;
+  box-shadow:none!important;outline:0!important;
+}
+/* Fertige Prompts liest man, statt sie zu schreiben: dieselbe Fläche, aber das
+   Logoblau als Schrift, wie im Eingabefeld der Startseite. */
+html.prompt-full-redesign :is(#freePromptOutput,.master-prompt){
+  color:var(--logo-blue)!important;-webkit-text-fill-color:var(--logo-blue);
+}
+/* Die Zeichenzahl unter dem Feld gehört zur Konsole, nicht zum Formular. */
+html.prompt-full-redesign .field-large>small{
+  display:block!important;margin-top:var(--sp-2)!important;
+  color:var(--muted)!important;font-size:11px!important;letter-spacing:.04em!important;
+}
+
+/* ---- 3. Die Ladeschirme bekommen den Rahmen der Konsole ------------------- */
+/* Der Ablauf bleibt, wie er ist: Fortschritt läuft durch das Wort, am Ende ein
+   einmaliges Aufblinken. Nur der Kasten drumherum ist jetzt derselbe wie auf
+   der Startseite - dunkel in beiden Modi, mit der Bildmarke darüber. */
+html.prompt-full-redesign :is(#promptWorkflowLoader,.prompt-handoff-loader,.prompt-completion-flash,#promptAiThinkingStage){
+  background:var(--paper)!important;
+}
+html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,#promptAiThinkingStage>div,.streamline-working-inner,.master-generation-inner){
+  width:min(560px,100%)!important;
+  padding:32px 26px!important;
+  border:1px solid color-mix(in srgb,var(--logo-blue) 20%,#000)!important;
+  border-radius:var(--r-lg)!important;
+  background:#111923!important;
+  color:#eef6fb!important;
+  box-shadow:none!important;
+}
+html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner)::before{
+  content:"";display:block;width:46px;height:46px;margin:0 auto 20px;
+  border:1px solid rgba(255,255,255,.12);border-radius:12px;
+  background:rgba(255,255,255,.04) url("./sitebrief-logo.svg?v=5") center/38px no-repeat;
+}
+/* Auf dunklem Grund braucht der Fortschritt im Wort einen hellen Rest, sonst
+   verschwindet der noch nicht gefüllte Teil. Der Füllstand selbst kommt
+   unverändert aus --prompt-fill. */
+html.prompt-full-redesign #promptWorkflowLoader strong{
+  background-image:linear-gradient(90deg,var(--logo-blue) 0 var(--prompt-fill,0%),rgba(233,243,250,.28) var(--prompt-fill,0%) 100%)!important;
+  font-size:clamp(28px,7vw,40px)!important;letter-spacing:-.05em!important;
+}
+html.prompt-full-redesign .prompt-loader-sentence{color:#cfdce7!important;font-weight:600!important}
+html.prompt-full-redesign :is(.prompt-handoff-loader,.prompt-completion-flash,#promptAiThinkingStage) .prompt-process-line{
+  border-bottom-color:rgba(255,255,255,.09)!important;color:#cfdce7!important;
+}
+html.prompt-full-redesign :is(.prompt-handoff-loader,.prompt-completion-flash) .prompt-process-title{color:#f2f8fd!important}
+html.prompt-full-redesign .prompt-loader-pulse i{background:var(--logo-blue)!important}
+/* Der Schließen-Knopf sitzt auf dem Grund, nicht auf der Karte. */
+html.prompt-full-redesign #promptWorkflowLoaderClose{
+  border-color:var(--line)!important;background:var(--surface)!important;color:var(--ink)!important;
+}
+
+/* ---- 4. Auf dem Telefon dieselben Maße wie auf der Startseite ------------- */
+@media(max-width:820px){
+  html.prompt-full-redesign :is(.step-panel>h1,.dialog-head h2,.free-prompt-head h2,.simple-intake-head h2,.project-mode-head h2,.history-head h2,.prompt-process-title){
+    font-size:clamp(24px,7vw,30px)!important;
+  }
+  html.prompt-full-redesign :is(#projectDescription,#simpleIntakeText,#freePromptDescription,#quickRevisionDescription){
+    min-height:132px!important;padding:16px!important;
+  }
+  html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,#promptAiThinkingStage>div,.streamline-working-inner,.master-generation-inner){
+    padding:26px 18px!important;border-radius:var(--r-md)!important;
+  }
+}
