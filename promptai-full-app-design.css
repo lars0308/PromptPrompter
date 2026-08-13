@@ -956,7 +956,10 @@ html.prompt-full-redesign[data-theme="dark"] .prompt-latest-action{color:var(--a
 /* Das Zeichen im Hintergrund ragt über die rechte Kante hinaus. Sichtbar ist
    das erst als waagerechter Überlauf auf dem Telefon - deshalb wird es dort
    beschnitten, wo es entsteht, statt die ganze Seite abzuschneiden. */
-html.prompt-full-redesign .prompt-command-home{overflow:clip}
+/* Nur waagerecht beschneiden: overflow:clip hat auch nach unten geschnitten, und
+   damit stand die Auswahlliste nur zur Hälfte im Bild. clip ist der einzige Wert,
+   der sich mit visible auf der anderen Achse verträgt. */
+html.prompt-full-redesign .prompt-command-home{overflow-x:clip;overflow-y:visible}
 html.prompt-full-redesign body{overflow-x:clip}
 
 /* Im Dunkelmodus verschwand die Konsole fast im Grund - schwarz auf schwarz
@@ -1308,7 +1311,7 @@ html.prompt-full-redesign :is(
   .dialog-head>div>span,.free-prompt-head>div>span,.history-head>div>span,
   .simple-intake-head>div>span,.project-mode-head>div>span,
   .free-prompt-result-head>div>span,.project-preview-head>div>span,
-  .prompt-process-kicker,#promptWorkflowLoader .kicker,.prompt-system-line
+  .prompt-process-kicker,#promptWorkflowLoader .kicker
 ){
   display:block!important;
   color:var(--logo-blue)!important;
@@ -1428,3 +1431,36 @@ html.prompt-full-redesign #promptWorkflowLoaderClose{
    einzige, was die Fläche als Prompt.ai ausweist. */
 html.prompt-full-redesign.prompt-home-surface .topbar .brand-mark{display:none!important}
 html.prompt-full-redesign.prompt-home-surface .topbar .brand{gap:0!important}
+
+/* Die Auswahlliste gehört zur Konsole, nicht zur Seite: derselbe dunkle Grund,
+   dieselbe Kante. Vorher war sie ein weißer Kasten mitten in der schwarzen
+   Fläche - der einzige Ort in der App, an dem beide Modi aufeinandertrafen. */
+html.prompt-full-redesign .prompt-mode-menu{
+  border:1px solid rgba(255,255,255,.14)!important;
+  border-radius:var(--r-md)!important;
+  background:#141e28!important;
+  color:#eef6fb!important;
+  box-shadow:0 24px 60px rgba(0,0,0,.5)!important;
+  padding:var(--sp-2)!important;
+}
+html.prompt-full-redesign .prompt-mode-option{color:#dfe9f2!important;border-radius:var(--r-sm)!important}
+html.prompt-full-redesign .prompt-mode-option svg{color:var(--mist)!important}
+html.prompt-full-redesign .prompt-mode-option small{color:var(--mist)!important}
+html.prompt-full-redesign .prompt-mode-option:hover,
+html.prompt-full-redesign .prompt-mode-option[aria-checked="true"]{
+  background:color-mix(in srgb,var(--logo-blue) 18%,transparent)!important;
+  color:#f4f9fd!important;
+}
+html.prompt-full-redesign .prompt-mode-option[aria-checked="true"] svg{color:var(--logo-blue)!important}
+
+/* Die Zeile der Startseite trägt einen Punkt vor dem Wort und ist deshalb eine Reihe,
+   kein Block. Sie steht bewusst nicht in der gemeinsamen Kopfregel: deren :is()-Liste
+   wiegt schwerer als eine einzelne Klasse, und display:block hat den Punkt auf die
+   Schrift gelegt. Schrift und Farbe bekommt sie hier trotzdem gleich. */
+html.prompt-full-redesign .prompt-system-line{
+  display:flex!important;align-items:center!important;gap:9px!important;
+  color:var(--logo-blue)!important;
+  font:850 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace!important;
+  letter-spacing:.15em!important;text-transform:uppercase!important;
+}
+html.prompt-full-redesign .prompt-system-line::before{flex:0 0 auto!important}

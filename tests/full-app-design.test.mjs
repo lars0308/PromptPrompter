@@ -221,3 +221,13 @@ test('the start page header carries the word only, the loaders keep the mark',as
   // is the only thing identifying the surface.
   assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\)::before\{[\s\S]{0,200}sitebrief-logo\.svg/);
 });
+
+test('the mode list belongs to the console: dark, and shown whole',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  // overflow:clip cut the list off at the bottom of the section. clip is the one value
+  // that may pair with visible on the other axis, so only the horizontal side is cut.
+  assert.match(css,/\.prompt-command-home\{overflow-x:clip;overflow-y:visible\}/);
+  assert.doesNotMatch(css,/\.prompt-command-home\{overflow:clip\}/);
+  assert.match(css,/\.prompt-mode-menu\{[\s\S]{0,220}background:#141e28!important/);
+  assert.match(css,/\.prompt-mode-option\{color:#dfe9f2!important/);
+});
