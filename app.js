@@ -1217,10 +1217,16 @@
   const progressTimers={};
   function startTaskProgress(kind,expectedSeconds){
     const box=el[`${kind}Progress`],fill=el[`${kind}ProgressFill`],percent=el[`${kind}ProgressPercent`],label=el[`${kind}ProgressText`];if(!box)return;clearInterval(progressTimers[kind]);const started=Date.now();box.hidden=false;fill.style.width="4%";percent.textContent="4 %";label.textContent=`Wird vorbereitet · ca. ${expectedSeconds} s`;
-    progressTimers[kind]=setInterval(()=>{const elapsed=(Date.now()-started)/1000,pct=Math.min(92,Math.round(4+88*(1-Math.exp(-elapsed/(expectedSeconds/2))))),remaining=Math.max(2,Math.ceil(expectedSeconds-elapsed));setTaskProgress(kind,pct,`${Math.floor(elapsed)} s vergangen · ca. ${remaining} s verbleibend`)},400);
+    progressStages[kind]="";
+    progressTimers[kind]=setInterval(()=>{const elapsed=(Date.now()-started)/1000,pct=Math.min(92,Math.round(4+88*(1-Math.exp(-elapsed/(expectedSeconds/2))))),remaining=Math.max(2,Math.ceil(expectedSeconds-elapsed));setTaskProgress(kind,pct,progressStages[kind]?`${progressStages[kind]} · noch ca. ${remaining} s`:`${Math.floor(elapsed)} s vergangen · ca. ${remaining} s verbleibend`)},400);
   }
   // The label text carries the progress instead of the thin track underneath it.
   function setTaskProgress(kind,pct,text){const box=el[`${kind}Progress`],fill=el[`${kind}ProgressFill`],percent=el[`${kind}ProgressPercent`],label=el[`${kind}ProgressText`];if(!fill)return;fill.style.width=`${pct}%`;box?.style.setProperty('--prompt-fill',`${pct}%`);label?.classList.add('prompt-fill-progress');if(pct<100)label?.classList.remove('prompt-fill-complete');percent.textContent=`${pct} %`;if(label.textContent!==text)label.textContent=text;}
+  // The loading screen in front of the preview step shows what the run is really doing. Once a
+  // stage is pinned the elapsed-time ticker stops writing, otherwise it overwrote "Bild 2 von 3"
+  // 400ms later and the honest text was never readable.
+  const progressStages={};
+  function previewStage(text,{pin=false}={}){progressStages.preview=String(text||"");if(pin)clearInterval(progressTimers.preview);if(text){const label=el.previewProgressText;if(label&&label.textContent!==text)label.textContent=text}window.dispatchEvent(new CustomEvent("promptai:preview-stage",{detail:{text:String(text||"")}}))}
   // Same ending as the full-screen loaders: full fill, one blue blink, then the box disappears.
   function finishTaskProgress(kind,text="Abgeschlossen"){clearInterval(progressTimers[kind]);setTaskProgress(kind,100,text);el[`${kind}ProgressText`]?.classList.add('prompt-fill-complete');setTimeout(()=>{if(el[`${kind}Progress`])el[`${kind}Progress`].hidden=true},1000);}
 
@@ -1667,7 +1673,7 @@
         const ready=await runProjectReview(false);
         if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}
       }
-      const count=PREVIEW_COUNT; if(el.regenerateConceptsBtn)el.regenerateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";startTaskProgress("preview",cloudReady()?Math.max(24,count*12):4);
+      const count=PREVIEW_COUNT; if(el.regenerateConceptsBtn)el.regenerateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy"; el.generationStatus.textContent="Vorschauen werden vorbereitet…";startTaskProgress("preview",cloudReady()?Math.max(24,count*12):4);previewStage("Briefing wird verarbeitet.");
       let concepts=[];
       try{
         if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
@@ -1677,6 +1683,7 @@
           if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
         }
         state.concepts=concepts.slice(0,count).map(normalizedConcept);state.selectedConceptId=state.concepts[0]?.id||"";state.refinements=[];renderConcepts();renderSelectedPreview();
+        previewStage(planRules().aiPreviews?`${state.concepts.length} Richtungen stehen. Die Bilder werden erstellt.`:`${state.concepts.length} Richtungen stehen.`);
         if(planRules().aiPreviews){
           // No personal connection and no choice to make: the plan grants image previews and the server
           // runs the image AIs configured for that plan in their priority order.
@@ -1687,7 +1694,7 @@
       }catch(err){
         if(err?.cancelled||previewCancel?.signal?.aborted)return;
         state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent="Die Vorschau-KI hat nicht geantwortet. Angezeigt werden die eingebauten HTML-Vorschauen – du kannst es oben erneut versuchen oder damit weiterarbeiten.";
-      }finally{finishTaskProgress("preview","Vorschauen fertig");consumeGuestRun();if(regenerate)state.previewRuns=(Number(state.previewRuns)||0)+1;renderRegenerateButton();saveState();updateGuide();}
+      }finally{finishTaskProgress("preview","Vorschauen fertig");previewStage("",{pin:true});consumeGuestRun();if(regenerate)state.previewRuns=(Number(state.previewRuns)||0)+1;renderRegenerateButton();saveState();updateGuide();}
     }finally{conceptsGenerating=false;previewCancel=null;delete document.body.dataset.previewGenerating;if(el.cancelPreviewBtn)el.cancelPreviewBtn.hidden=true;renderRegenerateButton();}
   }
 
@@ -1705,8 +1712,9 @@
     const concepts=state.concepts.slice(),total=concepts.length;
     if(!total)return {kind:"success"};
     let quotaError=false,otherError=false,done=0,firstMessage="";
+    previewStage(`Bild 1 von ${total} wird erstellt.`,{pin:true});
     const note=(className,text)=>{if(firstMessage)return;firstMessage=text;el.generationStatus.className=className;el.generationStatus.textContent=text};
-    const tick=()=>{done++;setTaskProgress("preview",Math.round(38+(done/total)*54),`Bildentwurf ${Math.min(done+1,total)} von ${total} wird gestaltet…`);renderConcepts();renderSelectedPreview()};
+    const tick=()=>{done++;const text=done>=total?`${total} von ${total} Bildern fertig.`:`Bild ${Math.min(done+1,total)} von ${total} wird erstellt.`;setTaskProgress("preview",Math.round(38+(done/total)*54),text);previewStage(text,{pin:true});renderConcepts();renderSelectedPreview()};
 
     const run=async concept=>{
       if(previewCancel?.signal?.aborted)return;

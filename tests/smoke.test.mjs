@@ -721,3 +721,22 @@ test('building a website is its own tool on the home page, not a card at the end
   assert.match(loader,/\.\/website-build-ui\.js\?v=\d{8}-\d+/);
   assert.ok(sw.includes('/website-build-ui.js'));
 });
+
+test('one loading screen carries the run from the questions to the finished previews',async()=>{
+  const loader=await text('transition-polish.js'),app=await text('app.js'),html=await text('index.html');
+  // The same "Briefing wird geprüft" screen used to come back after the clarification dialog.
+  assert.match(loader,/let reviewAnswered=false,stageText='';/);
+  assert.match(loader,/show\(reviewAnswered\?'preview':'review'\)/);
+  assert.match(loader,/#saveClarificationsBtn,#deferClarificationsBtn'\)\)\{reviewAnswered=true/);
+  // Steps 4 and 5 are skipped automatically, so the screen must not blink away between them.
+  assert.match(loader,/if\(step===4\|\|step===5\|\|\(step===6&&document\.body\.dataset\.previewGenerating==='1'\)\)\{pendingFromReferences=false;if\(cleanMode\(\)\)show\('preview'\);else hide\(\)/);
+  assert.match(loader,/promptai:preview-stage/,'the screen says what the run is really doing');
+  assert.match(app,/previewStage\("Briefing wird verarbeitet\."\)/);
+  assert.match(app,/Bild \$\{Math\.min\(done\+1,total\)\} von \$\{total\} wird erstellt\./);
+  assert.match(app,/previewStage\(`Bild 1 von \$\{total\} wird erstellt\.`,\{pin:true\}\)/,'the elapsed ticker must not overwrite the image stages');
+  assert.match(app,/progressStages\[kind\]\?`\$\{progressStages\[kind\]\} · noch ca\./);
+  // Nothing above the three results may look like the button that starts them.
+  const gallery=html.indexOf('id="conceptGallery"'),controls=html.indexOf('class="preview-generation-controls"');
+  assert.ok(gallery>0&&controls>gallery,'the regenerate control sits below the previews');
+  assert.doesNotMatch(html,/<div class="preview-step-head">[\s\S]{0,200}preview-generation-controls/,'and no longer in the step head');
+});

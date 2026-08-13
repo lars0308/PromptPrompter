@@ -284,13 +284,15 @@
         <div class="section-kicker">06 — VORSCHAUEN</div>
         <div class="preview-step-head">
           <div><h1>Drei echte Richtungen.</h1></div>
-          <div class="preview-generation-controls">
-            <button type="button" class="outline-btn" id="regenerateConceptsBtn" hidden>Andere Vorschauen erstellen <small id="regenerateConceptsHint"></small></button>
-          </div>
         </div>
         <div id="generationStatus" class="generation-status">Noch keine Vorschauen erzeugt.</div>
         <div class="task-progress preview-progress" id="previewProgress" hidden><div class="task-progress-label"><b id="previewProgressPercent">0 %</b><small id="previewProgressText">Vorschauen werden vorbereitet…</small></div><div class="task-progress-track"><i id="previewProgressFill"></i></div><button type="button" class="outline-btn mini task-progress-cancel" id="cancelPreviewBtn" hidden>Abbrechen</button></div>
         <div id="conceptGallery" class="concept-gallery"></div>
+        <!-- Below the three results, not above them: the previews are already there when the step
+             opens, so nothing at the top may look like the button that starts them. -->
+        <div class="preview-generation-controls">
+          <button type="button" class="outline-btn" id="regenerateConceptsBtn" hidden>Andere Vorschauen erstellen <small id="regenerateConceptsHint"></small></button>
+        </div>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="5">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="7" id="toRefineBtn">Auswahl verfeinern <i>→</i></button></div>
       </section>
@@ -794,8 +796,8 @@
   <script src="./maintenance-mode.js?v=20260813-2" defer></script>
   <script src="./entry-gate-ui.js?v=20260814-3" defer></script>
   <script src="./legal-pages.js?v=20260815-1" defer></script>
-  <script src="./app.js?v=20260815-9" defer></script>
-  <script src="./admin-console.js?v=20260814-8" defer></script>
+  <script src="./app.js?v=20260815-10" defer></script>
+  <script src="./admin-console.js?v=20260814-9" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>
 </html>
