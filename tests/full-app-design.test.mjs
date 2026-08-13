@@ -214,14 +214,15 @@ test('the old start page never shows through, and the handoff loader gets to fin
   assert.doesNotMatch(home,/Modell automatisch/,'the label said nothing that changes');
 });
 
-test('the start page header carries the word only, the loaders keep the mark',async()=>{
+test('the mark stands free on every ground it appears on',async()=>{
   const css=await read('promptai-full-app-design.css');
-  assert.match(css,/\.prompt-home-surface \.topbar \.brand-mark\{display:none!important\}/);
+  // Sie steht wieder in der Kopfzeile der Startseite, aber ohne Plättchen darunter.
+  assert.match(css,/\.prompt-home-surface \.topbar \.brand-mark\{[\s\S]{0,140}display:block!important/);
   // Scoped to the start page: the loading screens are the one place where the mark
   // is the only thing identifying the surface.
   // Auf den Ladeflächen steht sie frei, ohne Plättchen - und in ihrer hellen Fassung,
   // weil diese Flächen in beiden Modi dunkel sind.
-  assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\)::before\{[\s\S]{0,200}sitebrief-logo-light\.svg/);
+  assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\)::before\{[\s\S]{0,200}sitebrief-logo-trace-light\.svg/);
 });
 
 test('the mode list belongs to the console: dark, and shown whole',async()=>{
@@ -265,4 +266,26 @@ test('the mark ships without a plate, and stays readable on the dark loading sur
                'both files must stay the same drawing');
   const sw=await read('sw.js');
   assert.match(sw,/sitebrief-logo-light\.svg/,'the light variant belongs in the offline shell');
+});
+
+test('the boot mark traces the blue once around the inside of the letter',async()=>{
+  const trace=await read('sitebrief-logo-trace.svg'),light=await read('sitebrief-logo-trace-light.svg');
+  const html=await read('index.html'),css=await read('promptai-full-app-design.css'),sw=await read('sw.js');
+  // The stroke follows the letter's outline and is clipped to the letter, so it runs along
+  // the inside edge instead of hanging outside it.
+  assert.match(trace,/<clipPath id="pMask">/);
+  assert.match(trace,/clip-path="url\(#pMask\)"/);
+  // pathLength normalises the dash numbers, so they read as per-mille of the perimeter.
+  assert.match(trace,/pathLength="1000"/);
+  assert.match(trace,/@keyframes promptTrace\{from\{stroke-dashoffset:1000\}to\{stroke-dashoffset:0\}\}/);
+  assert.match(trace,/prefers-reduced-motion:reduce/,'motion has to be calmable');
+  // The start screen carries it in the theme that fits its ground; the loading surfaces are
+  // dark in both themes and always take the light one.
+  assert.match(html,/id="promptAppBoot"[\s\S]{0,120}sitebrief-logo-trace\.svg/);
+  assert.match(html,/\[data-theme="dark"\] #promptAppBoot img\{content:url\("\.\/sitebrief-logo-trace-light\.svg/);
+  assert.match(css,/::before\{[\s\S]{0,160}sitebrief-logo-trace-light\.svg/);
+  assert.match(light,/fill="#eef5fb"/);
+  for(const f of ['sitebrief-logo-trace.svg','sitebrief-logo-trace-light.svg'])assert.ok(sw.includes(f),f);
+  // And the mark is back in the start page header, without a plate.
+  assert.match(css,/\.prompt-home-surface \.topbar \.brand-mark\{[\s\S]{0,140}background:transparent!important/);
 });

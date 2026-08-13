@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Prompt.ai</title>
+  <desc id="desc">Das P der Marke; das Blau läuft einmal an der Innenkante des Buchstabens herum.</desc>
+  <style>
+    /* Der Strich folgt der Aussenlinie des Buchstabens und wird auf dessen Form
+       beschnitten - dadurch läuft er innen an der Kante entlang statt darüber
+       hinaus. pathLength=1000 macht die Strichlängen unabhängig von der echten
+       Pfadlänge, deshalb sind die Zahlen unten Promille des Umfangs. */
+    .trace{stroke-dasharray:170 830;animation:promptTrace 2.6s linear infinite}
+    @keyframes promptTrace{from{stroke-dashoffset:1000}to{stroke-dashoffset:0}}
+    @media(prefers-reduced-motion:reduce){.trace{animation-duration:6s}}
+  </style>
+  <defs><clipPath id="pMask"><path d="M151 94 L270 94 A91.5 91.5 0 0 1 270 277 L219 277 L219 371 L155 419 L155 159 L219 159 Z"/></clipPath></defs>
+  <path fill-rule="evenodd" fill="#eef5fb" d="M151 94 L270 94 A91.5 91.5 0 0 1 270 277 L219 277 L219 318 L155 262 L155 159 L219 159 Z M277 150 A36 36 0 0 1 277 222 L219 222 L219 150 Z"/>
+  <path fill="#1f63db" d="M155 262 L219 318 L219 371 L155 419 Z"/>
+  <g clip-path="url(#pMask)">
+    <path class="trace" pathLength="1000" d="M151 94 L270 94 A91.5 91.5 0 0 1 270 277 L219 277 L219 371 L155 419 L155 159 L219 159 Z" fill="none" stroke="#3b82f6"
+          stroke-width="30" stroke-linecap="butt" stroke-linejoin="miter"/>
+  </g>
+</svg>

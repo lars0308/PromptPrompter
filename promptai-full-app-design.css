@@ -1403,10 +1403,10 @@ html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>d
    Blau. Ein Filter hätte auch das Blau umgefärbt. */
 html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner)::before{
   content:"";display:block;width:46px;height:46px;margin:0 auto 20px;
-  background:url("./sitebrief-logo-light.svg?v=6") center/contain no-repeat;
+  background:url("./sitebrief-logo-trace-light.svg?v=6") center/contain no-repeat;
 }
 html.prompt-full-redesign :is(.prompt-handoff-loader>div,.prompt-completion-flash>div)::before{
-  background-image:url("./sitebrief-logo-light.svg?v=6")!important;
+  background-image:url("./sitebrief-logo-trace-light.svg?v=6")!important;
 }
 /* Auf dunklem Grund braucht der Fortschritt im Wort einen hellen Rest, sonst
    verschwindet der noch nicht gefüllte Teil. Der Füllstand selbst kommt
@@ -1439,12 +1439,13 @@ html.prompt-full-redesign #promptWorkflowLoaderClose{
   }
 }
 
-/* Auf der Startseite trägt die Kopfzeile nur noch das Wort. Die Bildmarke stand
-   dort direkt neben dem Menüknopf und hat aus zwei Zeichen nebeneinander eine
-   unruhige Ecke gemacht. In den Ladeschirmen bleibt sie - dort ist sie das
-   einzige, was die Fläche als Prompt.ai ausweist. */
-html.prompt-full-redesign.prompt-home-surface .topbar .brand-mark{display:none!important}
-html.prompt-full-redesign.prompt-home-surface .topbar .brand{gap:0!important}
+/* Die Marke steht wieder in der Kopfzeile der Startseite - ohne Plättchen und
+   mit etwas Luft zum Menüknopf, damit die Ecke nicht gedrängt wirkt. */
+html.prompt-full-redesign.prompt-home-surface .topbar .brand-mark{
+  display:block!important;width:30px!important;height:30px!important;
+  border:0!important;background:transparent!important;box-shadow:none!important;
+}
+html.prompt-full-redesign.prompt-home-surface .topbar .brand{gap:10px!important}
 
 /* Die Auswahlliste gehört zur Konsole, nicht zur Seite: derselbe dunkle Grund,
    dieselbe Kante. Vorher war sie ein weißer Kasten mitten in der schwarzen

@@ -23,6 +23,7 @@
     html.prompt-app-booting #promptAppBoot{display:grid}
     #promptAppBoot.is-leaving{opacity:0;pointer-events:none}
     #promptAppBoot>div{width:min(520px,100%);text-align:center}
+    html[data-theme="dark"] #promptAppBoot img{content:url("./sitebrief-logo-trace-light.svg?v=6")}
     #promptAppBoot img{display:block;width:min(126px,31vw);height:min(126px,31vw);margin:0 auto;object-fit:contain;filter:drop-shadow(0 16px 32px rgba(20,88,129,.10))}
     #promptAppBoot strong{display:block;margin-top:17px;font-size:clamp(28px,7vw,42px);line-height:1;letter-spacing:-.045em}
     .brand-ai-suffix{color:var(--accent,#1b76aa)}
@@ -35,7 +36,7 @@
   </style>
 </head>
 <body>
-  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo.svg?v=6" alt="Prompt.ai"><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><p class="prompt-fill-progress" style="--prompt-fill:6%">Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div></section>
+  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo-trace.svg?v=6" alt="Prompt.ai"><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><p class="prompt-fill-progress" style="--prompt-fill:6%">Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div></section>
   <aside id="offerBanner" class="offer-banner" hidden>
     <div><span id="offerEyebrow">AKTION</span><strong id="offerTitle"></strong><p id="offerDescription"></p></div>
     <button type="button" class="solid-btn mini" id="offerCta">Kostenlos testen</button><button type="button" class="offer-close" id="offerClose" aria-label="Aktion ausblenden">×</button>
