@@ -28,7 +28,6 @@
   const THEME_KEY = "sitebrief-theme";
   const REMEMBERED_EMAIL_KEY = "sitebrief-remembered-email";
   const QUICK_REVISION_VARIANTS_KEY = "sitebrief-v6-revision-variants";
-  const BIOMETRIC_KEY = "prompt-ai-biometric-v1";
   const ENTRY_GATE_KEY = "prompt-ai-entry-gate-shown-v1";
   const OWNER_EMAIL = "service.battermann@gmx.de";
   function isOwnerAccount(){return String(window.SiteBriefCloud?.user?.email||state.cloud.user?.email||"").trim().toLowerCase()===OWNER_EMAIL}
@@ -123,7 +122,7 @@
       "selectedPreviewLarge","quickRefinements","refinementInput","applyRefinementBtn","clearRefinementsBtn","refinementHistory",
       "masterPrompt","promptMeta","copyPromptBtn","downloadPromptBtn","downloadProjectSourcesBtn","downloadHandoffPackageBtn","downloadBriefBtn","promptHandoff","promptHandoffText","promptHandoffPreview","downloadProjectReportBtn","downloadClientBriefBtn","downloadHandoverBtn","downloadWebsiteZipBtn","buildWebsiteBtn","downloadGeneratedWebsiteBtn","websiteBuildStatus","websiteBuildProgress","websiteBuildStage","websiteBuildPercent","websiteBuildFill","websiteBuildStages","websiteBuildPreview","websiteBuildTruthNote","websiteRequirements","publishGithubBtn","clientResultHint","exportResultHint",
       "guideStepLabel","guideTitle","guideText","guideSuggestions","guideActionBtn","guideAgent","guideModules","guideSkills","guideReferences","progressText",
-      "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","libraryProjectList","faceIdBtn","faceIdMessage","supportCategory","supportSubject","supportMessage","sendSupportBtn","supportStatus",
+      "accountBtn","syncState","themeToggleBtn","accountDialog","accountLoggedOut","accountLoggedIn","accountDialogKicker","accountDialogTitle","guestLimitBox","guestLimitTitle","guestLimitNote","guestContinueBtn","authEmail","authPassword","rememberEmail","signInBtn","signUpBtn","signOutBtn","syncNowBtn","authMessage","syncMessage","accountEmail","accountUserId","cloudStats","libraryProjectList","supportCategory","supportSubject","supportMessage","sendSupportBtn","supportStatus",
       "openLibraryBtn","openSettingsBtn","libraryDialog","exportLibraryBtn","importLibraryBtn","importLibraryInput",
       "settingsDialog","apiKeySection","apiKeySlotsNote","setActiveProfile","applyProfileBtn","githubLoginRow","githubUpgradeRow","githubConnectionGrid","githubSettingsLoginBtn","saveProfileBtn","manageProfilesBtn","profileDialog","profileList","newProfileName","newProfileDescription","createProfileBtn","setAiClarifications","setMaxQuestions","setCriticalBehavior","setAskMissing","setAskConflict","setAskInfeasible","setSuggestAlternatives","setLegalRegion","setCheckPrivacy","setCheckImprint","setCheckLegal","setCheckAccessibility","setCheckSecurity","setCheckPerformance","setCheckSeo","setNoInventLegal","setFinalChecklist","saveSettingsBtn",
       "aiReviewCard","aiReviewTitle","aiReviewText","runAiReviewBtn","buyReviewInlineBtn","reviewProgress","reviewProgressPercent","reviewProgressText","reviewProgressFill","previewProgress","previewProgressPercent","previewProgressText","previewProgressFill","clarificationDialog","clarificationIntro","clarificationWarnings","clarificationQuestions","deferClarificationsBtn","saveClarificationsBtn",
@@ -295,7 +294,7 @@
   }
 
   // Sections start closed - in the settings and in the profile alike. Unfolded, the profile opened
-  // with identity block, profile data, Face ID and the support form all at once.
+  // with identity block, profile data and the support form all at once.
   function collapseSections(root,sectionSelector,headingSelector){
     if(!root)return;
     $$(sectionSelector,root).forEach(section=>{
@@ -350,12 +349,28 @@
     if(cloudReady()||!el.accountDialog)return;updateAccountUi();renderGuestLimit();el.accountDialog.classList.add("guest-gate");el.accountDialogKicker.textContent="WILLKOMMEN BEI PROMPT.AI";el.accountDialogTitle.textContent=guestRunsRemaining()?"Anmelden oder kostenlos testen":"Zum Weitermachen anmelden";
     if(!el.accountDialog.open)el.accountDialog.showModal();
   }
+  // Der Merker lag nur in sessionStorage: ein Tab, der offen bleibt, hat das Tor genau einmal
+  // gezeigt und danach nie wieder - eine installierte App auf dem Handy behält ihre Sitzung über
+  // Tage. Nach einer längeren Pause soll die Anmeldeseite wieder da sein, so wie nach einem
+  // Neustart. Deshalb zusätzlich ein Zeitstempel: liegt der letzte Besuch über sechs Stunden
+  // zurück, zählt der Merker nicht mehr.
+  const LAST_SEEN_KEY = "prompt-ai-last-seen-v1";
+  const GATE_AFTER_MS = 6*60*60*1000;
+  function markSeen(){try{localStorage.setItem(LAST_SEEN_KEY,String(Date.now()))}catch{}}
+  function awayLongEnough(){
+    try{
+      const last=Number(localStorage.getItem(LAST_SEEN_KEY))||0;
+      return Boolean(last)&&Date.now()-last>GATE_AFTER_MS;
+    }catch{return false}
+  }
   function maybeShowEntryGate(){
-    if(cloudReady())return;
+    if(cloudReady()){markSeen();return}
     let midFlow=false;try{midFlow=Boolean(sessionStorage.getItem(MODE_HANDOFF_KEY))||sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)==='1'}catch{}
-    if(midFlow)return;
+    if(midFlow){markSeen();return}
     let alreadyShown=false;try{alreadyShown=sessionStorage.getItem(ENTRY_GATE_KEY)==='1'}catch{}
-    if(alreadyShown)return;
+    const away=awayLongEnough();
+    markSeen();
+    if(alreadyShown&&!away)return;
     try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}
     showAccountGate();
   }
@@ -583,7 +598,7 @@
       if(el.userDisplayName){el.userDisplayName.value=state.userProfile.displayName||'';el.userCompanyName.value=state.userProfile.companyName||'';el.userWebsite.value=state.userProfile.website||'';el.userDefaultClientType.value=state.userProfile.defaultClientType||''}
       const counts={profiles:state.profiles.length,modules:state.modules.length,skills:state.skills.length,projects:state.cloudProjects.length};
       el.cloudStats.innerHTML=`<div><b>${counts.profiles}</b><span>Profile</span></div><div><b>${counts.modules}</b><span>Module</span></div><div><b>${counts.skills}</b><span>Skills</span></div><div><b>${counts.projects}</b><span>Projekte</span></div>`;
-      renderCloudProjects();renderBiometricUi();
+      renderCloudProjects();
       if(!state.cloud.syncing) setSyncState("Cloud",state.cloud.error?"error":"synced");
     }else{
       el.accountBtn.textContent="Anmelden";el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;setSyncState("Cloud bereit");if(el.openLibraryBtn){el.openLibraryBtn.disabled=true;el.openLibraryBtn.title="Bibliotheken sind nach der Anmeldung verfügbar"}if(el.generatorEngine){el.generatorEngine.value="local";state.engine="local";el.generatorEngine.disabled=true;el.generatorModel.disabled=true;}
@@ -717,13 +732,15 @@
           const realTransition=previousUserId!==nextUserId;
           if(realTransition){state.aiConnections=[];state.isAdmin=false;state.plan='free';state.ownApiKeys=false;state.apiKeySlots=0;window.PromptAiAccess={plan:'free',isAdmin:false,ownApiKeys:false};window.SiteBriefCloud.aiConnections=[];window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:false}}));renderAiConnections();applyPlanUi();}
           updateAccountUi();
-          if(realTransition&&payload.authEvent==='SIGNED_IN'&&nextUserId){closeAccountGate();showWelcome();continuePendingAuthPlan();maybePromptBiometric();}
+          if(realTransition&&payload.authEvent==='SIGNED_IN'&&nextUserId){closeAccountGate();showWelcome();continuePendingAuthPlan();}
           else if(realTransition&&payload.authEvent==='SIGNED_OUT'&&!nextUserId){showWelcome();}
           if(state.cloud.user){try{await loadCloudBundle()}catch{}closeAccountGate();}
         }
       });
-      if(state.cloud.user){await loadCloudBundle();await handleCheckoutReturn();maybePromptBiometric();}
-      document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybePromptBiometric()});
+      if(state.cloud.user){await loadCloudBundle();await handleCheckoutReturn();}
+      // Zurück nach längerer Pause: das Gerät war aus, die App lag im Hintergrund, der Rechner
+      // hat geschlafen. Beim Wiederkommen zählt derselbe Zeitstempel wie beim Start.
+      document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybeShowEntryGate()});
       if(!state.activeProfileId){const def=state.systemProfiles.find(x=>x.is_default)||state.systemProfiles[0];if(def){state.activeProfileId=def.id;state.settings.activeProfileId=def.id;saveProfiles();}}
       renderProfileUi();updateAccountUi();maybeShowEntryGate();
     }catch(err){state.cloud.configured=false;state.cloud.error=err?.message||"Supabase nicht verfügbar";updateAccountUi();maybeShowEntryGate();}
@@ -739,7 +756,7 @@
   async function signIn(){
     if(!state.cloud.configured){el.authMessage.textContent="Supabase ist in diesem Deployment noch nicht konfiguriert.";el.authMessage.className="auth-message error";return;}
     const email=el.authEmail.value.trim(),password=el.authPassword.value;if(!email||!password)return;
-    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await withTimeout(window.SiteBriefCloud.signIn(email,password));if(el.rememberEmail?.checked)localStorage.setItem(REMEMBERED_EMAIL_KEY,email);else localStorage.removeItem(REMEMBERED_EMAIL_KEY);state.cloud.user=data.user;el.authPassword.value="";el.authMessage.textContent="Angemeldet. Die Sitzung bleibt auf diesem Gerät erhalten.";el.authMessage.className="auth-message good";updateAccountUi();closeAccountGate();window.PromptAiTransitionLoader?.show('login');try{await loadCloudBundle()}catch{}window.PromptAiTransitionLoader?.hide();showWelcome();continuePendingAuthPlan();maybePromptBiometric();}catch(err){window.PromptAiTransitionLoader?.hide();el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
+    try{el.authMessage.textContent="Anmeldung läuft…";el.authMessage.className="auth-message";const data=await withTimeout(window.SiteBriefCloud.signIn(email,password));if(el.rememberEmail?.checked)localStorage.setItem(REMEMBERED_EMAIL_KEY,email);else localStorage.removeItem(REMEMBERED_EMAIL_KEY);state.cloud.user=data.user;el.authPassword.value="";el.authMessage.textContent="Angemeldet. Die Sitzung bleibt auf diesem Gerät erhalten.";el.authMessage.className="auth-message good";updateAccountUi();closeAccountGate();window.PromptAiTransitionLoader?.show('login');try{await loadCloudBundle()}catch{}window.PromptAiTransitionLoader?.hide();showWelcome();continuePendingAuthPlan();}catch(err){window.PromptAiTransitionLoader?.hide();el.authMessage.textContent=err?.message||"Anmeldung fehlgeschlagen.";el.authMessage.className="auth-message error";}
   }
 
   async function signUp(){
@@ -2593,23 +2610,12 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     finally{el.publishGithubBtn.disabled=false}
   }
   async function saveUserProfile(){if(!cloudReady())return;const profile={displayName:el.userDisplayName.value.trim(),companyName:el.userCompanyName.value.trim(),website:el.userWebsite.value.trim(),defaultClientType:el.userDefaultClientType.value};try{el.saveUserProfileBtn.disabled=true;await window.SiteBriefCloud.saveUserProfile(profile);state.userProfile=profile;el.userProfileMessage.textContent='Profil gespeichert ✓'}catch(err){el.userProfileMessage.textContent=err.message||'Profil konnte nicht gespeichert werden'}finally{el.saveUserProfileBtn.disabled=false}}
-  function biometricRecord(){try{const row=JSON.parse(localStorage.getItem(BIOMETRIC_KEY)||'null');return row?.userId===state.cloud.user?.id?row:null}catch{return null}}
-  let lastBiometricPromptAt=0,biometricPrompting=false;
-  async function maybePromptBiometric(){
-    if(biometricPrompting||!cloudReady())return;
-    const record=biometricRecord();if(!record)return;
-    const supported=window.isSecureContext&&window.PublicKeyCredential&&navigator.credentials;if(!supported)return;
-    const now=Date.now();if(now-lastBiometricPromptAt<15000)return;lastBiometricPromptAt=now;biometricPrompting=true;
-    try{
-      const challenge=crypto.getRandomValues(new Uint8Array(32));
-      await navigator.credentials.get({publicKey:{challenge,allowCredentials:[{type:'public-key',id:base64UrlToBytes(record.credentialId)}],userVerification:'required',timeout:60000}});
-    }catch{}
-    finally{biometricPrompting=false}
-  }
-  function bytesToBase64Url(value){return btoa(String.fromCharCode(...new Uint8Array(value))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
-  function base64UrlToBytes(value){const normalized=String(value).replace(/-/g,'+').replace(/_/g,'/'),padded=normalized+'='.repeat((4-normalized.length%4)%4);return Uint8Array.from(atob(padded),character=>character.charCodeAt(0))}
-  function renderBiometricUi(){if(!el.faceIdBtn)return;const supported=window.isSecureContext&&window.PublicKeyCredential&&navigator.credentials;if(!supported){el.faceIdBtn.disabled=true;el.faceIdBtn.textContent='Nicht unterstützt';el.faceIdMessage.textContent='Face ID benötigt HTTPS und einen unterstützten Browser.';return}const active=Boolean(biometricRecord());el.faceIdBtn.disabled=false;el.faceIdBtn.textContent=active?'Face ID testen':'Face ID einrichten';el.faceIdMessage.textContent=active?'Auf diesem Gerät eingerichtet.':'Die biometrischen Daten bleiben auf deinem Gerät.'}
-  async function handleBiometric(){if(!cloudReady())return;try{el.faceIdBtn.disabled=true;el.faceIdMessage.textContent='Geräteprüfung wird geöffnet…';const existing=biometricRecord(),challenge=crypto.getRandomValues(new Uint8Array(32));if(existing){await navigator.credentials.get({publicKey:{challenge,allowCredentials:[{type:'public-key',id:base64UrlToBytes(existing.credentialId)}],userVerification:'required',timeout:60000}});el.faceIdMessage.textContent='Face ID erfolgreich bestätigt ✓';return}const userBytes=new TextEncoder().encode(state.cloud.user.id).slice(0,64),credential=await navigator.credentials.create({publicKey:{challenge,rp:{name:'Prompt.ai'},user:{id:userBytes,name:state.cloud.user.email||state.cloud.user.id,displayName:state.userProfile.displayName||state.cloud.user.email||'Prompt.ai Nutzer'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'preferred',userVerification:'required'},attestation:'none',timeout:60000}});if(!credential)throw new Error('Die Einrichtung wurde abgebrochen.');localStorage.setItem(BIOMETRIC_KEY,JSON.stringify({userId:state.cloud.user.id,credentialId:bytesToBase64Url(credential.rawId),createdAt:new Date().toISOString()}));el.faceIdMessage.textContent='Face ID ist auf diesem Gerät eingerichtet ✓';renderBiometricUi()}catch(err){el.faceIdMessage.textContent=err?.name==='NotAllowedError'?'Face ID wurde abgebrochen.':(err?.message||'Face ID konnte nicht eingerichtet werden.')}finally{el.faceIdBtn.disabled=false}}
+  // Face ID wurde entfernt. Was hier stand, war eine Geräteprüfung ohne Wirkung: es legte eine
+  // WebAuthn-Anmeldeinformation an, führte beim nächsten Start die Prüfung aus - und danach
+  // passierte nichts. Nichts wurde serverseitig geprüft, keine Sitzung entsperrt, kein Zugang
+  // gewährt. Ein Knopf, der Sicherheit verspricht und keine hat, ist schlechter als keiner.
+  // Ein echter Login über Face ID braucht eine Challenge vom Server und eine Signaturprüfung;
+  // solange die fehlt, gibt es hier nichts.
   async function sendSupportRequest(){if(!cloudReady())return;const subject=el.supportSubject.value.trim(),message=el.supportMessage.value.trim();if(subject.length<4||message.length<15){el.supportStatus.textContent='Bitte Betreff und Anliegen etwas genauer ausfüllen.';return}try{el.sendSupportBtn.disabled=true;el.supportStatus.textContent='Wird gesendet…';await window.SiteBriefCloud.createSupportRequest({category:el.supportCategory.value,subject,message});el.supportSubject.value='';el.supportMessage.value='';el.supportStatus.textContent='Anfrage wurde gesendet ✓'}catch(err){el.supportStatus.textContent=err?.message||'Anfrage konnte nicht gesendet werden.'}finally{el.sendSupportBtn.disabled=false}}
   async function pendingNameSuggestion(found){
     const current=el.clientName.value.trim();
@@ -2715,7 +2721,7 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
     el.downloadProjectReportBtn?.addEventListener('click',()=>downloadText('sitebrief-projektbericht.md',buildProjectReport(),'text/markdown'));
     el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));[el.buySingleReviewBtn,el.buyReviewInlineBtn].forEach(button=>button?.addEventListener('click',()=>beginCheckout('single_review')));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
-    el.startApiAddonCheckoutBtn?.addEventListener('click',()=>beginCheckout('own_api_keys',{slots:Number(el.apiAddonSlots?.value)||1}));el.saveUserProfileBtn?.addEventListener('click',saveUserProfile);el.faceIdBtn?.addEventListener('click',handleBiometric);el.sendSupportBtn?.addEventListener('click',sendSupportRequest);el.importClientWebsiteBtn?.addEventListener('click',importClientWebsite);document.addEventListener('click',e=>{if(e.target.closest('[data-api-addon]'))beginCheckout('own_api_keys')});
+    el.startApiAddonCheckoutBtn?.addEventListener('click',()=>beginCheckout('own_api_keys',{slots:Number(el.apiAddonSlots?.value)||1}));el.saveUserProfileBtn?.addEventListener('click',saveUserProfile);el.sendSupportBtn?.addEventListener('click',sendSupportRequest);el.importClientWebsiteBtn?.addEventListener('click',importClientWebsite);document.addEventListener('click',e=>{if(e.target.closest('[data-api-addon]'))beginCheckout('own_api_keys')});
     el.openLibraryBtn.addEventListener("click",()=>openLibrary("projects"));$$('[data-open-library]').forEach(b=>b.addEventListener("click",()=>openLibrary(b.dataset.openLibrary)));$$('[data-library-tab]').forEach(b=>b.addEventListener("click",()=>switchLibraryTab(b.dataset.libraryTab)));
     el.openSettingsBtn.addEventListener("click",()=>{populateSettingsDialog();el.settingsDialog.showModal()});el.saveSettingsBtn.addEventListener("click",saveSettingsFromDialog);
     
