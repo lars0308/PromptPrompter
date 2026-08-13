@@ -749,7 +749,10 @@
   }
 
   async function signOut(){
-    try{await window.SiteBriefCloud.signOut();state.cloud.user=null;state.cloudProjects=[];state.aiConnections=[];state.plan='free';state.isAdmin=false;state.apiKeySlots=0;state.ownApiKeys=false;state.reviewCredits=0;window.SiteBriefCloud.aiConnections=[];renderAiConnections();applyPlanUi();setSyncState("Cloud bereit");updateAccountUi();el.accountDialog.close();}catch(err){el.syncMessage.textContent=err?.message||"Abmelden fehlgeschlagen.";el.syncMessage.className="auth-message error";}
+    // Abmelden hat den Dialog geschlossen und den Besucher damit als Gast in der App gelassen.
+    // Der Einstieg ist eine Entscheidung, keine Meldung: nach dem Abmelden steht wieder die
+    // Anmeldeseite da, und weiter geht es erst über Anmelden oder „Kostenlos testen".
+    try{await window.SiteBriefCloud.signOut();state.cloud.user=null;state.cloudProjects=[];state.aiConnections=[];state.plan='free';state.isAdmin=false;state.apiKeySlots=0;state.ownApiKeys=false;state.reviewCredits=0;window.SiteBriefCloud.aiConnections=[];renderAiConnections();applyPlanUi();setSyncState("Cloud bereit");updateAccountUi();try{sessionStorage.removeItem(ENTRY_GATE_KEY)}catch{}showAccountGate();}catch(err){el.syncMessage.textContent=err?.message||"Abmelden fehlgeschlagen.";el.syncMessage.className="auth-message error";}
   }
 
   function applySavedState(saved,{persistLocal=false}={}){
