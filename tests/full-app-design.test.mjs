@@ -320,3 +320,18 @@ test('the references step reads as two purposes, not five equal blocks',async()=
   assert.match(clean,/const short='PDF, PNG, JPG, WebP, TXT, MD, CSV oder JSON · max\. 12 MB'/);
   assert.match(clean,/clientLead\.textContent='Echte Fakten statt Stil/);
 });
+
+test('the loading screen is the surface itself, and the step pages take the full width',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  // No card on the loader: the whole screen is dark in both themes, so the frame could go
+  // without the light type losing its ground.
+  assert.match(css,/:is\(#promptWorkflowLoader,\.prompt-handoff-loader,\.prompt-completion-flash,#promptAiThinkingStage\)\{\s*background:#0f151d!important/);
+  assert.match(css,/\.master-generation-inner\)\{[\s\S]{0,200}border:0!important;\s*background:transparent!important/);
+  // content:url() instead of a background image - a background graphic can be frozen,
+  // a replaced image animates, so the blue bar moves here too.
+  assert.match(css,/::before\{\s*content:url\("\.\/sitebrief-logo-trace-light\.svg/);
+  // .workspace inset 20, the step card another 16 - content sat at 36 while the rest of
+  // the app starts at 16, and the card floated with a visible edge.
+  assert.match(css,/\.workspace\{padding-left:0!important;padding-right:0!important\}/);
+  assert.match(css,/\.step-panel,[\s\S]{0,80}#guidedCleanHead\{[\s\S]{0,160}padding-left:var\(--dlg-x\)!important/);
+});

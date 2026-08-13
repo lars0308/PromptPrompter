@@ -15,6 +15,6 @@
   <path fill="#1f63db" d="M155 262 L219 318 L219 371 L155 419 Z"/>
   <g clip-path="url(#pMask)">
     <path class="trace" pathLength="1000" d="M151 94 L270 94 A91.5 91.5 0 0 1 270 277 L219 277 L219 371 L155 419 L155 159 L219 159 Z" fill="none" stroke="#3b82f6"
-          stroke-width="30" stroke-linecap="butt" stroke-linejoin="miter"/>
+          stroke-width="40" stroke-linecap="butt" stroke-linejoin="miter"/>
   </g>
 </svg>

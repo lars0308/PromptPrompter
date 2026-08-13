@@ -69,7 +69,7 @@
     }
     document.head.appendChild(frag);
   }
-  async function critical(){preloadCritical();let ready=0;for(const src of CRITICAL_SCRIPTS){await (src==='core'?loadCore():load(src));bootProgress(++ready/CRITICAL_SCRIPTS.length)}await load('./promptai-full-app-design.js?v=20260817-9');document.querySelector('#freePromptCategory option[value="website"]')?.remove();const intro=document.querySelector('#freePromptDialog .free-prompt-intro');if(intro)intro.textContent='Wähle jetzt Typ und Ziel-Tool. Weitere Angaben sind optional.';document.documentElement.classList.add('prompt-home-ready')}
+  async function critical(){preloadCritical();let ready=0;for(const src of CRITICAL_SCRIPTS){await (src==='core'?loadCore():load(src));bootProgress(++ready/CRITICAL_SCRIPTS.length)}await load('./promptai-full-app-design.js?v=20260817-10');document.querySelector('#freePromptCategory option[value="website"]')?.remove();const intro=document.querySelector('#freePromptDialog .free-prompt-intro');if(intro)intro.textContent='Wähle jetzt Typ und Ziel-Tool. Weitere Angaben sind optional.';document.documentElement.classList.add('prompt-home-ready')}
   async function adminExtras(){await load('./admin-ai-ui.js?v=20260816-1');await load('./admin-prompts-ui.js?v=20260816-3');await load('./admin-tokens-ui.js?v=20260816-1');await load('./system-ai-studio.js?v=20260816-2')}
   async function previewExtras(){await load('./sandbox-preview.js?v=20260816-2');await load('./github-sandbox.js?v=20260816-2')}
   async function accountExtras(){await load('./learning-controls.js?v=20260816-2')}
