@@ -401,7 +401,7 @@ test('GitHub API can list a user\'s own repositories and publish into an existin
   assert.match(src,/async function listRepos\(token\)\{const repos=await github\('\/user\/repos\?sort=updated&per_page=100&affiliation=owner,collaborator',token\);/);
   assert.match(src,/async function publishExisting\(token,targetRepoInput,branchInput,files\)\{/);
   assert.match(src,/if\(action==='list-repos'\)return res\.status\(200\)\.json\(\{repos:await listRepos\(token\)\}\);/);
-  assert.match(src,/if\(action==='publish-existing'\)return res\.status\(200\)\.json\(await publishExisting\(token,req\.body\?\.targetRepo,req\.body\?\.branch,req\.body\?\.files\|\|\{\}\)\);/);
+  assert.match(src,/const result=await publishExisting\(token,req\.body\?\.targetRepo,req\.body\?\.branch,req\.body\?\.files\|\|\{\}\);/);
 });
 test('GitHub-repo sandbox pull requires Ultimate, while plain ZIP-upload sandbox builds stay Pro+',async()=>{
   const src=await text('server/sandbox-build.js');
@@ -414,7 +414,7 @@ test('publishing to GitHub offers a picker of the user\'s existing repos (via th
   const app=await text('app.js'),html=await text('index.html');
   assert.match(app,/async function fetchGithubRepos\(\)\{/);
   assert.match(app,/const choice=await customSelect\('Wohin soll veröffentlicht werden\?',\[\{value:'__new__',label:'Neues Repository anlegen'\},\.\.\.repos\.map/);
-  assert.match(app,/const body=targetRepo\?\{action:'publish-existing',targetRepo,files\}:\{repoName,files\};/);
+  assert.match(app,/const body=targetRepo\?\{action:'publish-existing',targetRepo,files,pages:wantsPages\}:\{repoName,files,pages:wantsPages\};/);
   assert.match(app,/const customSelect=\(message,selectOptions,selectValue='',options=\{\}\)=>showAppAction\(\{\.\.\.options,message,selectOptions,selectValue\}\);/);
   assert.match(html,/<select id="appActionSelect" hidden><\/select>/);
 });

@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
   <script src="./theme-init.js?v=6"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260815-4" />
+  <link rel="stylesheet" href="./styles.css?v=20260816-4" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
     html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
@@ -347,8 +347,8 @@
           <small id="clientResultHint"></small>
         </section>
         <section class="export-result-card">
-          <div><span>PROBELAUF</span><h2>Briefing zur Probe bauen lassen</h2><p id="exportResultHint">Prompt.ai baut aus genau diesem Projekt eine Seite und zeigt sie hier an. Das ist der Nachweis, dass dein Briefing trägt – keine fertige Website: Sie lässt sich hier weder herunterladen noch veröffentlichen. Für die echte Umsetzung nimmst du den Master-Prompt.</p></div>
-          <div class="client-result-actions"><button type="button" class="solid-btn" id="buildWebsiteBtn">Probelauf starten</button><button type="button" class="outline-btn" id="downloadGeneratedWebsiteBtn" hidden>Erstellte Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn" hidden>Auf GitHub veröffentlichen</button></div>
+          <div><span>PROBELAUF</span><h2>Briefing zur Probe bauen lassen</h2><p id="exportResultHint">Prompt.ai baut aus genau diesem Projekt eine Seite und zeigt sie hier an. Das ist der Nachweis, dass dein Briefing trägt – keine fertige Website und hier auch nicht als Datei zum Mitnehmen. Mit Ultimate kannst du das Ergebnis stattdessen in ein GitHub-Repository legen – zusammen mit Master-Prompt, Seitenstruktur und Quellen – und dort weiterarbeiten oder die Seite über GitHub Pages ansehen.</p></div>
+          <div class="client-result-actions"><button type="button" class="solid-btn" id="buildWebsiteBtn">Probelauf starten</button><button type="button" class="outline-btn" id="downloadGeneratedWebsiteBtn" hidden>Erstellte Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn">In GitHub-Repository legen</button></div>
           <div class="website-build-status" id="websiteBuildStatus" aria-live="polite"></div>
           <section class="website-build-progress" id="websiteBuildProgress" hidden aria-live="polite" aria-label="Fortschritt der Website-Erstellung">
             <div class="build-progress-head"><div><span>ERSTELLUNG LÄUFT</span><strong id="websiteBuildStage">Briefing wird vorbereitet</strong></div><b id="websiteBuildPercent">0 %</b></div>
@@ -585,10 +585,10 @@
         <section class="settings-section">
           <div class="settings-heading"><strong>GitHub-Verbindung</strong></div>
           <div class="connection-login-row" id="githubLoginRow" hidden><span>Zum Verbinden von GitHub zuerst anmelden.</span><button type="button" class="outline-btn mini" id="githubSettingsLoginBtn">Zum Speichern anmelden</button></div>
-          <div class="connection-login-row" id="githubUpgradeRow" hidden><span>Die eigene GitHub-Verbindung ist ab Pro enthalten.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
+          <div class="connection-login-row" id="githubUpgradeRow" hidden><span>Für die eigene GitHub-Verbindung ist ein Ultimate-Abo erforderlich.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
           <div class="ai-connection-grid" id="githubConnectionGrid" hidden>
             <article class="ai-connection-card">
-              <div class="ai-connection-head"><div><span>PRO · EXPORT</span><strong>GitHub</strong></div><span class="connection-status" id="githubConnectionStatus">Nicht verbunden</span></div>
+              <div class="ai-connection-head"><div><span>ULTIMATE · REPOSITORY</span><strong>GitHub</strong></div><span class="connection-status" id="githubConnectionStatus">Nicht verbunden</span></div>
               <label class="field"><span>GitHub Personal Access Token</span><input id="githubToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_… oder ghp_…" /></label>
               <div class="connection-actions"><button type="button" class="solid-btn mini" id="githubConnectBtn">Speichern & verbinden</button><button type="button" class="outline-btn mini" id="githubTestBtn">Testen</button><button type="button" class="text-btn" id="githubDisconnectBtn" hidden>Trennen</button></div>
               <small class="connection-message" id="githubConnectionMessage">Token benötigt Berechtigung zum Erstellen und Schreiben von Repositories.</small>
@@ -728,7 +728,7 @@
         </article>
         <article class="plan-card" data-plan-card="ultimate">
           <div class="plan-card-summary"><span><b>Ultimate</b><small>Für Vielnutzer, Agenturen und eigene KI</small></span><strong id="ultimatePriceLabel">25,99 € / Monat</strong></div>
-          <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Pro</b>, plus:</p><ul><li><b>Bibliothek ohne Grenze</b> – so viele Vorlagen, Bausteine und Skills wie du willst</li><li><b>2 eigene KI-Verbindungen inklusive</b> – dein Anbieter, dein Modell, deine Version</li><li>Eigene Aufrufe zählen nur <b>halb</b> aufs Kontingent</li><li>500 freie Prompts, 100 Website-Projekte, 250 Bild-Durchläufe</li><li><b>Website-Probelauf:</b> dein Briefing wird zur Probe gebaut und angezeigt</li><li>Alle Ziel-Agenten und der Modus „Selbst einstellen“</li></ul><button type="button" class="outline-btn plan-card-buy" id="startUltimateCheckoutBtn">Jetzt kaufen</button></div>
+          <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Pro</b>, plus:</p><ul><li><b>Bibliothek ohne Grenze</b> – so viele Vorlagen, Bausteine und Skills wie du willst</li><li><b>2 eigene KI-Verbindungen inklusive</b> – dein Anbieter, dein Modell, deine Version</li><li>Eigene Aufrufe zählen nur <b>halb</b> aufs Kontingent</li><li>500 freie Prompts, 100 Website-Projekte, 250 Bild-Durchläufe</li><li><b>Website-Probelauf:</b> dein Briefing wird zur Probe gebaut und angezeigt</li><li><b>GitHub:</b> Repositories ansehen, neue anlegen, Dateien samt Briefing hochladen und die Seite über Pages öffnen</li><li>Alle Ziel-Agenten und der Modus „Selbst einstellen“</li></ul><button type="button" class="outline-btn plan-card-buy" id="startUltimateCheckoutBtn">Jetzt kaufen</button></div>
         </article>
       </div>
       <div class="plans-footer"><button type="button" class="text-btn" id="manageSubscriptionBtn">Bestehendes Abo verwalten</button><small>Die Zahlung und Aboverwaltung erfolgt sicher über Stripe.</small></div>
@@ -817,12 +817,12 @@
     </div>
   </footer>
 
-  <script type="module" src="./cloud.js?v=20260815-1"></script>
-  <script src="./maintenance-mode.js?v=20260813-2" defer></script>
-  <script src="./entry-gate-ui.js?v=20260814-3" defer></script>
-  <script src="./legal-pages.js?v=20260815-1" defer></script>
-  <script src="./app.js?v=20260815-19" defer></script>
-  <script src="./admin-console.js?v=20260814-17" defer></script>
+  <script type="module" src="./cloud.js?v=20260816-1"></script>
+  <script src="./maintenance-mode.js?v=20260816-2" defer></script>
+  <script src="./entry-gate-ui.js?v=20260816-3" defer></script>
+  <script src="./legal-pages.js?v=20260816-1" defer></script>
+  <script src="./app.js?v=20260816-19" defer></script>
+  <script src="./admin-console.js?v=20260816-17" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>
 </html>

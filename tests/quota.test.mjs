@@ -138,12 +138,13 @@ test('the Probelauf builds the open project and hands nothing out',async()=>{
   const html=await text('index.html'),ui=await text('website-build-ui.js'),app=await text('app.js'),gen=await text('generator-selection.js'),home=await text('home-entry-ui.js');
   // It says what it is, and what it is not.
   assert.match(html,/<span>PROBELAUF<\/span><h2>Briefing zur Probe bauen lassen<\/h2>/);
-  assert.match(html,/keine fertige Website: Sie lässt sich hier weder herunterladen noch veröffentlichen/);
+  assert.match(html,/keine fertige Website und hier auch nicht als Datei zum Mitnehmen/);
   assert.match(html,/id="websiteBuildProject"/,'which project is being built has to be visible');
   assert.match(ui,/function projectLine\(\)/);
   // Nothing leaves the dialog - not even after a successful build.
   assert.match(app,/if\(el\.downloadWebsiteZipBtn\)el\.downloadWebsiteZipBtn\.hidden=true;/);
-  assert.match(app,/if\(el\.publishGithubBtn\)el\.publishGithubBtn\.hidden=true;/);
+  // The repository is a place to work in, not a download, so publishing stays - the ZIP does not.
+  assert.match(app,/if\(el\.publishGithubBtn\)el\.publishGithubBtn\.hidden=!rules\.github;/);
   assert.doesNotMatch(app,/el\.downloadGeneratedWebsiteBtn\.hidden=false/);
   assert.match(gen,/Der Probelauf bleibt in diesem Fenster/);
   assert.match(home,/'Probelauf','Dein offenes Projekt einmal bauen lassen – zum Ansehen, nicht zum Mitnehmen\.'/);
@@ -155,4 +156,18 @@ test('the half-counting rule is stated where a slot is bought, not only on the p
   assert.match(ui,/zwei davon verbrauchen eine Einheit, deine Tokens gar nichts/);
   assert.match(ui,/Aufrufe über eigene Verbindungen zählen nur halb aufs Kontingent\./,'and again when buying another one');
   assert.match(html,/Eigene Aufrufe zählen nur <b>halb<\/b> aufs Kontingent/,'plus on the Ultimate card');
+});
+
+test('the repository gets the briefing, not only the build, and the page can be looked at',async()=>{
+  const app=await text('app.js'),api=await text('api/github-publish.js'),html=await text('index.html');
+  // Whoever opens the repository later needs the order, not only one build's output.
+  assert.match(app,/'MASTER-PROMPT\.md':el\.masterPrompt\.value,/);
+  assert.match(app,/'SEITENSTRUKTUR\.md':structureDocument\(\),/);
+  assert.match(app,/'PROJEKT-QUELLEN\.md':attachmentPromptBlock\(\)/);
+  assert.match(app,/const wantsPages=Object\.keys\(files\)\.some\(name=>\/\(\^\|\\\/\)index\\\.html\$\/i\.test\(name\)\)/,'Pages only for something that has an index.html');
+  assert.match(api,/async function enablePages\(token,fullName,branch\)/);
+  assert.match(api,/return \{url:'',enabled:false,error:/,'a failed Pages activation never blocks the upload');
+  assert.match(api,/Object\.entries\(files\)\.slice\(0,40\)/,'the briefing files need room next to the build');
+  assert.match(html,/In GitHub-Repository legen/);
+  assert.match(html,/<li><b>GitHub:<\/b> Repositories ansehen, neue anlegen/);
 });

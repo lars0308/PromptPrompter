@@ -519,11 +519,12 @@
     if(el.currentPlanDescription){const trialEnd=state.subscriptionPeriodEnd?new Intl.DateTimeFormat('de-DE').format(new Date(state.subscriptionPeriodEnd)):'';el.currentPlanDescription.textContent=state.subscriptionStatus==='trialing'?`Kostenlose Testphase aktiv${trialEnd?` bis ${trialEnd}`:''}.`:rules===PLAN_RULES.free?"Gute Ergebnisse mit geführten Standards und drei Richtungen.":rules===PLAN_RULES.pro?"Claude/Codex, Module, Skills, vier Richtungen und Kundenunterlagen.":"Alle Agenten, Modelle, Profile, Einstellungen und fünf Richtungen."}
     if(el.clientResultHint)el.clientResultHint.textContent=rules.clientDocs?"Ausgearbeitete Kundenunterlagen sind freigeschaltet.":"Der Projektbericht ist enthalten. Ausgearbeitetes Kundenbriefing und technische Übergabe sind in Pro enthalten.";
     [el.downloadClientBriefBtn,el.downloadHandoverBtn].forEach(button=>{if(button)button.hidden=!rules.clientDocs});
-    // The Probelauf shows a result, it does not hand one out.
+    // The Probelauf hands nothing out as a file - but the repository is a place to work in, not a
+    // download, so it stays.
     if(el.downloadWebsiteZipBtn)el.downloadWebsiteZipBtn.hidden=true;
     if(el.downloadGeneratedWebsiteBtn)el.downloadGeneratedWebsiteBtn.hidden=true;
     if(el.buildWebsiteBtn)el.buildWebsiteBtn.hidden=!rules.zip;
-    if(el.publishGithubBtn)el.publishGithubBtn.hidden=true;
+    if(el.publishGithubBtn)el.publishGithubBtn.hidden=!rules.github;
     const existingButton=el.outputTargetSelector?.querySelector('[data-output="existing"]');if(existingButton){existingButton.classList.toggle('plan-locked',!rules.existing);existingButton.setAttribute('aria-label',rules.existing?'Bestehendes Projekt weiterführen':'Bestehendes Projekt weiterführen – ab Pro')}
     if(!rules.existing&&state.outputTarget==='existing')state.outputTarget='next-vercel';
     if(el.revisionProGate)el.revisionProGate.hidden=rules.existing;if(el.revisionEditor)el.revisionEditor.hidden=!rules.existing;
@@ -2559,12 +2560,20 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
       if(!repoName)return;
     }
     try{
-      el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='GitHub-Veröffentlichung wird vorbereitet…';
-      const files=state.generatedWebsite?.files||exportedWebsiteFiles();
-      const body=targetRepo?{action:'publish-existing',targetRepo,files}:{repoName,files};
+      el.publishGithubBtn.disabled=true;el.exportResultHint.textContent='Repository wird vorbereitet…';
+      updateMasterPrompt();
+      // The briefing travels with the files: whoever opens the repository later needs the order,
+      // not only the result of one build.
+      const files={...(state.generatedWebsite?.files||exportedWebsiteFiles()),
+        'MASTER-PROMPT.md':el.masterPrompt.value,
+        'SEITENSTRUKTUR.md':structureDocument(),
+        'PROJEKT-QUELLEN.md':attachmentPromptBlock()};
+      const wantsPages=Object.keys(files).some(name=>/(^|\/)index\.html$/i.test(name));
+      const body=targetRepo?{action:'publish-existing',targetRepo,files,pages:wantsPages}:{repoName,files,pages:wantsPages};
       const response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await response.json();
       if(!response.ok)throw new Error(data.error||'GitHub-Veröffentlichung nicht möglich');
-      el.exportResultHint.innerHTML=`Veröffentlicht: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>`;
+      const live=data.pages?.url?` · <a href="${escapeHtml(data.pages.url)}" target="_blank" rel="noopener">Seite ansehen</a>` : data.pages?.error?' · GitHub Pages ließ sich nicht aktivieren, die Dateien liegen aber im Repository.' : '';
+      el.exportResultHint.innerHTML=`${Object.keys(files).length} Dateien übertragen: <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">Repository öffnen</a>${live}`;
     }catch(err){el.exportResultHint.textContent=err.message}
     finally{el.publishGithubBtn.disabled=false}
   }
