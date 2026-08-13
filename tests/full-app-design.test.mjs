@@ -86,7 +86,7 @@ test('the phone home page fits one screen: every block gives height, none disapp
   assert.match(home,/\.prompt-command-input\{[^}]*min-height:185px/,'the component still ships the tall default');
   assert.match(css,/\.prompt-command-input\{min-height:96px!important/,'which the phone layer has to bring down');
   assert.match(css,/#welcomePage\{[\s\S]{0,120}min-height:calc\(100dvh - 112px\)!important/,'the page claims the screen, so nothing floats in a void');
-  assert.match(css,/\.prompt-command-panel\{max-height:46vh!important\}/,'and the console stops before it becomes a black slab');
+  assert.match(css,/\.prompt-command-panel\{max-height:54vh!important\}/,'and the console stops before it becomes a black slab');
 });
 
 test('the start page drops the bottom tools and puts the writing surface in the middle',async()=>{
@@ -96,14 +96,12 @@ test('the start page drops the bottom tools and puts the writing surface in the 
   assert.doesNotMatch(home,/prompt-home-tools/,'the tool row is gone from the component');
   assert.doesNotMatch(css,/\.prompt-home-tool\b/,'and from the design layer');
   for(const id of ['workspaceLibraryBtn','workspaceBuildSiteBtn','workspacePreviewBtn','projectHistoryBtn'])assert.ok(nav.includes(id),`${id} must still be reachable from the drawer`);
-  // Three visible modes instead of a dropdown: the choice is the first step of every path.
-  assert.match(home,/const MODES=\[\['website'.*\['revision'.*\['free'/);
-  assert.doesNotMatch(home,/promptModeMenu/,'no dropdown left to open');
-  assert.match(home,/closest\?\.\('\.prompt-mode-chip'\)/,'matched by class - the section itself carries data-command-mode');
-  // A suggestion fills the field and stops there; sending stays the visitor's decision.
-  assert.match(home,/const STARTERS=\{/);
-  assert.match(home,/input\.value=starter\.dataset\.starter;input\.focus\(\)/);
-  assert.doesNotMatch(home,/data-starter[\s\S]{0,200}submitCommand/,'a suggestion must not send by itself');
+  // The mode picker stays the dropdown it was: three tiles took the whole width of the
+  // console for a choice that is made once, and suggestion chips added a second row below.
+  assert.match(home,/id="promptModeButton"[\s\S]{0,300}id="promptModeMenu"/);
+  assert.match(home,/data-command-mode="website"[\s\S]{0,400}data-command-mode="free"[\s\S]{0,400}data-command-mode="revision"/);
+  assert.doesNotMatch(home,/prompt-starter/,'no suggestion row under the console');
+  assert.match(css,/\.prompt-mode-menu:not\(\[hidden\]\)\{animation:promptMenuIn/,'it still opens softly');
 });
 
 test('one inset for everything inside a dialog, heavy enough to beat the id rules below',async()=>{
@@ -152,7 +150,9 @@ test('the menu button moves left by position, not by re-parenting',async()=>{
   assert.match(css,/#topbarMenuToggle\{[\s\S]{0,120}left:12px!important/);
   // .top-actions carries position:relative, so left was measured from the action group.
   assert.match(css,/\.topbar \.top-actions\{position:static!important\}/);
-  assert.match(css,/\.brand\{padding-left:56px!important\}/,'the wordmark has to clear the button');
+  // .brand.brand, because the start page layer sets ".topbar .brand{padding:0 4px}" and an
+  // equally weighted rule left the logo lying underneath the button.
+  assert.match(css,/\.topbar \.brand\.brand\{padding-left:60px!important\}/,'the wordmark has to clear the button');
 });
 test('light/dark lives in the drawer, not twice in the header',async()=>{
   const css=await read('promptai-full-app-design.css'),nav=await read('promptai-nav-drawer.js');
@@ -162,4 +162,15 @@ test('light/dark lives in the drawer, not twice in the header',async()=>{
   assert.match(css,/\.topbar \.menu-theme-quick\{display:none!important\}/);
   assert.match(css,/\.topbar-menu #themeToggleBtn\{[\s\S]{0,200}display:flex!important/,'it stays a full entry in the drawer');
   assert.match(nav,/themeToggleBtn:61/,'and sits next to Einstellungen, not at the top');
+});
+
+test('writing in the console does not draw a second box inside it',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  // Every textarea gets a 3px focus ring from the general field rule, and it followed the
+  // field's radius - inside the console that read as a small box around the writing area.
+  assert.match(css,/textarea,select\):focus\{[\s\S]{0,120}box-shadow:0 0 0 3px/);
+  // It did not lose to !important (both rules carry it) but to specificity, hence the
+  // element name in front of the class.
+  assert.match(css,/html\.prompt-full-redesign textarea\.prompt-command-input:focus,/);
+  assert.match(css,/textarea\.prompt-command-input:focus-visible\{\s*box-shadow:none!important/);
 });

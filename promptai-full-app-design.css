@@ -811,12 +811,12 @@ html.prompt-full-redesign :is(
 }
 /* Anklickbare Karten heben sich beim Überfahren um genau eine Stufe. Kein
    Verschieben, kein Skalieren - nur die Kante wird deutlicher. */
-html.prompt-full-redesign :is(.prompt-latest,.concept-option,.plan-card,.project-mode-card):hover:not(:disabled):not([aria-disabled="true"]){
+html.prompt-full-redesign :is(.prompt-latest,.concept-option,.plan-card,.project-mode-card,.prompt-mode-option):hover:not(:disabled):not([aria-disabled="true"]){
   border-color:color-mix(in srgb,var(--accent) 45%,var(--line))!important;
   box-shadow:var(--depth-2)!important;
   transform:none!important;
 }
-html.prompt-full-redesign :is(.prompt-latest,.concept-option,.plan-card,.project-mode-card):active:not(:disabled){
+html.prompt-full-redesign :is(.prompt-latest,.concept-option,.plan-card,.project-mode-card,.prompt-mode-option):active:not(:disabled){
   box-shadow:var(--depth-1)!important;
   background:var(--surface-soft)!important;
 }
@@ -833,7 +833,7 @@ html.prompt-full-redesign .outline-btn:hover:not(:disabled){
   background:var(--surface-soft)!important;
 }
 /* Ein Druck ist ein Druck: 1px nach unten, überall gleich. */
-html.prompt-full-redesign :is(.solid-btn,.outline-btn,.upgrade-btn,.prompt-mode-chip,.prompt-starter,.prompt-command-submit,.mini):active:not(:disabled){transform:translateY(1px)!important}
+html.prompt-full-redesign :is(.solid-btn,.outline-btn,.upgrade-btn,.prompt-mode-button,.prompt-command-submit,.mini):active:not(:disabled){transform:translateY(1px)!important}
 html.prompt-full-redesign :is(.solid-btn,.outline-btn,.upgrade-btn,.mini):disabled{opacity:.45!important;cursor:not-allowed!important}
 
 /* Der Fokusring ist ein Ring, kein Rahmen - er darf das Layout nicht bewegen. */
@@ -864,6 +864,7 @@ html.prompt-full-redesign dialog[open]#welcomeIntroDialog{
 html.prompt-full-redesign dialog[open]::backdrop{animation:promptBackdropIn var(--t-base) var(--ease) both}
 /* Menüs klappen aus ihrer Kante auf, nicht aus dem Nichts. */
 @keyframes promptMenuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+html.prompt-full-redesign .prompt-mode-menu:not([hidden]){animation:promptMenuIn var(--t-base) var(--ease) both}
 html.prompt-full-redesign .topbar-menu.open,
 html.prompt-full-redesign .topbar-menu[data-open="true"],
 
@@ -891,7 +892,7 @@ html.prompt-full-redesign[data-theme="dark"] .prompt-command-home::before{opacit
 /* ---- Mobil: Abstände nach dem System, Tippflächen mindestens 44px -------- */
 @media(max-width:820px){
   html.prompt-full-redesign :is(.prompt-command-panel,.prompt-latest){border-radius:var(--r-md)!important}
-  html.prompt-full-redesign .prompt-mode-chip{min-height:64px!important;padding:var(--sp-3) var(--sp-2)!important}
+  html.prompt-full-redesign .prompt-mode-button{min-height:46px!important}
   html.prompt-full-redesign :is(.solid-btn,.outline-btn,.upgrade-btn,.close-dialog,.topbar-menu-toggle){min-height:44px!important}
   html.prompt-full-redesign .prompt-command-input{min-height:104px!important}
   html.prompt-full-redesign .prompt-footer-content{gap:var(--sp-2)!important}
@@ -918,7 +919,17 @@ html.prompt-full-redesign .prompt-command-panel:focus-within{
 html.prompt-full-redesign .prompt-command-input{
   border-radius:0!important;box-shadow:none!important;background:transparent!important;resize:none!important;
 }
-html.prompt-full-redesign .prompt-command-input:focus{box-shadow:none!important;border:0!important}
+/* Beim Hineinschreiben zeichnete sich ein zweiter, kleinerer Kasten im Feld ab:
+   die allgemeine Feldregel gibt jedem textarea einen 3px-Fokusring, und der lief
+   mit dem Radius des Feldes mit. Er verliert hier nicht wegen !important - beide
+   Regeln tragen es -, sondern weil er spezifischer war. Deshalb steht hier
+   textarea.prompt-command-input statt nur der Klasse. Den Fokus zeigt die Konsole
+   ohnehin am Rahmen der ganzen Fläche. */
+html.prompt-full-redesign textarea.prompt-command-input,
+html.prompt-full-redesign textarea.prompt-command-input:focus,
+html.prompt-full-redesign textarea.prompt-command-input:focus-visible{
+  box-shadow:none!important;border:0!important;border-radius:0!important;outline:0!important;
+}
 
 /* Der Absendeknopf: kein schwebendes Quadrat, sondern ein Knopf mit Kontrast. */
 html.prompt-full-redesign .prompt-command-submit{
@@ -982,7 +993,8 @@ html.prompt-full-redesign .prompt-command-input:focus{
   caret-color:var(--logo-blue)!important;
 }
 html.prompt-full-redesign .prompt-command-input::placeholder{color:#7d8f9e!important;-webkit-text-fill-color:#7d8f9e}
-html.prompt-full-redesign :is(.prompt-command-meta,.prompt-command-top){color:#cfdbe4!important}
+html.prompt-full-redesign :is(.prompt-command-meta,.prompt-command-top,.prompt-mode-button){color:#cfdbe4!important}
+html.prompt-full-redesign .prompt-mode-button{border-color:rgba(255,255,255,.14)!important}
 
 /* 3) Das Blau der Bildmarke führt die Konsole. */
 html.prompt-full-redesign{--logo-blue:#2d93c9;--logo-blue-deep:#124f7c}
@@ -1068,9 +1080,6 @@ html.prompt-full-redesign[data-theme="dark"] .prompt-command-panel{
   }
   html.prompt-full-redesign .prompt-latest-action::after{content:"→";font-size:18px}
 
-  /* Die drei Arbeitsarten bleiben nebeneinander - schmaler, nie gestapelt. */
-  html.prompt-full-redesign .prompt-mode-chip{min-height:58px!important;font-size:10.5px!important;padding:var(--sp-2) var(--sp-1)!important}
-  html.prompt-full-redesign .prompt-starters{margin-top:var(--sp-3)!important}
   html.prompt-full-redesign .prompt-footer{padding:var(--sp-2) var(--sp-4)!important}
   html.prompt-full-redesign body{padding-bottom:64px!important}
 }
@@ -1125,7 +1134,10 @@ html.prompt-full-redesign #topbarMenuToggle{
   position:absolute!important;left:12px!important;top:50%!important;right:auto!important;
   transform:translateY(-50%)!important;margin:0!important;z-index:3!important;
 }
-html.prompt-full-redesign .brand{padding-left:56px!important}
+/* Die Marke muss dem Knopf ausweichen. Die Startseiten-Ebene setzt
+   ".topbar .brand{padding:0 4px}" - dagegen kommt eine Regel mit gleichem
+   Gewicht nicht an, und das Logo lag unter dem Hamburger. Daher .brand.brand. */
+html.prompt-full-redesign .topbar .brand.brand{padding-left:60px!important}
 
 /* Hell/Dunkel wandert in die Schublade. Oben stand er doppelt - einmal als
    #themeToggleBtn, einmal als der eigene Knopf der Startseite - und beide
@@ -1155,51 +1167,13 @@ html.prompt-full-redesign .topbar-menu .theme-toggle>b{font-size:14px!important;
 
 @media(max-width:700px){
   html.prompt-full-redesign #topbarMenuToggle{left:8px!important}
-  html.prompt-full-redesign .brand{padding-left:50px!important}
+  html.prompt-full-redesign .topbar .brand.brand{padding-left:52px!important}
 }
 
 /* Der Knopf blieb rechts, weil .top-actions selbst position:relative trägt -
    left:12px maß also ab der Aktionsgruppe, nicht ab der Kopfzeile. Der
    Bezugsrahmen ist jetzt wieder die Kopfzeile. */
 html.prompt-full-redesign .topbar .top-actions{position:static!important}
-
-/* ═══ Startseite: die Wahl steht offen, das Feld ist der Mittelpunkt ════════
-
-   Die vier Werkzeuge unten sind weg - sie stehen in der Schublade und haben
-   auf der Startseite nur den Blick vom Textfeld weggezogen. An ihre Stelle
-   tritt, was jeder Weg zuerst braucht: die Arbeitsart, offen nebeneinander
-   statt in einer Klappliste, und darunter Vorschläge, die zeigen, wie
-   ausführlich ein Auftrag sein darf. Ein Klick füllt das Feld, geschickt wird
-   erst nach dem Nachbessern. */
-html.prompt-full-redesign .prompt-mode-chip{
-  border:1px solid rgba(255,255,255,.12)!important;
-  border-radius:var(--r-sm)!important;
-  background:rgba(255,255,255,.035)!important;
-  color:#b6c7d5!important;
-  transition:border-color var(--t-fast) var(--ease),background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)!important;
-}
-html.prompt-full-redesign .prompt-mode-chip svg{color:#8ba2b5!important}
-html.prompt-full-redesign .prompt-mode-chip:hover{
-  border-color:rgba(255,255,255,.24)!important;background:rgba(255,255,255,.07)!important;color:#e7f1f9!important;
-}
-html.prompt-full-redesign .prompt-mode-chip[aria-selected="true"]{
-  border-color:var(--logo-blue)!important;
-  background:color-mix(in srgb,var(--logo-blue) 17%,transparent)!important;
-  color:#f2f8fd!important;
-}
-html.prompt-full-redesign .prompt-mode-chip[aria-selected="true"] svg{color:var(--logo-blue)!important}
-html.prompt-full-redesign .prompt-mode-chip:focus-visible{outline:2px solid var(--logo-blue)!important;outline-offset:2px}
-html.prompt-full-redesign .prompt-command-tag{color:color-mix(in srgb,var(--logo-blue) 62%,#7f92a2)!important}
-html.prompt-full-redesign .prompt-starter{
-  border:1px solid var(--line)!important;border-radius:999px!important;
-  background:var(--surface)!important;color:var(--muted)!important;
-  box-shadow:var(--depth-1)!important;
-  transition:border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),background var(--t-fast) var(--ease)!important;
-}
-html.prompt-full-redesign .prompt-starter:hover{
-  border-color:color-mix(in srgb,var(--logo-blue) 55%,var(--line))!important;
-  background:var(--surface-soft)!important;color:var(--ink)!important;
-}
 
 /* ═══ Ein Rand für alles, was im Dialog steht ══════════════════════════════
 
@@ -1256,12 +1230,12 @@ html.prompt-full-redesign :is(.library-tools,.settings-footer,.inline-actions) .
   html.prompt-full-redesign .prompt-command-panel{
     display:flex!important;flex-direction:column!important;flex:1 1 auto!important;min-height:0!important;
   }
-  html.prompt-full-redesign :is(.prompt-home-intro,.prompt-command-top,.prompt-command-meta,.prompt-starters,.prompt-latest){flex:0 0 auto!important}
+  html.prompt-full-redesign :is(.prompt-home-intro,.prompt-command-top,.prompt-command-meta,.prompt-latest){flex:0 0 auto!important}
   html.prompt-full-redesign .prompt-command-input{flex:1 1 auto!important;height:auto!important}
   /* Aber nicht grenzenlos: über etwa der halben Höhe wird aus dem Feld eine
      schwarze Fläche. Was darüber hinausgeht, bekommen die Zeilen darunter. */
-  html.prompt-full-redesign .prompt-command-panel{max-height:46vh!important}
-  html.prompt-full-redesign .prompt-starters{margin-top:auto!important;padding-top:var(--sp-3)!important}
+  html.prompt-full-redesign .prompt-command-panel{max-height:54vh!important}
+  html.prompt-full-redesign .prompt-latest{margin-top:auto!important}
   /* Der Sockel von 64px stammt von der Fußzeile, die auf dem Telefon gar nicht
      erscheint - auf der Startseite hat er nur den letzten Block hochgedrückt. */
   html.prompt-full-redesign.prompt-home-surface body{padding-bottom:14px!important}
