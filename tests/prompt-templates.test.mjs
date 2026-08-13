@@ -8,7 +8,7 @@ const templates=require('../server/prompt-templates.js');
 const text=name=>readFile(new URL(`../${name}`,import.meta.url),'utf8');
 
 test('every prompt area ships a built-in default, so an empty database still produces a full prompt',()=>{
-  assert.equal(templates.KEYS.length,27,'8 project areas, the master-prompt template, the universal free-prompt rules and 17 categories');
+  assert.equal(templates.KEYS.length,29,'9 project areas, the universal free-prompt rules, the tool syntax and 18 categories');
   for(const item of templates.promptDefaults()){
     assert.ok(item.key&&item.label&&item.body,`${item.key} is incomplete`);
     assert.ok(item.body.length>100,`${item.key} default looks truncated`);
@@ -162,8 +162,8 @@ test('the saver mode is visible to the user and settable per plan by an administ
 test('the fixed rule sets of every free-prompt area are editable too, and default to the built-in list',()=>{
   const templates=require('../server/prompt-templates.js');
   const keys=templates.KEYS.filter(k=>k.startsWith('freeprompt-'));
-  assert.equal(keys.length,18,'universal rules plus 17 categories');
-  for(const area of ['image','video','code','text','music','email','custom'])assert.ok(keys.includes('freeprompt-'+area),`${area} is missing`);
+  assert.equal(keys.length,20,'universal rules, the per-tool syntax and 18 categories');
+  for(const area of ['image','logo','video','code','text','music','email','custom'])assert.ok(keys.includes('freeprompt-'+area),`${area} is missing`);
   const lines=templates.promptLines('freeprompt-image');
   assert.ok(lines.length>=3&&lines.every(x=>x&&!x.startsWith('-')),'one rule per line, without the bullet');
   assert.deepEqual(templates.promptLines('nope'),[],'an unknown area yields no rules instead of throwing');
@@ -338,7 +338,7 @@ test('lessons from earlier projects reach the questions, where they can still ch
 async function factHarness(){
   const src=await text('app.js');
   const cut=(start,end)=>{const a=src.indexOf(start);const b=src.indexOf(end,a);assert.ok(a>=0&&b>a,`marker missing: ${start}`);return src.slice(a,b)};
-  const body=`let state={sourceUrls:[],settings:{checks:{}}},PROJECT={};function project(){return PROJECT}\n`
+  const body=`let state={sourceUrls:[],documents:[],settings:{checks:{}}},PROJECT={};function project(){return PROJECT}\n`
     +cut('  const UNUSABLE_SOURCE=','  const usableSources=')
     +'  const usableSources=()=>state.sourceUrls.filter(sourceUsable);\n'
     +cut('  const FACT_MAIL=','  function buildMasterPrompt(){')
@@ -349,7 +349,7 @@ async function factHarness(){
 test('the master prompt carries the facts the customer site already answers',async()=>{
   const api=await factHarness();
   const page={url:'https://beispiel.de/kontakt',title:'Kontakt',summary:'Kontakt Familie Aslan bereitet hier schon seit 1999 Gerichte zu. Das Restaurant bietet bis zu 50 Sitzplaetze. Tel.: +49 (0)5725 88 85 E-Mail: post@beispiel.de Rechtliches: Impressum Weitere Informationen zu unseren Leistungen finden Sie auf dieser Seite.'};
-  api.set({sourceUrls:[{url:'https://beispiel.de',title:'Beispiel',pages:[page],links:['https://beispiel.de/wp-content/uploads/speisekarte.pdf','https://www.facebook.com/beispiel/']}],clarifications:[]},{name:'Beispiel',description:'Laden in 31698 Lindhorst'});
+  api.set({documents:[],sourceUrls:[{url:'https://beispiel.de',title:'Beispiel',pages:[page],links:['https://beispiel.de/wp-content/uploads/speisekarte.pdf','https://www.facebook.com/beispiel/']}],clarifications:[]},{name:'Beispiel',description:'Laden in 31698 Lindhorst'});
   const block=api.verifiedFactsBlock();
   assert.match(block,/- Telefon: \+49 \(0\)5725 88 85 \(Quelle: https:\/\/beispiel\.de\/kontakt\)/);
   assert.match(block,/- E-Mail: post@beispiel\.de/);
@@ -368,7 +368,7 @@ test('a blocked search page is not a customer source, and its title never become
     {url:'https://www.google.com/httpservice/retry/enablejs',title:'Enable JavaScript to use search',summary:'Enable JavaScript to use search Turn on JavaScript to keep searching The browser you are using has JavaScript turned off. To continue your search, turn it on.'}
   ],links:[]};
   const real={url:'https://kunde.de',title:'Kunde',pages:[{url:'https://kunde.de',title:'Kunde',summary:'x'.repeat(300)}],links:[]};
-  api.set({sourceUrls:[google,real],clarifications:[]},{name:'Google Search',client:{name:'Lindhorster Grill &#038; Dönerhaus &#8211; Komme als Gast, gehe als Freund..'}});
+  api.set({documents:[],sourceUrls:[google,real],clarifications:[]},{name:'Google Search',client:{name:'Lindhorster Grill &#038; Dönerhaus &#8211; Komme als Gast, gehe als Freund..'}});
   assert.equal(api.usableSources().length,1,'the blocked search page is dropped');
   // The page title of an import must never end up as the brand on the finished website.
   assert.equal(api.masterBrandName(),'Lindhorster Grill & Dönerhaus');
@@ -376,9 +376,9 @@ test('a blocked search page is not a customer source, and its title never become
 
 test('an answered question becomes project data instead of staying a transcript line',async()=>{
   const api=await factHarness();
-  api.set({sourceUrls:[],clarifications:[{question:'Welche Zielgruppe soll mit der Website angesprochen werden?',answer:'Lokale Einwohner und Passanten'}]},{name:'X',audience:''});
+  api.set({documents:[],sourceUrls:[],clarifications:[{question:'Welche Zielgruppe soll mit der Website angesprochen werden?',answer:'Lokale Einwohner und Passanten'}]},{name:'X',audience:''});
   assert.equal(api.projectAudience(),'Lokale Einwohner und Passanten');
-  api.set({sourceUrls:[],clarifications:[{question:'Welche Zielgruppe?',answer:'aus der Rückfrage'}]},{name:'X',audience:'vom Nutzer selbst gesetzt'});
+  api.set({documents:[],sourceUrls:[],clarifications:[{question:'Welche Zielgruppe?',answer:'aus der Rückfrage'}]},{name:'X',audience:'vom Nutzer selbst gesetzt'});
   assert.equal(api.projectAudience(),'vom Nutzer selbst gesetzt','an own entry always wins');
 });
 
@@ -391,7 +391,7 @@ test('the preview image is binding for the look, never for facts',async()=>{
 
 test('the page list is derived from the existing site, not decided again on every run',async()=>{
   const api=await factHarness();
-  api.set({settings:{checks:{imprint:true,privacy:true}},clarifications:[],sourceUrls:[{
+  api.set({documents:[],settings:{checks:{imprint:true,privacy:true}},clarifications:[],sourceUrls:[{
     url:'https://kunde.de',title:'Kunde',
     pages:[
       {url:'https://kunde.de/',title:'Kunde – Slogan',summary:'x'.repeat(300)},
@@ -421,4 +421,64 @@ test('copying hands over the same files the package contains',async()=>{
   assert.match(app,/DATEI \$\{index\+1\} VON \$\{files\.length\}/,'the count follows the list instead of a hard-coded 2');
   assert.match(app,/'MASTER-PROMPT\.md':el\.masterPrompt\.value,'SEITENSTRUKTUR\.md':structureDocument\(\)/,'the ZIP carries it too');
   assert.match(app,/Es gilt die Liste in \\`SEITENSTRUKTUR\.md\\`/,'the master prompt stops deciding the site map itself');
+});
+
+test('every target tool gets its own syntax, so a Midjourney prompt is not a Sora prompt',()=>{
+  const templates=require('../server/prompt-templates.js');
+  const lines=templates.promptLines('freeprompt-tool-rules');
+  assert.ok(lines.length>=15,'one line per tool');
+  assert.ok(lines.every(line=>line.includes('::')),'every line is "Tool :: rule"');
+  const rule=name=>lines.find(line=>line.toLowerCase().startsWith(name.toLowerCase()))||'';
+  // The parameters that actually steer these tools, not a paraphrase of them.
+  assert.match(rule('Midjourney'),/--ar/);
+  assert.match(rule('Midjourney'),/--no/);
+  assert.match(rule('Flux'),/Negativ-Feld/);
+  assert.match(rule('Suno'),/\[Verse\]|\[Chorus\]/);
+  assert.match(rule('Sora'),/Einstellung pro Prompt/);
+  assert.match(rule('Ideogram'),/Anführungszeichen/);
+});
+
+test('the tool syntax reaches the finished prompt, and an unknown tool adds no rule',async()=>{
+  const free=await text('server/free-prompt-v2.js');
+  assert.match(free,/function toolRules\(tool\)/);
+  assert.match(free,/if\(!wanted\|\|wanted==='universell'\)return '';/,'Universell has no special syntax');
+  assert.match(free,/SYNTAX UND PARAMETER VON \$\{tool\.toUpperCase\(\)\}/);
+  assert.match(free,/SCHREIBWEISE FÜR \$\{tool\.toUpperCase\(\)\}/,'the local fallback carries it too');
+});
+
+test('logo is its own category, because a logo is not an image',async()=>{
+  const templates=require('../server/prompt-templates.js');
+  const server=await text('server/free-prompt-v2.js'),ui=await text('free-prompt-ui.js');
+  const rules=templates.promptLines('freeprompt-logo').join(' ');
+  assert.match(rules,/einfarbig funktionieren/);
+  assert.match(rules,/16 Pixel/);
+  assert.match(rules,/Kein Mockup/);
+  assert.match(server,/logo:'Logo \/ Marke'/);
+  assert.match(server,/logo:'erfahrener Markendesigner/);
+  assert.match(ui,/\['logo','Logo \/ Marke'\]/);
+  assert.match(ui,/logo:\['Midjourney','Ideogram'/,'the tools that can actually render lettering come first');
+});
+
+test('image and video rules carry the negation knowledge the preview route already had',()=>{
+  const templates=require('../server/prompt-templates.js');
+  const image=templates.promptLines('freeprompt-image').join(' '),video=templates.promptLines('freeprompt-video').join(' ');
+  assert.match(image,/kennen keine verlässliche Verneinung/);
+  assert.match(image,/kein Monitor, kein Mockup-Rahmen/);
+  assert.match(video,/Ein Prompt = eine Einstellung/);
+  assert.match(video,/keine verlässliche Verneinung/);
+});
+
+test('the crawler spends its budget on pages, not on stylesheets, and names linked documents',async()=>{
+  const api=await text('api/site-context.js'),app=await text('app.js');
+  assert.match(api,/const NOT_A_PAGE=/);
+  assert.match(api,/const crawlable=discovered\.filter\(link=>!NOT_A_PAGE\.test\(link\)&&!DOCUMENT_FILE\.test\(link\)\);/);
+  assert.match(api,/const PAGE_BUDGET=12;/);
+  for(const kind of ['oeffnungszeiten','anfahrt','galerie','aktuelles','jobs','agb'])assert.ok(api.includes(`return'${kind}'`),`${kind} is not recognised`);
+  // The browser cannot fetch a foreign PDF, so the server hands over the bytes.
+  assert.match(api,/async function fetchDocument\(req,res\)/);
+  assert.match(api,/if\(req\.body\?\.document\)return await fetchDocument\(req,res\);/);
+  assert.match(api,/DOCUMENT_FILE\.test\(url\.href\)/,'only documents, never any address');
+  assert.match(app,/async function importLinkedDocuments\(source,urls\)/);
+  assert.match(app,/if\(extracted\.length<120\)throw new Error/,'a scan yields no text and must not look imported');
+  assert.match(app,/const documentRead=url=>state\.documents\.some/,'a document that was read is no longer an open point');
 });

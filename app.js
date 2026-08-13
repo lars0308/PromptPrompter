@@ -35,9 +35,9 @@
   const MODE_HANDOFF_KEY = "prompt-ai-mode-handoff-v1";
   const GUEST_RUN_LIMIT = 3;
   const PROJECT_OPTIONS = {
-    free:{types:["Website","Landingpage"],goals:["Anfragen gewinnen","Informieren"]},
-    pro:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Kundenportal","Buchungsplattform","Mitgliederbereich","Portfolio","Magazin oder Blog","Dokumentation","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Direkt verkaufen","Termine oder Buchungen","Marke positionieren","Leistungen verständlich erklären","Registrierungen gewinnen","Kunden binden","Inhalte veröffentlichen","Interne Abläufe vereinfachen","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]},
-    ultimate:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Marktplatz","SaaS-Anwendung","Kundenportal","Buchungsplattform","Mitgliederbereich","Community","Magazin oder Blog","Dokumentation","Dashboard","Interne Fachanwendung","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Direkt verkaufen","Abonnements verkaufen","Termine oder Buchungen","Marke positionieren","Registrierungen gewinnen","Aktive Nutzung steigern","Kunden binden","Community aufbauen","Inhalte veröffentlichen","Interne Abläufe automatisieren","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]}
+    free:{types:["Website","Landingpage"],goals:["Anfragen gewinnen","Besuche vor Ort gewinnen","Informieren"]},
+    pro:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Kundenportal","Buchungsplattform","Mitgliederbereich","Portfolio","Magazin oder Blog","Dokumentation","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Besuche vor Ort gewinnen","Bestellungen zur Abholung oder Lieferung","Direkt verkaufen","Termine oder Buchungen","Marke positionieren","Leistungen verständlich erklären","Registrierungen gewinnen","Kunden binden","Inhalte veröffentlichen","Interne Abläufe vereinfachen","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]},
+    ultimate:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Marktplatz","SaaS-Anwendung","Kundenportal","Buchungsplattform","Mitgliederbereich","Community","Magazin oder Blog","Dokumentation","Dashboard","Interne Fachanwendung","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Besuche vor Ort gewinnen","Bestellungen zur Abholung oder Lieferung","Direkt verkaufen","Abonnements verkaufen","Termine oder Buchungen","Marke positionieren","Registrierungen gewinnen","Aktive Nutzung steigern","Kunden binden","Community aufbauen","Inhalte veröffentlichen","Interne Abläufe automatisieren","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]}
   };
   // Three previews, for every plan. More was a choice nobody could judge; fewer is not a real set.
   const PREVIEW_COUNT=3;
@@ -1696,7 +1696,7 @@
           // No personal connection and no choice to make: the plan grants image previews and the server
           // runs the image AIs configured for that plan in their priority order.
           if(cloudReady()){
-            const imageResult=await generateConceptImages();el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt, dazu die KI-Bilder deines Tarifs.`:imageResult?.kind==="quota"?"Dein Bildkontingent für diesen Monat ist aufgebraucht. Die HTML-Vorschauen bleiben vollständig nutzbar.":"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
+            const imageResult=await generateConceptImages();el.generationStatus.className=imageResult?.kind==="quota"?"generation-status notice":imageResult?.kind==="error"?"generation-status error":"generation-status";el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${state.concepts.length} Richtungen erstellt, dazu die KI-Bilder deines Tarifs.${state.isAdmin&&lastImageRoute?` [Bildmodell: ${lastImageRoute}]`:''}`:imageResult?.kind==="quota"?"Dein Bildkontingent für diesen Monat ist aufgebraucht. Die HTML-Vorschauen bleiben vollständig nutzbar.":"KI-Bilder waren nicht verfügbar. Die HTML-Vorschauen bleiben vollständig nutzbar.";
           }else{el.generationStatus.className="generation-status notice";el.generationStatus.textContent="Für KI-Bilder ist eine Anmeldung nötig. Bis dahin werden HTML-Vorschauen angezeigt.";}
         }else{el.generationStatus.className="generation-status";el.generationStatus.textContent=`${state.concepts.length} echte HTML/CSS-Vorschauen erstellt. Wähle die stärkste Richtung – ohne Bildkontingent und ohne zusätzliche Kosten.`;}
       }catch(err){
@@ -1713,12 +1713,14 @@
     const rules=selectedModules().map(m=>`${m.name}: ${String(m.prompt||'').replace(/\s+/g,' ').trim().slice(0,220)}`).slice(0,6);
     return {controls:{originality:ctrl.originality,antiSlop:ctrl.antiSlop,motion:ctrl.motion,density:ctrl.density},designRules:rules};
   }
+  let lastImageRoute='';
   async function generateConceptImages(){
     // The requests run in parallel: sequentially, three images meant three full round trips one
     // after the other (measured at ~140s). The concurrency is capped so a run never trips the
     // server's own per-minute limit for this action.
     const concepts=state.concepts.slice(),total=concepts.length;
     if(!total)return {kind:"success"};
+    lastImageRoute='';
     let quotaError=false,otherError=false,done=0,firstMessage="";
     previewStage(`Bild 1 von ${total} wird erstellt.`,{pin:true});
     const note=(className,text)=>{if(firstMessage)return;firstMessage=text;el.generationStatus.className=className;el.generationStatus.textContent=text};
@@ -1732,6 +1734,10 @@
         const data=await res.json();
         if(!res.ok){const err=new Error(data.error||"Bildvorschau fehlgeschlagen");err.status=res.status;throw err}
         concept.previewImage=data.imageDataUrl||"";
+        // Whether a preview is a real AI image or the built-in HTML layout is impossible to tell
+        // from a screenshot. Administrators see which model answered, so the question is settled by
+        // looking instead of guessing.
+        if(data.imageDataUrl&&data.model)lastImageRoute=`${data.route||data.provider||''} · ${data.model}`.replace(/^ · /,'');
       }catch(err){
         if(err?.cancelled||previewCancel?.signal?.aborted)return;
         const message=String(err?.message||"");
@@ -1990,6 +1996,9 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     const zip=text.match(/\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß]+/);
     return zip?zip[0]:'';
   }
+  // Linked files are imported and parsed on the references step, so the same URL can be either an
+  // open point or a real source depending on whether the text made it in.
+  const documentRead=url=>state.documents.some(item=>item.sourceUrl===url&&String(item.text||'').length>=120);
   function factLine(label,entries,missingHint){
     const list=(entries||[]).slice(0,4);
     if(!list.length)return `- ${label}: nicht in den Quellen gefunden — ${missingHint}`;
@@ -2008,7 +2017,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
       factLine('Profile in sozialen Netzwerken',facts.social,'keine Profile erfinden oder verlinken.'),
       factLine('Vorhandene Rechtsseiten',facts.legal,'Impressum und Datenschutz als offene Punkte kennzeichnen, keine Pflichttexte erzeugen.')
     ];
-    const documents=facts.documents.slice(0,6);
+    const documents=facts.documents.filter(item=>!documentRead(item.value)).slice(0,6);
     const documentBlock=documents.length
       ? `\nNICHT AUSGEWERTETE UNTERLAGEN\nAuf der Kundenwebsite verlinkt, aber von Prompt.ai nicht ausgelesen. Ihr Inhalt ist unbekannt und darf nicht angenommen werden. Wenn er für eine Sektion gebraucht wird (z. B. eine Speisekarte, eine Preisliste oder ein Leistungsverzeichnis), lade die Datei selbst und nutze die echten Werte — oder benenne die Sektion als offenen Punkt.\n${documents.map(item=>`- ${item.value}`).join('\n')}\n`
       : '';
@@ -2082,8 +2091,10 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
 
   function pageOpenPoints(entry,facts){
     const open=[];
-    if(entry.documents.length)open.push(`Der Inhalt liegt nur als verlinkte Datei vor, die Prompt.ai nicht ausgelesen hat: ${entry.documents.join(', ')}. Lade sie selbst und nutze die echten Werte, oder baue diese Seite ausdrücklich als offenen Punkt – erfinde keine Positionen und keine Preise.`);
-    else if(!entry.crawled&&entry.url)open.push('Die Seite ist auf der bestehenden Website verlinkt, wurde aber nicht ausgelesen. Inhalt vor dem Bauen prüfen.');
+    const unread=entry.documents.filter(url=>!documentRead(url)),read=entry.documents.filter(documentRead);
+    if(read.length)open.push(`Der Inhalt dieser Seite stammt aus der verlinkten Datei ${read.join(', ')}; ihr ausgelesener Text liegt als Unterlage bei. Nutze die echten Positionen und Preise daraus, erfinde nichts dazu.`);
+    if(unread.length)open.push(`Der Inhalt liegt nur als verlinkte Datei vor, die Prompt.ai nicht ausgelesen hat: ${unread.join(', ')}. Lade sie selbst und nutze die echten Werte, oder baue diese Seite ausdrücklich als offenen Punkt – erfinde keine Positionen und keine Preise.`);
+    if(!entry.documents.length&&!entry.crawled&&entry.url)open.push('Die Seite ist auf der bestehenden Website verlinkt, wurde aber nicht ausgelesen. Inhalt vor dem Bauen prüfen.');
     if(entry.type.key==='contact'){
       if(!facts.phone.length)open.push('Keine Telefonnummer in den Quellen.');
       if(!facts.mail.length)open.push('Keine E-Mail-Adresse in den Quellen.');
@@ -2483,12 +2494,47 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
   }
   function renderClientSources(){if(!el.clientSources)return;el.clientSources.innerHTML=state.sourceUrls.map(item=>`<div class="source-item" data-source-id="${escapeHtml(item.id)}"><div><strong>${escapeHtml(item.title||(()=>{try{return new URL(item.url).hostname}catch{return 'Datenquelle'}})())}</strong><small>${escapeHtml(item.url)}</small></div><span>${sourceUsable(item)?'INHALT ÜBERNOMMEN':item.summary||item.title?'NICHT AUSWERTBAR':'LINK GESPEICHERT'}</span><button type="button" class="remove-btn" aria-label="Quelle entfernen">×</button></div>`).join('');$$('.source-item',el.clientSources).forEach(row=>row.querySelector('button').addEventListener('click',()=>{state.sourceUrls=state.sourceUrls.filter(x=>x.id!==row.dataset.sourceId);state.clientContext=state.sourceUrls.map(x=>x.summary||'').filter(Boolean).join('\n\n').slice(0,8000);renderClientSources();saveState();renderAiReviewCard()}))}
 
+  // A menu or price list linked as a PDF is usually the most valuable page of a small website, and
+  // it was the one page nobody read - the browser cannot fetch it (no CORS on a foreign server), so
+  // the server hands over the bytes and the same pdf.js that handles uploads extracts the text.
+  const PDF_LINK=/\.pdf(?:[?#]|$)/i;
+  async function importLinkedDocuments(source,urls){
+    const wanted=(urls||[]).filter(url=>PDF_LINK.test(String(url))).slice(0,2);
+    if(!wanted.length)return 0;
+    let imported=0;
+    for(const url of wanted){
+      if(state.documents.some(item=>item.sourceUrl===url))continue;
+      try{
+        const response=await sitebriefApiFetch('/api/site-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({document:url})});
+        const data=await response.json();
+        if(!response.ok)throw new Error(data.error||'Datei nicht lesbar');
+        const bytes=Uint8Array.from(atob(data.bytes||''),ch=>ch.charCodeAt(0));
+        const pdfjs=await import('https://esm.sh/pdfjs-dist@4.10.38/build/pdf.mjs');
+        pdfjs.GlobalWorkerOptions.workerSrc='https://esm.sh/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
+        const pdf=await pdfjs.getDocument({data:bytes}).promise,text=[];
+        for(let pageNo=1;pageNo<=Math.min(pdf.numPages,30);pageNo++){const page=await pdf.getPage(pageNo),content=await page.getTextContent();text.push(content.items.map(x=>x.str||'').join(' '))}
+        const extracted=text.join('\n').replace(/[ \t]+/g,' ').trim().slice(0,50000);
+        // A scanned menu yields nothing readable. Better no document than an empty one that looks
+        // like it was read.
+        if(extracted.length<120)throw new Error('Die Datei enthält keinen auslesbaren Text (vermutlich ein Scan).');
+        state.documents.push({id:uid('doc'),name:data.name||'Unterlage von der Kundenwebsite',type:'application/pdf',text:extracted,pages:pdf.numPages,pageImages:[],aspects:['Inhalte','Fakten'],like:'',dislike:'',storagePath:'',sourceUrl:url,fromSource:true});
+        imported++;
+      }catch(error){
+        source.documentErrors=[...(source.documentErrors||[]),`${url}: ${error.message||'nicht lesbar'}`];
+      }
+    }
+    return imported;
+  }
   async function importClientWebsite(){let url=el.clientWebsite.value.trim();if(!url){el.clientImportStatus.textContent='Bitte zuerst eine Website-, Google- oder Datenquellen-Adresse eingeben.';return}if(!/^https?:\/\//i.test(url))url=`https://${url}`;try{new URL(url)}catch{el.clientImportStatus.textContent='Die Adresse ist ungültig.';return}if(state.sourceUrls.some(x=>normalizedSourceUrl(x.url)===normalizedSourceUrl(url))){el.clientWebsite.value='';el.clientImportStatus.textContent='Diese Quelle ist bereits eingetragen.';return}const source={id:uid('source'),url,title:'',summary:'',pages:[],links:[],images:[]};state.sourceUrls.push(source);renderClientSources();try{el.importClientWebsiteBtn.disabled=true;el.clientImportStatus.textContent='Website, Rechtstexte, Links und Bilder werden gelesen…';const response=await sitebriefApiFetch('/api/site-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Quelle konnte nicht direkt gelesen werden');source.url=data.url||url;source.title=data.siteName||data.title||'';source.summary=[data.description,data.summary].filter(Boolean).join('\n').slice(0,6000);source.pages=Array.isArray(data.pages)?data.pages:[];source.links=Array.isArray(data.links)?data.links:[];source.images=Array.isArray(data.images)?data.images:[];const found=String(source.title||'').trim();
       if(found&&!el.clientName.value.trim())el.clientName.value=found;
       if(found&&!el.projectName.value.trim())el.projectName.value=found;
       // A name that differs from what is already there is offered, never written over silently.
       else if(found&&el.clientName.value.trim()&&el.clientName.value.trim().toLowerCase()!==found.toLowerCase())pendingNameSuggestion(found);
-      state.clientContext=state.sourceUrls.flatMap(x=>(x.pages||[]).map(page=>`${page.title||page.kind}: ${page.summary}`)).join('\n\n').slice(0,24000);if(source.summary&&!el.projectDescription.value.trim())el.projectDescription.value=source.summary.slice(0,1800);el.descriptionCount.textContent=el.projectDescription.value.length;const legal=source.pages.filter(page=>['impressum','datenschutz'].includes(page.kind)).length;source.usable=sourceUsable(source);el.clientImportStatus.textContent=source.usable?`${source.pages.length} Seiten, ${source.links.length} Links und ${source.images.length} Bilder übernommen${legal?` · ${legal} Rechtstext${legal===1?'':'e'}`:''} ✓`:'Die Seite hat keinen lesbaren Inhalt geliefert (z. B. JavaScript-Hinweis oder Sperre). Sie bleibt hier stehen, geht aber nicht in den Master-Prompt.'}catch(err){source.usable=false;el.clientImportStatus.textContent=`Link gespeichert, aber nicht automatisch auslesbar: ${err.message}. Ergänze bei Bedarf Screenshot oder PDF.`}finally{el.clientWebsite.value='';el.importClientWebsiteBtn.disabled=false;renderClientSources();state.understandingConfirmed=false;saveState()}}
+      state.clientContext=state.sourceUrls.flatMap(x=>(x.pages||[]).map(page=>`${page.title||page.kind}: ${page.summary}`)).join('\n\n').slice(0,24000);if(source.summary&&!el.projectDescription.value.trim())el.projectDescription.value=source.summary.slice(0,1800);el.descriptionCount.textContent=el.projectDescription.value.length;const legal=source.pages.filter(page=>['impressum','datenschutz'].includes(page.kind)).length;source.usable=sourceUsable(source);
+      source.documents=Array.isArray(data.documents)?data.documents:[];
+      let readDocuments=0;
+      if(source.usable&&source.documents.length){el.clientImportStatus.textContent='Verlinkte Unterlagen werden gelesen…';readDocuments=await importLinkedDocuments(source,source.documents);renderReferences()}
+      el.clientImportStatus.textContent=source.usable?`${source.pages.length} Seiten, ${source.links.length} Links und ${source.images.length} Bilder übernommen${legal?` · ${legal} Rechtstext${legal===1?'':'e'}`:''}${readDocuments?` · ${readDocuments} verlinkte Unterlage${readDocuments===1?'':'n'} ausgelesen`:''} ✓`:'Die Seite hat keinen lesbaren Inhalt geliefert (z. B. JavaScript-Hinweis oder Sperre). Sie bleibt hier stehen, geht aber nicht in den Master-Prompt.'}catch(err){source.usable=false;el.clientImportStatus.textContent=`Link gespeichert, aber nicht automatisch auslesbar: ${err.message}. Ergänze bei Bedarf Screenshot oder PDF.`}finally{el.clientWebsite.value='';el.importClientWebsiteBtn.disabled=false;renderClientSources();state.understandingConfirmed=false;saveState()}}
 
   async function resetPassword(){const email=el.authEmail.value.trim();if(!email){el.authMessage.textContent='Trage zuerst deine E-Mail-Adresse ein.';el.authMessage.className='auth-message error';return}try{el.forgotPasswordBtn.disabled=true;await window.SiteBriefCloud.resetPassword(email);el.authMessage.textContent='Wenn die Adresse registriert ist, wurde eine E-Mail zum Zurücksetzen gesendet.';el.authMessage.className='auth-message good'}catch(err){el.authMessage.textContent=err.message||'Die E-Mail konnte nicht gesendet werden.';el.authMessage.className='auth-message error'}finally{el.forgotPasswordBtn.disabled=false}}
 
