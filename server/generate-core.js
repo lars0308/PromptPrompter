@@ -2,6 +2,7 @@ const { resolveProviderKey } = require('../server/provider-key');
 const { getEntitlements } = require('../server/entitlements');
 const { rateLimit } = require('../server/rate-limit');
 const { primePromptTemplates, promptText } = require('../server/prompt-templates');
+const { learningBlock } = require('../server/learning-hints');
 const VARIANTS = ["split","poster","ledger","stacked","editorial","minimal"];
 const PROVIDER_TIMEOUT_MS = 35000;
 async function fetchWithTimeout(url,options={},timeoutMs=PROVIDER_TIMEOUT_MS){
@@ -209,7 +210,7 @@ Schreibe alle sichtbaren Textwerte auf Deutsch (Fragen, Begründungen, Antwortvo
 Gib ausschließlich das verlangte JSON zurück.`;
 }
 
-function makeReviewPrompt({project,references,documents,settings,template,modules,clarifications}){
+function makeReviewPrompt({project,references,documents,settings,template,modules,clarifications,learning}){
   const max=Math.min(6,Math.max(2,Number(settings?.maxQuestions)||4));
   return `${promptText('review-role',{max})}
 
@@ -238,7 +239,7 @@ ${settingsText(settings)}
 
 PREVIOUS USER ANSWERS
 ${clarificationText(clarifications)}
-
+${learning?`\n${learning}\n`:''}
 Rules:
 ${promptText('review-rules')}
 
@@ -523,7 +524,10 @@ module.exports = async function handler(req,res){
       prompt=makeWebsitePrompt({masterPrompt:body.masterPrompt,sourceDocument:body.sourceDocument,project,concept:body.concept||{},outputTarget:body.outputTarget});schema=websiteSchema();name="sitebrief_website_package";
     }else if(action==="review"){
       const maxQuestions=Math.min(6,Math.max(2,Number(settings?.maxQuestions)||4));
-      prompt=makeReviewPrompt({project,references:Array.isArray(references)?references.slice(0,12):[],settings,template,modules:Array.isArray(modules)?modules.slice(0,24):[],clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[]});
+      // The questions are the one place where a lesson from an earlier project can still change
+      // the outcome, so they get the matching experience before they are written.
+      const learning=await learningBlock(project);
+      prompt=makeReviewPrompt({project,references:Array.isArray(references)?references.slice(0,12):[],settings,template,modules:Array.isArray(modules)?modules.slice(0,24):[],clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],learning});
       schema=reviewSchema(maxQuestions);name="sitebrief_project_review";
     }else if(action==="refine"){
       if(!body.concept || !body.refinement) return res.status(400).json({error:"concept and refinement are required"});

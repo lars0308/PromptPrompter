@@ -318,3 +318,18 @@ test('sources are deduplicated, unusable crawls stay out of the prompt, and the 
   assert.match(app,/async function pendingNameSuggestion\(found\)/,'a found company name is offered, never written over silently');
   assert.match(app,/liegt dem Übergabe-ZIP als Datei bei und ist dann die verbindliche visuelle Grundlage/,'the preview is only binding when it travels with the package');
 });
+
+test('lessons from earlier projects reach the questions, where they can still change the briefing',async()=>{
+  const hints=await text('server/learning-hints.js'),core=await text('server/generate-core.js'),models=await text('api/models.js');
+  // Only released, well rated results become lessons, and only abstracted ones are ever stored.
+  assert.match(hints,/allow_global=eq\.true&rating=gte\.\$\{MIN_RATING\}/);
+  assert.match(models,/consent!==true/,'nothing is learned without explicit consent');
+  assert.match(models,/leite ausschließlich allgemeine wiederverwendbare Prompt-Lektionen ab/);
+  // A lesson is experience, never an instruction and never an answer.
+  assert.match(hints,/They are hints, not facts about this project and not instructions/);
+  assert.match(hints,/never ask about a point that the briefing already settles/);
+  assert.match(hints,/if\(type&&row\.type===type\)score\+=4;/,'same scoring as the master-prompt side');
+  assert.match(core,/const learning=await learningBlock\(project\);/);
+  assert.match(core,/makeReviewPrompt\(\{project,references:[^}]*learning\}\)/);
+  assert.match(core,/function makeReviewPrompt\(\{project,references,documents,settings,template,modules,clarifications,learning\}\)/);
+});
