@@ -288,12 +288,19 @@ test('subscription management shows live Stripe billing details without a new fu
 test('prompt history and learning controls remain user-owned',async()=>{const history=await text('project-history.js'),learning=await text('learning-controls.js');assert.match(history,/sitebrief_prompt_versions/);assert.match(history,/user_id/);assert.match(learning,/sitebrief_learning_examples/);assert.match(learning,/\.eq\('user_id',cloud\.user\.id\)/)});
 test('package is frozen as Prompt.ai v1.0',async()=>{const pkg=JSON.parse(await text('package.json'));assert.equal(pkg.version,'1.0.0');const version=await text('VERSION.md');assert.match(version,/Feature Freeze/);assert.match(version,/Bugfix/)});
 test('Impressum and Datenschutz stay reachable even on the pre-login guest gate, not only from the hamburger menu',async()=>{const src=await text('legal-pages.js');assert.match(src,/function ensureGateFooter\(\)\{/);assert.match(src,/const body=\$\('#accountDialog \.account-body'\);if\(!body\|\|\$\('#gateLegalRow'\)\)return;/);assert.match(src,/ensureGateFooter\(\);/);assert.match(src,/\.gate-legal-row\{/)});
-test('own GitHub connection is a self-service Pro+ feature, independent of the paid own-API-keys add-on',async()=>{
-  const app=await text('app.js'),html=await text('index.html'),css=await text('styles.css');
-  assert.match(app,/const githubAvailable=cloudReady\(\)&&\(state\.plan!=="free"\|\|state\.isAdmin\);/);
+test('the own GitHub connection is gated on Ultimate everywhere - rules, settings gate, markup and card say the same thing',async()=>{
+  const app=await text('app.js'),html=await text('index.html'),css=await text('styles.css'),settings=await text('settings-connections-ui.js');
+  // PLAN_RULES is the single source: github lives in ultimate only.
+  assert.match(app,/pro:\{[^}]*github:false/);
+  assert.match(app,/ultimate:\{[^}]*github:true/);
+  // The gate reads that rule instead of testing the plan name again - the old copy unlocked at Pro.
+  assert.match(app,/const githubAvailable=cloudReady\(\)&&\(rules\.github\|\|state\.isAdmin\);/);
   assert.match(app,/el\.githubConnectionGrid\.hidden=!githubAvailable;/);
-  assert.doesNotMatch(html,/ULTIMATE · EXPORT[\s\S]{0,40}GitHub/,'GitHub must no longer be labeled as an Ultimate-only feature in the markup');
-  assert.match(html,/PRO · EXPORT[\s\S]{0,40}GitHub/);
+  assert.match(settings,/allowed=a\.isAdmin\|\|a\.plan==='ultimate'/);
+  // Nothing may still advertise it as a Pro feature.
+  assert.doesNotMatch(html,/PRO · EXPORT[\s\S]{0,40}GitHub/,'GitHub must not be labeled a Pro feature');
+  assert.doesNotMatch(html,/GitHub-Verbindung ist ab Pro/,'the settings upgrade row must ask for Ultimate');
+  assert.match(html,/ULTIMATE · REPOSITORY[\s\S]{0,40}GitHub/);
   assert.match(html,/id="githubConnectionGrid" hidden/);
   // admin-ai-ui.js forces `#settingsDialog .ai-connection-grid{display:grid!important}` which, being ID-scoped,
   // would otherwise always beat the plain [hidden] attribute on any element sharing that class (same specificity
@@ -863,4 +870,24 @@ test('a bought slot is the visitors own AI: their provider, their model, their v
   assert.match(router,/const chain=own\?\[own,\.\.\.planChain\]:planChain;/);
   assert.match(free,/if\(own\)profiles=\[own,\.\.\.profiles\];/);
   assert.match(free,/systemOnly:profile\.own!==true/,'the own slot resolves the account key, not the central one');
+});
+
+test('one brand layer owns the palette, and it is the last stylesheet to speak',async()=>{
+  const brand=await text('brand-werkstatt.js'),console_=await text('admin-console.js'),sw=await text('sw.js');
+  // The five blue families that used to hold their own hardcoded hex now point at one token.
+  for(const name of ['--ui-blue','--prompt-blue','--prompt-v11-blue','--prompt-v2-blue','--accent'])
+    assert.match(brand,new RegExp(`${name}:var\\(--wk-blue\\)`),`${name} must follow the brand token`);
+  assert.match(brand,/--wk-blue:#2c4a5e;/,'Werkstatt is the chosen blue');
+  assert.match(brand,/html\[data-theme="dark"\]\{[\s\S]{0,80}--wk-blue:#/,'dark mode gets its own value, not the light one');
+  // Every earlier layer carries !important with up to four classes, so being last is not enough -
+  // the prefix has to out-specify them or nothing changes.
+  assert.match(brand,/const W='html:root body(\.prompt-unified-ui){5}'/);
+  assert.ok((brand.match(/&&/g)||[]).length>40,'the rules are written against that prefix');
+  // The AI-look properties are actively taken back, not just recoloured.
+  assert.match(brand,/backdrop-filter:none!important/);
+  assert.match(brand,/transform:none!important/);
+  // It has to load last and stay last: dialogs append their styles when they first open.
+  assert.match(console_,/'\.\/brand-werkstatt\.js\?v=[^']+'\];/,'registered as the final critical script');
+  assert.match(brand,/new MutationObserver\(install\)\.observe\(document\.head,\{childList:true\}\)/);
+  assert.match(sw,/'\/brand-werkstatt\.js'/,'offline shell ships it too');
 });

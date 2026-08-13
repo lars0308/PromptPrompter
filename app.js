@@ -528,8 +528,17 @@
     const existingButton=el.outputTargetSelector?.querySelector('[data-output="existing"]');if(existingButton){existingButton.classList.toggle('plan-locked',!rules.existing);existingButton.setAttribute('aria-label',rules.existing?'Bestehendes Projekt weiterführen':'Bestehendes Projekt weiterführen – ab Pro')}
     if(!rules.existing&&state.outputTarget==='existing')state.outputTarget='next-vercel';
     if(el.revisionProGate)el.revisionProGate.hidden=rules.existing;if(el.revisionEditor)el.revisionEditor.hidden=!rules.existing;
-    if(el.exportResultHint)el.exportResultHint.textContent=rules.github?"Website durch die gewählte KI erstellen, als ZIP laden oder auf GitHub veröffentlichen.":rules.zip?"Die gewählte KI erstellt das Website-Paket. GitHub-Veröffentlichung ist in Ultimate enthalten.":"Direkte Website-Erstellung und Kundenunterlagen sind ab Pro enthalten.";
-    const githubAvailable=cloudReady()&&(state.plan!=="free"||state.isAdmin);
+    // Der Probelauf ist ein Nachweis, kein Produkt: er baut genau das offene Projekt, zeigt es an
+    // und gibt es nicht als Datei heraus. Der Weg nach draußen führt über das Repository - dorthin
+    // gehen Build, Master-Prompt, Seitenstruktur und Quellen gemeinsam.
+    if(el.exportResultHint)el.exportResultHint.textContent=rules.github
+      ?"Prompt.ai baut aus genau diesem Projekt eine Seite und zeigt sie hier an – keine fertige Website und hier auch nicht als Datei zum Mitnehmen. Du kannst das Ergebnis stattdessen in ein GitHub-Repository legen, zusammen mit Master-Prompt, Seitenstruktur und Quellen, und die Seite dort über GitHub Pages ansehen."
+      :"Der Website-Probelauf ist in Ultimate enthalten – dort wird dein Briefing zur Probe gebaut und kann samt Unterlagen in ein GitHub-Repository wandern.";
+    // Eine Ultimate-Funktion, an drei Stellen gleich beschrieben: PLAN_RULES.github ist nur dort
+    // gesetzt, die Einstellungen verlangen Ultimate und die Tarifkarte nennt sie unter Ultimate.
+    // Diese Zeile hat als einzige noch ab Pro freigeschaltet und damit ein Feld gezeigt, das der
+    // Server danach abgelehnt hätte.
+    const githubAvailable=cloudReady()&&(rules.github||state.isAdmin);
     if(el.githubLoginRow)el.githubLoginRow.hidden=cloudReady();
     if(el.githubUpgradeRow)el.githubUpgradeRow.hidden=!cloudReady()||githubAvailable;
     if(el.githubConnectionGrid)el.githubConnectionGrid.hidden=!githubAvailable;
@@ -543,7 +552,10 @@
     const moduleStep=document.getElementById('stepModules');if(moduleStep)moduleStep.classList.toggle('tier-unavailable',!rules.modules);
     if(el.openLibraryBtn)el.openLibraryBtn.hidden=!rules.modules;
     document.querySelectorAll('[data-open-library],[data-mobile-library]').forEach(button=>button.hidden=!rules.modules);
-    if(el.workspaceLibraryBtn){el.workspaceLibraryBtn.disabled=!rules.modules;el.workspaceLibraryBtn.textContent=rules.modules?'Bibliothek öffnen':'Pro Variante benötigt';el.workspaceLibraryBtn.title=rules.modules?'':'Die Bibliothek ist ab Pro verfügbar.';el.workspaceLibraryBtn.classList.toggle('plan-disabled',!rules.modules)}
+    // Der Titel bleibt stehen, auch wenn der Tarif die Bibliothek nicht enthält: die Kachel trägt
+    // bereits ein PRO-Schild, und textContent zu überschreiben hat die von der Startseite gesetzte
+    // Struktur (Titel + Beschreibung) zerstört - übrig blieb eine Kachel ohne Namen.
+    if(el.workspaceLibraryBtn){el.workspaceLibraryBtn.disabled=!rules.modules;el.workspaceLibraryBtn.title=rules.modules?'':'Die Bibliothek ist ab Pro verfügbar.';el.workspaceLibraryBtn.classList.toggle('plan-disabled',!rules.modules);if(!el.workspaceLibraryBtn.querySelector('strong'))el.workspaceLibraryBtn.textContent=rules.modules?'Bibliothek öffnen':'Bibliothek';}
     const nextTier=state.plan==='pro'?'Ultimate':'Pro';
     if(el.upgradeBtn){el.upgradeBtn.hidden=state.plan!=='free'||state.isAdmin;el.upgradeBtn.innerHTML=`Upgrade auf <span class="upgrade-target">${nextTier}</span>`}
     if(el.upgradeMenuBtn){el.upgradeMenuBtn.hidden=state.plan==='ultimate'||state.isAdmin;el.upgradeMenuBtn.innerHTML=`Upgrade auf <span class="upgrade-target">${nextTier}</span>`}
