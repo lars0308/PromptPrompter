@@ -240,3 +240,14 @@ test('the inset is handed out once per dialog, not once per nesting level',async
   // And the containers that had none at all now get it from the same token.
   assert.match(css,/\.legal-body,\.quick-revision-body,\.free-prompt-body,\s*\.library-pane>\.welcome-project-list/);
 });
+
+test('one edge for the whole app: header, console, greeting and every card start at the same line',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  // Measured on one phone screen before this: header 10px, console 14px, greeting 18px,
+  // dialog cards 17px. Each looked right alone; together nothing lined up.
+  assert.match(css,/\.welcome-page\{padding-left:var\(--dlg-x\)!important/);
+  assert.match(css,/\.prompt-home-intro\{padding-left:0!important/,'its extra 4px was the third line');
+  assert.match(css,/body>\.topbar,[\s\S]{0,120}width:calc\(100% - var\(--dlg-x\)\*2\)!important/);
+  // On the desktop the header was 1180px wide over 1040px of content.
+  assert.match(css,/width:min\(1040px,calc\(100% - var\(--dlg-x\)\*2\)\)!important/);
+});

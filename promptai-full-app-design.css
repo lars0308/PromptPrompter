@@ -1477,3 +1477,39 @@ html.prompt-full-redesign .prompt-system-line{
   letter-spacing:.15em!important;text-transform:uppercase!important;
 }
 html.prompt-full-redesign .prompt-system-line::before{flex:0 0 auto!important}
+
+/* ═══ Eine Kante für die ganze App ═════════════════════════════════════════
+
+   Nachgemessen auf einem Telefon, eine Seite, vier verschiedene Linien:
+   Kopfzeile 10px, Konsole 14px, Begrüßung 18px, Karten im Dialog 17px. Jede
+   für sich sah richtig aus, zusammen ergibt es das, was man beim Umschalten
+   zwischen den Seiten sieht: nichts steht übereinander.
+
+   Es gibt ab hier genau einen Wert - denselben, den die Dialoge schon tragen. */
+@media(max-width:820px){
+  html.prompt-full-redesign .welcome-page{padding-left:var(--dlg-x)!important;padding-right:var(--dlg-x)!important}
+  html.prompt-full-redesign .prompt-home-intro{padding-left:0!important;padding-right:0!important}
+  html.prompt-full-redesign body>.topbar,
+  html.prompt-full-redesign body.prompt-unified-ui>.topbar{
+    width:calc(100% - var(--dlg-x)*2)!important;margin-left:auto!important;margin-right:auto!important;
+  }
+}
+/* Am Rechner teilen sich Kopfzeile und Inhalt dieselbe Spalte - vorher war die
+   Kopfzeile 1180px breit und der Inhalt darunter 1040px. */
+html.prompt-full-redesign body>.topbar,
+html.prompt-full-redesign body.prompt-unified-ui>.topbar{
+  width:min(1040px,calc(100% - var(--dlg-x)*2))!important;
+}
+
+/* Der Dialograhmen selbst stand noch 1px vom Rand ab - auf dem Telefon füllt er
+   die Breite ganz aus, damit die Karten darin auf derselben Linie sitzen wie die
+   Konsole der Startseite. */
+@media(max-width:820px){
+  html.prompt-full-redesign dialog:not(.cookie-banner){
+    width:100%!important;max-width:100%!important;margin:0!important;
+    border-left:0!important;border-right:0!important;
+  }
+  html.prompt-full-redesign dialog>:is(.dialog-frame,.free-prompt-shell,.history-frame,.project-preview-shell,.simple-intake-shell,.project-mode-frame){
+    border-left:0!important;border-right:0!important;
+  }
+}
