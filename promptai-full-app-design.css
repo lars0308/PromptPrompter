@@ -1121,3 +1121,42 @@ html.prompt-full-redesign :is(.project-mode-head,.simple-intake-head){padding-ri
   html.prompt-full-redesign .prompt-home-intro{padding-bottom:var(--sp-3)!important}
   html.prompt-full-redesign .prompt-command-top{padding-top:var(--sp-3)!important}
 }
+
+/* ═══ Kopfzeile: Menü links, kein Umschalter mehr oben ═════════════════════
+
+   Der Hamburger wird nicht umgehängt, sondern nur anders platziert.
+   promptai-home-final.js setzt seinen Umschalter mit insertBefore direkt vor
+   #topbarMenuToggle - würde der Knopf die .top-actions verlassen, liefe genau
+   dieses insertBefore ins Leere. Die Kopfzeile ist sticky und damit schon ein
+   Bezugsrahmen, also reicht eine absolute Position darin. */
+html.prompt-full-redesign .topbar{position:sticky!important}
+html.prompt-full-redesign #topbarMenuToggle{
+  position:absolute!important;left:12px!important;top:50%!important;right:auto!important;
+  transform:translateY(-50%)!important;margin:0!important;z-index:3!important;
+}
+html.prompt-full-redesign .brand{padding-left:56px!important}
+
+/* Hell/Dunkel wandert in die Schublade. Oben stand er doppelt - einmal als
+   #themeToggleBtn, einmal als der eigene Knopf der Startseite - und beide
+   nahmen Platz weg, den die Kopfzeile auf dem Telefon nicht hat. */
+html.prompt-full-redesign .topbar .theme-toggle,
+html.prompt-full-redesign .topbar #themeToggleBtn,
+html.prompt-full-redesign .topbar #homeThemeToggle,
+html.prompt-full-redesign .topbar .home-theme-toggle{display:none!important}
+/* In der Schublade bleibt er ein vollwertiger Eintrag. */
+html.prompt-full-redesign .topbar-menu .theme-toggle,
+html.prompt-full-redesign .topbar-menu #themeToggleBtn{
+  display:flex!important;width:100%!important;min-height:46px!important;
+  border:0!important;border-radius:8px!important;background:transparent!important;
+  color:var(--ink)!important;font-size:14px!important;font-weight:650!important;
+}
+
+@media(max-width:700px){
+  html.prompt-full-redesign #topbarMenuToggle{left:8px!important}
+  html.prompt-full-redesign .brand{padding-left:50px!important}
+}
+
+/* Der Knopf blieb rechts, weil .top-actions selbst position:relative trägt -
+   left:12px maß also ab der Aktionsgruppe, nicht ab der Kopfzeile. Der
+   Bezugsrahmen ist jetzt wieder die Kopfzeile. */
+html.prompt-full-redesign .topbar .top-actions{position:static!important}

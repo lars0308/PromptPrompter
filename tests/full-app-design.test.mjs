@@ -116,3 +116,19 @@ test('the close button in the mode dialog is anchored again',async()=>{
   assert.match(css,/:is\(\.project-mode-close,\.simple-intake-close\)\{[\s\S]{0,120}right:14px!important/);
   assert.match(css,/:is\(\.project-mode-head,\.simple-intake-head\)\{padding-right:66px!important\}/,'the heading must not run under it');
 });
+
+test('the menu button moves left by position, not by re-parenting',async()=>{
+  const css=await read('promptai-full-app-design.css'),home=await read('promptai-home-final.js');
+  // promptai-home-final inserts its own toggle directly before #topbarMenuToggle, so lifting the
+  // button out of .top-actions would leave that insertBefore without a reference node.
+  assert.match(home,/actions\.insertBefore\(button,\$\('#topbarMenuToggle'\)\)/);
+  assert.match(css,/#topbarMenuToggle\{[\s\S]{0,120}left:12px!important/);
+  // .top-actions carries position:relative, so left was measured from the action group.
+  assert.match(css,/\.topbar \.top-actions\{position:static!important\}/);
+  assert.match(css,/\.brand\{padding-left:56px!important\}/,'the wordmark has to clear the button');
+});
+test('light/dark lives in the drawer, not twice in the header',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  assert.match(css,/\.topbar #homeThemeToggle,[\s\S]{0,80}display:none!important/);
+  assert.match(css,/\.topbar-menu #themeToggleBtn\{[\s\S]{0,120}display:flex!important/,'it stays a full entry in the drawer');
+});
