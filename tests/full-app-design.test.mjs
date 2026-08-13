@@ -213,3 +213,11 @@ test('the old start page never shows through, and the handoff loader gets to fin
   assert.match(home,/text\?`\$\{text\.length\} Zeichen · ≈\$\{tokenGuess\(text\)\} Token`:quotaLine/);
   assert.doesNotMatch(home,/Modell automatisch/,'the label said nothing that changes');
 });
+
+test('the start page header carries the word only, the loaders keep the mark',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  assert.match(css,/\.prompt-home-surface \.topbar \.brand-mark\{display:none!important\}/);
+  // Scoped to the start page: the loading screens are the one place where the mark
+  // is the only thing identifying the surface.
+  assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\)::before\{[\s\S]{0,200}sitebrief-logo\.svg/);
+});
