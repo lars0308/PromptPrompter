@@ -79,7 +79,7 @@ html.prompt-full-redesign body::after{
   width:620px;
   height:620px;
   pointer-events:none;
-  background:url("./sitebrief-logo.svg?v=5") center/contain no-repeat;
+  background:url("./sitebrief-logo.svg?v=6") center/contain no-repeat;
   opacity:.025;
   filter:grayscale(1);
 }
@@ -149,7 +149,7 @@ html.prompt-full-redesign .workspace::before{
   width:360px;
   height:360px;
   pointer-events:none;
-  background:url("./sitebrief-logo.svg?v=5") center/contain no-repeat;
+  background:url("./sitebrief-logo.svg?v=6") center/contain no-repeat;
   opacity:.025;
   filter:grayscale(1);
 }
@@ -236,7 +236,7 @@ html.prompt-full-redesign .prompt-command-home::before{
   top:-90px;
   width:420px;
   height:420px;
-  background:url("./sitebrief-logo.svg?v=5") center/contain no-repeat;
+  background:url("./sitebrief-logo.svg?v=6") center/contain no-repeat;
   opacity:.035;
   filter:grayscale(1);
   pointer-events:none;
@@ -282,7 +282,7 @@ html.prompt-full-redesign .history-frame::after{
   width:380px;
   height:380px;
   pointer-events:none;
-  background:url("./sitebrief-logo.svg?v=5") center/contain no-repeat;
+  background:url("./sitebrief-logo.svg?v=6") center/contain no-repeat;
   opacity:.018;
   filter:grayscale(1);
 }
@@ -395,7 +395,7 @@ html.prompt-full-redesign .prompt-completion-flash>div::before{
   margin:0 auto 24px;
   border:1px solid var(--line);
   border-radius:14px;
-  background:var(--surface-soft) url("./sitebrief-logo.svg?v=5") center/44px no-repeat;
+  background:var(--surface-soft) url("./sitebrief-logo.svg?v=6") center/44px no-repeat;
 }
 html.prompt-full-redesign .prompt-process-title{font-family:Inter,ui-sans-serif,sans-serif!important;font-weight:740!important;letter-spacing:-.05em!important}
 html.prompt-full-redesign .prompt-process-line{padding:10px 0;border-bottom:1px solid var(--line);font-size:14px!important}
@@ -640,7 +640,7 @@ html.prompt-full-redesign #promptMaintenanceOverlay>div::before{
   margin:0 auto 22px;
   border:1px solid var(--line);
   border-radius:14px;
-  background:var(--surface-soft) url("./sitebrief-logo.svg?v=5") center/44px no-repeat;
+  background:var(--surface-soft) url("./sitebrief-logo.svg?v=6") center/44px no-repeat;
 }
 
 /* Current d052fcb feature surfaces */
@@ -1405,7 +1405,7 @@ html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>d
 html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner)::before{
   content:"";display:block;width:46px;height:46px;margin:0 auto 20px;
   border:1px solid rgba(255,255,255,.12);border-radius:12px;
-  background:rgba(255,255,255,.04) url("./sitebrief-logo.svg?v=5") center/38px no-repeat;
+  background:rgba(255,255,255,.04) url("./sitebrief-logo.svg?v=6") center/38px no-repeat;
 }
 /* Auf dunklem Grund braucht der Fortschritt im Wort einen hellen Rest, sonst
    verschwindet der noch nicht gefüllte Teil. Der Füllstand selbst kommt

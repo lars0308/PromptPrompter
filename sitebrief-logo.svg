@@ -1,24 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Prompt.ai</title>
-  <desc id="desc">Ein klares P aus verbundenen blauen Knoten.</desc>
-  <rect width="512" height="512" rx="104" fill="#f8fafb"/>
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M143 96V416" stroke="#124f7c" stroke-width="26"/>
-    <path d="M143 96L282 94 380 151 402 247 348 319 245 363 143 416" stroke="#278bc2" stroke-width="8"/>
-    <path d="M143 96L246 158 380 151M143 96L258 246 282 94M143 246L246 158 402 247M143 246L258 246 348 319M143 246L245 363 258 246M143 416L245 363 348 319M246 158L258 246 380 151M282 94L258 246 402 247M380 151L348 319 258 246" stroke="#1b76aa" stroke-width="7"/>
-  </g>
-  <g fill="#124f7c">
-    <circle cx="143" cy="96" r="24"/>
-    <circle cx="143" cy="246" r="15"/>
-    <circle cx="143" cy="416" r="24"/>
-    <circle cx="258" cy="246" r="31"/>
-  </g>
-  <g fill="#2d93c9">
-    <circle cx="282" cy="94" r="20"/>
-    <circle cx="246" cy="158" r="17"/>
-    <circle cx="380" cy="151" r="20"/>
-    <circle cx="402" cy="247" r="20"/>
-    <circle cx="348" cy="319" r="20"/>
-    <circle cx="245" cy="363" r="18"/>
-  </g>
+  <desc id="desc">Ein geometrisches P: dunkler Bogen, angeschnittener Schaft mit blauer Spitze.</desc>
+  <rect width="512" height="512" rx="104" fill="#f5f6f7"/>
+  <!-- Der Körper des P: waagerechte Oberkante, angeschnittene obere linke Ecke,
+       runder Bogen nach rechts, Schaft nach unten. Die Punze ist als zweiter
+       Teilpfad ausgespart (fill-rule evenodd). -->
+  <path fill-rule="evenodd" fill="#21262e" d="
+    M151 94
+    L270 94
+    A91.5 91.5 0 0 1 270 277
+    L219 277
+    L219 318
+    L155 262
+    L155 159
+    L219 159
+    Z
+    M277 150
+    A36 36 0 0 1 277 222
+    L219 222
+    L219 150
+    Z
+  "/>
+  <!-- Die blaue Spitze schließt den Schaft ab, oben und unten im gleichen Winkel. -->
+  <path fill="#1f63db" d="M155 262 L219 318 L219 371 L155 419 Z"/>
 </svg>

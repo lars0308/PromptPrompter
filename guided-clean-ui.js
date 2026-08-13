@@ -104,7 +104,7 @@
 
   function header(){
     const workspace=$('.workspace');if(!workspace||$('#guidedCleanHead'))return;
-    const h=document.createElement('div');h.id='guidedCleanHead';h.className='guided-clean-head';h.innerHTML='<div class="guided-clean-brand"><img src="./sitebrief-logo.svg?v=4" alt=""><strong>Prompt.ai</strong></div><button type="button" class="guided-clean-exit" aria-label="Projekt schließen">×</button>';
+    const h=document.createElement('div');h.id='guidedCleanHead';h.className='guided-clean-head';h.innerHTML='<div class="guided-clean-brand"><img src="./sitebrief-logo.svg?v=6" alt=""><strong>Prompt.ai</strong></div><button type="button" class="guided-clean-exit" aria-label="Projekt schließen">×</button>';
     workspace.prepend(h);
     $('.guided-clean-exit',h).onclick=()=>{const home=$('#brandHome');if(home){home.click();return}const flow=$('#workflowApp'),welcome=$('#welcomePage');if(flow)flow.hidden=true;if(welcome)welcome.hidden=false};
   }
