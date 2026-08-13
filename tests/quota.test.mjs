@@ -110,7 +110,7 @@ test('the website build is Ultimate, on the client and on the server',async()=>{
   assert.match(core,/if\(entitlement\.plan!=='ultimate'&&!entitlement\.isAdmin\)return res\.status\(403\)/);
   assert.match(core,/Der Website-Probelauf ist in Ultimate enthalten\./);
   assert.match(ui,/const isLocked=\(\)=>\{const a=access\(\);return !a\.isAdmin&&a\.plan!=='ultimate'\}/);
-  assert.match(home,/'Probelauf: Prompt\.ai baut aus deinem Briefing eine Testseite\.',false,'ULTIMATE'/);
+  assert.match(home,/'Probelauf','Dein offenes Projekt einmal bauen lassen – zum Ansehen, nicht zum Mitnehmen\.',false,'ULTIMATE'/);
 });
 
 test('a connection slot folds, carries its own name and says what it is used for',async()=>{
@@ -132,4 +132,27 @@ test('every save says so',async()=>{
   assert.match(toast,/auth-message\.error/,'a failed save never reports success');
   assert.match(loader,/\.\/save-toast-ui\.js\?v=\d{8}-\d+/);
   assert.ok(sw.includes('/save-toast-ui.js'));
+});
+
+test('the Probelauf builds the open project and hands nothing out',async()=>{
+  const html=await text('index.html'),ui=await text('website-build-ui.js'),app=await text('app.js'),gen=await text('generator-selection.js'),home=await text('home-entry-ui.js');
+  // It says what it is, and what it is not.
+  assert.match(html,/<span>PROBELAUF<\/span><h2>Briefing zur Probe bauen lassen<\/h2>/);
+  assert.match(html,/keine fertige Website: Sie lässt sich hier weder herunterladen noch veröffentlichen/);
+  assert.match(html,/id="websiteBuildProject"/,'which project is being built has to be visible');
+  assert.match(ui,/function projectLine\(\)/);
+  // Nothing leaves the dialog - not even after a successful build.
+  assert.match(app,/if\(el\.downloadWebsiteZipBtn\)el\.downloadWebsiteZipBtn\.hidden=true;/);
+  assert.match(app,/if\(el\.publishGithubBtn\)el\.publishGithubBtn\.hidden=true;/);
+  assert.doesNotMatch(app,/el\.downloadGeneratedWebsiteBtn\.hidden=false/);
+  assert.match(gen,/Der Probelauf bleibt in diesem Fenster/);
+  assert.match(home,/'Probelauf','Dein offenes Projekt einmal bauen lassen – zum Ansehen, nicht zum Mitnehmen\.'/);
+});
+
+test('the half-counting rule is stated where a slot is bought, not only on the plan card',async()=>{
+  const ui=await text('settings-connections-ui.js'),html=await text('index.html');
+  assert.match(ui,/Aufrufe über deine eigene Verbindung zählen nur halb aufs Monatskontingent/);
+  assert.match(ui,/zwei davon verbrauchen eine Einheit, deine Tokens gar nichts/);
+  assert.match(ui,/Aufrufe über eigene Verbindungen zählen nur halb aufs Kontingent\./,'and again when buying another one');
+  assert.match(html,/Eigene Aufrufe zählen nur <b>halb<\/b> aufs Kontingent/,'plus on the Ultimate card');
 });

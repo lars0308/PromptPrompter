@@ -713,7 +713,7 @@ test('building a website is its own tool on the home page, not a card at the end
   assert.doesNotMatch(ui,/buildWebsiteBtn'\)\.addEventListener/,'the build itself stays in app.js');
   assert.match(html,/<dialog id="websiteBuildDialog"/);
   assert.match(html,/id="workspaceBuildSiteBtn"/);
-  assert.match(home,/decorate\(\$\('#workspaceBuildSiteBtn'\),'Website bauen'/);
+  assert.match(home,/decorate\(\$\('#workspaceBuildSiteBtn'\),'Probelauf'/);
   assert.match(home,/'workspaceRevisionBtn','workspaceBuildSiteBtn','workspacePreviewBtn'/,'locked for free accounts like the other paid tools');
   // Without a finished master prompt the AI would get an empty briefing.
   assert.match(ui,/const ready=String\(\$\('#masterPrompt'\)\?\.value\|\|''\)\.trim\(\)\.length>200;/);

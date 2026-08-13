@@ -1,9 +1,10 @@
 (()=>{
   'use strict';
-  // "Website bauen" used to sit as a large card at the end of the workflow, where it competed with
-  // the master prompt for attention. It is its own tool now: a tile on the start page opens the
-  // same card in a dialog. The card itself is moved, not rebuilt - app.js keeps its element
-  // references and every handler that was already bound to those buttons stays intact.
+  // The Probelauf is a proof, not a product: it builds exactly the project that is open and shows
+  // the result here. Nothing leaves this dialog - no ZIP, no publishing - because a one-shot build
+  // is not a website anyone should ship. The real deliverable is the master prompt.
+  // The card itself is moved, not rebuilt - app.js keeps its element references and every handler
+  // that was already bound to those buttons stays intact.
   const $=(s,r=document)=>r.querySelector(s);
   const access=()=>window.PromptAiAccess||{plan:'free',isAdmin:false};
   // The build is Ultimate: the most expensive call in the product, and a proof rather than a
@@ -18,6 +19,7 @@
       .website-build-blocked strong{display:block;font-size:14px}
       .website-build-blocked p{margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.55}
       .website-build-blocked-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+      .website-build-project{margin:0 0 14px;padding:11px 13px;border-left:3px solid var(--accent);border-radius:0 10px 10px 0;background:color-mix(in srgb,var(--accent) 6%,var(--surface));font-size:12.5px;font-weight:650;line-height:1.45}
       /* Inside the dialog the card is the whole content, so it drops the accent rail and the frame
          it needed as one section among many in the workflow. */
       #websiteBuildMount .export-result-card{margin-top:0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;grid-template-columns:1fr!important}
@@ -43,11 +45,18 @@
     const ready=String($('#masterPrompt')?.value||'').trim().length>200;
     blocked.hidden=ready;mountHost.hidden=!ready;
     if(ready)return;
-    blocked.innerHTML=`<strong>Dafür wird ein fertiges Projekt gebraucht</strong><p>Prompt.ai baut die Website aus deinem Master-Prompt, der gewählten Richtung und den Projekt-Quellen. Führe ein Projekt bis zum Master-Prompt und komm dann hierher zurück.</p><div class="website-build-blocked-actions"><button type="button" class="solid-btn" data-build-open="last">Letztes Projekt öffnen</button><button type="button" class="outline-btn" data-build-open="new">Neues Projekt starten</button></div>`;
+    blocked.innerHTML=`<strong>Dafür wird ein fertiges Projekt gebraucht</strong><p>Der Probelauf baut genau das Projekt, das gerade offen ist – aus seinem Master-Prompt, der gewählten Richtung und den Quellen. Führe ein Projekt bis zum Master-Prompt und komm dann hierher zurück.</p><div class="website-build-blocked-actions"><button type="button" class="solid-btn" data-build-open="last">Letztes Projekt öffnen</button><button type="button" class="outline-btn" data-build-open="new">Neues Projekt starten</button></div>`;
+  }
+  // Which project this is about has to be visible: the build is always the project that is open,
+  // never a project you pick here.
+  function projectLine(){
+    const host=$('#websiteBuildProject');if(!host)return;
+    const name=String($('#projectName')?.value||'').trim()||String($('#clientName')?.value||'').trim();
+    host.textContent=name?`Gebaut wird: ${name}`:'Gebaut wird das Projekt, das gerade offen ist.';
   }
   function open(){
     const dialog=$('#websiteBuildDialog');if(!dialog)return;
-    styles();mount();readiness();
+    styles();mount();readiness();projectLine();
     try{dialog.showModal()}catch{}
   }
   function bind(){

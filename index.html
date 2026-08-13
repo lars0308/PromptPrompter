@@ -76,7 +76,7 @@
       <div class="welcome-quick-actions">
         <button type="button" class="solid-btn" id="workspaceNewProjectBtn">Neues Projekt</button>
         <button type="button" class="outline-btn" id="workspaceRevisionBtn">Webseite überarbeiten</button>
-        <button type="button" class="outline-btn" id="workspaceBuildSiteBtn">Website bauen</button>
+        <button type="button" class="outline-btn" id="workspaceBuildSiteBtn">Probelauf</button>
         <button type="button" class="outline-btn" id="workspaceLastProjectBtn">Letztes Projekt öffnen</button>
         <button type="button" class="outline-btn" id="workspaceLibraryBtn">Bibliothek öffnen</button>
         <button type="button" class="outline-btn" id="showPlansBtn">Abonnieren</button>
@@ -347,8 +347,8 @@
           <small id="clientResultHint"></small>
         </section>
         <section class="export-result-card">
-          <div><span>DIREKTE ERSTELLUNG</span><h2>Website bauen und direkt ansehen</h2><p id="exportResultHint">Prompt.ai erstellt ein vollständiges Projektpaket. Statische Websites werden direkt angezeigt; ein sicherer Vorschau-Läufer für hochgeladene Next.js-Projekte folgt als eigener Ausbau.</p></div>
-          <div class="client-result-actions"><button type="button" class="solid-btn" id="buildWebsiteBtn">Website jetzt erstellen</button><button type="button" class="outline-btn" id="downloadGeneratedWebsiteBtn" hidden>Erstellte Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn">Auf GitHub veröffentlichen</button></div>
+          <div><span>PROBELAUF</span><h2>Briefing zur Probe bauen lassen</h2><p id="exportResultHint">Prompt.ai baut aus genau diesem Projekt eine Seite und zeigt sie hier an. Das ist der Nachweis, dass dein Briefing trägt – keine fertige Website: Sie lässt sich hier weder herunterladen noch veröffentlichen. Für die echte Umsetzung nimmst du den Master-Prompt.</p></div>
+          <div class="client-result-actions"><button type="button" class="solid-btn" id="buildWebsiteBtn">Probelauf starten</button><button type="button" class="outline-btn" id="downloadGeneratedWebsiteBtn" hidden>Erstellte Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn" hidden>Auf GitHub veröffentlichen</button></div>
           <div class="website-build-status" id="websiteBuildStatus" aria-live="polite"></div>
           <section class="website-build-progress" id="websiteBuildProgress" hidden aria-live="polite" aria-label="Fortschritt der Website-Erstellung">
             <div class="build-progress-head"><div><span>ERSTELLUNG LÄUFT</span><strong id="websiteBuildStage">Briefing wird vorbereitet</strong></div><b id="websiteBuildPercent">0 %</b></div>
@@ -360,7 +360,7 @@
             <small id="websiteBuildTruthNote">Der Prozentwert steigt nur, wenn ein echter Arbeitsschritt abgeschlossen ist.</small>
           </section>
           <div class="website-requirements" id="websiteRequirements" hidden></div>
-          <button type="button" class="text-btn" id="downloadWebsiteZipBtn">Einfaches Starterpaket herunterladen</button>
+          <button type="button" class="text-btn" id="downloadWebsiteZipBtn" hidden>Einfaches Starterpaket herunterladen</button>
         </section>
 
         <section class="revision-studio" id="revisionStudio">
@@ -728,7 +728,7 @@
         </article>
         <article class="plan-card" data-plan-card="ultimate">
           <div class="plan-card-summary"><span><b>Ultimate</b><small>Für Vielnutzer, Agenturen und eigene KI</small></span><strong id="ultimatePriceLabel">25,99 € / Monat</strong></div>
-          <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Pro</b>, plus:</p><ul><li><b>Bibliothek ohne Grenze</b> – so viele Vorlagen, Bausteine und Skills wie du willst</li><li><b>2 eigene KI-Verbindungen inklusive</b> – dein Anbieter, dein Modell, deine Version</li><li>Eigene Aufrufe zählen nur <b>halb</b> aufs Kontingent</li><li>500 freie Prompts, 100 Website-Projekte, 250 Bild-Durchläufe</li><li><b>Website-Probelauf</b> und Veröffentlichung auf GitHub</li><li>Alle Ziel-Agenten und der Modus „Selbst einstellen“</li></ul><button type="button" class="outline-btn plan-card-buy" id="startUltimateCheckoutBtn">Jetzt kaufen</button></div>
+          <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Pro</b>, plus:</p><ul><li><b>Bibliothek ohne Grenze</b> – so viele Vorlagen, Bausteine und Skills wie du willst</li><li><b>2 eigene KI-Verbindungen inklusive</b> – dein Anbieter, dein Modell, deine Version</li><li>Eigene Aufrufe zählen nur <b>halb</b> aufs Kontingent</li><li>500 freie Prompts, 100 Website-Projekte, 250 Bild-Durchläufe</li><li><b>Website-Probelauf:</b> dein Briefing wird zur Probe gebaut und angezeigt</li><li>Alle Ziel-Agenten und der Modus „Selbst einstellen“</li></ul><button type="button" class="outline-btn plan-card-buy" id="startUltimateCheckoutBtn">Jetzt kaufen</button></div>
         </article>
       </div>
       <div class="plans-footer"><button type="button" class="text-btn" id="manageSubscriptionBtn">Bestehendes Abo verwalten</button><small>Die Zahlung und Aboverwaltung erfolgt sicher über Stripe.</small></div>
@@ -747,8 +747,9 @@
 
   <dialog id="websiteBuildDialog" class="library-dialog website-build-dialog">
     <form method="dialog" class="dialog-frame">
-      <header class="dialog-head"><div><span>DIREKTE ERSTELLUNG</span><h2>Website bauen</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
+      <header class="dialog-head"><div><span>PROBELAUF</span><h2>Briefing zur Probe bauen lassen</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="website-build-body">
+        <p class="website-build-project" id="websiteBuildProject"></p>
         <div class="website-build-blocked" id="websiteBuildBlocked" hidden></div>
         <div id="websiteBuildMount"></div>
       </div>
@@ -820,8 +821,8 @@
   <script src="./maintenance-mode.js?v=20260813-2" defer></script>
   <script src="./entry-gate-ui.js?v=20260814-3" defer></script>
   <script src="./legal-pages.js?v=20260815-1" defer></script>
-  <script src="./app.js?v=20260815-18" defer></script>
-  <script src="./admin-console.js?v=20260814-16" defer></script>
+  <script src="./app.js?v=20260815-19" defer></script>
+  <script src="./admin-console.js?v=20260814-17" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>
 </html>

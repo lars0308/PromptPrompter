@@ -519,9 +519,11 @@
     if(el.currentPlanDescription){const trialEnd=state.subscriptionPeriodEnd?new Intl.DateTimeFormat('de-DE').format(new Date(state.subscriptionPeriodEnd)):'';el.currentPlanDescription.textContent=state.subscriptionStatus==='trialing'?`Kostenlose Testphase aktiv${trialEnd?` bis ${trialEnd}`:''}.`:rules===PLAN_RULES.free?"Gute Ergebnisse mit geführten Standards und drei Richtungen.":rules===PLAN_RULES.pro?"Claude/Codex, Module, Skills, vier Richtungen und Kundenunterlagen.":"Alle Agenten, Modelle, Profile, Einstellungen und fünf Richtungen."}
     if(el.clientResultHint)el.clientResultHint.textContent=rules.clientDocs?"Ausgearbeitete Kundenunterlagen sind freigeschaltet.":"Der Projektbericht ist enthalten. Ausgearbeitetes Kundenbriefing und technische Übergabe sind in Pro enthalten.";
     [el.downloadClientBriefBtn,el.downloadHandoverBtn].forEach(button=>{if(button)button.hidden=!rules.clientDocs});
-    if(el.downloadWebsiteZipBtn)el.downloadWebsiteZipBtn.hidden=!rules.zip;
+    // The Probelauf shows a result, it does not hand one out.
+    if(el.downloadWebsiteZipBtn)el.downloadWebsiteZipBtn.hidden=true;
+    if(el.downloadGeneratedWebsiteBtn)el.downloadGeneratedWebsiteBtn.hidden=true;
     if(el.buildWebsiteBtn)el.buildWebsiteBtn.hidden=!rules.zip;
-    if(el.publishGithubBtn)el.publishGithubBtn.hidden=!rules.github;
+    if(el.publishGithubBtn)el.publishGithubBtn.hidden=true;
     const existingButton=el.outputTargetSelector?.querySelector('[data-output="existing"]');if(existingButton){existingButton.classList.toggle('plan-locked',!rules.existing);existingButton.setAttribute('aria-label',rules.existing?'Bestehendes Projekt weiterführen':'Bestehendes Projekt weiterführen – ab Pro')}
     if(!rules.existing&&state.outputTarget==='existing')state.outputTarget='next-vercel';
     if(el.revisionProGate)el.revisionProGate.hidden=rules.existing;if(el.revisionEditor)el.revisionEditor.hidden=!rules.existing;
@@ -2535,7 +2537,8 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
       const files=safeGeneratedFiles(data.files);validateGeneratedPackage(files);
       const modelRequirements=Array.isArray(data.requiredInputs)?data.requiredInputs:[],requirements=[...modelRequirements];for(const item of deterministicRequiredInputs())if(!requirements.some(existing=>String(existing.area).toLowerCase()===item.area.toLowerCase()))requirements.push(item);
       state.generatedWebsite={files,requirements,setup:data.setup||[],verification:data.verification||[],summary:data.summary||''};renderGeneratedPreview(files);setWebsiteBuildProgress(100,'Website-Paket und Vorschau sind fertig','ready');
-      el.downloadGeneratedWebsiteBtn.hidden=false;el.websiteBuildStatus.textContent=`${Object.keys(files).length} Dateien erstellt. ${data.summary||'Das Paket ist bereit.'}`;el.websiteRequirements.hidden=false;el.websiteRequirements.innerHTML=`<strong>Was vor dem Livegang noch gebraucht wird</strong>${requirements.length?`<ul>${requirements.map(item=>`<li><b>${escapeHtml(item.area||'Projekt')}:</b> ${escapeHtml(item.item||'Angabe fehlt')}<small>${escapeHtml(item.reason||'')}</small></li>`).join('')}</ul>`:'<p>Keine zusätzlichen Zugänge erkannt. Inhalte und Funktionen trotzdem vor Veröffentlichung prüfen.</p>'}${(data.setup||[]).length?`<strong>Einrichtung</strong><ol>${data.setup.map(item=>`<li>${escapeHtml(item)}</li>`).join('')}</ol>`:''}`;
+      // A Probelauf stays in the dialog: nothing to download, nothing to publish.
+      el.websiteBuildStatus.textContent=`${Object.keys(files).length} Dateien erstellt. ${data.summary||'Das Paket ist bereit.'}`;el.websiteRequirements.hidden=false;el.websiteRequirements.innerHTML=`<strong>Was vor dem Livegang noch gebraucht wird</strong>${requirements.length?`<ul>${requirements.map(item=>`<li><b>${escapeHtml(item.area||'Projekt')}:</b> ${escapeHtml(item.item||'Angabe fehlt')}<small>${escapeHtml(item.reason||'')}</small></li>`).join('')}</ul>`:'<p>Keine zusätzlichen Zugänge erkannt. Inhalte und Funktionen trotzdem vor Veröffentlichung prüfen.</p>'}${(data.setup||[]).length?`<strong>Einrichtung</strong><ol>${data.setup.map(item=>`<li>${escapeHtml(item)}</li>`).join('')}</ol>`:''}`;
     }catch(err){el.websiteBuildProgress.hidden=false;el.websiteBuildProgress.classList.add('failed');el.websiteBuildStage.textContent='Erstellung wurde abgebrochen';el.websiteBuildTruthNote.textContent='Der letzte bestätigte Arbeitsschritt bleibt sichtbar. Du kannst den Vorgang erneut starten.';el.websiteBuildStatus.textContent=err.message||'Website konnte nicht erstellt werden.'}
     finally{el.buildWebsiteBtn.disabled=false}
   }
