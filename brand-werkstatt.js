@@ -220,13 +220,21 @@
   // Die Ebene muss die letzte im Kopf bleiben. Andere Skripte hängen ihre <style>-Blöcke teils
   // verzögert an (Admin, Vorschau, Bibliothek werden erst beim Öffnen geladen); ohne Nachrücken
   // stünden deren Regeln später und würden bei gleicher Spezifität gewinnen.
+  // Ab der vollen Designebene (promptai-full-app-design) tritt diese Schicht zurück. Sie hat ihre
+  // Aufgabe erfüllt - Milchglas raus, eine Farbquelle statt fünf - und würde jetzt gegen die neue
+  // Palette arbeiten: das warme Papier und das blaue Raster stammen von hier. Das Logo-Muster der
+  // neuen Ebene soll den Grund tragen, nicht ein Raster darunter.
+  const superseded=()=>document.documentElement.classList.contains('prompt-full-redesign');
   function install(){
-    let node=$('#'+ID);
+    const existing=$('#'+ID);
+    if(superseded()){existing?.remove();return}
+    let node=existing;
     if(!node){node=document.createElement('style');node.id=ID;node.textContent=CSS.split('&&').join(W)}
     if(document.head.lastElementChild!==node)document.head.appendChild(node);
   }
   install();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   new MutationObserver(install).observe(document.head,{childList:true});
+  new MutationObserver(install).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
   window.PromptAiBrand={blue:'#2c4a5e',name:'Werkstatt',reapply:install};
 })();
