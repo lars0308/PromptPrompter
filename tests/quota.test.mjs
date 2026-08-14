@@ -110,7 +110,7 @@ test('the website build is Ultimate, on the client and on the server',async()=>{
   assert.match(core,/if\(entitlement\.plan!=='ultimate'&&!entitlement\.isAdmin\)return res\.status\(403\)/);
   assert.match(core,/Der Website-Probelauf ist in Ultimate enthalten\./);
   assert.match(ui,/const isLocked=\(\)=>\{const a=access\(\);return !a\.isAdmin&&a\.plan!=='ultimate'\}/);
-  assert.match(home,/'Probelauf','Dein offenes Projekt einmal bauen lassen – zum Ansehen, nicht zum Mitnehmen\.',false,'ULTIMATE'/);
+  assert.match(home,/'Probelauf','Dein offenes Projekt einmal bauen lassen – ansehen, als ZIP mitnehmen oder ins Repository legen\.',false,'ULTIMATE'/);
 });
 
 test('a connection slot folds, carries its own name and says what it is used for',async()=>{
@@ -134,20 +134,22 @@ test('every save says so',async()=>{
   assert.ok(sw.includes('/save-toast-ui.js'));
 });
 
-test('the Probelauf builds the open project and hands nothing out',async()=>{
+test('the Probelauf builds the open project and lets the result be taken along',async()=>{
   const html=await text('index.html'),ui=await text('website-build-ui.js'),app=await text('app.js'),gen=await text('generator-selection.js'),home=await text('home-entry-ui.js');
   // It says what it is, and what it is not.
   assert.match(html,/<span>PROBELAUF<\/span><h2>Briefing zur Probe bauen lassen<\/h2>/);
-  assert.match(html,/keine fertige Website und hier auch nicht als Datei zum Mitnehmen/);
+  assert.match(html,/keine fertige Website\./,'es bleibt ein Probelauf, kein fertiges Produkt');
+  assert.match(html,/als ZIP mitnehmen oder es in ein GitHub-Repository legen/,'…aber das Ergebnis darf mit');
   assert.match(html,/id="websiteBuildProject"/,'which project is being built has to be visible');
   assert.match(ui,/function projectLine\(\)/);
-  // Nothing leaves the dialog - not even after a successful build.
-  assert.match(app,/if\(el\.downloadWebsiteZipBtn\)el\.downloadWebsiteZipBtn\.hidden=true;/);
-  // The repository is a place to work in, not a download, so publishing stays - the ZIP does not.
+  // Zwei Wege aus dem Probelauf heraus: ZIP nach Tarif, Repository nach Tarif.
+  assert.match(app,/el\.downloadGeneratedWebsiteBtn\.hidden=!rules\.zip\|\|!state\.generatedWebsite\?\.files/,'die ZIP-Schaltfläche gehört zum Tarif und braucht ein gebautes Paket');
+  assert.match(app,/if\(el\.downloadGeneratedWebsiteBtn\)el\.downloadGeneratedWebsiteBtn\.hidden=!planRules\(\)\.zip;/,'nach dem Bauen erscheint sie');
   assert.match(app,/if\(el\.publishGithubBtn\)el\.publishGithubBtn\.hidden=!rules\.github;/);
-  assert.doesNotMatch(app,/el\.downloadGeneratedWebsiteBtn\.hidden=false/);
-  assert.match(gen,/Der Probelauf bleibt in diesem Fenster/);
-  assert.match(home,/'Probelauf','Dein offenes Projekt einmal bauen lassen – zum Ansehen, nicht zum Mitnehmen\.'/);
+  // Die separate Website-ZIP der Schrittseite bleibt aus - sie ist ein anderer Weg.
+  assert.match(app,/if\(el\.downloadWebsiteZipBtn\)el\.downloadWebsiteZipBtn\.hidden=true;/);
+  assert.match(gen,/Das Ergebnis kannst du als ZIP mitnehmen oder in ein Repository legen/);
+  assert.match(home,/'Probelauf','Dein offenes Projekt einmal bauen lassen – ansehen, als ZIP mitnehmen oder ins Repository legen\.'/);
 });
 
 test('the half-counting rule is stated where a slot is bought, not only on the plan card',async()=>{

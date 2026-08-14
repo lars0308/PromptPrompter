@@ -12,10 +12,44 @@
       /* The gate is a standalone page, so it uses the full height instead of clustering at the
          top with dead space underneath: hero and actions share the space, the legal row sits on
          the bottom edge. */
+      /* min-height statt height: reicht der Inhalt über den Bildschirm, wächst die Fläche mit,
+         statt die Fußzeile in den letzten Absatz zu schieben. */
       .account-dialog.guest-gate:not(.gate-expanded) .account-body{display:flex;flex-direction:column;min-height:100dvh;padding-bottom:max(20px,env(safe-area-inset-bottom))!important}
-      .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{display:flex;flex-direction:column;flex:1;min-height:0}
+      .account-dialog.guest-gate:not(.gate-expanded) #gateLegalRow{flex:0 0 auto;margin-top:auto;padding-top:22px}
+      /* flex:1 mit min-height:0 ließ den Kasten unter seine Inhaltshöhe schrumpfen, sobald die
+         Belegreihe dazukam - die Fußzeile lag dann im letzten Absatz. Nach unten gedrückt wird
+         die Fußzeile ohnehin von ihrem eigenen margin-top:auto in .account-body. */
+      .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{display:flex;flex-direction:column;flex:0 0 auto;min-height:auto}
       .account-dialog.guest-gate:not(.gate-expanded) .auth-hero{padding-bottom:0}
       .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{position:relative}
+      /* Ein Bild der Sache selbst statt einer Behauptung darüber: die Konsole, wie sie nach dem
+         Einstieg aussieht, mit dem Satz darin, den man dort tatsächlich schreibt. Kein Screenshot -
+         dieselben Bausteine wie die echte Oberfläche, damit sie nicht veraltet. */
+      .gate-shot{
+        position:relative;width:100%;max-width:520px;border-radius:20px;overflow:hidden;
+        border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));
+        background:#111b26;box-shadow:0 30px 80px rgba(10,20,30,.28);
+      }
+      .gate-shot-bar{display:flex;align-items:center;gap:6px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+      .gate-shot-bar i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16)}
+      .gate-shot-bar span{margin-left:auto;color:#61778a;font:800 7px/1 ui-monospace,monospace;letter-spacing:.16em}
+      .gate-shot-body{padding:18px 16px 16px}
+      .gate-shot-mode{
+        display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;margin-bottom:14px;
+        border:1px solid #425262;border-radius:10px;color:#edf6fd;font:750 11px/1 Arial,Helvetica,sans-serif;
+      }
+      .gate-shot-mode:before{content:"";width:13px;height:13px;border:1.6px solid var(--accent);border-radius:50%}
+      .gate-shot-text{color:#9fb4c6;font-size:12.5px;line-height:1.6;min-height:66px}
+      .gate-shot-text b{color:#edf6fd;font-weight:600}
+      .gate-shot-caret{display:inline-block;width:1.5px;height:13px;margin-left:2px;background:var(--accent);vertical-align:-2px;animation:gateCaret 1.05s steps(1) infinite}
+      @keyframes gateCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
+      .gate-shot-foot{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);color:#7d8fa3;font-size:9px}
+      .gate-shot-foot b{margin-left:auto;color:var(--accent);font-weight:800}
+      /* Die Reihe unter dem Einstieg: drei Belege, keine Werbezeilen. */
+      .gate-proof{display:grid;gap:16px;width:100%;padding:0;margin:0;list-style:none}
+      .gate-proof li{display:grid;gap:3px;padding:14px 0 0;border-top:2px solid color-mix(in srgb,var(--accent) 30%,var(--line));text-align:left}
+      .gate-proof strong{font-size:13px;letter-spacing:-.01em}
+      .gate-proof small{color:var(--muted);font-size:11.5px;line-height:1.5}
       /* auto on both sides so the leftover height is shared above and below the actions instead
          of piling up in one gap. */
       .account-dialog.guest-gate:not(.gate-expanded) #gateActions{display:grid;justify-items:center;gap:34px;max-width:460px;margin-top:auto;margin-bottom:auto;padding-top:26px}
@@ -58,21 +92,47 @@
         .gate-highlights li{grid-template-columns:1fr;justify-items:center;text-align:center}
         .gate-highlights small{margin-top:4px}
       }
-      @media(min-width:821px){
-        .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{display:flex;flex-direction:column;align-items:center;max-width:760px;margin:0 auto;padding-top:clamp(24px,6vh,80px)}
-        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero{max-width:100%;width:100%;text-align:center}
-        .account-dialog.guest-gate:not(.gate-expanded) .auth-brand{justify-content:center}
-        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero h1{max-width:100%}
-        .account-dialog.guest-gate:not(.gate-expanded) #gateActions{max-width:720px;width:100%;gap:40px;margin-top:auto;margin-bottom:auto}
+      @media(min-width:960px){
+        /* Zwei Spalten wie bei jedem Produkt, das sich selbst zeigt: links das Versprechen und
+           der Einstieg, rechts das Ding. Zentrierter Text auf leerer Fläche war das Problem. */
+        .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{
+          display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.92fr);
+          grid-template-areas:'hero shot' 'actions shot' 'proof proof';
+          align-items:start;column-gap:clamp(40px,6vw,84px);row-gap:0;
+          max-width:1180px;margin:0 auto;padding-top:clamp(28px,7vh,86px);
+          /* Die einspaltige Regel oben setzt flex:1 und min-height:0 - beides bleibt sonst stehen
+             und lässt den Kasten unter seine Inhaltshöhe schrumpfen, worauf die Belegreihe unter
+             der Fußzeile herauslief. */
+          flex:0 0 auto;min-height:auto;
+        }
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero{grid-area:hero;max-width:100%;width:100%;text-align:left}
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-brand{justify-content:flex-start}
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero h1{max-width:15ch}
+        .account-dialog.guest-gate:not(.gate-expanded) #gateActions{
+          grid-area:actions;justify-items:start;max-width:520px;width:100%;
+          gap:26px;margin:22px 0 0;padding-top:0;
+        }
+        .account-dialog.guest-gate:not(.gate-expanded) .gate-shot{grid-area:shot;justify-self:end;margin-top:14px}
+        .account-dialog.guest-gate:not(.gate-expanded) .gate-proof{
+          grid-area:proof;grid-template-columns:repeat(3,minmax(0,1fr));
+          gap:26px;margin:clamp(48px,7vh,86px) 0 clamp(30px,5vh,58px);
+        }
+        .gate-cta{justify-items:start}
+        .gate-guest-note{text-align:left}
         .gate-login-pick{top:6px;font-size:13px}
-        .gate-guest-btn{min-height:74px;font-size:19px;border-radius:18px}
+        .gate-guest-btn{min-height:60px;font-size:17px;border-radius:15px;padding:0 30px}
         .gate-guest-note{font-size:11px}
-        .gate-plans-pick{padding:20px 24px;border-radius:18px}
+        .gate-plans-pick{padding:18px 22px;border-radius:16px}
         .gate-plans-pick .gate-plans-kicker{font-size:9px}
-        .gate-plans-pick strong{font-size:18px;margin:6px 0 4px}
+        .gate-plans-pick strong{font-size:16px;margin:6px 0 4px}
         .gate-plans-pick small{font-size:11px}
         .gate-plans-tiers i{font-size:11px;padding:6px 13px}
         .gate-theme-pick{font-size:11px}
+      }
+      /* Zwischen 821 und 960 bleibt eine Spalte, aber das Bild darf mit. */
+      @media(max-width:959px){
+        .gate-shot{max-width:100%;margin:0 auto}
+        .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{max-width:620px;margin:0 auto}
       }
     `;document.head.appendChild(s);
   }
@@ -82,14 +142,26 @@
     const box=document.createElement('div');box.id='gateActions';
     box.innerHTML='<button type="button" class="gate-login-pick" id="gateSignInPick">Anmelden</button>'
       +'<div class="gate-cta"><button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen</button><p class="gate-guest-note">Ohne Konto, jederzeit später upgradebar.</p></div>'
-      +'<ol class="gate-highlights">'
-      +'<li><b>1</b><div><strong>Beschreiben</strong><small>Ein paar Sätze reichen. Hast du schon eine Website? Die lesen wir aus und übernehmen Kontakt, Leistungen und Öffnungszeiten.</small></div></li>'
-      +'<li><b>2</b><div><strong>Richtung wählen</strong><small>Du siehst drei fertige Vorschläge und entscheidest, welcher passt.</small></div></li>'
-      +'<li><b>3</b><div><strong>Auftrag mitnehmen</strong><small>Fertig ist ein Master-Prompt mit allen Fakten – für ChatGPT, Claude, Codex oder was du sonst nutzt.</small></div></li>'
-      +'</ol>'
       +'<button type="button" class="gate-plans-pick" id="gatePlansPick"><span class="gate-plans-copy"><span class="gate-plans-kicker">ABO ABSCHLIESSEN</span><strong>Alle drei Tarife im Vergleich</strong><small>Kostenlos, Pro und Ultimate nebeneinander – mit allen Leistungen und Preisen.</small><span class="gate-plans-tiers"><i>Kostenlos 0 €</i><i id="gateProTier">Pro 15,99 €</i><i id="gateUltimateTier">Ultimate 25,99 €</i></span></span></button>'
       +'<button type="button" class="gate-theme-pick" id="gateThemePick">Anderes Farbschema verwenden</button>';
     hero.insertAdjacentElement('afterend',box);
+
+    // Das Produkt zeigen statt es zu beschreiben - dieselbe Konsole, die nach dem Einstieg kommt.
+    const shot=document.createElement('div');shot.className='gate-shot';
+    shot.innerHTML='<div class="gate-shot-bar"><i></i><i></i><i></i><span>COMMAND / 01</span></div>'
+      +'<div class="gate-shot-body">'
+      +'<span class="gate-shot-mode">Internetseite erstellen</span>'
+      +'<p class="gate-shot-text"><b>Kosmetikstudio in Lindhorst.</b> Die Seite soll Struktur haben und direkt zeigen, was gemacht wird.<span class="gate-shot-caret"></span></p>'
+      +'<div class="gate-shot-foot"><span>Mit Rückfragen</span><span>·</span><span>3 Richtungen</span><b>Master-Prompt</b></div>'
+      +'</div>';
+    box.insertAdjacentElement('afterend',shot);
+
+    // Drei Belege statt drei Werbezeilen - dieselben Schritte, die die App danach wirklich geht.
+    const proof=document.createElement('ul');proof.className='gate-proof';
+    proof.innerHTML='<li><strong>Beschreiben</strong><small>Ein paar Sätze reichen. Hast du schon eine Website, lesen wir sie aus und übernehmen Kontakt, Leistungen und Öffnungszeiten.</small></li>'
+      +'<li><strong>Richtung wählen</strong><small>Du siehst drei fertig gestaltete Vorschläge und entscheidest, welcher passt.</small></li>'
+      +'<li><strong>Auftrag mitnehmen</strong><small>Fertig ist ein Master-Prompt mit allen Fakten – für ChatGPT, Claude, Codex oder was du sonst nutzt.</small></li>';
+    shot.insertAdjacentElement('afterend',proof);
     const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
     $('#gateSignInPick',box).addEventListener('click',reveal);
     $('#gateGuestBtn',box).addEventListener('click',()=>$('#guestContinueBtn')?.click());
