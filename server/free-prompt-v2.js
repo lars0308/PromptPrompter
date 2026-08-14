@@ -1,4 +1,5 @@
 const {getEntitlements}=require('./entitlements');
+const {detectIndustry,industryBlock}=require('./industry');
 const {getTokenBudget}=require('./quota');
 const {resolveProviderKey}=require('./provider-key');
 const {listProfiles}=require('./system-ai-profiles');
@@ -219,9 +220,19 @@ function toolRules(tool){
   }
   return '';
 }
+// Die Branche hilft dort, wo etwas Gestaltetes oder Kundennahes entsteht - bei einem Bild, einem
+// Video, einem Social-Post, einer Präsentation oder einem Geschäftstext. Bei reinem Text, Code,
+// Recherche oder Musik trägt sie nichts bei und bliebe Ballast, deshalb steht sie dort nicht drin.
+const INDUSTRY_CATEGORIES=new Set(['image','video','social','presentation','business','email','website','custom']);
+function industryFor(input){
+  if(!INDUSTRY_CATEGORIES.has(input.category))return '';
+  const industry=detectIndustry(input.description,input.goal,input.context,input.customCategory);
+  return industryBlock(industry);
+}
+
 function architectPrompt(input,{advanced=false}={}){
   const tool=input.customTool||input.targetTool||'Universell',role=roleFor(input),fields=suppliedFields(input),syntax=toolRules(tool);
-  return `Du bist der Prompt.ai Master-Prompt-Architekt. Verwandle die untenstehenden Rohangaben in EINEN professionellen, sofort kopierbaren Prompt für das genannte Ziel-Tool.\n\nWICHTIG: Die Rohangaben stammen direkt vom Nutzer und können Tippfehler, Umgangssprache, Satzfragmente oder Wiederholungen enthalten. Im finalen Prompt darfst du sie NICHT roh kopieren. Formuliere jede enthaltene Angabe fachlich sauber neu, ohne ihre Bedeutung zu verändern oder Informationen hinzuzuerfinden.\n\nAUSGABETYP\n${input.categoryLabel}\n\nZIEL-KI / TOOL\n${tool}\n\nSPRACHE DES FERTIGEN PROMPTS\n${input.language}\n\nPASSENDE FACHROLLE FÜR DEN ZIEL-AGENTEN\n${role}\n\nROHANGABEN DES NUTZERS\n${fields||`Beschreibung:\n${input.description}`}\n\nUNIVERSELLES PROMPT.AI MASTER-GERÜST\n${asBullets(universalRules())}\n\nSPEZIFISCHE MASTER-REGELN FÜR ${input.categoryLabel.toUpperCase()}\n${asBullets(categoryRules(input))}${syntax?`\n\nSYNTAX UND PARAMETER VON ${tool.toUpperCase()}\nDer fertige Prompt muss dieser Schreibweise folgen, sonst ignoriert das Zielwerkzeug die entscheidenden Angaben.\n- ${syntax}`:''}\n\nAUFBAU DES FINALEN PROMPTS\n${promptText('free-prompt-structure',{mode:advanced?'PRO-MODUS: Nutze sämtliche gelieferten Zusatzfelder. Verknüpfe sie sinnvoll, löse Dopplungen auf und mache Konflikte sichtbar.':'FREE-MODUS: Nutze ausschließlich Ausgabetyp, Ziel-Tool, Beschreibung und Sprache. Füge keine nicht gelieferten Ziele, Zielgruppen, Referenzen oder Stilwünsche hinzu.'})}\n\nErstelle jetzt den finalen Prompt.`;
+  return `Du bist der Prompt.ai Master-Prompt-Architekt. Verwandle die untenstehenden Rohangaben in EINEN professionellen, sofort kopierbaren Prompt für das genannte Ziel-Tool.\n\nWICHTIG: Die Rohangaben stammen direkt vom Nutzer und können Tippfehler, Umgangssprache, Satzfragmente oder Wiederholungen enthalten. Im finalen Prompt darfst du sie NICHT roh kopieren. Formuliere jede enthaltene Angabe fachlich sauber neu, ohne ihre Bedeutung zu verändern oder Informationen hinzuzuerfinden.\n\nAUSGABETYP\n${input.categoryLabel}${industryFor(input)?`\n\nERKANNTE BRANCHE (nutze sie für Fachsprache, Motive und Pflichtinhalte)\n${industryFor(input)}`:''}\n\nZIEL-KI / TOOL\n${tool}\n\nSPRACHE DES FERTIGEN PROMPTS\n${input.language}\n\nPASSENDE FACHROLLE FÜR DEN ZIEL-AGENTEN\n${role}\n\nROHANGABEN DES NUTZERS\n${fields||`Beschreibung:\n${input.description}`}\n\nUNIVERSELLES PROMPT.AI MASTER-GERÜST\n${asBullets(universalRules())}\n\nSPEZIFISCHE MASTER-REGELN FÜR ${input.categoryLabel.toUpperCase()}\n${asBullets(categoryRules(input))}${syntax?`\n\nSYNTAX UND PARAMETER VON ${tool.toUpperCase()}\nDer fertige Prompt muss dieser Schreibweise folgen, sonst ignoriert das Zielwerkzeug die entscheidenden Angaben.\n- ${syntax}`:''}\n\nAUFBAU DES FINALEN PROMPTS\n${promptText('free-prompt-structure',{mode:advanced?'PRO-MODUS: Nutze sämtliche gelieferten Zusatzfelder. Verknüpfe sie sinnvoll, löse Dopplungen auf und mache Konflikte sichtbar.':'FREE-MODUS: Nutze ausschließlich Ausgabetyp, Ziel-Tool, Beschreibung und Sprache. Füge keine nicht gelieferten Ziele, Zielgruppen, Referenzen oder Stilwünsche hinzu.'})}\n\nErstelle jetzt den finalen Prompt.`;
 }
 
 function localProfessionalize(value){

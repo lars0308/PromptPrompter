@@ -1,4 +1,5 @@
 const { resolveProviderKey } = require('../server/provider-key');
+const {detectIndustry,industryBlock}=require('./industry');
 const { getEntitlements } = require('../server/entitlements');
 const { rateLimit } = require('../server/rate-limit');
 const { primePromptTemplates, promptText } = require('../server/prompt-templates');
@@ -142,7 +143,12 @@ function variantsFor(project,count){
 }
 function makeConceptPrompt({count,project,references,documents,controls,template,modules,settings,clarifications,projectReview,tier='free',baseConcept=null}){
   const variants=variantsFor(project,count);
+  // Dieselbe Einordnung, die auch das Vorschaubild und der freie Prompt verwenden. Ohne sie
+  // bekamen eine Zahnarztpraxis und ein Dönerladen dieselben Standardabschnitte vorgeschlagen.
+  const industry=detectIndustry(project?.description,project?.type,project?.goal);
   return `${promptText('concepts-role',{count})}
+
+${industryBlock(industry)?`BRANCHE DIESES PROJEKTS\n${industryBlock(industry)}\nDie Pflichtbereiche der Branche gehören in die Seitenstruktur, sofern der Auftrag nichts anderes verlangt. Sie ersetzen keine ausdrückliche Anweisung des Nutzers.`:''}
 
 LAYOUT INSTRUCTION PRIORITY: check the project's special wish and description for an explicit, literal layout or header instruction, for example "large hero with one image and no normal nav bar, only a logo and a hamburger menu on the right", "image on the left, big wide text on the right, a completely normal header on top", or "nothing else, just one image with a small headline inside it". If such an instruction is present, EVERY direction must honor it literally — pick the closest matching layoutVariant and set navStyle/mirror to match instead of forcing artificial variety. Available layoutVariant values: ${VARIANTS.join(", ")}. "minimal" means one full-bleed image and a small headline only — no navigation bar, no sections, no footer. Set navStyle to "logo-hamburger" when the instruction wants a header with only a logo plus a hamburger/burger menu instead of a normal nav bar with menu items; otherwise use "full". Set mirror to true when the instruction explicitly wants the image on the left and the text on the right (or another mirrored order) inside a two-column layout like "split". If no explicit layout instruction is given, instead maximize structural variety: use each of these layoutVariant values once, in this order, across the ${count} directions, and use navStyle "full" with mirror false: ${variants.join(", ")}.
 

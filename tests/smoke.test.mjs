@@ -916,3 +916,34 @@ test('one brand layer owns the palette, and it is the last stylesheet to speak',
   assert.match(brand,/new MutationObserver\(install\)\.observe\(document\.head,\{childList:true\}\)/);
   assert.match(sw,/'\/brand-werkstatt\.js'/,'offline shell ships it too');
 });
+
+test('one industry classifier feeds the preview image, the concepts and the free prompt',async()=>{
+  // Die Einordnung lag als kurze Regex-Kette nur in preview-image.js. Sie kannte fünf Fälle, und
+  // `bau\b` traf "bau mir eine Website für einen Kosmetikladen" - der Bildauftrag verlangte
+  // daraufhin Werkzeug im Kosmetikstudio.
+  const {detectIndustry,industryBlock,INDUSTRIES}=(await import('../server/industry.js')).default
+    ||await import('../server/industry.js');
+  const industry=await import('../server/industry.js');
+  const detect=industry.default?.detectIndustry||industry.detectIndustry;
+  assert.equal(detect('bau mir eine website für einen kosmetikladen in lindhorst').key,'beauty','das Anweisungsverb darf die Branche nicht bestimmen');
+  assert.equal(detect('website für ein bauunternehmen').key,'bau','ein echtes Bauunternehmen bleibt Bau');
+  assert.equal(detect('Internetseite für meinen Handwerksbetrieb, Elektro').key,'handwerk');
+  assert.equal(detect('erstelle mir eine seite für mein restaurant mit döner').key,'gastronomie');
+  assert.equal(detect('Zahnarztpraxis in Köln').key,'gesundheit');
+  assert.equal(detect('Maschinenbau Zulieferer').key,'industrie');
+  assert.equal(detect('').key,'allgemein','ohne Text kein Ratespiel');
+  // Jede Branche bringt Motiv, Pflichtbereiche und Tonalität mit - sonst unterscheiden sich zwei
+  // Aufträge nur in der Überschrift.
+  const list=industry.default?.INDUSTRIES||industry.INDUSTRIES;
+  assert.ok(list.length>=18,'genug Branchen, um die Bandbreite abzudecken');
+  for(const item of list)for(const field of ['key','label','match','subject','sections','tone'])
+    assert.ok(item[field],`${item.key||'?'} ohne ${field}`);
+  const preview=await text('server/preview-image.js'),free=await text('server/free-prompt-v2.js');
+  assert.match(preview,/require\('\.\/industry'\)/,'das Vorschaubild nutzt dieselbe Quelle');
+  assert.doesNotMatch(preview,/\|bau\\b\|/,'die alte, zu lockere Kette ist weg');
+  assert.match(free,/require\('\.\/industry'\)/,'…und der freie Prompt auch');
+  // Bei reinem Text, Code oder Recherche trägt die Branche nichts bei.
+  assert.match(free,/const INDUSTRY_CATEGORIES=new Set\(\[/);
+  assert.doesNotMatch(free,/INDUSTRY_CATEGORIES=new Set\(\[[^\]]*'text'/,'Text braucht keine Branche');
+  assert.doesNotMatch(free,/INDUSTRY_CATEGORIES=new Set\(\[[^\]]*'code'/,'Code auch nicht');
+});
