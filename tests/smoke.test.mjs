@@ -134,7 +134,7 @@ test('the entry gate fills the page and its plans card carries no arrow button',
   const gate=await text('entry-gate-ui.js');
   assert.doesNotMatch(gate,/gate-plans-arrow/,'the blue circle with the arrow is gone');
   assert.match(gate,/\.account-body\{display:flex;flex-direction:column;min-height:100dvh/);
-  assert.match(gate,/#gateActions\{display:grid;gap:18px;max-width:420px;margin-top:auto;margin-bottom:auto/,'leftover height is split above and below the actions');
+  assert.match(gate,/#gateActions\{display:grid;justify-items:center;gap:34px;max-width:460px;margin-top:auto;margin-bottom:auto/,'leftover height is split above and below the actions');
   assert.match(gate,/#gateLegalRow\{margin-top:auto/,'the legal row sits on the bottom edge');
 });
 test('admin quota tiers are collapsed accordions and accounts can be promoted to admin',async()=>{
