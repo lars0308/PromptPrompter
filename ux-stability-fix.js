@@ -74,9 +74,23 @@
     const menu=$('#topbarMenu');if(!menu)return;
     const reset=$('#resetBtn');if(reset&&!reset.hidden)reset.hidden=true;
     const projects=$('#openLibraryBtn'),profile=$('#accountBtn'),subscription=$('#subscriptionMenuBtn'),admin=$('#adminBtn'),settings=$('#openSettingsBtn'),upgrade=$('#upgradeMenuBtn'),signout=$('#signOutBtn');
-    setText(projects,'Projekte');if(subscription)setText(subscription,'Abonnement');setText(admin,'Verwaltung');setText(settings,'Einstellungen');setText(signout,'Abmelden');
-    let libraries=$('#menuLibrariesBtn');if(!libraries){libraries=document.createElement('button');libraries.type='button';libraries.id='menuLibrariesBtn';libraries.className='text-btn';libraries.textContent='Bibliotheken';libraries.addEventListener('click',()=>{const source=$('#openLibraryBtn');if(!source||source.hidden)return;source.click();setTimeout(()=>document.querySelector('[data-library-tab="templates"]')?.click(),80)});menu.appendChild(libraries)}
-    const hidden=!projects||projects.hidden;if(libraries.hidden!==hidden)libraries.hidden=hidden;
+    if(subscription)setText(subscription,'Abonnement');setText(admin,'Verwaltung');setText(settings,'Einstellungen');setText(signout,'Abmelden');
+    let libraries=$('#menuLibrariesBtn');if(!libraries){libraries=document.createElement('button');libraries.type='button';libraries.id='menuLibrariesBtn';libraries.className='text-btn';libraries.textContent='Bibliothek';libraries.addEventListener('click',()=>{
+      const source=$('#openLibraryBtn');
+      // Gesperrt öffnet die Tarifseite, statt stillschweigend nichts zu tun.
+      if(!source||source.hidden){document.querySelector('#plansDialog')?.showModal();return}
+      source.click();setTimeout(()=>document.querySelector('[data-library-tab="templates"]')?.click(),80);
+    });menu.appendChild(libraries)}
+    // "Projekte" und "Bibliothek" öffneten beide dasselbe Fenster - ein Eintrag genügt. Der
+    // Knopf selbst bleibt im DOM, weil app.js und andere Skripte ihn anklicken; nur sein Platz
+    // im Menü fällt weg. `hidden` bleibt dabei unangetastet, denn genau daran hängt die
+    // Tarifauskunft (app.js setzt hidden=!rules.modules).
+    if(projects&&projects.style.display!=='none')projects.style.display='none';
+    // Sichtbar mit Preisschild statt unsichtbar: im kostenlosen Tarif sieht man, dass es die
+    // Bibliothek gibt und was sie kostet.
+    if(libraries.hidden)libraries.hidden=false;
+    const libraryLocked=!projects||projects.hidden;
+    if(libraryLocked)libraries.dataset.drawerTier='ab Pro';else delete libraries.dataset.drawerTier;
     const history=$('#projectHistoryBtn'),legalRow=$('#menuLegalRow'),installApp=$('#installAppBtn');
     [libraries,projects,history,profile,subscription,admin,settings,installApp,legalRow,upgrade,signout].filter(Boolean).forEach(node=>menu.appendChild(node));
   }

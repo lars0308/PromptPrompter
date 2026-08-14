@@ -131,8 +131,12 @@ test('the drawer reshapes the existing menu instead of building a second one',as
   // A rebuilt menu means maintaining every plan gate twice, and the copy is the one that goes wrong.
   assert.match(nav,/const menu=\$\('#topbarMenu'\)/);
   assert.doesNotMatch(nav,/\.insertBefore\(/,'no existing entry may be re-parented');
-  // The only append is the drawer's own new button; nothing that was already there is touched.
-  assert.deepEqual([...nav.matchAll(/menu\.appendChild\((\w+)\)/g)].map(m=>m[1]),['button']);
+  // The only appends are the drawer's own new buttons (the work path and the Support entry);
+  // nothing that was already in the menu is re-parented.
+  assert.deepEqual([...nav.matchAll(/menu\.appendChild\((\w+)\)/g)].map(m=>m[1]),['button','button']);
+  assert.match(nav,/button\.id='menuSupportBtn'/,'Support ist ein eigener Menüpunkt');
+  // Er baut kein zweites Formular, sondern öffnet den vorhandenen Block im Profil.
+  assert.match(nav,/\.account-support-card/);
   // Moving nodes threw: other layers insertBefore relative to them. Ordering is CSS now.
   assert.match(nav,/const rank=sortEntry\(node\);/);
   assert.match(nav,/node\.style\.order=String\(rank\);/);
@@ -141,7 +145,13 @@ test('the drawer reshapes the existing menu instead of building a second one',as
   assert.match(nav,/new MutationObserver\(\(\)=>\{clearTimeout\(pending\);pending=setTimeout\(shell,60\)\}\)\.observe\(menu,\{childList:true\}\)/);
   // The four work paths click the real home buttons, so the plan gate stays in one place.
   assert.match(nav,/\['Probelauf','workspaceBuildSiteBtn'/);
-  assert.match(nav,/setTimeout\(\(\)=>\$\('#'\+targetId\)\?\.click\(\),60\)/);
+  assert.match(nav,/const target=\$\('#'\+targetId\);/);
+  assert.match(nav,/setTimeout\(\(\)=>target\?\.click\(\),60\)/);
+  // Ein gesperrter Eintrag verschwindet nicht, er nennt den Tarif und öffnet die Tarifseite -
+  // der nötige Tarif wird dabei aus data-plan-label der echten Kachel gespiegelt, nicht doppelt
+  // gepflegt.
+  assert.match(nav,/target\?\.dataset\.planLabel/);
+  assert.match(nav,/if\(lockFromTarget\(button,target\)\)\{close\(\);setTimeout\(\(\)=>document\.querySelector\('#plansDialog'\)\?\.showModal\(\)/);
   assert.match(nav,/#accountBtn:not\(\[hidden\]\)\{[\s\S]{0,60}margin-top:auto/,'profile is the one entry pinned to the bottom');
   // Eine Liste aus Wörtern: zwei Zeilen mit Zeichen unter acht ohne sahen aus wie Reste.
   assert.match(nav,/\.topbar-menu button svg\{display:none!important\}/);
