@@ -385,6 +385,36 @@
     if(mode==='check'){closeModeMenu(home);proxy('workspacePreviewBtn');return}
     home.dataset.commandMode=mode;const copy=modeCopy(mode),button=$('#promptModeButton',home);button.innerHTML=`${copy.icon}<span id="promptModeLabel">${copy.label}</span><i class="mode-chevron" aria-hidden="true"></i>`;button.setAttribute('aria-expanded','false');$('#promptModeMenu',home).hidden=true;$('#promptCommandInput',home).placeholder=copy.placeholder;syncMeta();home.querySelectorAll('[data-command-mode]').forEach(option=>option.setAttribute('aria-checked',String(option.dataset.commandMode===mode)));$('#promptCommandInput',home).focus()}
   async function submitCommand(event){event.preventDefault();applyFlow(flowMode());const home=ensureHome(),input=$('#promptCommandInput',home),error=$('#promptCommandError',home),mode=home.dataset.commandMode||'website',brief=input.value.trim();if(brief.length<8){error.textContent='Bitte kurz beschreiben.';input.focus();return}error.textContent='';const button=$('#promptCommandSubmit',home);button.disabled=true;try{if(window.PromptAiHomeEntry?.submitBrief)await window.PromptAiHomeEntry.submitBrief(mode,brief);else if(mode==='website')await window.PromptAiProjectStart?.startFromBrief?.(brief);else{window.PromptAiHomeEntry?.[mode==='free'?'openFreePrompt':'openRevision']?.();setTimeout(()=>{const field=$('#simpleIntakeText');if(field){field.value=brief;$('#simpleIntakeContinue')?.click()}},40)}}finally{setTimeout(()=>{button.disabled=false},350)}}
+  // Ein leeres Feld mit einem festen Beispieltext sagt einmal, was hier hineingehört. Wechselnde
+  // Beispiele zeigen die Spannbreite und dienen als Anregung. Beim Hineinklicken verschwindet der
+  // Vorschlag, damit er nicht mit eigenem Text verwechselt wird; bleibt das Feld leer, kommt er
+  // nach ein paar Sekunden zurück. Die Liste teilt sich mit der Einstiegsseite.
+  function rotatePlaceholder(field){
+    if(!field||field.__rotating)return;
+    const examples=window.PromptAiExamples;
+    if(!Array.isArray(examples)||!examples.length)return;
+    field.__rotating=true;
+    let index=Math.floor(Math.random()*examples.length),timer=0,idle=0,paused=false;
+    const base='Beschreibe kurz, was entstehen soll …';
+    const show=()=>{
+      // Nur im Website-Modus: die anderen Arbeitsarten haben ihren eigenen Platzhalter.
+      const home=field.closest('.prompt-command-home');
+      if(paused||field.value||(home&&home.dataset.commandMode&&home.dataset.commandMode!=='website'))return;
+      const item=examples[index%examples.length];
+      field.placeholder=`z. B. ${item.head}${item.rest}`;
+    };
+    const start=()=>{clearInterval(timer);show();timer=setInterval(()=>{index++;show()},3800)};
+    const stop=()=>{clearInterval(timer);timer=0};
+    field.addEventListener('focus',()=>{paused=true;stop();field.placeholder=base});
+    field.addEventListener('blur',()=>{clearTimeout(idle);idle=setTimeout(()=>{if(!field.value){paused=false;start()}},3000)});
+    field.addEventListener('input',()=>{
+      clearTimeout(idle);
+      if(field.value){stop();return}
+      // Wieder leer: nach drei Sekunden Ruhe kommen die Vorschläge zurück.
+      idle=setTimeout(()=>{if(!field.value&&document.activeElement!==field){paused=false;start()}},3000);
+    });
+    start();
+  }
   function proxy(id){const target=$(`#${id}`);if(!target)return;if(target.disabled||target.getAttribute('aria-disabled')==='true'){const message=target.title||'Diese Funktion ist in deinem Tarif noch nicht verfügbar.';const error=$('#promptCommandError');if(error)error.textContent=message;return}target.click()}
   function bindHome(home){home.dataset.commandMode='website';$('#promptModeButton',home).addEventListener('click',()=>{const menu=$('#promptModeMenu',home),open=menu.hidden;menu.hidden=!open;$('#promptModeButton',home).setAttribute('aria-expanded',String(open))});home.querySelectorAll('[data-command-mode]').forEach(option=>option.addEventListener('click',()=>selectMode(option.dataset.commandMode)));$('#promptCommandForm',home).addEventListener('submit',submitCommand);
     // Unlike the attach- and setup-menus, this one never got a click-outside handler - it stayed
@@ -444,6 +474,7 @@
     // paste/cut melden sich, bevor der Browser den Text tatsaechlich einfuegt oder entfernt - ein
     // sofortiger Aufruf haette noch den alten Stand gelesen. Einen Tick warten, dann stimmt er.
     ['paste','cut'].forEach(type=>$('#promptCommandInput',home).addEventListener(type,()=>setTimeout(syncMeta,0)));
+    rotatePlaceholder($('#promptCommandInput',home));
     // Enter schickt ab - aber nur dort, wo Enter auch wirklich Enter heisst. Auf dem Telefon
     // ist die Taste der Zeilenumbruch, und wer mitten im Schreiben absendet, verliert den Rest
     // des Satzes. Mit Umschalt bleibt es ueberall ein Umbruch, mit Strg/Cmd geht es immer los.

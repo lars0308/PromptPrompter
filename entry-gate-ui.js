@@ -2,6 +2,22 @@
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
   let settleTimer=0;
+  // Ein festes Beispiel liest sich wie der einzige Fall, für den das Ding gemacht ist. Eine
+  // wechselnde Reihe zeigt die Spannbreite - und dient auf der Startseite zugleich als Anregung,
+  // was man hier überhaupt hineinschreiben kann. Global, damit Einstiegsseite und Konsole
+  // dieselben Sätze verwenden und nicht zwei Listen auseinanderlaufen.
+  const EXAMPLES=window.PromptAiExamples=window.PromptAiExamples||[
+    {head:'Dönerladen in Hannover.',rest:' Mittagskarte, Öffnungszeiten und der Weg zum Laden sollen sofort zu finden sein.'},
+    {head:'Pizzeria in Hamburg.',rest:' Speisekarte, Tischreservierung und Lieferzeiten gehören nach vorn.'},
+    {head:'Dachdecker in Lindhorst.',rest:' Leistungen, Einsatzgebiet und eine Nummer, die man direkt anrufen kann.'},
+    {head:'Kosmetikstudio in Bremen.',rest:' Behandlungen mit Preisen, Termine online und ein ruhiger, hochwertiger Auftritt.'},
+    {head:'Physiotherapie in Köln.',rest:' Kassenleistungen, Team und Terminanfrage ohne Umwege.'},
+    {head:'Tischlerei in Osnabrück.',rest:' Referenzen aus echten Projekten statt Katalogbildern, dazu ein Kontaktweg.'},
+    {head:'Steuerbüro in Leipzig.',rest:' Seriös, ruhig, mit klarer Erstberatung und Mandantenportal.'},
+    {head:'Hofladen bei Rostock.',rest:' Was gerade geerntet wird, Öffnungszeiten und der Weg zum Hof.'},
+    {head:'Fotografin in München.',rest:' Die Bilder tragen die Seite, Preise und Anfrage bleiben schlicht.'},
+    {head:'Autowerkstatt in Dortmund.',rest:' Termin, Leistungen und Preise ohne Werbefloskeln.'}
+  ];
 
   function styles(){
     if($('#entryGateStyles'))return;
@@ -151,7 +167,7 @@
     shot.innerHTML='<div class="gate-shot-bar"><i></i><i></i><i></i><span>COMMAND / 01</span></div>'
       +'<div class="gate-shot-body">'
       +'<span class="gate-shot-mode">Internetseite erstellen</span>'
-      +'<p class="gate-shot-text"><b>Kosmetikstudio in Lindhorst.</b> Die Seite soll Struktur haben und direkt zeigen, was gemacht wird.<span class="gate-shot-caret"></span></p>'
+      +'<p class="gate-shot-text"><b></b><span class="gate-shot-rest"></span><span class="gate-shot-caret"></span></p>'
       +'<div class="gate-shot-foot"><span>Mit Rückfragen</span><span>·</span><span>3 Richtungen</span><b>Master-Prompt</b></div>'
       +'</div>';
     box.insertAdjacentElement('afterend',shot);
@@ -162,11 +178,28 @@
       +'<li><strong>Richtung wählen</strong><small>Du siehst drei fertig gestaltete Vorschläge und entscheidest, welcher passt.</small></li>'
       +'<li><strong>Auftrag mitnehmen</strong><small>Fertig ist ein Master-Prompt mit allen Fakten – für ChatGPT, Claude, Codex oder was du sonst nutzt.</small></li>';
     shot.insertAdjacentElement('afterend',proof);
+    rotateShot(shot);
     const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
     $('#gateSignInPick',box).addEventListener('click',reveal);
     $('#gateGuestBtn',box).addEventListener('click',()=>$('#guestContinueBtn')?.click());
     $('#gatePlansPick',box).addEventListener('click',()=>openPlansFromGate());
     $('#gateThemePick',box).addEventListener('click',()=>$('#themeToggleBtn')?.click());
+  }
+
+  // Der Satz im Bild wechselt, damit die Reihe an Fällen sichtbar wird statt eines einzigen.
+  // Ein Ausblenden dazwischen, sonst springt der Text hart um.
+  function rotateShot(shot){
+    const head=shot.querySelector('.gate-shot-text b'),rest=shot.querySelector('.gate-shot-rest'),text=shot.querySelector('.gate-shot-text');
+    if(!head||!rest||shot.__rotating)return;
+    shot.__rotating=true;
+    let index=Math.floor(Math.random()*EXAMPLES.length);
+    const paint=()=>{const item=EXAMPLES[index%EXAMPLES.length];head.textContent=item.head;rest.textContent=item.rest};
+    paint();
+    setInterval(()=>{
+      if(!shot.isConnected)return;
+      text.style.transition='opacity .28s ease';text.style.opacity='0';
+      setTimeout(()=>{index++;paint();text.style.opacity='1'},300);
+    },3600);
   }
 
   // The price labels in the plans dialog are the single place live Stripe pricing is written to

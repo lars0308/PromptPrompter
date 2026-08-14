@@ -1779,8 +1779,17 @@ html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
      weiter unten in styles.css. */
   /* Die kurzen Nachrichtenfenster (Bestätigen, Agent öffnen) sind keine Arbeitsflächen
      und dürfen nicht auf Monitorbreite gezogen werden - sie tragen vier Zeilen Text. */
-  html.prompt-full-redesign dialog.library-dialog:not(.app-action-dialog):not(.agent-launch-dialog){
+  html.prompt-full-redesign dialog.library-dialog:not(.app-action-dialog):not(.agent-launch-dialog):not(.guest-gate){
     width:min(1480px,calc(100vw - 72px))!important;max-width:none!important;
+  }
+  /* Die Einstiegsseite ist technisch ein Dialog, gemeint ist aber eine Seite. Die Deckelung
+     oben machte daraus einen 1480px-Kasten, hinter dem rechts die App hervorsah. */
+  html.prompt-full-redesign dialog#accountDialog.guest-gate{
+    width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;
+    margin:0!important;border-radius:0!important;
+  }
+  html.prompt-full-redesign dialog#accountDialog.guest-gate>.dialog-frame{
+    width:100%!important;max-width:none!important;height:100%!important;margin:0!important;border-radius:0!important;
   }
   html.prompt-full-redesign dialog.plans-dialog{width:min(1320px,calc(100vw - 72px))!important}
   html.prompt-full-redesign dialog.plans-dialog .plans-grid{

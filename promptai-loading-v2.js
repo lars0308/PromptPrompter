@@ -127,10 +127,18 @@
     ]);stage.classList.remove('prompt-v2-complete')},180)}
   }
 
+  // Das × führte auf Schritt 2 zurück - die Referenzen-Seite, die es im geführten Ablauf gar
+  // nicht mehr gibt. Der Klick löste damit die automatische Weiterleitung aus, was aussah, als
+  // lade die Seite neu. Wer die Rückfragen wegklickt, will heraus: zurück auf die Startseite.
+  function goHomeFromClarification(){
+    const exit=document.querySelector('.guided-clean-exit')||document.querySelector('#brandHome');
+    if(exit){exit.click();return}
+    const nav=$('.step-nav[data-step="2"]');if(nav)nav.click();else $('#stepAgent .back-btn')?.click();
+  }
   function clarificationExit(event){
     const close=event.target.closest?.('#clarificationDialog .close-dialog');if(!close)return;
     event.preventDefault();event.stopImmediatePropagation();const dialog=$('#clarificationDialog');document.documentElement.classList.add('prompt-clarification-exit');try{sessionStorage.setItem(DISMISS_KEY,'1')}catch{}try{dialog?.close('cancel')}catch{dialog?.removeAttribute('open')}
-    setTimeout(()=>{const nav=$('.step-nav[data-step="2"]');if(nav)nav.click();else $('#stepAgent .back-btn')?.click();document.documentElement.classList.remove('prompt-review-transition');setTimeout(()=>{document.documentElement.classList.remove('prompt-clarification-exit');try{sessionStorage.removeItem(DISMISS_KEY)}catch{}},500)},20)
+    setTimeout(()=>{goHomeFromClarification();document.documentElement.classList.remove('prompt-review-transition');setTimeout(()=>{document.documentElement.classList.remove('prompt-clarification-exit');try{sessionStorage.removeItem(DISMISS_KEY)}catch{}},500)},20)
   }
   function clarificationCancel(event){if(event.target?.id!=='clarificationDialog')return;event.preventDefault();const close=$('#clarificationDialog .close-dialog');if(close)clarificationExit({target:close,preventDefault(){},stopImmediatePropagation(){}})}
 
