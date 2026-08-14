@@ -1777,7 +1777,9 @@ html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
      war - drei Tarife nebeneinander quetschten sich dort auf je 240px. Auf dem
      Telefon bleibt alles wie es war, das regeln die vorhandenen Media-Queries
      weiter unten in styles.css. */
-  html.prompt-full-redesign dialog.library-dialog{
+  /* Die kurzen Nachrichtenfenster (Bestätigen, Agent öffnen) sind keine Arbeitsflächen
+     und dürfen nicht auf Monitorbreite gezogen werden - sie tragen vier Zeilen Text. */
+  html.prompt-full-redesign dialog.library-dialog:not(.app-action-dialog):not(.agent-launch-dialog){
     width:min(1480px,calc(100vw - 72px))!important;max-width:none!important;
   }
   html.prompt-full-redesign dialog.plans-dialog{width:min(1320px,calc(100vw - 72px))!important}
@@ -1809,3 +1811,83 @@ html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
   html.prompt-full-redesign #promptAppBoot img,
   html.prompt-full-redesign #promptAppBoot .prompt-boot-mark{width:104px!important;height:104px!important}
 }
+
+/* ==========================================================================
+   Bestätigungsfenster und Gegenfragen an das übrige Haus angleichen
+   ========================================================================== */
+
+/* Das Fenster nach dem Kauf ("Pro ist aktiv") ist eine kurze Nachricht, stand aber
+   in derselben 680px-Fläche wie ein Formular und bekam dadurch einen eigenen
+   Scrollbalken für vier Zeilen Text. */
+/* ui-polish-final.js setzt die Breite über eine ID mit !important (900px) - dieselbe
+   ID ist nötig, sonst gewinnt sie. */
+html.prompt-full-redesign body #appActionDialog{width:min(520px,calc(100vw - 32px))!important;max-width:none!important}
+html.prompt-full-redesign body #appActionDialog .dialog-frame{width:100%!important;max-width:none!important}
+html.prompt-full-redesign .app-action-dialog .dialog-frame{
+  border:1px solid var(--line)!important;border-radius:var(--r-lg)!important;
+  background:var(--surface)!important;box-shadow:var(--shadow-lift)!important;
+}
+html.prompt-full-redesign .app-action-body{padding:var(--sp-6) var(--sp-6) var(--sp-5)!important}
+html.prompt-full-redesign .app-action-body>span{
+  display:block!important;color:var(--accent-strong)!important;
+  font-size:9px!important;font-weight:900!important;letter-spacing:.14em!important;
+}
+html.prompt-full-redesign .app-action-body h2{
+  margin:var(--sp-2) 0 var(--sp-3)!important;font-size:clamp(23px,3vw,29px)!important;
+  line-height:1.1!important;letter-spacing:-.035em!important;
+}
+html.prompt-full-redesign .app-action-body p{
+  margin:0!important;color:var(--mist)!important;font-size:14px!important;line-height:1.6!important;
+}
+html.prompt-full-redesign .app-action-buttons{
+  display:flex!important;justify-content:flex-end!important;gap:var(--sp-3)!important;
+  margin-top:var(--sp-6)!important;
+}
+
+/* Die Gegenfragen waren eine Kolonne aus Serifen-Überschriften, grauen Absätzen und
+   unterstrichenen Textlinks - näher an einem Fragebogen als an dieser App. Jede Frage
+   wird eine Karte, die Vorschläge werden anklickbare Chips. */
+html.prompt-full-redesign .clarification-question{
+  padding:var(--sp-5)!important;margin-bottom:var(--sp-4)!important;
+  border:1px solid var(--line)!important;border-top:1px solid var(--line)!important;
+  border-radius:var(--r-md)!important;background:var(--surface)!important;
+}
+html.prompt-full-redesign .clarification-question>span{
+  color:var(--accent-strong)!important;font-size:9px!important;font-weight:900!important;letter-spacing:.12em!important;
+}
+html.prompt-full-redesign .clarification-question h3{
+  margin:var(--sp-2) 0 var(--sp-2)!important;font-family:inherit!important;
+  font-size:17px!important;font-weight:700!important;line-height:1.35!important;letter-spacing:-.02em!important;
+}
+html.prompt-full-redesign .clarification-question p{
+  margin:0 0 var(--sp-4)!important;color:var(--mist)!important;font-size:12.5px!important;line-height:1.55!important;
+}
+html.prompt-full-redesign .clarification-question textarea{
+  border:1px solid var(--line)!important;border-radius:var(--r-sm)!important;
+  background:var(--surface-soft)!important;color:var(--ink)!important;padding:var(--sp-3)!important;
+  font:inherit!important;font-size:14px!important;
+}
+html.prompt-full-redesign .clarification-question textarea:focus{
+  border-color:color-mix(in srgb,var(--accent) 60%,var(--line))!important;outline:none!important;
+}
+/* Aus unterstrichenen Textlinks werden Antworten, die man antippt. */
+html.prompt-full-redesign .suggested-answer{flex-wrap:wrap!important;gap:var(--sp-2)!important;margin-top:var(--sp-3)!important}
+html.prompt-full-redesign .suggested-answer button{
+  padding:8px 13px!important;border:1px solid var(--line)!important;border-radius:999px!important;
+  background:var(--surface-soft)!important;color:var(--ink)!important;
+  font-size:12px!important;font-weight:600!important;text-decoration:none!important;text-align:left!important;
+}
+html.prompt-full-redesign .suggested-answer button:hover{
+  border-color:color-mix(in srgb,var(--accent) 55%,var(--line))!important;
+  background:color-mix(in srgb,var(--accent) 8%,var(--surface))!important;
+}
+html.prompt-full-redesign .clarification-intro{
+  font-family:inherit!important;font-size:15px!important;line-height:1.6!important;color:var(--mist)!important;
+}
+
+/* Die Arbeitsfläche (Schrittseiten, Master-Prompt, Vorschauen) hing an
+   --prompt-content:1240px - auf einem breiten Monitor stand der Master-Prompt
+   damit in einer schmalen Spalte mit viel Leerraum daneben. Die Spalte wächst
+   mit, das Telefon bleibt unberührt. */
+@media(min-width:1500px){html.prompt-full-redesign{--prompt-content:1560px}}
+@media(min-width:1800px){html.prompt-full-redesign{--prompt-content:1720px}}
