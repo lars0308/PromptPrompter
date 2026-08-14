@@ -353,3 +353,14 @@ test('the sweep: every card breathes, no box in a box, no pair of buttons glued 
   // 5. Weiß auf Mittelblau kam im Dunkelmodus auf 2,2:1.
   assert.match(css,/\.plan-card-badge\{[\s\S]{0,120}background:var\(--navy\)!important/);
 });
+
+test('Enter sends where Enter means Enter, and stays a line break where it does not',async()=>{
+  const home=await read('promptai-home-final.js');
+  // Auf dem Telefon ist Enter der Zeilenumbruch - wer dort mitten im Satz absendet,
+  // verliert den Rest. Deshalb entscheidet der Zeiger, nicht die Bildschirmbreite.
+  assert.match(home,/matchMedia\('\(pointer:fine\)'\)\.matches/);
+  assert.match(home,/if\(!withModifier&&\(!fine\|\|event\.shiftKey\)\)return;/);
+  // Strg/Cmd+Enter geht überall, auch auf dem Telefon mit Tastatur.
+  assert.match(home,/const withModifier=event\.metaKey\|\|event\.ctrlKey;/);
+  assert.match(home,/event\.isComposing/,'während einer Eingabemethode darf Enter nichts auslösen');
+});
