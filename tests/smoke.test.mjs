@@ -947,3 +947,21 @@ test('one industry classifier feeds the preview image, the concepts and the free
   assert.doesNotMatch(free,/INDUSTRY_CATEGORIES=new Set\(\[[^\]]*'text'/,'Text braucht keine Branche');
   assert.doesNotMatch(free,/INDUSTRY_CATEGORIES=new Set\(\[[^\]]*'code'/,'Code auch nicht');
 });
+
+test('the master prompt turns the chosen direction into a buildable component spec',async()=>{
+  // Die Richtung nannte nur Wirkung (Stimmung, Layoutprinzip, Hero, Typografie, Palette). Was
+  // daraus gebaut wird - Kopfzeile, Karten, Felder, Buttons, Fußzeile - blieb offen, und genau
+  // darin gingen Vorschaubild und Ergebnis auseinander.
+  const src=await text('app.js');
+  assert.match(src,/function componentSpecBlock\(c,ctrl\)\{/);
+  assert.match(src,/\$\{componentSpecBlock\(c,ctrl\)\}/,'der Abschnitt hängt an der ausgewählten Richtung');
+  // Die Vorgabe leitet sich aus der Auswahl ab, statt fest verdrahtet zu sein.
+  assert.match(src,/c\.navStyle==="logo-hamburger"/,'Kopfzeile folgt der Richtung');
+  assert.match(src,/gefüllt in \$\{c\.palette\?\.\[2\]/,'der Primärbutton nimmt die Akzentfarbe der Palette');
+  assert.match(src,/const density=Number\(ctrl\?\.density\)/,'der Rhythmus folgt dem Regler');
+  assert.match(src,/const corners=/,'die Ecken folgen dem Charakter der Richtung');
+  // Was der Nutzer wörtlich verlangt, schlägt die Vorgabe - sonst widerspricht sich der Prompt.
+  assert.match(src,/deckungsgleich mit der Bildvorschau/);
+  for(const part of ['Kopfzeile','Hero:','Karten und Flächen','Primärbutton','Formularfelder','Typografie:','Fußzeile:','Zustände','Mobil'])
+    assert.ok(src.includes(part),part);
+});
