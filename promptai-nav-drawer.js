@@ -21,7 +21,7 @@
     const s=document.createElement('style');s.id='promptNavDrawerStyles';s.textContent=`
       html.prompt-full-redesign .topbar-menu{
         position:fixed!important;inset:0 auto 0 0!important;top:0!important;bottom:0!important;left:0!important;right:auto!important;
-        z-index:2147482900!important;display:flex!important;flex-direction:column!important;gap:0!important;
+        z-index:2147483001!important;display:flex!important;flex-direction:column!important;gap:0!important;
         width:min(320px,86vw)!important;max-height:none!important;height:100dvh!important;
         padding:0!important;border:0!important;border-right:1px solid var(--line)!important;border-radius:0!important;
         background:var(--surface)!important;box-shadow:none!important;overflow:hidden!important;

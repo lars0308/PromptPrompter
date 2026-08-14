@@ -251,8 +251,10 @@ test('one edge for the whole app: header, console, greeting and every card start
   assert.match(css,/\.welcome-page\{padding-left:var\(--dlg-x\)!important/);
   assert.match(css,/\.prompt-home-intro\{padding-left:0!important/,'its extra 4px was the third line');
   assert.match(css,/body>\.topbar,[\s\S]{0,120}width:calc\(100% - var\(--dlg-x\)\*2\)!important/);
-  // On the desktop the header was 1180px wide over 1040px of content.
-  assert.match(css,/width:min\(1040px,calc\(100% - var\(--dlg-x\)\*2\)\)!important/);
+  // On the desktop the header was 1180px wide over 1040px of content, and later
+  // both were frozen at the same 1040px regardless of window size. Now they
+  // grow together with the window, up to 1520px.
+  assert.match(css,/width:min\(clamp\(1040px,78vw,1520px\),calc\(100% - var\(--dlg-x\)\*2\)\)!important/);
 });
 
 test('the mark ships without a plate, and stays readable on the dark loading surfaces',async()=>{

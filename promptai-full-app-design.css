@@ -88,7 +88,13 @@ html.prompt-full-redesign body::after{
 }
 
 html.prompt-full-redesign[data-theme="dark"] body::after{opacity:.038;filter:grayscale(1) invert(1)}
-html.prompt-full-redesign body>*{position:relative;z-index:1}
+/* :where() keeps this at zero specificity on purpose: it only needs to lift plain children
+   above the watermark. Written as a normal selector it outranked every fixed-position loader
+   that mounts straight onto body (mode handoff, workflow loader, completion flash, maintenance
+   and history-restore overlays) and silently flattened them into the document flow - the screen
+   just went blank mid-transition because the overlay was rendering below the fold instead of
+   covering the viewport. Any component that declares its own position now wins as it should. */
+:where(html.prompt-full-redesign body>*){position:relative;z-index:1}
 html.prompt-full-redesign button:focus-visible,
 html.prompt-full-redesign a:focus-visible,
 html.prompt-full-redesign input:focus-visible,
@@ -1521,10 +1527,13 @@ html.prompt-full-redesign .prompt-system-line::before{flex:0 0 auto!important}
   }
 }
 /* Am Rechner teilen sich Kopfzeile und Inhalt dieselbe Spalte - vorher war die
-   Kopfzeile 1180px breit und der Inhalt darunter 1040px. */
+   Kopfzeile 1180px breit und der Inhalt darunter 1040px. Auf großen Bildschirmen
+   war diese gemeinsame Spalte trotzdem fest bei 1040px eingefroren, egal wie breit
+   das Fenster war - die Fläche links und rechts blieb ungenutzt. Beide Seiten
+   wachsen jetzt gemeinsam mit dem Fenster, bis 1520px. */
 html.prompt-full-redesign body>.topbar,
 html.prompt-full-redesign body.prompt-unified-ui>.topbar{
-  width:min(1040px,calc(100% - var(--dlg-x)*2))!important;
+  width:min(clamp(1040px,78vw,1520px),calc(100% - var(--dlg-x)*2))!important;
 }
 
 /* Der Dialograhmen selbst stand noch 1px vom Rand ab - auf dem Telefon füllt er
