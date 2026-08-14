@@ -85,7 +85,9 @@
     // Knopf selbst bleibt im DOM, weil app.js und andere Skripte ihn anklicken; nur sein Platz
     // im Menü fällt weg. `hidden` bleibt dabei unangetastet, denn genau daran hängt die
     // Tarifauskunft (app.js setzt hidden=!rules.modules).
-    if(projects&&projects.style.display!=='none')projects.style.display='none';
+    // Nicht über style.display: die Schublade setzt display:flex!important auf jeden sichtbaren
+    // Eintrag und gewinnt gegen eine Inline-Angabe. Ein Merkmal, auf das ihre eigene Regel hört.
+    if(projects&&projects.dataset.drawerHidden!=='1')projects.dataset.drawerHidden='1';
     // Sichtbar mit Preisschild statt unsichtbar: im kostenlosen Tarif sieht man, dass es die
     // Bibliothek gibt und was sie kostet.
     if(libraries.hidden)libraries.hidden=false;

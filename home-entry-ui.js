@@ -45,6 +45,11 @@
   function planLocks(){
     const free=isFree();
     for(const id of ['workspaceRevisionBtn','workspaceBuildSiteBtn','workspacePreviewBtn','workspaceLastProjectBtn','workspaceLibraryBtn']){const b=$(`#${id}`);if(!b)continue;b.classList.toggle('home-plan-locked',free);b.setAttribute('aria-disabled',free?'true':'false')}
+    // Der Probelauf ist Ultimate, nicht nur "nicht kostenlos" - server/generate-core.js und
+    // website-build-ui.js erzwingen beide genau das. Die Kachel sagte einem Pro-Konto trotzdem,
+    // sie sei offen, und damit fehlte auch im Menü der Hinweis auf den nötigen Tarif.
+    const a=access(),notUltimate=!a.isAdmin&&String(a.plan||'free')!=='ultimate',build=$('#workspaceBuildSiteBtn');
+    if(build){build.classList.toggle('home-plan-locked',notUltimate);build.setAttribute('aria-disabled',notUltimate?'true':'false')}
     // Only a free account has something to subscribe to here; paid plans upgrade from the menu
     // and an admin is not billed at all.
     const plans=$('#showPlansBtn');if(plans)plans.hidden=!free;

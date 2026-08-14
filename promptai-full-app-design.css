@@ -1790,7 +1790,7 @@ html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
   /* Zwei Spalten statt einer langen Kolonne, sobald wirklich Platz da ist. */
   html.prompt-full-redesign #accountDialog .account-profile-settings .field-grid.two,
   html.prompt-full-redesign #settingsDialog .field-grid.two{grid-template-columns:1fr 1fr!important}
-  html.prompt-full-redesign #libraryDialog .library-pane.active{grid-template-columns:minmax(320px,34%) minmax(0,1fr)!important}
+  html.prompt-full-redesign #libraryDialog .library-pane.active:not([data-library-pane="projects"]){grid-template-columns:minmax(320px,34%) minmax(0,1fr)!important}
 }
 
 /* ==========================================================================
@@ -1891,3 +1891,14 @@ html.prompt-full-redesign .clarification-intro{
    mit, das Telefon bleibt unberührt. */
 @media(min-width:1500px){html.prompt-full-redesign{--prompt-content:1560px}}
 @media(min-width:1800px){html.prompt-full-redesign{--prompt-content:1720px}}
+
+/* Die Projektliste ist die einzige Fläche in ihrem Bereich - einen Editor daneben gibt es dort
+   nicht. Sie bekam trotzdem nur die schmale erste Spalte des zweispaltigen Bibliotheks-Rasters,
+   also standen die Karten in zwei engen Reihen und rechts blieb die halbe Fläche leer. */
+html.prompt-full-redesign #libraryDialog .library-pane[data-library-pane="projects"]{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+html.prompt-full-redesign #libraryDialog #libraryProjectList{
+  display:grid!important;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))!important;
+  width:100%!important;max-width:none!important;gap:var(--sp-4)!important;
+}

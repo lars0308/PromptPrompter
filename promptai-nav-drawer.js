@@ -51,6 +51,9 @@
         justify-content:flex-start!important;
       }
       html.prompt-full-redesign .topbar-menu button:hover:not(:disabled){background:var(--surface-soft)!important}
+      /* "Projekte" und "Bibliothek" öffneten dasselbe Fenster - der doppelte Eintrag verschwindet
+         hier, weil die Regel darüber jeden sichtbaren Knopf mit !important auf display:flex setzt. */
+      html.prompt-full-redesign .topbar-menu button[data-drawer-hidden="1"]{display:none!important}
       /* Keine Symbole in der Schublade: zwei Zeichen unter zehn Wörtern sahen aus wie
          Reste, nicht wie System. Jetzt beginnt jede Zeile auf derselben Linie. */
       html.prompt-full-redesign .topbar-menu button svg{display:none!important}
