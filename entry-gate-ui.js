@@ -34,6 +34,15 @@
       .gate-plans-tiers i{padding:5px 10px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:99px;background:var(--surface);color:var(--ink);font-size:9px;font-style:normal;font-weight:750;white-space:nowrap}
       .gate-theme-pick{justify-self:center;margin-top:2px;display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--muted);font-size:9px}
       .gate-theme-pick:hover{color:var(--ink)}
+      /* The collapsed gate stretches .account-body to the full dialog height and pins the legal
+         row to the bottom with margin-top:auto. Picking "Anmelden"/"Registrieren" swaps in the
+         two-column auth-layout, but that layout never got the same treatment - on a dialog taller
+         than its content, Impressum/Datenschutz just sat wherever the content ended instead of at
+         the bottom edge, and the two-column layout started right under the headline with barely
+         any air between them. Same technique, applied to the expanded state instead. */
+      .account-dialog.guest-gate.gate-expanded .account-body{display:flex;flex-direction:column;flex:1;min-height:0}
+      .account-dialog.guest-gate.gate-expanded .auth-layout{margin-top:clamp(28px,5vh,56px)}
+      .account-dialog.guest-gate.gate-expanded #gateLegalRow{margin-top:auto;padding-top:28px}
       @media(max-width:360px){.gate-primary-actions{grid-template-columns:1fr}}
       @media(min-width:821px){
         .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{display:flex;flex-direction:column;align-items:center;max-width:760px;margin:0 auto;padding-top:clamp(24px,6vh,80px)}

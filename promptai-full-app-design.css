@@ -1700,6 +1700,14 @@ html.prompt-full-redesign .auth-access-card .auth-subscribe-compact{
   border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;
   background:transparent!important;margin-top:var(--sp-5)!important;padding:var(--sp-5) 0 0!important;
 }
+/* Same fix, second offender: .guest-limit-box still carried its own full card border/background/
+   shadow (from the flat-card rule above) while sitting inside .auth-access-card, which already has
+   the exact same treatment - the same box-in-a-box this section was meant to remove. */
+html.prompt-full-redesign .auth-access-card .guest-limit-box{
+  border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;
+  margin-top:var(--sp-5)!important;padding:var(--sp-5) 0 0!important;
+}
 
 /* 3. Knöpfe nebeneinander standen 7px auseinander - zu wenig, um zwei Ziele zu
       sein. Ein Abstand für alle Knopfreihen. */
