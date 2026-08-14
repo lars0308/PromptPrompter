@@ -323,7 +323,11 @@
   function firstName(value){return titleCase(value).split(/\s+/)[0]||''}
   function resolvedName(){const cloud=window.SiteBriefCloud||{},user=cloud.user||{},meta=user.user_metadata||{};const values=[$('#userDisplayName')?.value,window.PromptAiUserProfile?.displayName,cloud.userProfile?.displayName,cloud.profile?.displayName,meta.display_name,meta.full_name,meta.name];for(const value of values){const name=firstName(value);if(name)return name}const email=String(user.email||'').trim();return email?firstName(email.split('@')[0]):''}
   function homeVisible(){const page=$('#welcomePage'),workflow=$('#workflowApp');return Boolean(page&&!page.hidden&&getComputedStyle(page).display!=='none'&&(!workflow||workflow.hidden||getComputedStyle(workflow).display==='none'))}
-  function projectTitle(){try{const state=JSON.parse(localStorage.getItem('sitebrief-v6-state')||'{}');return String(state.projectName||state.project?.name||state.project?.client?.name||'').trim()}catch{return ''}}
+  // Same fallback order the project list already uses (app.js): a project name, then a client
+  // name, then the description itself. Most projects start from the console's free-text
+  // description alone, with neither name field ever filled in - without this fallback the
+  // "Letztes Projekt" row stayed hidden for exactly that, the most common, case.
+  function projectTitle(){try{const state=JSON.parse(localStorage.getItem('sitebrief-v6-state')||'{}'),p=state.project||{};return String(p.name||p.client?.name||p.description?.slice(0,54)||'').trim()}catch{return ''}}
 
   function ensureThemeToggle(){const actions=$('.topbar .top-actions');if(!actions)return;let button=$('#homeThemeToggle');if(!button){button=document.createElement('button');button.id='homeThemeToggle';button.type='button';button.className='home-theme-toggle';button.addEventListener('click',()=>$('#themeToggleBtn')?.click());actions.insertBefore(button,$('#topbarMenuToggle'))}const dark=document.documentElement.dataset.theme==='dark';button.textContent=dark?'☀':'◐';button.title=dark?'Helles Design':'Dunkles Design';button.setAttribute('aria-label',button.title)}
 
@@ -376,6 +380,10 @@
       if(event.target.closest?.('#promptSetupButton,#promptSetupSheet'))return;
       setupSheet.hidden=true;setupButton.setAttribute('aria-expanded','false');
     });
+    // Zeichen und Token laufen mit, waehrend man schreibt - syncMeta() kannte den Text schon,
+    // es fehlte nur der Aufruf bei jedem Tastendruck. Ohne den stand dort weiter das Kontingent,
+    // auch mitten im Satz.
+    $('#promptCommandInput',home).addEventListener('input',syncMeta);
     // Enter schickt ab - aber nur dort, wo Enter auch wirklich Enter heisst. Auf dem Telefon
     // ist die Taste der Zeilenumbruch, und wer mitten im Schreiben absendet, verliert den Rest
     // des Satzes. Mit Umschalt bleibt es ueberall ein Umbruch, mit Strg/Cmd geht es immer los.
