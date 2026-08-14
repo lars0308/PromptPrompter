@@ -374,8 +374,13 @@ test('the flow selector drives the real mode switch and never claims a mode the 
   assert.match(home,/const FLOW_LABEL=\{guided:'Mit Rückfragen',auto:'Ohne Rückfragen',expert:'Selbst einstellen'\}/);
   // Erst merken, wenn der echte Schalter umgesprungen ist.
   assert.match(home,/const active=\$\('\.mode-switch button\.active'\)\?\.dataset\.mode;\s*if\(active&&active!==mode\)\{syncFlowUi\(\);return\}/);
+  // Die drei Abläufe werden ins Blatt gebaut - eine Liste, kein zweiter Satz Knöpfe.
+  assert.match(home,/const menu=\$\('#promptFlowMenu'\);if\(!menu\)return;/);
+  assert.match(home,/for\(const key of \['guided','auto','expert'\]\)\{/);
+  // Ein gemerkter, aber gesperrter Ablauf fällt auf "Mit Rückfragen" zurück, statt zu lügen.
+  assert.match(home,/if\(flowLocked\(mode\)\)\{mode='guided';/);
   // Gesperrte Einträge sind im Menü als solche zu sehen, nicht erst nach dem Klick.
-  assert.match(home,/b\.dataset\.locked=flowLocked\(b\.dataset\.flowMode\)\?'1':'0'/);
+  assert.match(home,/button\.dataset\.locked=flowLocked\(key\)\?'1':'0'/);
   assert.match(home,/\[data-locked="1"\]:after\{content:"ab Pro"/);
 });
 
