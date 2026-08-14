@@ -305,15 +305,22 @@ test('the boot mark traces the blue once around the inside of the letter',async(
   assert.match(css,/\.prompt-home-surface \.topbar \.brand-mark\{[\s\S]{0,140}background:transparent!important/);
 });
 
-test('light mode is a calm grey, and the watermark stays off it',async()=>{
+test('light mode is a calm grey and carries the mark faintly',async()=>{
   const css=await read('promptai-full-app-design.css');
   assert.match(css,/--paper:#e7eaee;/,'the ground is grey, not near-white');
   assert.match(css,/--surface:#f5f7f9;/,'and the cards sit one step above it, still not white');
   assert.doesNotMatch(css,/--surface:#ffffff;/);
   // The start page carries its own colour names and sets them with !important.
   assert.match(css,/\.prompt-home-surface:not\(\[data-theme="dark"\]\)\{[\s\S]{0,200}--home-bg:var\(--paper\)/);
-  // A large flat shape at 2% reads as a stain on grey; on near-white it did not.
-  assert.match(css,/:not\(\[data-theme="dark"\]\) body::after,[\s\S]{0,400}display:none!important/);
+  // Das Zeichen ist im Hellmodus wieder da - aber schwächer als im Dunkelmodus, sonst
+  // trägt die große flache Form auf dem Grau als Fleck auf.
+  assert.match(css,/:not\(\[data-theme="dark"\]\) body::after\{opacity:\.019!important;display:block!important\}/);
+  assert.match(css,/\[data-theme="dark"\] body::after\{opacity:\.038/,'im Dunkelmodus darf es kräftiger sein');
+  // In Dialogen bleibt es aus: kleine Fläche, Text darüber.
+  assert.match(css,/:not\(\[data-theme="dark"\]\) \.dialog-frame::after,[\s\S]{0,300}display:none!important/);
+  // Zwei flache Diagonalen über den Grund, hinter allem und ohne Klickfläche.
+  assert.match(css,/body::before\{[\s\S]{0,160}pointer-events:none/);
+  assert.match(css,/linear-gradient\(104deg,transparent calc\(38% - 1px\)/);
 });
 
 test('the handoff screen is a transition, not a progress bar for the whole brief',async()=>{

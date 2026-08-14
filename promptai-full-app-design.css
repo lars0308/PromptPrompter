@@ -1561,18 +1561,37 @@ html.prompt-full-redesign.prompt-home-surface:not([data-theme="dark"]){
 /* Das Zeichen im Hintergrund war auf einen fast weißen Grund abgestimmt. Auf dem
    Grau tritt es zu deutlich hervor - auf einer ruhigen Fläche fällt jede Kante
    mehr auf als auf einer hellen. Es bleibt eine Ahnung, kein Bild. */
-/* Auf dem Grau wird aus dem Zeichen im Hintergrund ein Fleck: eine große, flache
-   Form mit vier Helligkeitsstufen Unterschied fällt auf einer ruhigen Fläche auf,
-   auf fast weißem Grund tat sie das nicht. Im Hellmodus bleibt der Grund leer -
-   im Dunkelmodus, wo es als feine Aufhellung sitzt, bleibt es. */
-html.prompt-full-redesign:not([data-theme="dark"]) body::after,
+/* Das Zeichen war im Hellmodus ganz abgeschaltet, weil es auf dem Grau als Fleck
+   auftrug. Es soll wieder da sein - also nicht heller, sondern schwächer: bei
+   dieser Deckkraft liest es sich als Struktur des Grundes, nicht als Bild darauf. */
+html.prompt-full-redesign:not([data-theme="dark"]) body::after{opacity:.019!important;display:block!important}
 html.prompt-full-redesign:not([data-theme="dark"]) .workspace::before,
-html.prompt-full-redesign:not([data-theme="dark"]) .prompt-command-home::before,
+html.prompt-full-redesign:not([data-theme="dark"]) .prompt-command-home::before{opacity:.022!important;display:block!important}
+/* In Dialogen bleibt es aus: dort steht es hinter Text auf kleiner Fläche. */
 html.prompt-full-redesign:not([data-theme="dark"]) .dialog-frame::after,
 html.prompt-full-redesign:not([data-theme="dark"]) .project-mode-frame::after,
 html.prompt-full-redesign:not([data-theme="dark"]) .history-frame::after{
   display:none!important;
 }
+
+/* Zwei ruhige Linien über den Grund - keine Deko-Formen, sondern zwei sehr flache
+   Diagonalen, die dieselbe Richtung nehmen wie der Balken im Zeichen. Sie liegen
+   hinter allem (z-index:0 beim Wasserzeichen, hier darunter) und fangen keine
+   Klicks ab. */
+html.prompt-full-redesign body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(104deg,transparent calc(38% - 1px),color-mix(in srgb,var(--accent) 34%,transparent) 38%,transparent calc(38% + 1px)),
+    linear-gradient(104deg,transparent calc(63% - 1px),color-mix(in srgb,var(--accent) 20%,transparent) 63%,transparent calc(63% + 1px)),
+    radial-gradient(120% 80% at 88% -10%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 62%);
+  /* Beides ausdrücklich: die Startseite setzt am selben Element ein gekacheltes
+     background-size, und die Kaskade entscheidet je Eigenschaft - ohne diese zwei
+     Zeilen wiederholen sich die zwei Linien alle 120px zu einem Streifenmuster. */
+  background-size:100% 100%!important;background-repeat:no-repeat!important;
+  opacity:.5;
+}
+html.prompt-full-redesign[data-theme="dark"] body::before{opacity:.62}
+@media(max-width:700px){html.prompt-full-redesign body::before{opacity:.34}}
 
 /* ═══ Referenzen: ein Weg pro Block, kein Absatz, wo eine Zeile reicht ══════
 
@@ -1770,4 +1789,23 @@ html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
   html.prompt-full-redesign #accountDialog .account-profile-settings .field-grid.two,
   html.prompt-full-redesign #settingsDialog .field-grid.two{grid-template-columns:1fr 1fr!important}
   html.prompt-full-redesign #libraryDialog .library-pane.active{grid-template-columns:minmax(320px,34%) minmax(0,1fr)!important}
+}
+
+/* ==========================================================================
+   Marke: größer, wo Platz ist
+   ========================================================================== */
+@media(min-width:821px){
+  /* Das Zeichen stand mit 30px kleiner da als der Schriftzug daneben verlangt. Die
+     Startseite setzt es über zwei Klassen am <html> - der Wert hier muss dieselbe
+     Spezifität erreichen, sonst gewinnt die Regel weiter oben. */
+  html.prompt-full-redesign .topbar .brand-mark,
+  html.prompt-full-redesign.prompt-home-surface .topbar .brand-mark{width:50px!important;height:50px!important}
+  html.prompt-full-redesign .topbar .brand-copy strong{font-size:21px!important}
+  /* Auf dem Ladeschirm ist die Marke das einzige Bild - 52px war eine Briefmarke
+     auf einer 1500px breiten Fläche. */
+  html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner)::before{
+    width:104px!important;height:104px!important;margin-bottom:28px!important;
+  }
+  html.prompt-full-redesign #promptAppBoot img,
+  html.prompt-full-redesign #promptAppBoot .prompt-boot-mark{width:104px!important;height:104px!important}
 }
