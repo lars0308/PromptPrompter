@@ -1711,3 +1711,10 @@ html.prompt-full-redesign .plan-card-badge{
   border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)!important;
 }
 html.prompt-full-redesign[data-theme="dark"] .plan-card-badge{background:var(--accent-strong)!important;color:#0b1219!important}
+
+/* Der Ablauf steht als kleines Menü in der Fußzeile der Konsole. Die Erklärung
+   unter jedem Eintrag ist eine Nebenzeile - sie stand vorher so groß wie der
+   Eintrag selbst. */
+html.prompt-full-redesign .prompt-flow-menu button{font-size:13px!important;font-weight:700!important}
+html.prompt-full-redesign .prompt-flow-menu button small{font-size:11px!important;font-weight:550!important;color:var(--mist)!important;letter-spacing:0!important}
+html.prompt-full-redesign .prompt-flow-button{color:var(--mist)!important}

@@ -364,3 +364,17 @@ test('Enter sends where Enter means Enter, and stays a line break where it does 
   assert.match(home,/const withModifier=event\.metaKey\|\|event\.ctrlKey;/);
   assert.match(home,/event\.isComposing/,'während einer Eingabemethode darf Enter nichts auslösen');
 });
+
+test('the flow selector drives the real mode switch and never claims a mode the plan forbids',async()=>{
+  const home=await read('promptai-home-final.js'),app=await read('app.js');
+  // app.js kennt die drei Abläufe bereits und sperrt sie nach Tarif; setMode öffnet bei
+  // einem gesperrten Ablauf die Tarifseite. Das Menü bedient genau diese Knöpfe.
+  assert.match(app,/function setMode\(mode\)\{\s*if\(!planRules\(\)\.modes\.includes\(mode\)\)/);
+  assert.match(home,/\.mode-switch button\[data-mode="\$\{mode\}"\]/);
+  assert.match(home,/const FLOW_LABEL=\{guided:'Mit Rückfragen',auto:'Ohne Rückfragen',expert:'Selbst einstellen'\}/);
+  // Erst merken, wenn der echte Schalter umgesprungen ist.
+  assert.match(home,/const active=\$\('\.mode-switch button\.active'\)\?\.dataset\.mode;\s*if\(active&&active!==mode\)\{syncFlowUi\(\);return\}/);
+  // Gesperrte Einträge sind im Menü als solche zu sehen, nicht erst nach dem Klick.
+  assert.match(home,/b\.dataset\.locked=flowLocked\(b\.dataset\.flowMode\)\?'1':'0'/);
+  assert.match(home,/\[data-locked="1"\]:after\{content:"ab Pro"/);
+});
