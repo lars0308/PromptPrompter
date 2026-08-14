@@ -79,6 +79,21 @@
       .prompt-attach-menu[hidden]{display:none!important}
       .prompt-attach-menu button{display:block;width:100%;padding:9px 11px;border:0;border-radius:9px;background:transparent;color:#dfe9f2;text-align:left;font:700 12px/1.3 Arial,Helvetica,sans-serif;cursor:pointer}
       .prompt-attach-menu button:hover{background:rgba(45,147,201,.18);color:#f4f9fd}
+      .prompt-setup-line{display:inline-flex;align-items:center;gap:7px;max-width:calc(100% - 46px);min-height:30px;padding:0 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--home-muted);font:650 11px/1 Arial,Helvetica,sans-serif;text-align:left;cursor:pointer}
+      .prompt-setup-line:hover,.prompt-setup-line[aria-expanded="true"]{border-color:#33465a;color:#e7f1f9}
+      .prompt-setup-line>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .prompt-setup-line .mode-chevron{flex:0 0 auto;width:6px;height:6px;margin:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
+      .prompt-setup-sheet{position:absolute;z-index:9;left:14px;right:14px;bottom:52px;max-height:min(52vh,360px);overflow-y:auto;overscroll-behavior:contain;padding:6px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:#141e28;box-shadow:0 26px 64px rgba(0,0,0,.55)}
+      .prompt-setup-sheet[hidden]{display:none!important}
+      .prompt-setup-section{padding:8px 6px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
+      .prompt-setup-section:last-of-type{border-bottom:0}
+      .prompt-setup-section>b{display:block;padding:0 5px 7px;color:#8b9dc3;font:850 9px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase}
+      .prompt-setup-section button{display:block;width:100%;padding:9px 11px;border:0;border-radius:9px;background:transparent;color:#dfe9f2;text-align:left;font:700 12.5px/1.3 Arial,Helvetica,sans-serif;cursor:pointer}
+      .prompt-setup-section button small{display:block;margin-top:3px;color:#8b9dc3;font-size:10.5px;font-weight:550;line-height:1.4}
+      .prompt-setup-section button[aria-checked="true"],.prompt-setup-section button:hover{background:rgba(45,147,201,.18);color:#f4f9fd}
+      .prompt-setup-section button[data-locked="1"]{color:#8b9dc3}
+      .prompt-setup-section button[data-locked="1"]:after{content:"ab Pro";float:right;color:var(--home-orange);font-size:9px;font-weight:850;letter-spacing:.08em}
+      .prompt-setup-note{margin:0;padding:9px 11px 4px;color:#7d8fa3;font:550 10px/1.5 Arial,Helvetica,sans-serif}
       .prompt-flow-button{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 10px;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:700 11px/1 Arial,Helvetica,sans-serif;white-space:nowrap;cursor:pointer}
       .prompt-flow-button:hover{border-color:#4d637a;color:#e7f1f9}
       .prompt-flow-button .mode-chevron{width:6px;height:6px;margin:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
@@ -191,7 +206,7 @@
   // Skills als Reihen mit Kontrollkästchen in #skillSelection. Beide Menüs hier lesen genau
   // diese Elemente und bedienen sie - keine zweite Liste, keine zweite Sperre.
   function syncTemplateMenu(){
-    const menu=$('#promptTemplateMenu'),select=document.querySelector('#templateSelect'),label=$('#promptTemplateLabel');
+    const menu=$('#promptTemplateMenu'),select=document.querySelector('#templateSelect');
     if(!menu)return;
     if(!select){menu.innerHTML='<p class="prompt-picker-empty">Vorlagen stehen im Projekt bereit.</p>';return}
     const current=select.value;
@@ -203,13 +218,11 @@
       button.textContent=option.textContent;
       button.addEventListener('click',()=>{
         select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));
-        menu.hidden=true;$('#promptTemplateButton')?.setAttribute('aria-expanded','false');
         setTimeout(syncTemplateMenu,80);
       });
       menu.appendChild(button);
     }
-    const chosen=select.options[select.selectedIndex];
-    if(label)label.textContent=current?(chosen?.textContent||'Vorlage').split(' · ')[0].slice(0,18):'Vorlage';
+    syncSetupSummary();
   }
   function syncSkillsMenu(){
     const menu=$('#promptSkillsMenu'),host=document.querySelector('#skillSelection');
@@ -237,7 +250,7 @@
         button.textContent=(row.querySelector('strong')?.textContent||'Skill').slice(0,40);
         button.addEventListener('click',()=>{
           if(box&&!box.disabled)box.click();
-          setTimeout(syncSkillsMenu,80);
+          setTimeout(()=>{syncSkillsMenu();syncSetupSummary()},80);
         });
         menu.appendChild(button);
       }
@@ -275,16 +288,35 @@
     try{localStorage.setItem(FLOW_KEY,mode)}catch{}
     syncFlowUi();
   }
+  const FLOW_NOTE={guided:'Fragt nur nach, wo es das Ergebnis ändert',auto:'Briefing rein, Prompt raus',expert:'Alle Schritte bleiben offen'};
   function syncFlowUi(){
-    const home=$('.prompt-command-home');if(!home)return;
+    const menu=$('#promptFlowMenu');if(!menu)return;
     let mode=flowMode();
     if(flowLocked(mode)){mode='guided';try{localStorage.setItem(FLOW_KEY,mode)}catch{}}
-    const label=$('#promptFlowLabel',home);
-    if(label&&label.textContent!==FLOW_LABEL[mode])label.textContent=FLOW_LABEL[mode];
-    home.querySelectorAll('[data-flow-mode]').forEach(b=>{
-      b.setAttribute('aria-checked',String(b.dataset.flowMode===mode));
-      b.dataset.locked=flowLocked(b.dataset.flowMode)?'1':'0';
-    });
+    menu.innerHTML='';
+    for(const key of ['guided','auto','expert']){
+      const button=document.createElement('button');
+      button.type='button';button.setAttribute('role','menuitemradio');
+      button.dataset.flowMode=key;button.setAttribute('aria-checked',String(key===mode));
+      button.dataset.locked=flowLocked(key)?'1':'0';
+      button.innerHTML='<span></span><small></small>';
+      button.querySelector('span').textContent=FLOW_LABEL[key];
+      button.querySelector('small').textContent=FLOW_NOTE[key];
+      button.addEventListener('click',()=>selectFlow(key));
+      menu.appendChild(button);
+    }
+    syncSetupSummary();
+  }
+  // Der Stand steht als Satz in der Zeile - man sieht ihn, ohne etwas zu öffnen.
+  function syncSetupSummary(){
+    const out=$('#promptSetupSummary');if(!out)return;
+    const parts=[FLOW_LABEL[flowMode()]];
+    const select=document.querySelector('#templateSelect');
+    if(select?.value){const name=(select.options[select.selectedIndex]?.textContent||'').split(' · ')[0].trim();if(name)parts.push(name)}
+    const skills=[...document.querySelectorAll('#skillSelection .selection-row input[type="checkbox"]')].filter(b=>b.checked).length;
+    if(skills)parts.push(skills===1?'1 Skill':skills+' Skills');
+    const text=parts.join(' · ');
+    if(out.textContent!==text)out.textContent=text;
   }
 
   function titleCase(value){return String(value||'').trim().replace(/[._-]+/g,' ').replace(/\b\p{L}/gu,char=>char.toUpperCase())}
@@ -295,7 +327,7 @@
 
   function ensureThemeToggle(){const actions=$('.topbar .top-actions');if(!actions)return;let button=$('#homeThemeToggle');if(!button){button=document.createElement('button');button.id='homeThemeToggle';button.type='button';button.className='home-theme-toggle';button.addEventListener('click',()=>$('#themeToggleBtn')?.click());actions.insertBefore(button,$('#topbarMenuToggle'))}const dark=document.documentElement.dataset.theme==='dark';button.textContent=dark?'☀':'◐';button.title=dark?'Helles Design':'Dunkles Design';button.setAttribute('aria-label',button.title)}
 
-  function markup(){return `<section class="prompt-command-home" aria-label="Prompt.ai Start"><header class="prompt-home-intro"><span class="prompt-system-line">Workspace bereit</span><h1>Hallo <span id="promptHomeName">Lars</span>.</h1><p>Was möchtest du heute umsetzen?</p></header><form class="prompt-command-panel" id="promptCommandForm"><div class="prompt-command-top"><button class="prompt-mode-button" id="promptModeButton" type="button" aria-haspopup="listbox" aria-expanded="false">${icons.website}<span id="promptModeLabel">Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-mode-menu" id="promptModeMenu" role="listbox" aria-label="Arbeitsart wählen" hidden><button type="button" class="prompt-mode-option" role="option" data-command-mode="website" aria-checked="true">${icons.website}<span>Internetseite erstellen<small>Neues Website-Projekt</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="free" aria-checked="false">${icons.prompt}<span>Freier Prompt<small>Text, Bild, Video, Code & mehr</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="revision" aria-checked="false">${icons.revision}<span>Website überarbeiten<small>Bestehende Seite gezielt ändern</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="check" aria-checked="false">${icons.shield}<span>Projekt prüfen<small>Aktuellen Stand prüfen lassen</small></span></button></div></div><textarea class="prompt-command-input" id="promptCommandInput" rows="5" minlength="8" placeholder="Beschreibe kurz, was entstehen soll …" aria-label="Projekt oder Aufgabe beschreiben"></textarea><button class="prompt-command-submit" id="promptCommandSubmit" type="submit" aria-label="Absenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg></button><div class="prompt-attach-list" id="promptAttachList" aria-live="polite"></div><footer class="prompt-command-meta"><button type="button" class="prompt-attach-button" id="promptAttachButton" aria-haspopup="menu" aria-expanded="false" title="Anhang hinzufügen">+</button><div class="prompt-attach-menu" id="promptAttachMenu" role="menu" hidden><button type="button" role="menuitem" data-attach="file">Bild oder Datei</button><button type="button" role="menuitem" data-attach="url">Link einfügen</button></div><button type="button" class="prompt-flow-button" id="promptFlowButton" aria-haspopup="listbox" aria-expanded="false"><span id="promptFlowLabel">Mit Rückfragen</span><i class="mode-chevron" aria-hidden="true"></i></button><button type="button" class="prompt-flow-button" id="promptSkillsButton" aria-haspopup="menu" aria-expanded="false"><span>Skills</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-flow-menu prompt-picker-menu" id="promptSkillsMenu" role="menu" hidden></div><button type="button" class="prompt-flow-button" id="promptTemplateButton" aria-haspopup="menu" aria-expanded="false"><span id="promptTemplateLabel">Vorlage</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-flow-menu prompt-picker-menu" id="promptTemplateMenu" role="menu" hidden></div><div class="prompt-flow-menu" id="promptFlowMenu" role="listbox" aria-label="Ablauf wählen" hidden><button type="button" role="option" data-flow-mode="guided" aria-checked="true">Mit Rückfragen<small>Fragt nur nach, wo es das Ergebnis ändert</small></button><button type="button" role="option" data-flow-mode="auto" aria-checked="false">Ohne Rückfragen<small>Briefing rein, Prompt raus</small></button><button type="button" role="option" data-flow-mode="expert" aria-checked="false">Selbst einstellen<small>Alle Schritte bleiben offen</small></button></div><span id="promptHomeMeta">Kontingent wird geladen</span><span><b id="promptHomePlan">Free</b></span><span class="prompt-command-error" id="promptCommandError" role="status"></span></footer></form><section class="prompt-latest" aria-label="Letztes Projekt"><span class="prompt-latest-icon">${icons.folder}</span><div class="prompt-latest-copy"><strong>Letztes Projekt</strong><small id="promptLatestTitle">Gespeicherten Arbeitsstand fortsetzen</small></div><button type="button" class="prompt-latest-action" id="promptLatestAction">Weiterarbeiten →</button></section></section>`}
+  function markup(){return `<section class="prompt-command-home" aria-label="Prompt.ai Start"><header class="prompt-home-intro"><span class="prompt-system-line">Workspace bereit</span><h1>Hallo <span id="promptHomeName">Lars</span>.</h1><p>Was möchtest du heute umsetzen?</p></header><form class="prompt-command-panel" id="promptCommandForm"><div class="prompt-command-top"><button class="prompt-mode-button" id="promptModeButton" type="button" aria-haspopup="listbox" aria-expanded="false">${icons.website}<span id="promptModeLabel">Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-mode-menu" id="promptModeMenu" role="listbox" aria-label="Arbeitsart wählen" hidden><button type="button" class="prompt-mode-option" role="option" data-command-mode="website" aria-checked="true">${icons.website}<span>Internetseite erstellen<small>Neues Website-Projekt</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="free" aria-checked="false">${icons.prompt}<span>Freier Prompt<small>Text, Bild, Video, Code & mehr</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="revision" aria-checked="false">${icons.revision}<span>Website überarbeiten<small>Bestehende Seite gezielt ändern</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="check" aria-checked="false">${icons.shield}<span>Projekt prüfen<small>Aktuellen Stand prüfen lassen</small></span></button></div></div><textarea class="prompt-command-input" id="promptCommandInput" rows="5" minlength="8" placeholder="Beschreibe kurz, was entstehen soll …" aria-label="Projekt oder Aufgabe beschreiben"></textarea><button class="prompt-command-submit" id="promptCommandSubmit" type="submit" aria-label="Absenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg></button><div class="prompt-attach-list" id="promptAttachList" aria-live="polite"></div><footer class="prompt-command-meta"><button type="button" class="prompt-attach-button" id="promptAttachButton" aria-haspopup="menu" aria-expanded="false" title="Anhang hinzufügen">+</button><div class="prompt-attach-menu" id="promptAttachMenu" role="menu" hidden><button type="button" role="menuitem" data-attach="file">Bild oder Datei</button><button type="button" role="menuitem" data-attach="url">Link einfügen</button></div><button type="button" class="prompt-setup-line" id="promptSetupButton" aria-haspopup="dialog" aria-expanded="false"><span id="promptSetupSummary">Mit Rückfragen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-setup-sheet" id="promptSetupSheet" role="dialog" aria-label="Einstellungen für diesen Auftrag" hidden><div class="prompt-setup-section"><b>Ablauf</b><div id="promptFlowMenu"></div></div><div class="prompt-setup-section"><b>Vorlage</b><div id="promptTemplateMenu"></div></div><div class="prompt-setup-section"><b>Skills</b><div id="promptSkillsMenu"></div></div><p class="prompt-setup-note">Was du hier einstellst, gilt auch beim nächsten Mal.</p></div><span id="promptHomeMeta">Kontingent wird geladen</span><span><b id="promptHomePlan">Free</b></span><span class="prompt-command-error" id="promptCommandError" role="status"></span></footer></form><section class="prompt-latest" aria-label="Letztes Projekt"><span class="prompt-latest-icon">${icons.folder}</span><div class="prompt-latest-copy"><strong>Letztes Projekt</strong><small id="promptLatestTitle">Gespeicherten Arbeitsstand fortsetzen</small></div><button type="button" class="prompt-latest-action" id="promptLatestAction">Weiterarbeiten →</button></section></section>`}
   function ensureHome(){const page=$('#welcomePage');if(!page)return null;let home=$('.prompt-command-home',page);if(!home){page.insertAdjacentHTML('beforeend',markup());home=$('.prompt-command-home',page);bindHome(home)}return home}
   function modeCopy(mode){return mode==='free'?{label:'Freier Prompt',placeholder:'Beschreibe, welchen Prompt du brauchst …',icon:icons.prompt}:mode==='revision'?{label:'Website überarbeiten',placeholder:'Was soll an der bestehenden Website geändert werden?',icon:icons.revision}:{label:'Internetseite erstellen',placeholder:'Beschreibe kurz, was entstehen soll …',icon:icons.website}}
   function closeModeMenu(home){const menu=$('#promptModeMenu',home);if(menu)menu.hidden=true;$('#promptModeButton',home)?.setAttribute('aria-expanded','false')}
@@ -324,21 +356,16 @@
       const host=document.querySelector(selector);
       if(host)new MutationObserver(()=>setTimeout(syncAttachments,60)).observe(host,{childList:true,subtree:true});
     }
-    for(const [buttonId,menuId,sync] of [['promptSkillsButton','promptSkillsMenu',syncSkillsMenu],['promptTemplateButton','promptTemplateMenu',syncTemplateMenu]]){
-      const button=$('#'+buttonId,home),menu=$('#'+menuId,home);
-      if(!button||!menu)continue;
-      button.addEventListener('click',()=>{
-        const open=menu.hidden;if(open)sync();
-        menu.hidden=!open;button.setAttribute('aria-expanded',String(open));
-      });
-      document.addEventListener('click',event=>{
-        if(event.target.closest?.('#'+buttonId+',#'+menuId))return;
-        menu.hidden=true;button.setAttribute('aria-expanded','false');
-      });
-    }
-    $('#promptFlowButton',home).addEventListener('click',()=>{const menu=$('#promptFlowMenu',home),open=menu.hidden;menu.hidden=!open;$('#promptFlowButton',home).setAttribute('aria-expanded',String(open))});
-    home.querySelectorAll('[data-flow-mode]').forEach(button=>button.addEventListener('click',()=>{$('#promptFlowMenu',home).hidden=true;$('#promptFlowButton',home).setAttribute('aria-expanded','false');selectFlow(button.dataset.flowMode)}));
-    document.addEventListener('click',event=>{if(event.target.closest?.('#promptFlowButton,#promptFlowMenu'))return;const m=$('#promptFlowMenu',home);if(m)m.hidden=true;$('#promptFlowButton',home)?.setAttribute('aria-expanded','false')});$('#promptLatestAction',home).addEventListener('click',()=>proxy('workspaceLastProjectBtn'));document.addEventListener('click',event=>{if(!event.target.closest?.('.prompt-command-top')){$('#promptModeMenu',home).hidden=true;$('#promptModeButton',home).setAttribute('aria-expanded','false')}});$('#promptCommandInput',home).addEventListener('input',()=>{$('#promptCommandError',home).textContent='';syncMeta()});
+    const setupButton=$('#promptSetupButton',home),setupSheet=$('#promptSetupSheet',home);
+    setupButton.addEventListener('click',()=>{
+      const open=setupSheet.hidden;
+      if(open){syncFlowUi();syncTemplateMenu();syncSkillsMenu()}
+      setupSheet.hidden=!open;setupButton.setAttribute('aria-expanded',String(open));
+    });
+    document.addEventListener('click',event=>{
+      if(event.target.closest?.('#promptSetupButton,#promptSetupSheet'))return;
+      setupSheet.hidden=true;setupButton.setAttribute('aria-expanded','false');
+    });
     // Enter schickt ab - aber nur dort, wo Enter auch wirklich Enter heisst. Auf dem Telefon
     // ist die Taste der Zeilenumbruch, und wer mitten im Schreiben absendet, verliert den Rest
     // des Satzes. Mit Umschalt bleibt es ueberall ein Umbruch, mit Strg/Cmd geht es immer los.
@@ -354,7 +381,7 @@
   function syncHome(){const visible=homeVisible();document.documentElement.classList.toggle('prompt-home-surface',visible);if(!visible)return;const home=ensureHome();if(!home)return;$('#promptHomeName',home).textContent=resolvedName()||'Lars';const access=window.PromptAiAccess||{},plan=access.isAdmin?'Ultimate':String(access.plan||'free');$('#promptHomePlan',home).textContent=plan.charAt(0).toUpperCase()+plan.slice(1);const title=projectTitle(),original=$('#workspaceLastProjectBtn'),latest=$('.prompt-latest',home);
     // Ohne gespeichertes Projekt bot die Zeile etwas an, das es nicht gibt.
     if(latest)latest.hidden=!title;
-    $('#promptLatestTitle',home).textContent=title||'Gespeicherten Arbeitsstand fortsetzen';$('#promptLatestAction',home).disabled=Boolean(original?.disabled);syncMeta();syncFlowUi();applyFlow(flowMode());syncAttachments();syncTemplateMenu();ensureThemeToggle();const topbar=$('body>.topbar')||$('.topbar');if(topbar){topbar.hidden=false;topbar.removeAttribute('aria-hidden')}}
+    $('#promptLatestTitle',home).textContent=title||'Gespeicherten Arbeitsstand fortsetzen';$('#promptLatestAction',home).disabled=Boolean(original?.disabled);syncMeta();syncFlowUi();applyFlow(flowMode());syncAttachments();syncSetupSummary();ensureThemeToggle();const topbar=$('body>.topbar')||$('.topbar');if(topbar){topbar.hidden=false;topbar.removeAttribute('aria-hidden')}}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(syncHome,25)}
   function init(){installStyles();syncHome();const observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','style']});new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});document.addEventListener('click',event=>{if(event.target.closest?.('#brandHome,.guided-clean-exit,#promptWorkflowLoaderClose'))setTimeout(syncHome,80)},true);window.addEventListener('promptai:access',schedule);window.addEventListener('promptai:quota',syncMeta);window.addEventListener('pageshow',schedule);window.addEventListener('promptai:home',syncHome);window.SiteBriefCloud?.subscribe?.(schedule);let count=0;const warm=setInterval(()=>{syncHome();if(++count>24)clearInterval(warm)},180)}
   window.PromptAiHomeSurface={sync:syncHome};

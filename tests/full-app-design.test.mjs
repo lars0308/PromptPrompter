@@ -405,6 +405,13 @@ test('templates and skills are pickable in the console, mirrored from the real c
   assert.match(home,/const locked=host\?\.querySelector\('\.feature-lock-note'\)/);
   // Gruppiert nach Agent - der steht im <code> der Reihe.
   assert.match(home,/row\.querySelector\('code'\)\?\.textContent\|\|'Alle Agents'/);
-  // Vier Bedienelemente passen am Telefon nicht mit Kontingent und Tarif in eine Zeile.
-  assert.match(home,/\.prompt-command-meta\{flex-wrap:wrap!important/);
+  // Drei Knöpfe nebeneinander sahen voll und verrutscht aus. Es gibt jetzt eine Zeile mit
+  // dem Stand und dahinter ein Blatt mit allen Einstellungen - links tun, rechts einstellen.
+  assert.match(home,/id="promptSetupButton"/);
+  assert.match(home,/<div class="prompt-setup-sheet" id="promptSetupSheet"/);
+  assert.doesNotMatch(home,/id="promptSkillsButton"/,'kein eigener Knopf mehr je Einstellung');
+  assert.doesNotMatch(home,/id="promptTemplateButton"/);
+  // Der Stand steht als Satz in der Zeile: Ablauf, Vorlage, Anzahl der Skills.
+  assert.match(home,/function syncSetupSummary\(\)\{/);
+  assert.match(home,/parts\.push\(skills===1\?'1 Skill':skills\+' Skills'\)/);
 });
