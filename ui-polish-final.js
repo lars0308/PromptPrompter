@@ -20,7 +20,7 @@
          background keep their own size. */
       body.prompt-unified-ui #legalDialog{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:none!important}
       body.prompt-unified-ui #appActionDialog,body.prompt-unified-ui #agentLaunchDialog{width:min(900px,calc(100vw - 28px))!important;max-width:none!important}
-      body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#appActionDialog) .dialog-frame{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:var(--prompt-content)!important;margin:16px auto!important}
+      body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#appActionDialog) .dialog-frame{width:min(var(--prompt-content),100%,calc(100vw - 32px))!important;max-width:min(var(--prompt-content),100%)!important;margin:16px auto!important}
       body.prompt-unified-ui #adminDialog .dialog-frame{width:min(1380px,calc(100vw - 32px))!important;max-width:1380px!important}
       body.prompt-unified-ui #libraryDialog .dialog-frame,body.prompt-unified-ui #settingsDialog .dialog-frame,body.prompt-unified-ui #accountDialog .dialog-frame{width:min(1280px,calc(100vw - 32px))!important;max-width:1280px!important}
       .free-prompt-body{width:min(var(--prompt-content),100%)!important}.project-preview-body{width:min(1320px,100%)!important}#quickRevisionDialog .quick-revision-body{width:min(var(--prompt-content),100%)!important}

@@ -201,7 +201,24 @@
     if(!dialog.classList.contains('guest-gate'))dialog.classList.remove('gate-expanded');
   }
 
-  function settle(){styles();ensureGateActions();watchPricing();syncTierChips();resetExpansion()}
+  // Die Tarifseite lässt sich von mehreren Stellen öffnen (Einstiegsseite, "Tarife ansehen" im
+  // Anmeldeformular, Upgrade-Knöpfe). Nur der Weg über die Einstiegsseite brachte einen danach
+  // dorthin zurück; über die anderen stand man nach dem × plötzlich in der App, ohne angemeldet
+  // zu sein. Solange niemand angemeldet ist, ist die Anmeldeseite der einzige richtige Ort.
+  function guardGateReturn(){
+    const plans=$('#plansDialog');if(!plans||plans.__gateReturnBound)return;
+    plans.__gateReturnBound=true;
+    plans.addEventListener('close',()=>{
+      const signedIn=Boolean(window.SiteBriefCloud?.user);
+      const account=$('#accountDialog');
+      if(signedIn||!account||account.open)return;
+      // Nur wenn die Anmeldeseite vorher wirklich der Zustand war - nicht mitten im Gastlauf.
+      if(!account.classList.contains('guest-gate'))return;
+      setTimeout(()=>{const dialog=$('#accountDialog');if(dialog&&!dialog.open){try{dialog.showModal()}catch{}}},40);
+    });
+  }
+
+  function settle(){styles();ensureGateActions();watchPricing();syncTierChips();resetExpansion();guardGateReturn()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
   function init(){settle();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});window.addEventListener('promptai:access',schedule);window.addEventListener('pageshow',schedule)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
