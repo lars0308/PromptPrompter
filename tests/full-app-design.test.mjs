@@ -390,3 +390,21 @@ test('the plus in the console feeds the real reference inputs instead of a secon
   assert.match(home,/item\.node\.querySelector\('\.remove-btn/);
   assert.match(home,/new MutationObserver\(\(\)=>setTimeout\(syncAttachments,60\)\)/,'was dort passiert, muss hier ankommen');
 });
+
+test('templates and skills are pickable in the console, mirrored from the real controls',async()=>{
+  const home=await read('promptai-home-final.js'),app=await read('app.js');
+  // Die Vorlage ist ein <select>, das app.js aus state.templates füllt - das Menü liest
+  // genau dessen Optionen und setzt seinen Wert, statt eine zweite Liste zu führen.
+  assert.match(app,/el\.templateSelect\.innerHTML='<option value="">Ohne Vorlage<\/option>'/);
+  assert.match(home,/const menu=\$\('#promptTemplateMenu'\),select=document\.querySelector\('#templateSelect'\)/);
+  assert.match(home,/select\.value=option\.value;select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/);
+  // Skills sind Reihen mit Kontrollkästchen; das Menü drückt genau diese Kästchen.
+  assert.match(home,/const rows=\[\.\.\.\(host\?\.querySelectorAll\('\.selection-row'\)\|\|\[\]\)\]/);
+  assert.match(home,/if\(box&&!box\.disabled\)box\.click\(\)/);
+  // Sperrt der Tarif die Skills, zeigt das Menü den Grund statt einer leeren Liste.
+  assert.match(home,/const locked=host\?\.querySelector\('\.feature-lock-note'\)/);
+  // Gruppiert nach Agent - der steht im <code> der Reihe.
+  assert.match(home,/row\.querySelector\('code'\)\?\.textContent\|\|'Alle Agents'/);
+  // Vier Bedienelemente passen am Telefon nicht mit Kontingent und Tarif in eine Zeile.
+  assert.match(home,/\.prompt-command-meta\{flex-wrap:wrap!important/);
+});
