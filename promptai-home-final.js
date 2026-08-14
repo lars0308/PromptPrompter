@@ -381,9 +381,13 @@
       setupSheet.hidden=true;setupButton.setAttribute('aria-expanded','false');
     });
     // Zeichen und Token laufen mit, waehrend man schreibt - syncMeta() kannte den Text schon,
-    // es fehlte nur der Aufruf bei jedem Tastendruck. Ohne den stand dort weiter das Kontingent,
-    // auch mitten im Satz.
-    $('#promptCommandInput',home).addEventListener('input',syncMeta);
+    // es fehlte nur der Aufruf bei jedem Tastendruck. 'input' allein reicht auf dem Telefon nicht
+    // zuverlaessig: Android-Tastaturen fassen Woerter beim Tippen oft in eine Komposition
+    // zusammen und uebernehmen Vorschlaege teils ohne ein einfaches 'input' danach.
+    ['input','compositionend','change'].forEach(type=>$('#promptCommandInput',home).addEventListener(type,syncMeta));
+    // paste/cut melden sich, bevor der Browser den Text tatsaechlich einfuegt oder entfernt - ein
+    // sofortiger Aufruf haette noch den alten Stand gelesen. Einen Tick warten, dann stimmt er.
+    ['paste','cut'].forEach(type=>$('#promptCommandInput',home).addEventListener(type,()=>setTimeout(syncMeta,0)));
     // Enter schickt ab - aber nur dort, wo Enter auch wirklich Enter heisst. Auf dem Telefon
     // ist die Taste der Zeilenumbruch, und wer mitten im Schreiben absendet, verliert den Rest
     // des Satzes. Mit Umschalt bleibt es ueberall ein Umbruch, mit Strg/Cmd geht es immer los.
