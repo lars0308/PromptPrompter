@@ -1424,6 +1424,14 @@
 
   function renderReferences(){
     const rules=planRules(),urlLimit=rules.maxRefUrls,imageLimit=rules.maxRefImages;
+    // Die Konsole zeigt dieselben Grenzen am Plus-Knopf an. Sie bekommt sie hier gemeldet,
+    // statt sie ein zweites Mal aus dem Tarif abzuleiten - sonst laufen die Zahlen auseinander.
+    window.PromptAiRefLimits={
+      urlLimit:state.isAdmin?Infinity:urlLimit,imageLimit:state.isAdmin?Infinity:imageLimit,
+      urls:state.urls.length,images:state.images.length,documents:state.documents.length,
+      plan:state.isAdmin?'Admin':rules.label
+    };
+    try{window.dispatchEvent(new CustomEvent('promptai:references'))}catch{}
     if(el.referenceUrlLimitNote){const atLimit=!state.isAdmin&&state.urls.length>=urlLimit;el.referenceUrlLimitNote.textContent=`${state.urls.length} / ${urlLimit} Referenz-Links (${rules.label})${atLimit?' · Limit erreicht':''}`;el.referenceUrlLimitNote.classList.toggle('limit-reached',atLimit);if(el.referenceUrl)el.referenceUrl.disabled=atLimit;if(el.addUrlBtn)el.addUrlBtn.disabled=atLimit;}
     if(el.referenceImageLimitNote){const atLimit=!state.isAdmin&&state.images.length>=imageLimit;el.referenceImageLimitNote.textContent=imageLimit?`${state.images.length} / ${imageLimit} Referenzbilder (${rules.label})${atLimit?' · Limit erreicht':''}`:`Referenzbilder sind ab Pro verfügbar (aktuell ${rules.label}).`;el.referenceImageLimitNote.classList.toggle('limit-reached',!imageLimit||atLimit);}
     const imagesAllowed=Boolean(imageLimit)||state.isAdmin;

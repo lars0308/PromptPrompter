@@ -220,7 +220,10 @@ test('the old start page never shows through, and the handoff loader gets to fin
   assert.match(loader,/const rest=Math\.max\(0,Number\(overlay\.dataset\.startedAt/);
   // Last project only appears once there is one; the meta line carries live numbers.
   assert.match(home,/if\(latest\)latest\.hidden=!title/);
-  assert.match(home,/text\?`\$\{text\.length\} Zeichen · ≈\$\{tokenGuess\(text\)\} Token`:quotaLine/);
+  assert.match(home,/\$\{text\.length\} Zeichen · ≈\$\{total\} Token/);
+  // Anhänge wiegen im Auftrag oft mehr als der getippte Satz und zählen deshalb mit.
+  assert.match(home,/function attachmentTokens\(\)/);
+  assert.match(home,/const total=tokenGuess\(text\)\+attached;/);
   assert.doesNotMatch(home,/Modell automatisch/,'the label said nothing that changes');
 });
 

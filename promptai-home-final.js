@@ -74,6 +74,13 @@
       /* Der Absende-Knopf schwebt (position:absolute) über dieser Zeile - ohne die freie Spur
          rechts lag er genau auf "Übernehmen" und fing dessen Klicks ab. */
       .prompt-attach-input{display:flex;gap:8px;width:100%;padding-right:62px}
+      /* Der Platzhalter blendet weich, statt hart umzuspringen. */
+      .prompt-command-input::placeholder{transition:opacity .5s ease}
+      .prompt-command-input.is-hint-fading::placeholder{opacity:0}
+      /* Wie viele Anhänge der Tarif noch hergibt - am Eintrag selbst, nicht erst nach dem Klick. */
+      .prompt-attach-menu button{display:flex;align-items:center;gap:10px}
+      .prompt-attach-count{margin-left:auto;color:var(--home-blue-deep);font:800 10px/1 ui-monospace,monospace;letter-spacing:.04em}
+      .prompt-attach-menu button[data-full="1"] .prompt-attach-count{color:var(--home-orange)}
       .prompt-attach-input input{flex:1 1 auto;min-height:34px;padding:0 11px;border:1px solid #33465a;border-radius:9px;background:#0f1721;color:#eef6fb;font-size:13px}
       .prompt-attach-input button{min-height:34px;padding:0 12px;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:700 11px/1 Arial,Helvetica,sans-serif;cursor:pointer}
       .prompt-attach-button{display:grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:400 19px/1 Arial,Helvetica,sans-serif;cursor:pointer}
@@ -148,13 +155,32 @@
     const left=Math.max(0,Number(item.remaining??limit-Number(item.used||0)));
     return `${left}/${limit} ${label}`;
   }
+  // Grobe, ehrliche Schätzung: der ausgelesene Text der Quellen und Unterlagen, so wie er auch
+  // im Auftrag landet. Bilder werden pauschal veranschlagt, weil ihre Kosten nicht an Zeichen hängen.
+  function attachmentTokens(){
+    let chars=0,images=0;
+    try{
+      const state=JSON.parse(localStorage.getItem('sitebrief-v6-state')||'{}');
+      for(const item of state.urls||[])chars+=String(item.summary||'').length+String(item.url||'').length;
+      for(const source of state.sourceUrls||[])chars+=String(source.summary||'').length;
+      for(const doc of state.documents||[])chars+=String(doc.text||'').length;
+      images=(state.images||[]).length;
+    }catch{}
+    return Math.round(chars/3.6)+images*260;
+  }
   function syncMeta(){
     const home=$('.prompt-command-home');if(!home)return;
     const field=$('#promptCommandInput',home),slot=$('#promptHomeMeta',home);
     if(!field||!slot)return;
     const text=field.value.trim();
-    // Beim Schreiben zählt, wie lang der Auftrag wird; solange nichts dasteht, was noch übrig ist.
-    const next=text?`${text.length} Zeichen · ≈${tokenGuess(text)} Token`:quotaLine(home.dataset.commandMode||'website');
+    // Anhänge gehen mit in den Auftrag - ein ausgelesener Link oder ein PDF wiegt oft mehr als
+    // der getippte Satz. Die Schätzung zählt sie deshalb mit, sonst steht dort eine Zahl, die
+    // mit dem, was tatsächlich an die KI geht, nichts zu tun hat.
+    const attached=attachmentTokens();
+    const total=tokenGuess(text)+attached;
+    const next=text
+      ?`${text.length} Zeichen · ≈${total} Token${attached?` (davon ≈${attached} aus Anhängen)`:''}`
+      :(attached?`≈${attached} Token aus Anhängen`:quotaLine(home.dataset.commandMode||'website'));
     if(slot.textContent!==next)slot.textContent=next;
   }
 
@@ -182,7 +208,26 @@
   }
   function message(text){const error=$('#promptCommandError');if(error)error.textContent=text}
   // Was in den echten Listen steht, steht auch hier - Reihenfolge und Anzahl inklusive.
+  // Wie viele Anhänge der Tarif noch hergibt. Die Zahlen kommen aus app.js (window.PromptAiRefLimits),
+  // damit hier keine zweite Ableitung des Tarifs entsteht, die irgendwann abweicht. Sie zählen mit,
+  // sobald etwas dazukommt oder wegfällt.
+  function syncAttachCounts(){
+    const limits=window.PromptAiRefLimits;
+    const fill=(id,used,limit)=>{
+      const slot=$(`#${id}`);if(!slot)return;
+      const button=slot.closest('button');
+      if(!limits){slot.textContent='';if(button)delete button.dataset.full;return}
+      const unlimited=!Number.isFinite(limit);
+      slot.textContent=unlimited?`${used}/∞`:`${used}/${limit}`;
+      if(button){if(!unlimited&&used>=limit)button.dataset.full='1';else delete button.dataset.full}
+    };
+    // Bilder und Dokumente teilen sich den Weg "Bild oder Datei"; die Grenze zählt die Bilder.
+    fill('promptAttachCountFile',Number(limits?.images||0),limits?.imageLimit);
+    fill('promptAttachCountUrl',Number(limits?.urls||0),limits?.urlLimit);
+  }
+
   function syncAttachments(){
+    syncAttachCounts();
     const list=$('#promptAttachList');if(!list)return;
     const items=[];
     for(const [selector,kind] of [['#urlReferences','link'],['#imageReferences','bild'],['#documentReferences','datei']]){
@@ -357,7 +402,7 @@
 
   function ensureThemeToggle(){const actions=$('.topbar .top-actions');if(!actions)return;let button=$('#homeThemeToggle');if(!button){button=document.createElement('button');button.id='homeThemeToggle';button.type='button';button.className='home-theme-toggle';button.addEventListener('click',()=>$('#themeToggleBtn')?.click());actions.insertBefore(button,$('#topbarMenuToggle'))}const dark=document.documentElement.dataset.theme==='dark';button.textContent=dark?'☀':'◐';button.title=dark?'Helles Design':'Dunkles Design';button.setAttribute('aria-label',button.title)}
 
-  function markup(){return `<section class="prompt-command-home" aria-label="Prompt.ai Start"><header class="prompt-home-intro"><span class="prompt-system-line">Workspace bereit</span><h1>Hallo <span id="promptHomeName">Lars</span>.</h1><p>Was möchtest du heute umsetzen?</p></header><form class="prompt-command-panel" id="promptCommandForm"><div class="prompt-command-top"><button class="prompt-mode-button" id="promptModeButton" type="button" aria-haspopup="listbox" aria-expanded="false">${icons.website}<span id="promptModeLabel">Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-mode-menu" id="promptModeMenu" role="listbox" aria-label="Arbeitsart wählen" hidden><button type="button" class="prompt-mode-option" role="option" data-command-mode="website" aria-checked="true">${icons.website}<span>Internetseite erstellen<small>Neues Website-Projekt</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="free" aria-checked="false">${icons.prompt}<span>Freier Prompt<small>Text, Bild, Video, Code & mehr</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="revision" data-locked="0" aria-checked="false">${icons.revision}<span>Website überarbeiten<small>Bestehende Seite gezielt ändern</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="check" data-locked="0" aria-checked="false">${icons.shield}<span>Projekt prüfen<small>Aktuellen Stand prüfen lassen</small></span></button></div></div><textarea class="prompt-command-input" id="promptCommandInput" rows="5" minlength="8" placeholder="Beschreibe kurz, was entstehen soll …" aria-label="Projekt oder Aufgabe beschreiben"></textarea><button class="prompt-command-submit" id="promptCommandSubmit" type="submit" aria-label="Absenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg></button><div class="prompt-attach-list" id="promptAttachList" aria-live="polite"></div><footer class="prompt-command-meta"><button type="button" class="prompt-attach-button" id="promptAttachButton" aria-haspopup="menu" aria-expanded="false" title="Anhang hinzufügen">+</button><div class="prompt-attach-menu" id="promptAttachMenu" role="menu" hidden><button type="button" role="menuitem" data-attach="file">Bild oder Datei</button><button type="button" role="menuitem" data-attach="url">Link einfügen</button></div><button type="button" class="prompt-setup-line" id="promptSetupButton" aria-haspopup="dialog" aria-expanded="false"><span id="promptSetupSummary">Mit Rückfragen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-setup-sheet" id="promptSetupSheet" role="dialog" aria-label="Einstellungen für diesen Auftrag" hidden><div class="prompt-setup-section"><b>Ablauf</b><div id="promptFlowMenu"></div></div><div class="prompt-setup-section"><b>Vorlage</b><div id="promptTemplateMenu"></div></div><div class="prompt-setup-section"><b>Skills</b><div id="promptSkillsMenu"></div></div><p class="prompt-setup-note">Was du hier einstellst, gilt auch beim nächsten Mal.</p></div><span id="promptHomeMeta">Kontingent wird geladen</span><span><b id="promptHomePlan">Free</b></span><span class="prompt-command-error" id="promptCommandError" role="status"></span></footer></form><section class="prompt-latest" aria-label="Letztes Projekt"><span class="prompt-latest-icon">${icons.folder}</span><div class="prompt-latest-copy"><strong>Letztes Projekt</strong><small id="promptLatestTitle">Gespeicherten Arbeitsstand fortsetzen</small></div><button type="button" class="prompt-latest-action" id="promptLatestAction">Weiterarbeiten →</button></section></section>`}
+  function markup(){return `<section class="prompt-command-home" aria-label="Prompt.ai Start"><header class="prompt-home-intro"><span class="prompt-system-line">Workspace bereit</span><h1>Hallo <span id="promptHomeName">Lars</span>.</h1><p>Was möchtest du heute umsetzen?</p></header><form class="prompt-command-panel" id="promptCommandForm"><div class="prompt-command-top"><button class="prompt-mode-button" id="promptModeButton" type="button" aria-haspopup="listbox" aria-expanded="false">${icons.website}<span id="promptModeLabel">Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-mode-menu" id="promptModeMenu" role="listbox" aria-label="Arbeitsart wählen" hidden><button type="button" class="prompt-mode-option" role="option" data-command-mode="website" aria-checked="true">${icons.website}<span>Internetseite erstellen<small>Neues Website-Projekt</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="free" aria-checked="false">${icons.prompt}<span>Freier Prompt<small>Text, Bild, Video, Code & mehr</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="revision" data-locked="0" aria-checked="false">${icons.revision}<span>Website überarbeiten<small>Bestehende Seite gezielt ändern</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="check" data-locked="0" aria-checked="false">${icons.shield}<span>Projekt prüfen<small>Aktuellen Stand prüfen lassen</small></span></button></div></div><textarea class="prompt-command-input" id="promptCommandInput" rows="5" minlength="8" placeholder="Beschreibe kurz, was entstehen soll …" aria-label="Projekt oder Aufgabe beschreiben"></textarea><button class="prompt-command-submit" id="promptCommandSubmit" type="submit" aria-label="Absenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg></button><div class="prompt-attach-list" id="promptAttachList" aria-live="polite"></div><footer class="prompt-command-meta"><button type="button" class="prompt-attach-button" id="promptAttachButton" aria-haspopup="menu" aria-expanded="false" title="Anhang hinzufügen">+</button><div class="prompt-attach-menu" id="promptAttachMenu" role="menu" hidden><button type="button" role="menuitem" data-attach="file"><span>Bild oder Datei</span><i class="prompt-attach-count" id="promptAttachCountFile"></i></button><button type="button" role="menuitem" data-attach="url"><span>Link einfügen</span><i class="prompt-attach-count" id="promptAttachCountUrl"></i></button></div><button type="button" class="prompt-setup-line" id="promptSetupButton" aria-haspopup="dialog" aria-expanded="false"><span id="promptSetupSummary">Mit Rückfragen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-setup-sheet" id="promptSetupSheet" role="dialog" aria-label="Einstellungen für diesen Auftrag" hidden><div class="prompt-setup-section"><b>Ablauf</b><div id="promptFlowMenu"></div></div><div class="prompt-setup-section"><b>Vorlage</b><div id="promptTemplateMenu"></div></div><div class="prompt-setup-section"><b>Skills</b><div id="promptSkillsMenu"></div></div><p class="prompt-setup-note">Was du hier einstellst, gilt auch beim nächsten Mal.</p></div><span id="promptHomeMeta">Kontingent wird geladen</span><span><b id="promptHomePlan">Free</b></span><span class="prompt-command-error" id="promptCommandError" role="status"></span></footer></form><section class="prompt-latest" aria-label="Letztes Projekt"><span class="prompt-latest-icon">${icons.folder}</span><div class="prompt-latest-copy"><strong>Letztes Projekt</strong><small id="promptLatestTitle">Gespeicherten Arbeitsstand fortsetzen</small></div><button type="button" class="prompt-latest-action" id="promptLatestAction">Weiterarbeiten →</button></section></section>`}
   function ensureHome(){const page=$('#welcomePage');if(!page)return null;let home=$('.prompt-command-home',page);if(!home){page.insertAdjacentHTML('beforeend',markup());home=$('.prompt-command-home',page);bindHome(home)}return home}
   function modeCopy(mode){return mode==='free'?{label:'Freier Prompt',placeholder:'Beschreibe, welchen Prompt du brauchst …',icon:icons.prompt}:mode==='revision'?{label:'Website überarbeiten',placeholder:'Was soll an der bestehenden Website geändert werden?',icon:icons.revision}:{label:'Internetseite erstellen',placeholder:'Beschreibe kurz, was entstehen soll …',icon:icons.website}}
   function closeModeMenu(home){const menu=$('#promptModeMenu',home);if(menu)menu.hidden=true;$('#promptModeButton',home)?.setAttribute('aria-expanded','false')}
@@ -403,7 +448,16 @@
       const item=examples[index%examples.length];
       field.placeholder=`z. B. ${item.head}${item.rest}`;
     };
-    const start=()=>{clearInterval(timer);show();timer=setInterval(()=>{index++;show()},3800)};
+    // Ein harter Textwechsel alle 3,8 Sekunden wirkt gehackt - der Satz springt einfach um.
+    // Jetzt blendet der Platzhalter aus, wechselt im unsichtbaren Moment und blendet wieder ein,
+    // und er steht dabei deutlich länger. Das Ausblenden macht CSS über die Platzhalterfarbe.
+    const swap=()=>{
+      const home=field.closest('.prompt-command-home');
+      if(paused||field.value||(home&&home.dataset.commandMode&&home.dataset.commandMode!=='website'))return;
+      field.classList.add('is-hint-fading');
+      setTimeout(()=>{index++;show();field.classList.remove('is-hint-fading')},520);
+    };
+    const start=()=>{clearInterval(timer);show();timer=setInterval(swap,7200)};
     const stop=()=>{clearInterval(timer);timer=0};
     field.addEventListener('focus',()=>{paused=true;stop();field.placeholder=base});
     field.addEventListener('blur',()=>{clearTimeout(idle);idle=setTimeout(()=>{if(!field.value){paused=false;start()}},3000)});
@@ -492,7 +546,7 @@
     if(latest)latest.hidden=!title;
     $('#promptLatestTitle',home).textContent=title||'Gespeicherten Arbeitsstand fortsetzen';$('#promptLatestAction',home).disabled=Boolean(original?.disabled);syncMeta();syncFlowUi();applyFlow(flowMode());syncAttachments();syncSetupSummary();syncModeMenuLocks(home);ensureThemeToggle();const topbar=$('body>.topbar')||$('.topbar');if(topbar){topbar.hidden=false;topbar.removeAttribute('aria-hidden')}}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(syncHome,25)}
-  function init(){installStyles();syncHome();const observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','style']});new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});document.addEventListener('click',event=>{if(event.target.closest?.('#brandHome,.guided-clean-exit,#promptWorkflowLoaderClose'))setTimeout(syncHome,80)},true);window.addEventListener('promptai:access',schedule);window.addEventListener('promptai:quota',syncMeta);window.addEventListener('pageshow',schedule);window.addEventListener('promptai:home',syncHome);window.SiteBriefCloud?.subscribe?.(schedule);let count=0;const warm=setInterval(()=>{syncHome();if(++count>24)clearInterval(warm)},180)}
+  function init(){installStyles();syncHome();const observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','style']});new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});document.addEventListener('click',event=>{if(event.target.closest?.('#brandHome,.guided-clean-exit,#promptWorkflowLoaderClose'))setTimeout(syncHome,80)},true);window.addEventListener('promptai:access',schedule);window.addEventListener('promptai:quota',syncMeta);window.addEventListener('promptai:references',()=>{syncAttachCounts();syncMeta()});window.addEventListener('pageshow',schedule);window.addEventListener('promptai:home',syncHome);window.SiteBriefCloud?.subscribe?.(schedule);let count=0;const warm=setInterval(()=>{syncHome();if(++count>24)clearInterval(warm)},180)}
   window.PromptAiHomeSurface={sync:syncHome};
   installStyles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
