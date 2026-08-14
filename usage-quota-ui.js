@@ -40,7 +40,7 @@
   function quotaSummaryText(p){const q=LIMITS[p]||LIMITS.free;return `${q.free_prompts} Prompts · ${q.website_generations} Websites · ${q.ai_previews?`${q.ai_previews} KI-Vorschauen`:'KI-Vorschauen nicht enthalten'}`}
   function planQuotaHtml(p){
     const q=LIMITS[p]||LIMITS.free,ai=q.ai_previews?`${q.ai_previews} / Monat`:'Nicht enthalten';
-    return `<strong>Monatskontingent</strong><div class="plan-quota-lines"><div class="plan-quota-line"><span>Freie Prompt-Generierungen</span><b>${q.free_prompts} / Monat</b></div><div class="plan-quota-line"><span>Website-Generierungen</span><b>${q.website_generations} / Monat</b></div><div class="plan-quota-line"><span>KI-Vorschauen</span><b>${ai}</b></div></div><small>Gespeicherte Projekte und vorhandene Ergebnisse bleiben erhalten. Das Kontingent startet jeden Monat neu.</small>`;
+    return `<strong>Monatskontingent</strong><div class="plan-quota-lines"><div class="plan-quota-line"><span>Freie Prompt-Generierungen</span><b>${q.free_prompts} / Monat</b></div><div class="plan-quota-line"><span>Website-Generierungen</span><b>${q.website_generations} / Monat</b></div><div class="plan-quota-line"><span>KI-Vorschauen</span><b>${ai}</b></div></div>`;
   }
   function syncPlanCards(){
     for(const p of ['free','pro','ultimate']){

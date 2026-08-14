@@ -1735,3 +1735,39 @@ html.prompt-full-redesign[data-theme="dark"] .plan-card-badge{background:var(--a
 html.prompt-full-redesign .prompt-flow-menu button{font-size:13px!important;font-weight:700!important}
 html.prompt-full-redesign .prompt-flow-menu button small{font-size:11px!important;font-weight:550!important;color:var(--mist)!important;letter-spacing:0!important}
 html.prompt-full-redesign .prompt-flow-button{color:var(--mist)!important}
+
+/* ==========================================================================
+   Desktop: Dialoge dürfen den Platz nutzen, den der Bildschirm hergibt
+   ========================================================================== */
+
+/* Zwei Scrollflächen übereinander: der <dialog> selbst UND der .dialog-frame
+   darin. Beim Scrollen rutschte deshalb erst der Inhalt und danach der ganze
+   Dialog um ein paar Dutzend Pixel - das las sich wie eine Seite, die unter
+   dem Dialog wegscrollt. Nur der Inhalt scrollt. */
+html.prompt-full-redesign dialog.library-dialog{overflow:hidden!important;display:flex!important;flex-direction:column!important}
+html.prompt-full-redesign dialog.library-dialog[open]{display:flex!important}
+html.prompt-full-redesign dialog.library-dialog:not([open]){display:none!important}
+/* min-height:0 ist der Teil, ohne den ein Flex-Kind nicht unter seine
+   Inhaltshöhe schrumpft - und genau daran scheiterte die Begrenzung. */
+html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
+  flex:1 1 auto!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;
+}
+
+@media(min-width:900px){
+  /* Die Karten standen in einer 760-1000px-Spalte, egal wie breit der Monitor
+     war - drei Tarife nebeneinander quetschten sich dort auf je 240px. Auf dem
+     Telefon bleibt alles wie es war, das regeln die vorhandenen Media-Queries
+     weiter unten in styles.css. */
+  html.prompt-full-redesign dialog.library-dialog{
+    width:min(1480px,calc(100vw - 72px))!important;max-width:none!important;
+  }
+  html.prompt-full-redesign dialog.plans-dialog{width:min(1320px,calc(100vw - 72px))!important}
+  html.prompt-full-redesign dialog.plans-dialog .plans-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:var(--sp-5)!important;align-items:start!important;
+  }
+  /* Zwei Spalten statt einer langen Kolonne, sobald wirklich Platz da ist. */
+  html.prompt-full-redesign #accountDialog .account-profile-settings .field-grid.two,
+  html.prompt-full-redesign #settingsDialog .field-grid.two{grid-template-columns:1fr 1fr!important}
+  html.prompt-full-redesign #libraryDialog .library-pane.active{grid-template-columns:minmax(320px,34%) minmax(0,1fr)!important}
+}

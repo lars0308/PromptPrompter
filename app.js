@@ -1751,6 +1751,17 @@
     if(conceptsGenerating)return;
     if(regenerate&&previewRetriesLeft()<=0){el.generationStatus.className='generation-status notice';el.generationStatus.textContent=`In deinem Tarif kannst du die Vorschauen ${planRules().previewRetries||0}× neu erstellen lassen.`;return}
     conceptsGenerating=true;previewCancel=new AbortController();
+    // Der Abschluss eines Laufs lag nur im finally des inneren try. Der Bilder-Zweig (genau der,
+    // den ein Neuerstellen in Pro/Ultimate nimmt) kehrt aber schon davor zurück - damit wurde
+    // previewRuns nie hochgezählt ("noch 2× möglich" blieb ewig stehen), und Fortschrittsbalken,
+    // Speichern und Guide-Aktualisierung blieben dort ebenfalls aus. Ein Abschluss für beide Wege.
+    let settled=false;
+    const settlePreviewRun=()=>{
+      if(settled)return;settled=true;
+      finishTaskProgress("preview","Vorschauen fertig");previewStage("",{pin:true});consumeGuestRun();
+      if(regenerate)state.previewRuns=(Number(state.previewRuns)||0)+1;
+      renderRegenerateButton();saveState();updateGuide();
+    };
     // The loading screen of the step before stays up while the three directions are built - and a
     // regeneration puts it back up instead of running behind the page in a small bar.
     document.body.dataset.previewGenerating='1';
@@ -1775,6 +1786,7 @@
         const result=await generateConceptImages();
         el.generationStatus.className=result?.kind==="quota"?"generation-status notice":"generation-status";
         el.generationStatus.textContent=state.concepts.some(x=>x.previewImage)?`${count} neue Bilder erstellt.${state.isAdmin&&lastImageRoute?` [Bildmodell: ${lastImageRoute}]`:''}`:"Neue Bilder waren nicht verfügbar. Die bisherigen Richtungen bleiben nutzbar.";
+        settlePreviewRun();
         return;
       }
       let concepts=[];
@@ -1797,7 +1809,7 @@
       }catch(err){
         if(err?.cancelled||previewCancel?.signal?.aborted)return;
         state.concepts=localConcepts(count); state.selectedConceptId=state.concepts[0].id; renderConcepts(); renderSelectedPreview(); el.generationStatus.className="generation-status error"; el.generationStatus.textContent="Die Vorschau-KI hat nicht geantwortet. Angezeigt werden die eingebauten HTML-Vorschauen – du kannst es oben erneut versuchen oder damit weiterarbeiten.";
-      }finally{finishTaskProgress("preview","Vorschauen fertig");previewStage("",{pin:true});consumeGuestRun();if(regenerate)state.previewRuns=(Number(state.previewRuns)||0)+1;renderRegenerateButton();saveState();updateGuide();}
+      }finally{settlePreviewRun();}
     }finally{conceptsGenerating=false;previewCancel=null;delete document.body.dataset.previewGenerating;if(el.cancelPreviewBtn)el.cancelPreviewBtn.hidden=true;renderRegenerateButton();}
   }
 

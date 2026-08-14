@@ -386,7 +386,13 @@ test('the flow selector drives the real mode switch and never claims a mode the 
   assert.match(home,/if\(flowLocked\(mode\)\)\{mode='guided';/);
   // Gesperrte Einträge sind im Menü als solche zu sehen, nicht erst nach dem Klick.
   assert.match(home,/button\.dataset\.locked=flowLocked\(key\)\?'1':'0'/);
-  assert.match(home,/\[data-locked="1"\]:after\{content:"ab Pro"/);
+  // Und sie nennen den Tarif, der sie wirklich freischaltet: "Selbst einstellen" gibt es laut
+  // PLAN_RULES erst ab Ultimate, stand aber pauschal mit "ab Pro" im Menü.
+  assert.match(home,/\[data-locked="1"\]:after\{content:attr\(data-tier\)/);
+  assert.match(home,/const FLOW_TIER=\{guided:'ab Pro',auto:'ab Pro',expert:'ab Ultimate'\}/);
+  assert.match(home,/button\.dataset\.tier=FLOW_TIER\[key\]/);
+  assert.match(app,/ultimate:\{label:"Ultimate",modes:\["guided","auto","expert"\]/,'expert gehört zu Ultimate');
+  assert.match(app,/pro:\{label:"Pro",modes:\["guided","auto"\]/,'…und eben nicht zu Pro');
 });
 
 test('the plus in the console feeds the real reference inputs instead of a second store',async()=>{

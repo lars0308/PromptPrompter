@@ -71,7 +71,9 @@
       .prompt-attach-chip b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
       .prompt-attach-chip button{width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;color:#8b9dc3;font-size:15px;line-height:1;cursor:pointer}
       .prompt-attach-chip button:hover{background:rgba(255,255,255,.08);color:#f2f8fd}
-      .prompt-attach-input{display:flex;gap:8px;width:100%}
+      /* Der Absende-Knopf schwebt (position:absolute) über dieser Zeile - ohne die freie Spur
+         rechts lag er genau auf "Übernehmen" und fing dessen Klicks ab. */
+      .prompt-attach-input{display:flex;gap:8px;width:100%;padding-right:62px}
       .prompt-attach-input input{flex:1 1 auto;min-height:34px;padding:0 11px;border:1px solid #33465a;border-radius:9px;background:#0f1721;color:#eef6fb;font-size:13px}
       .prompt-attach-input button{min-height:34px;padding:0 12px;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:700 11px/1 Arial,Helvetica,sans-serif;cursor:pointer}
       .prompt-attach-button{display:grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:400 19px/1 Arial,Helvetica,sans-serif;cursor:pointer}
@@ -84,16 +86,19 @@
       .prompt-setup-line:hover,.prompt-setup-line[aria-expanded="true"]{border-color:#33465a;color:#e7f1f9}
       .prompt-setup-line>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .prompt-setup-line .mode-chevron{flex:0 0 auto;width:6px;height:6px;margin:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
-      .prompt-setup-sheet{position:absolute;z-index:9;left:14px;right:14px;bottom:52px;max-height:min(52vh,360px);overflow-y:auto;overscroll-behavior:contain;padding:6px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:#141e28;box-shadow:0 26px 64px rgba(0,0,0,.55)}
+      /* Unter der Konsole statt darüber: nach oben lief das Blatt über Überschrift und Textfeld,
+         also genau über das, was man beim Einstellen noch sehen will. */
+      .prompt-setup-sheet{position:absolute;z-index:9;left:14px;right:14px;top:calc(100% + 8px);max-height:min(52vh,380px);overflow-y:auto;overscroll-behavior:contain;padding:6px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:#141e28;box-shadow:0 26px 64px rgba(0,0,0,.55)}
       .prompt-setup-sheet[hidden]{display:none!important}
       .prompt-setup-section{padding:8px 6px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
       .prompt-setup-section:last-of-type{border-bottom:0}
       .prompt-setup-section>b{display:block;padding:0 5px 7px;color:#8b9dc3;font:850 9px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase}
+      .prompt-setup-section>b .tier-flag{float:right;color:var(--home-orange);font-size:9px;font-weight:850;letter-spacing:.08em;text-transform:none}
       .prompt-setup-section button{display:block;width:100%;padding:9px 11px;border:0;border-radius:9px;background:transparent;color:#dfe9f2;text-align:left;font:700 12.5px/1.3 Arial,Helvetica,sans-serif;cursor:pointer}
       .prompt-setup-section button small{display:block;margin-top:3px;color:#8b9dc3;font-size:10.5px;font-weight:550;line-height:1.4}
       .prompt-setup-section button[aria-checked="true"],.prompt-setup-section button:hover{background:rgba(45,147,201,.18);color:#f4f9fd}
       .prompt-setup-section button[data-locked="1"]{color:#8b9dc3}
-      .prompt-setup-section button[data-locked="1"]:after{content:"ab Pro";float:right;color:var(--home-orange);font-size:9px;font-weight:850;letter-spacing:.08em}
+      .prompt-setup-section button[data-locked="1"]:after{content:attr(data-tier);float:right;color:var(--home-orange);font-size:9px;font-weight:850;letter-spacing:.08em}
       .prompt-setup-note{margin:0;padding:9px 11px 4px;color:#7d8fa3;font:550 10px/1.5 Arial,Helvetica,sans-serif}
       .prompt-flow-button{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 10px;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:700 11px/1 Arial,Helvetica,sans-serif;white-space:nowrap;cursor:pointer}
       .prompt-flow-button:hover{border-color:#4d637a;color:#e7f1f9}
@@ -104,10 +109,11 @@
       .prompt-flow-menu button small{display:block;margin-top:3px;color:#8b9dc3;font-size:10px;font-weight:550;line-height:1.4}
       .prompt-flow-menu button[aria-checked="true"],.prompt-flow-menu button:hover{background:rgba(45,147,201,.18);color:#f4f9fd}
       .prompt-flow-menu button[data-locked="1"]{color:#8b9dc3}
-      .prompt-flow-menu button[data-locked="1"]:after{content:"ab Pro";float:right;margin-top:-14px;color:var(--home-orange);font-size:9px;font-weight:850;letter-spacing:.08em}
+      .prompt-flow-menu button[data-locked="1"]:after{content:attr(data-tier);float:right;margin-top:-14px;color:var(--home-orange);font-size:9px;font-weight:850;letter-spacing:.08em}
       .prompt-command-meta{display:flex;align-items:center;gap:16px;min-height:56px;padding:0 22px;border-top:1px solid #31404e;color:#91a1ae;font-size:10px}
       .prompt-command-meta span+span{padding-left:16px;border-left:1px solid #394a59}.prompt-command-meta b{color:#68b9ed;font-weight:750}.prompt-command-error{margin-left:auto;color:#ff9d78}.prompt-command-error:empty{display:none}
-      .prompt-latest{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;margin-top:18px;padding:14px 16px;border:1px solid var(--home-line);border-radius:17px;background:var(--home-card);color:var(--home-ink)}
+      .prompt-latest{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;margin-top:18px;padding:14px 16px;border:1px solid var(--home-line);border-radius:17px;background:var(--home-card);color:var(--home-ink);cursor:pointer;transition:border-color .16s ease,transform .16s ease}
+      .prompt-latest:hover{border-color:var(--home-blue);transform:translateY(-1px)}
       .prompt-latest-icon{display:grid;width:45px;height:45px;place-items:center;border-radius:13px;background:var(--home-soft);color:var(--home-blue-deep)}
       .prompt-latest-copy strong,.prompt-latest-copy small{display:block}.prompt-latest-copy strong{font-size:13px}.prompt-latest-copy small{margin-top:4px;color:var(--home-muted);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .prompt-latest-action{min-height:38px;padding:0 12px;border:0;background:transparent;color:var(--home-blue-deep);font-size:11px;font-weight:800;cursor:pointer}.prompt-latest-action:disabled{opacity:.4;cursor:not-allowed}
@@ -206,9 +212,22 @@
   // Vorlagen und Skills gibt es bereits: die Vorlage als <select id="templateSelect">, die
   // Skills als Reihen mit Kontrollkästchen in #skillSelection. Beide Menüs hier lesen genau
   // diese Elemente und bedienen sie - keine zweite Liste, keine zweite Sperre.
+  // Eigene Vorlagen und Skills gehören beide zu planRules().modules bzw. libraryItems - im
+  // kostenlosen Tarif also gesperrt. Der Hinweis stand bisher nur beim Ablauf; hier bekommt er
+  // denselben Platz, damit man vor dem Tippen sieht, was zum Tarif gehört.
+  const planIsFree=()=>{const a=window.PromptAiAccess||{};return !a.isAdmin&&String(a.plan||'free')==='free'};
+  function markSectionTier(menuId,tier){
+    const section=$(`#${menuId}`)?.closest('.prompt-setup-section'),head=section?.querySelector('b');
+    if(!head)return;
+    let flag=head.querySelector('.tier-flag');
+    if(!tier){flag?.remove();return}
+    if(!flag){flag=document.createElement('i');flag.className='tier-flag';head.appendChild(flag)}
+    if(flag.textContent!==tier)flag.textContent=tier;
+  }
   function syncTemplateMenu(){
     const menu=$('#promptTemplateMenu'),select=document.querySelector('#templateSelect');
     if(!menu)return;
+    markSectionTier('promptTemplateMenu',planIsFree()?'ab Pro':'');
     if(!select){menu.innerHTML='<p class="prompt-picker-empty">Vorlagen stehen im Projekt bereit.</p>';return}
     const current=select.value;
     menu.innerHTML='';
@@ -228,6 +247,7 @@
   function syncSkillsMenu(){
     const menu=$('#promptSkillsMenu'),host=document.querySelector('#skillSelection');
     if(!menu)return;
+    markSectionTier('promptSkillsMenu',planIsFree()?'ab Pro':'');
     const locked=host?.querySelector('.feature-lock-note');
     if(locked){menu.innerHTML='<p class="prompt-picker-empty">'+(locked.querySelector('strong')?.textContent||'Skills sind in diesem Tarif nicht aktiv.')+'</p>';return}
     const rows=[...(host?.querySelectorAll('.selection-row')||[])];
@@ -290,6 +310,10 @@
     syncFlowUi();
   }
   const FLOW_NOTE={guided:'Fragt nur nach, wo es das Ergebnis ändert',auto:'Briefing rein, Prompt raus',expert:'Alle Schritte bleiben offen'};
+  // Welcher Tarif den Ablauf tatsächlich freischaltet - dieselbe Reihenfolge wie PLAN_RULES.modes
+  // in app.js (free: guided, pro: +auto, ultimate: +expert). Vorher stand pauschal "ab Pro" an
+  // jedem gesperrten Eintrag, also auch an "Selbst einstellen", das es erst ab Ultimate gibt.
+  const FLOW_TIER={guided:'ab Pro',auto:'ab Pro',expert:'ab Ultimate'};
   function syncFlowUi(){
     const menu=$('#promptFlowMenu');if(!menu)return;
     let mode=flowMode();
@@ -300,6 +324,7 @@
       button.type='button';button.setAttribute('role','menuitemradio');
       button.dataset.flowMode=key;button.setAttribute('aria-checked',String(key===mode));
       button.dataset.locked=flowLocked(key)?'1':'0';
+      button.dataset.tier=FLOW_TIER[key]||'ab Pro';
       button.innerHTML='<span></span><small></small>';
       button.querySelector('span').textContent=FLOW_LABEL[key];
       button.querySelector('small').textContent=FLOW_NOTE[key];
@@ -368,6 +393,15 @@
       if(event.target.closest?.('#promptModeButton,#promptModeMenu'))return;
       closeModeMenu(home);
     });
+    // Die Zeile zeigte das letzte Projekt zwar an, war aber nie mit dem echten Knopf verbunden:
+    // ein Klick - auf die Zeile wie auf "Weiterarbeiten" - tat schlicht gar nichts. Die ganze
+    // Zeile ist jetzt die Schaltfläche, das ist die Trefferfläche, die man ohnehin anzielt.
+    $('.prompt-latest',home)?.addEventListener('click',()=>{
+      const target=$('#workspaceLastProjectBtn');
+      if(!target)return;
+      if(target.disabled||target.getAttribute('aria-disabled')==='true'){document.querySelector('#plansDialog')?.showModal();return}
+      target.click();
+    });
     $('#promptAttachButton',home).addEventListener('click',()=>{
       const menu=$('#promptAttachMenu',home),open=menu.hidden;
       menu.hidden=!open;$('#promptAttachButton',home).setAttribute('aria-expanded',String(open));
@@ -390,14 +424,11 @@
       const open=setupSheet.hidden;
       if(open){
         syncFlowUi();syncTemplateMenu();syncSkillsMenu();
-        // The sheet's max-height (min(52vh,360px)) assumes the console panel is tall enough to
-        // hold it above the setup line. On a fresh, still-short panel (a few lines of text) that
-        // isn't true, and an absolutely-positioned box with only `bottom` set grows upward past
-        // its container's own top edge once content exceeds the room - which spilled the sheet
-        // over the header. Cap it to what's actually free above the button in the viewport.
-        const bottomEdge=setupButton.closest('.prompt-command-panel').getBoundingClientRect().bottom-52;
-        const room=bottomEdge-100;
-        setupSheet.style.maxHeight=`${Math.max(160,Math.min(360,room))}px`;
+        // Das Blatt hängt jetzt unter der Konsole, also zählt der Platz bis zur Fensterunterkante.
+        // Ohne diese Deckelung wüchse es bei vielen Skills über den sichtbaren Bereich hinaus.
+        const panelBottom=setupButton.closest('.prompt-command-panel').getBoundingClientRect().bottom;
+        const room=window.innerHeight-panelBottom-28;
+        setupSheet.style.maxHeight=`${Math.max(200,Math.min(380,room))}px`;
       }
       setupSheet.hidden=!open;setupButton.setAttribute('aria-expanded',String(open));
     });
