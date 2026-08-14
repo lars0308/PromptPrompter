@@ -47,14 +47,13 @@
     const dialog=ensureDialog();$$('[data-project-mode]',dialog).forEach(btn=>{const mode=btn.dataset.projectMode,ok=allowed(mode);btn.disabled=!ok;btn.querySelector('i').textContent=ok?'Auswählen →':mode==='auto'?'Pro erforderlich':'Ultimate erforderlich'});
   }
   function chooseMode(){
-    if((access().plan||'free')==='free'&&!access().isAdmin)return Promise.resolve('guided');
-    const dialog=ensureDialog();refreshCards();
-    return new Promise(resolve=>{
-      const cleanup=()=>{$$('[data-project-mode]',dialog).forEach(btn=>btn.onclick=null);dialog.removeEventListener('close',onClose)};
-      const onClose=()=>{cleanup();resolve(null)};dialog.addEventListener('close',onClose,{once:true});
-      $$('[data-project-mode]',dialog).forEach(btn=>btn.onclick=()=>{if(btn.disabled)return;const mode=btn.dataset.projectMode;cleanup();dialog.close();resolve(mode)});
-      try{dialog.showModal()}catch{resolve(null)}
-    });
+    // This used to open a full-page "Mit Rückfragen / Ohne Rückfragen / Selbst einstellen"
+    // dialog for every plan above Free. The same three choices already live in the console's
+    // inline "Ablauf" picker (promptai-home-final.js, .prompt-setup-sheet) before a project
+    // is even started, so asking again here was a duplicate stop for the same decision.
+    // Free already skipped this dialog outright; every plan does now, keeping whatever the
+    // console (or a previous visit) last set as the active mode.
+    return Promise.resolve($('.mode-switch button.active')?.dataset.mode||'guided');
   }
   function hasCurrentProject(){return Boolean($('#projectName')?.value?.trim()||$('#projectDescription')?.value?.trim())}
   async function confirmReplace(reset=false){

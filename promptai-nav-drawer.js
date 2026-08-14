@@ -20,12 +20,12 @@
     if($('#promptNavDrawerStyles'))return;
     const s=document.createElement('style');s.id='promptNavDrawerStyles';s.textContent=`
       html.prompt-full-redesign .topbar-menu{
-        position:fixed!important;inset:0 auto 0 0!important;top:0!important;bottom:0!important;left:0!important;right:auto!important;
+        position:fixed!important;inset:0 0 0 auto!important;top:0!important;bottom:0!important;right:0!important;left:auto!important;
         z-index:2147483001!important;display:flex!important;flex-direction:column!important;gap:0!important;
         width:min(320px,86vw)!important;max-height:none!important;height:100dvh!important;
-        padding:0!important;border:0!important;border-right:1px solid var(--line)!important;border-radius:0!important;
+        padding:0!important;border:0!important;border-left:1px solid var(--line)!important;border-radius:0!important;
         background:var(--surface)!important;box-shadow:none!important;overflow:hidden!important;
-        transform:translateX(-101%);transition:transform var(--t-slow,260ms) var(--ease,ease);
+        transform:translateX(101%);transition:transform var(--t-slow,260ms) var(--ease,ease);
         visibility:hidden;
       }
       html.prompt-full-redesign .topbar-menu.open,

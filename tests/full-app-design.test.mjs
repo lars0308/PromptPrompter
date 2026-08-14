@@ -162,17 +162,17 @@ test('the close button in the mode dialog is anchored again',async()=>{
   assert.match(css,/:is\(\.project-mode-head,\.simple-intake-head\)\{padding-right:66px!important\}/,'the heading must not run under it');
 });
 
-test('the menu button moves left by position, not by re-parenting',async()=>{
+test('the menu button moves right by position, not by re-parenting',async()=>{
   const css=await read('promptai-full-app-design.css'),home=await read('promptai-home-final.js');
   // promptai-home-final inserts its own toggle directly before #topbarMenuToggle, so lifting the
   // button out of .top-actions would leave that insertBefore without a reference node.
   assert.match(home,/actions\.insertBefore\(button,\$\('#topbarMenuToggle'\)\)/);
-  assert.match(css,/#topbarMenuToggle\{[\s\S]{0,120}left:12px!important/);
-  // .top-actions carries position:relative, so left was measured from the action group.
+  assert.match(css,/#topbarMenuToggle\{[\s\S]{0,120}right:12px!important/);
+  // .top-actions carries position:relative, so right was measured from the action group.
   assert.match(css,/\.topbar \.top-actions\{position:static!important\}/);
-  // .brand.brand, because the start page layer sets ".topbar .brand{padding:0 4px}" and an
-  // equally weighted rule left the logo lying underneath the button.
-  assert.match(css,/\.topbar \.brand\.brand\{padding-left:60px!important\}/,'the wordmark has to clear the button');
+  // .top-actions.top-actions, because the upgrade button needs to clear the toggle now sitting
+  // in its old spot at the header's right edge.
+  assert.match(css,/\.topbar \.top-actions\.top-actions\{padding-right:52px!important\}/,'the upgrade button has to clear the toggle');
 });
 test('light/dark lives in the drawer, not twice in the header',async()=>{
   const css=await read('promptai-full-app-design.css'),nav=await read('promptai-nav-drawer.js');
@@ -244,17 +244,20 @@ test('the inset is handed out once per dialog, not once per nesting level',async
   assert.match(css,/\.legal-body,\.quick-revision-body,\.free-prompt-body,\s*\.library-pane>\.welcome-project-list/);
 });
 
-test('one edge for the whole app: header, console, greeting and every card start at the same line',async()=>{
+test('one edge for the whole app on the phone: header, console, greeting and every card start at the same line',async()=>{
   const css=await read('promptai-full-app-design.css');
   // Measured on one phone screen before this: header 10px, console 14px, greeting 18px,
-  // dialog cards 17px. Each looked right alone; together nothing lined up.
+  // dialog cards 17px. Each looked right alone; together nothing lined up. The phone still
+  // floats the header with a small side margin, same as the console beneath it.
   assert.match(css,/\.welcome-page\{padding-left:var\(--dlg-x\)!important/);
   assert.match(css,/\.prompt-home-intro\{padding-left:0!important/,'its extra 4px was the third line');
-  assert.match(css,/body>\.topbar,[\s\S]{0,120}width:calc\(100% - var\(--dlg-x\)\*2\)!important/);
-  // On the desktop the header was 1180px wide over 1040px of content, and later
-  // both were frozen at the same 1040px regardless of window size. Now they
-  // grow together with the window, up to 1520px.
-  assert.match(css,/width:min\(clamp\(1040px,78vw,1520px\),calc\(100% - var\(--dlg-x\)\*2\)\)!important/);
+  assert.match(css,/max-width:820px\)\{[\s\S]{0,400}body>\.topbar,[\s\S]{0,120}width:calc\(100% - var\(--dlg-x\)\*2\)!important/);
+});
+test('on the desktop the header runs edge to edge, independent of the console column',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  // The header used to share the console's own (once frozen, then growing) column width. It now
+  // fills the full window on the desktop - only the console keeps its own, narrower measure.
+  assert.match(css,/min-width:821px\)\{[\s\S]{0,220}body>\.topbar,[\s\S]{0,160}width:100%!important;margin-left:0!important;margin-right:0!important/);
 });
 
 test('the mark ships without a plate, and stays readable on the dark loading surfaces',async()=>{

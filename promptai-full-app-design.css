@@ -1135,22 +1135,21 @@ html.prompt-full-redesign :is(.project-mode-head,.simple-intake-head){padding-ri
   html.prompt-full-redesign .prompt-command-top{padding-top:var(--sp-3)!important}
 }
 
-/* ═══ Kopfzeile: Menü links, kein Umschalter mehr oben ═════════════════════
+/* ═══ Kopfzeile: Menü rechts, kein Umschalter mehr oben ═════════════════════
 
    Der Hamburger wird nicht umgehängt, sondern nur anders platziert.
    promptai-home-final.js setzt seinen Umschalter mit insertBefore direkt vor
    #topbarMenuToggle - würde der Knopf die .top-actions verlassen, liefe genau
    dieses insertBefore ins Leere. Die Kopfzeile ist sticky und damit schon ein
-   Bezugsrahmen, also reicht eine absolute Position darin. */
+   Bezugsrahmen, also reicht eine absolute Position darin. Er sitzt rechts,
+   neben dem Upgrade-Knopf - die Marke bleibt unangetastet links stehen. */
 html.prompt-full-redesign .topbar{position:sticky!important}
 html.prompt-full-redesign #topbarMenuToggle{
-  position:absolute!important;left:12px!important;top:50%!important;right:auto!important;
+  position:absolute!important;right:12px!important;top:50%!important;left:auto!important;
   transform:translateY(-50%)!important;margin:0!important;z-index:3!important;
 }
-/* Die Marke muss dem Knopf ausweichen. Die Startseiten-Ebene setzt
-   ".topbar .brand{padding:0 4px}" - dagegen kommt eine Regel mit gleichem
-   Gewicht nicht an, und das Logo lag unter dem Hamburger. Daher .brand.brand. */
-html.prompt-full-redesign .topbar .brand.brand{padding-left:60px!important}
+/* Der Upgrade-Knopf muss dem Umschalter ausweichen, wie vorher die Marke. */
+html.prompt-full-redesign .topbar .top-actions.top-actions{padding-right:52px!important}
 
 /* Hell/Dunkel wandert in die Schublade. Oben stand er doppelt - einmal als
    #themeToggleBtn, einmal als der eigene Knopf der Startseite - und beide
@@ -1189,8 +1188,8 @@ html.prompt-full-redesign[data-theme="dark"] .topbar-menu .theme-toggle::after{
 }
 
 @media(max-width:700px){
-  html.prompt-full-redesign #topbarMenuToggle{left:8px!important}
-  html.prompt-full-redesign .topbar .brand.brand{padding-left:52px!important}
+  html.prompt-full-redesign #topbarMenuToggle{right:8px!important}
+  html.prompt-full-redesign .topbar .top-actions.top-actions{padding-right:48px!important}
 }
 
 /* Der Knopf blieb rechts, weil .top-actions selbst position:relative trägt -
@@ -1526,14 +1525,15 @@ html.prompt-full-redesign .prompt-system-line::before{flex:0 0 auto!important}
     width:calc(100% - var(--dlg-x)*2)!important;margin-left:auto!important;margin-right:auto!important;
   }
 }
-/* Am Rechner teilen sich Kopfzeile und Inhalt dieselbe Spalte - vorher war die
-   Kopfzeile 1180px breit und der Inhalt darunter 1040px. Auf großen Bildschirmen
-   war diese gemeinsame Spalte trotzdem fest bei 1040px eingefroren, egal wie breit
-   das Fenster war - die Fläche links und rechts blieb ungenutzt. Beide Seiten
-   wachsen jetzt gemeinsam mit dem Fenster, bis 1520px. */
-html.prompt-full-redesign body>.topbar,
-html.prompt-full-redesign body.prompt-unified-ui>.topbar{
-  width:min(clamp(1040px,78vw,1520px),calc(100% - var(--dlg-x)*2))!important;
+/* Die Kopfzeile liegt am Rechner jetzt komplett links und rechts an, statt als
+   schmalere Spalte über der Fläche zu schweben - nur das Textfeld darunter behält
+   seine eigene, engere Breite. Auf dem Telefon bleibt die schwebende Kante mit
+   Rand bestehen (siehe @media(max-width:820px) oben), deshalb ab hier gesperrt. */
+@media(min-width:821px){
+  html.prompt-full-redesign body>.topbar,
+  html.prompt-full-redesign body.prompt-unified-ui>.topbar{
+    width:100%!important;margin-left:0!important;margin-right:0!important;
+  }
 }
 
 /* Der Dialograhmen selbst stand noch 1px vom Rand ab - auf dem Telefon füllt er
