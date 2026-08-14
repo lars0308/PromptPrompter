@@ -146,7 +146,7 @@
       const clientLead=$('.client-context-lead');
       if(clientLead)clientLead.textContent='Echte Fakten statt Stil: aus der Website oder dem Google-Eintrag deines Kunden übernimmt Prompt.ai Adresse, Zeiten und Leistungen.';
     }
-    if(n===6){const back=$('#stepPreviews .back-btn');if(back)back.textContent='← Referenzen'}
+    if(n===6){const back=$('#stepPreviews .back-btn');if(back)back.textContent='← Beschreibung'}
     if(n===7){const back=$('#stepRefine .back-btn');if(back)back.textContent='← Vorschau'}
   }
 

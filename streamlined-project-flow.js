@@ -56,12 +56,19 @@
   }
 
   function syncCopy(){
-    const m=mode(),expert=m==='expert',h2=$('#stepReferences h1'),h6=$('#stepPreviews h1'),h7=$('#stepRefine h1'),h8=$('#stepPrompt h1'),k6=$('#stepPreviews .section-kicker'),k7=$('#stepRefine .section-kicker'),k8=$('#stepPrompt .section-kicker'),next2=$('#stepReferences .next-btn'),back6=$('#stepPreviews .back-btn'),next6=$('#stepPreviews .next-btn'),generate=$('#generateConceptsBtn');
+    const m=mode(),expert=m==='expert',h2=$('#stepReferences h1'),h6=$('#stepPreviews h1'),h7=$('#stepRefine h1'),h8=$('#stepPrompt h1'),k6=$('#stepPreviews .section-kicker'),k7=$('#stepRefine .section-kicker'),k8=$('#stepPrompt .section-kicker'),next2=$('#stepReferences .next-btn'),back3=$('#stepAgent .back-btn'),back6=$('#stepPreviews .back-btn'),next6=$('#stepPreviews .next-btn'),generate=$('#generateConceptsBtn');
     for(const [el,key] of [[h2,'streamOriginal'],[h6,'streamOriginal'],[h7,'streamOriginal'],[h8,'streamOriginal'],[k6,'streamOriginal'],[k7,'streamOriginal'],[k8,'streamOriginal'],[next2,'streamOriginalHtml'],[back6,'streamOriginalHtml'],[next6,'streamOriginalHtml'],[generate,'streamOriginalHtml']])if(el&&!el.dataset[key])el.dataset[key]=key.endsWith('Html')?el.innerHTML:el.textContent;
-    if(expert){for(const el of [h2,h6,h7,h8,k6,k7,k8])if(el?.dataset.streamOriginal)setText(el,el.dataset.streamOriginal);for(const el of [next2,back6,next6,generate])if(el?.dataset.streamOriginalHtml)setHtml(el,el.dataset.streamOriginalHtml);return}
+    if(back3&&!back3.dataset.streamOriginalBack)back3.dataset.streamOriginalBack=back3.dataset.back;
+    if(expert){for(const el of [h2,h6,h7,h8,k6,k7,k8])if(el?.dataset.streamOriginal)setText(el,el.dataset.streamOriginal);for(const el of [next2,back6,next6,generate])if(el?.dataset.streamOriginalHtml)setHtml(el,el.dataset.streamOriginalHtml);if(back3?.dataset.streamOriginalBack)back3.dataset.back=back3.dataset.streamOriginalBack;return}
     setText(h2,'Hast du Referenzen?');setText(h6,'So könnte deine Internetseite aussehen.');setText(k6,'03 — VORSCHAU');
     if(m==='guided'){setText(h7,'Noch etwas ändern?');setText(k7,'04 — FEINSCHLIFF');setText(h8,'Dein Master-Prompt.');setText(k8,'05 — MASTER-PROMPT')}else{setText(h8,'Dein Master-Prompt.');setText(k8,'04 — MASTER-PROMPT')}
-    setHtml(next2,'Weiter zur Vorschau <i>→</i>');setHtml(back6,'← Referenzen');if(back6&&back6.dataset.back!=='2')back6.dataset.back='2';setHtml(next6,m==='auto'?'Diese Vorschau übernehmen <i>→</i>':'Auswahl verfeinern <i>→</i>');setText(generate,'Vorschau erstellen');
+    // Steps 2-5 are all auto-piloted in guided/auto mode now (references come in via the
+    // console's plus button before the flow even starts), so the two real "back" targets
+    // that remain both skip straight to step 1 instead of the now-unused step 2.
+    setHtml(next2,'Weiter zur Vorschau <i>→</i>');
+    if(back3&&back3.dataset.back!=='1')back3.dataset.back='1';
+    setHtml(back6,'← Beschreibung');if(back6&&back6.dataset.back!=='1')back6.dataset.back='1';
+    setHtml(next6,m==='auto'?'Diese Vorschau übernehmen <i>→</i>':'Auswahl verfeinern <i>→</i>');setText(generate,'Vorschau erstellen');
   }
 
   function maybeSkipInitial(){
