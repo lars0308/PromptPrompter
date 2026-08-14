@@ -326,7 +326,10 @@ test('the loading screen is the surface itself, and the step pages take the full
   // No card on the loader: the whole screen is dark in both themes, so the frame could go
   // without the light type losing its ground.
   assert.match(css,/:is\(#promptWorkflowLoader,\.prompt-handoff-loader,\.prompt-completion-flash,#promptAiThinkingStage\)\{\s*background:#0f151d!important/);
-  assert.match(css,/\.master-generation-inner\)\{[\s\S]{0,200}border:0!important;\s*background:transparent!important/);
+  assert.match(css,/#promptAiThinkingStage>div\)\{[\s\S]{0,200}border:0!important;\s*background:transparent!important/);
+  // Die beiden Arbeitsflächen mitten in einer Schrittseite sind kein Vollbild - ohne
+  // eigenen dunklen Grund stand ihre helle Schrift im Hellmodus auf hellem Papier.
+  assert.match(css,/:is\(\.streamline-working-inner,\.master-generation-inner\)\{[\s\S]{0,240}background:#111923!important/);
   // content:url() instead of a background image - a background graphic can be frozen,
   // a replaced image animates, so the blue bar moves here too.
   assert.match(css,/::before\{\s*content:url\("\.\/sitebrief-logo-trace-light\.svg/);
@@ -334,4 +337,19 @@ test('the loading screen is the surface itself, and the step pages take the full
   // the app starts at 16, and the card floated with a visible edge.
   assert.match(css,/\.workspace\{padding-left:0!important;padding-right:0!important\}/);
   assert.match(css,/\.step-panel,[\s\S]{0,80}#guidedCleanHead\{[\s\S]{0,160}padding-left:var\(--dlg-x\)!important/);
+});
+
+test('the sweep: every card breathes, no box in a box, no pair of buttons glued together',async()=>{
+  const css=await read('promptai-full-app-design.css');
+  // Gemessen über alle Dialoge und Schritte, Telefon und Rechner, hell und dunkel.
+  // 1. Karten mit Kante, aber ohne Innenabstand.
+  assert.match(css,/:is\(\.library-item,\.admin-fold,\.settings-upgrade-note,\.legal-placeholder-note,[\s\S]{0,120}padding:var\(--sp-5\)!important/);
+  // 2. Kante in Kante auf der Anmeldeseite.
+  assert.match(css,/\.auth-access-card \.auth-subscribe-compact\{[\s\S]{0,120}border:0!important/);
+  // 3. Ein Abstand für jede Knopfreihe - vorher standen sie 7px auseinander.
+  assert.match(css,/:is\(\.inline-actions,\.step-actions,[\s\S]{0,260}gap:var\(--sp-3\)!important/);
+  // 4. Luft unter jeder Überschrift.
+  assert.match(css,/:is\(\.dialog-head,\.free-prompt-head,[\s\S]{0,120}padding-bottom:var\(--sp-5\)!important/);
+  // 5. Weiß auf Mittelblau kam im Dunkelmodus auf 2,2:1.
+  assert.match(css,/\.plan-card-badge\{[\s\S]{0,120}background:var\(--navy\)!important/);
 });

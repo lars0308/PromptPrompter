@@ -1396,7 +1396,7 @@ html.prompt-full-redesign :is(#promptWorkflowLoader,.prompt-handoff-loader,.prom
   background:#0f151d!important;
   color:#eef6fb!important;
 }
-html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,#promptAiThinkingStage>div,.streamline-working-inner,.master-generation-inner){
+html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,#promptAiThinkingStage>div){
   width:min(560px,100%)!important;
   padding:32px 26px!important;
   border:0!important;
@@ -1404,6 +1404,21 @@ html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>d
   color:#eef6fb!important;
   box-shadow:none!important;
 }
+/* Die beiden Arbeitsflächen mitten in einer Schrittseite sind kein Vollbild: sie
+   brauchen ihren eigenen dunklen Grund, sonst steht helle Schrift auf hellem
+   Papier - genau das war im Hellmodus bei "Briefing wird verstanden" der Fall. */
+html.prompt-full-redesign :is(.streamline-working-inner,.master-generation-inner){
+  width:min(560px,100%)!important;
+  margin:0 auto!important;
+  padding:var(--sp-7) var(--sp-6)!important;
+  border:0!important;
+  border-radius:var(--r-lg)!important;
+  background:#111923!important;
+  color:#eef6fb!important;
+  box-shadow:none!important;
+}
+html.prompt-full-redesign :is(.streamline-working-inner,.master-generation-inner) :is(strong,h1,h2){color:#f2f8fd!important}
+html.prompt-full-redesign :is(.streamline-working-inner,.master-generation-inner) :is(p,small,span:not(.prompt-process-fill)){color:var(--mist)!important}
 /* Ohne Plättchen: die Marke steht frei. Die Ladeflächen sind in beiden Modi dunkel,
    also trägt sie dort ihre helle Fassung - dasselbe Zeichen, heller Körper, gleiches
    Blau. Ein Filter hätte auch das Blau umgefärbt. */
@@ -1655,3 +1670,44 @@ html.prompt-full-redesign .step-panel>h1+.reference-url-add{margin-top:var(--sp-
   }
   html.prompt-full-redesign .step-panel>*{max-width:none!important}
 }
+
+/* ═══ Luft und Abstand, gemessen statt geschätzt ═══════════════════════════
+
+   Eine Prüfung über alle Dialoge, Schritte und beide Größen in hell und dunkel
+   hat vier Sorten Fehler gefunden. Hier stehen die Gegenmittel, in derselben
+   Reihenfolge. */
+
+/* 1. Karten mit Kante, aber ohne Innenabstand - Inhalt klebte an der Linie. */
+html.prompt-full-redesign :is(.library-item,.admin-fold,.settings-upgrade-note,.legal-placeholder-note,.connection-slot-card,.guest-limit-box,.quick-accordion){
+  padding:var(--sp-5)!important;
+}
+html.prompt-full-redesign :is(.admin-fold,.quick-accordion)>summary{margin:calc(var(--sp-5)*-1)!important;padding:var(--sp-5)!important}
+html.prompt-full-redesign .settings-section.is-collapsible>.settings-heading{padding:var(--sp-5) var(--sp-5)!important}
+
+/* 2. Kante in Kante: der Kasten im Kasten auf der Anmeldeseite. Die innere
+      Fläche trägt jetzt nichts mehr - eine Linie reicht, um eine Gruppe zu
+      zeigen. */
+html.prompt-full-redesign .auth-access-card .auth-subscribe-compact{
+  border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;
+  background:transparent!important;margin-top:var(--sp-5)!important;padding:var(--sp-5) 0 0!important;
+}
+
+/* 3. Knöpfe nebeneinander standen 7px auseinander - zu wenig, um zwei Ziele zu
+      sein. Ein Abstand für alle Knopfreihen. */
+html.prompt-full-redesign :is(.inline-actions,.step-actions,.free-prompt-actions,.plans-footer,.quick-refinements,.dialog-actions,.library-tools,.reference-list-actions,.history-actions,.preview-lightbox-actions,.app-action-buttons){
+  gap:var(--sp-3)!important;
+}
+html.prompt-full-redesign .quick-refinements{display:flex!important;flex-wrap:wrap!important}
+html.prompt-full-redesign .quick-refinements button{margin:0!important}
+
+/* 4. Überschriften brauchen Platz nach unten, sonst kleben Feld und Titel. */
+html.prompt-full-redesign :is(.dialog-head,.free-prompt-head,.history-head,.simple-intake-head,.project-mode-head){padding-bottom:var(--sp-5)!important}
+html.prompt-full-redesign :is(.settings-section,.plan-card,.library-editor)>:is(h2,h3):first-child{margin-bottom:var(--sp-4)!important}
+
+/* 5. Das Abzeichen der empfohlenen Stufe stand mit Weiß auf Mittelblau: im
+      Dunkelmodus 2,2:1 und damit unter jeder Lesbarkeitsschwelle. */
+html.prompt-full-redesign .plan-card-badge{
+  background:var(--navy)!important;color:#f2f8fd!important;
+  border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)!important;
+}
+html.prompt-full-redesign[data-theme="dark"] .plan-card-badge{background:var(--accent-strong)!important;color:#0b1219!important}
