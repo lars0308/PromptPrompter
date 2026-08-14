@@ -367,14 +367,20 @@
     if(cloudReady()){markSeen();return}
     let midFlow=false;try{midFlow=Boolean(sessionStorage.getItem(MODE_HANDOFF_KEY))||sessionStorage.getItem(CONTINUE_WORKFLOW_KEY)==='1'}catch{}
     if(midFlow){markSeen();return}
-    let alreadyShown=false;try{alreadyShown=sessionStorage.getItem(ENTRY_GATE_KEY)==='1'}catch{}
+    // Der Merker sagt "der Besucher hat sich entschieden", nicht "wir haben das Tor einmal
+    // gezeigt". Er wurde früher schon beim Anzeigen gesetzt - ein Neuladen auf der Anmeldeseite
+    // galt damit als erledigt und führte ohne Anmeldung direkt in die App. Gesetzt wird er
+    // jetzt erst, wenn jemand bewusst als Gast weitergeht (closeAccountGate); wer sich anmeldet,
+    // fällt ohnehin schon oben über cloudReady() heraus.
+    let decided=false;try{decided=sessionStorage.getItem(ENTRY_GATE_KEY)==='1'}catch{}
     const away=awayLongEnough();
     markSeen();
-    if(alreadyShown&&!away)return;
-    try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}
+    if(decided&&!away)return;
     showAccountGate();
   }
-  function closeAccountGate(){el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
+  // Nur dieser Weg ist eine Entscheidung: der Besucher geht bewusst ohne Konto weiter. Erst
+  // damit hört die Anmeldeseite auf, beim nächsten Laden wiederzukommen.
+  function closeAccountGate(){try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
   let pendingAuthPlan=null;
   function pickAuthPlan(plan){
     if(plan==="free"){pendingAuthPlan=null;closeAccountGate();return;}

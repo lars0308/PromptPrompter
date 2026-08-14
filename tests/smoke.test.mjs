@@ -434,14 +434,19 @@ test('the GitHub sandbox card offers a picker populated from the user\'s own rep
 test('the entry gate opens immediately and no longer waits on cookie consent to appear',async()=>{
   const src=await text('app.js');
   assert.doesNotMatch(src,/Promise\.race\(\[consent,new Promise\(resolve=>setTimeout\(resolve,4000\)\)\]\)\.then\(showAccountGate\)/,'the account gate must not be delayed behind cookie-banner consent resolution');
-  assert.match(src,/function maybeShowEntryGate\(\)\{[\s\S]{0,700}showAccountGate\(\);\s*\}/);
+  assert.match(src,/function maybeShowEntryGate\(\)\{[\s\S]{0,1200}showAccountGate\(\);\s*\}/);
 });
 test('the login screen comes back after the app was closed or left alone for hours, not once per browser session',async()=>{
   const src=await text('app.js');
   // sessionStorage alone let an installed app that keeps its session skip the gate for days.
   assert.match(src,/const GATE_AFTER_MS = 6\*60\*60\*1000;/);
   assert.match(src,/function awayLongEnough\(\)\{/);
-  assert.match(src,/if\(alreadyShown&&!away\)return;/,'a long absence must beat the once-per-session marker');
+  assert.match(src,/if\(decided&&!away\)return;/,'a long absence must beat the marker');
+  // Der Merker bedeutet "entschieden", nicht "einmal gezeigt": wurde er schon beim Anzeigen
+  // gesetzt, galt ein Neuladen auf der Anmeldeseite als erledigt und führte ohne Anmeldung in
+  // die App. Gesetzt wird er nur dort, wo jemand bewusst ohne Konto weitergeht.
+  assert.doesNotMatch(src,/markSeen\(\);\s*if\(decided&&!away\)return;\s*try\{sessionStorage\.setItem\(ENTRY_GATE_KEY/,'nicht beim blossen Anzeigen setzen');
+  assert.match(src,/function closeAccountGate\(\)\{try\{sessionStorage\.setItem\(ENTRY_GATE_KEY,'1'\)\}catch\{\}/,'erst die Gast-Entscheidung setzt ihn');
   assert.match(src,/document\.addEventListener\('visibilitychange',\(\)=>\{if\(document\.visibilityState==='visible'\)maybeShowEntryGate\(\)\}\);/);
   // Signing out is an exit, so the gate returns immediately - not after six hours.
   assert.match(src,/sessionStorage\.removeItem\(ENTRY_GATE_KEY\)\}catch\{\}showAccountGate\(\);/);
