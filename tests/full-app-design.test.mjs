@@ -378,3 +378,15 @@ test('the flow selector drives the real mode switch and never claims a mode the 
   assert.match(home,/b\.dataset\.locked=flowLocked\(b\.dataset\.flowMode\)\?'1':'0'/);
   assert.match(home,/\[data-locked="1"\]:after\{content:"ab Pro"/);
 });
+
+test('the plus in the console feeds the real reference inputs instead of a second store',async()=>{
+  const home=await read('promptai-home-final.js');
+  // Datei: der echte Dateidialog der Referenzen, mit dessen Formaten, Grenzen und Sperren.
+  assert.match(home,/function attachFile\(\)\{const input=\$\('#imageInput'\);if\(input\)input\.click\(\)/);
+  // Link: durch das echte Feld und den echten Knopf - keine zweite Prüfung, kein zweiter Zähler.
+  assert.match(home,/const field=\$\('#referenceUrl'\);if\(field\)\{field\.value=value;\$\('#addUrlBtn'\)\?\.click\(\)\}/);
+  // Die Kacheln spiegeln die echte Liste; ihr × drückt den echten Entfernen-Knopf.
+  assert.match(home,/\['#urlReferences','link'\],\['#imageReferences','bild'\],\['#documentReferences','datei'\]/);
+  assert.match(home,/item\.node\.querySelector\('\.remove-btn/);
+  assert.match(home,/new MutationObserver\(\(\)=>setTimeout\(syncAttachments,60\)\)/,'was dort passiert, muss hier ankommen');
+});

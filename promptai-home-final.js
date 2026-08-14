@@ -58,6 +58,21 @@
       .prompt-command-input::placeholder{color:#71808e}
       .prompt-command-submit{position:absolute;right:21px;bottom:69px;display:grid;width:52px;height:52px;min-height:52px;padding:0;place-items:center;border:0;border-radius:13px;background:var(--home-blue);color:#07131c;cursor:pointer;transition:transform .16s ease,background .16s ease}
       .prompt-command-submit:hover{transform:translateY(-2px);background:#79c5f4}.prompt-command-submit:disabled{opacity:.35;transform:none;cursor:not-allowed}
+      .prompt-attach-list{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 12px}
+      .prompt-attach-list[hidden]{display:none}
+      .prompt-attach-chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:0 4px 0 11px;border:1px solid #33465a;border-radius:999px;background:#141e28;color:#dfe9f2;font:650 11px/26px Arial,Helvetica,sans-serif}
+      .prompt-attach-chip b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
+      .prompt-attach-chip button{width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;color:#8b9dc3;font-size:15px;line-height:1;cursor:pointer}
+      .prompt-attach-chip button:hover{background:rgba(255,255,255,.08);color:#f2f8fd}
+      .prompt-attach-input{display:flex;gap:8px;width:100%}
+      .prompt-attach-input input{flex:1 1 auto;min-height:34px;padding:0 11px;border:1px solid #33465a;border-radius:9px;background:#0f1721;color:#eef6fb;font-size:13px}
+      .prompt-attach-input button{min-height:34px;padding:0 12px;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:700 11px/1 Arial,Helvetica,sans-serif;cursor:pointer}
+      .prompt-attach-button{display:grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:400 19px/1 Arial,Helvetica,sans-serif;cursor:pointer}
+      .prompt-attach-button:hover{border-color:#4d637a;color:#e7f1f9}
+      .prompt-attach-menu{position:absolute;z-index:9;left:14px;bottom:52px;width:min(240px,calc(100vw - 60px));padding:7px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:#141e28;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+      .prompt-attach-menu[hidden]{display:none!important}
+      .prompt-attach-menu button{display:block;width:100%;padding:9px 11px;border:0;border-radius:9px;background:transparent;color:#dfe9f2;text-align:left;font:700 12px/1.3 Arial,Helvetica,sans-serif;cursor:pointer}
+      .prompt-attach-menu button:hover{background:rgba(45,147,201,.18);color:#f4f9fd}
       .prompt-flow-button{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 10px;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:700 11px/1 Arial,Helvetica,sans-serif;cursor:pointer}
       .prompt-flow-button:hover{border-color:#4d637a;color:#e7f1f9}
       .prompt-flow-button .mode-chevron{width:6px;height:6px;margin:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
@@ -105,6 +120,57 @@
     // Beim Schreiben zählt, wie lang der Auftrag wird; solange nichts dasteht, was noch übrig ist.
     const next=text?`${text.length} Zeichen · ≈${tokenGuess(text)} Token`:quotaLine(home.dataset.commandMode||'website');
     if(slot.textContent!==next)slot.textContent=next;
+  }
+
+  // Anhänge laufen über die vorhandenen Eingaben der Referenzen: der Dateiknopf öffnet
+  // #imageInput, der Link geht durch #referenceUrl und #addUrlBtn. Damit gelten dieselben
+  // Formate, Grenzen und Tarifregeln wie bisher - hier ist nur der Ort des Klicks neu. Die
+  // Kacheln spiegeln die echte Liste, es gibt also keine zweite Wahrheit.
+  function attachFile(){const input=$('#imageInput');if(input)input.click();else message('Anhänge stehen im Projekt bereit.')}
+  function attachUrl(){
+    const list=$('#promptAttachList');if(!list)return;
+    let row=$('.prompt-attach-input',list);
+    if(!row){
+      row=document.createElement('div');row.className='prompt-attach-input';
+      row.innerHTML='<input type="url" placeholder="https://beispiel.de" aria-label="Link einfügen"><button type="button">Übernehmen</button>';
+      list.prepend(row);list.hidden=false;
+      const apply=()=>{
+        const value=$('input',row).value.trim();if(!value){row.remove();return}
+        const field=$('#referenceUrl');if(field){field.value=value;$('#addUrlBtn')?.click()}
+        row.remove();setTimeout(syncAttachments,120);
+      };
+      $('button',row).addEventListener('click',apply);
+      $('input',row).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();apply()}if(e.key==='Escape')row.remove()});
+    }
+    list.hidden=false;$('input',row).focus();
+  }
+  function message(text){const error=$('#promptCommandError');if(error)error.textContent=text}
+  // Was in den echten Listen steht, steht auch hier - Reihenfolge und Anzahl inklusive.
+  function syncAttachments(){
+    const list=$('#promptAttachList');if(!list)return;
+    const items=[];
+    for(const [selector,kind] of [['#urlReferences','link'],['#imageReferences','bild'],['#documentReferences','datei']]){
+      const host=document.querySelector(selector);if(!host)continue;
+      for(const node of host.children){
+        // Der Name steht im <strong> des Eintrags; das <span> davor ist nur die Marke
+        // ("URL"), und die als Kachelbeschriftung zu nehmen wäre für jeden Anhang dasselbe.
+        const label=(node.querySelector('strong')?.textContent||node.querySelector('figcaption')?.textContent||node.getAttribute('data-reference-label')||'').trim();
+        if(label)items.push({kind,label:label.slice(0,42),node});
+      }
+    }
+    for(const chip of [...list.querySelectorAll('.prompt-attach-chip')])chip.remove();
+    for(const item of items){
+      const chip=document.createElement('span');chip.className='prompt-attach-chip';chip.dataset.kind=item.kind;
+      chip.innerHTML=`<b></b><button type="button" aria-label="Entfernen">×</button>`;
+      chip.querySelector('b').textContent=item.label;
+      chip.querySelector('button').addEventListener('click',()=>{
+        const remove=item.node.querySelector('.remove-btn,[data-remove-url],[data-remove-image],[data-remove-document]');
+        if(remove)remove.click();else item.node.remove();
+        setTimeout(syncAttachments,120);
+      });
+      list.appendChild(chip);
+    }
+    list.hidden=!items.length&&!$('.prompt-attach-input',list);
   }
 
   const FLOW_KEY='prompt-ai-flow-mode-v1';
@@ -158,7 +224,7 @@
 
   function ensureThemeToggle(){const actions=$('.topbar .top-actions');if(!actions)return;let button=$('#homeThemeToggle');if(!button){button=document.createElement('button');button.id='homeThemeToggle';button.type='button';button.className='home-theme-toggle';button.addEventListener('click',()=>$('#themeToggleBtn')?.click());actions.insertBefore(button,$('#topbarMenuToggle'))}const dark=document.documentElement.dataset.theme==='dark';button.textContent=dark?'☀':'◐';button.title=dark?'Helles Design':'Dunkles Design';button.setAttribute('aria-label',button.title)}
 
-  function markup(){return `<section class="prompt-command-home" aria-label="Prompt.ai Start"><header class="prompt-home-intro"><span class="prompt-system-line">Workspace bereit</span><h1>Hallo <span id="promptHomeName">Lars</span>.</h1><p>Was möchtest du heute umsetzen?</p></header><form class="prompt-command-panel" id="promptCommandForm"><div class="prompt-command-top"><button class="prompt-mode-button" id="promptModeButton" type="button" aria-haspopup="listbox" aria-expanded="false">${icons.website}<span id="promptModeLabel">Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-mode-menu" id="promptModeMenu" role="listbox" aria-label="Arbeitsart wählen" hidden><button type="button" class="prompt-mode-option" role="option" data-command-mode="website" aria-checked="true">${icons.website}<span>Internetseite erstellen<small>Neues Website-Projekt</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="free" aria-checked="false">${icons.prompt}<span>Freier Prompt<small>Text, Bild, Video, Code & mehr</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="revision" aria-checked="false">${icons.revision}<span>Website überarbeiten<small>Bestehende Seite gezielt ändern</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="check" aria-checked="false">${icons.shield}<span>Projekt prüfen<small>Aktuellen Stand prüfen lassen</small></span></button></div></div><textarea class="prompt-command-input" id="promptCommandInput" rows="5" minlength="8" placeholder="Beschreibe kurz, was entstehen soll …" aria-label="Projekt oder Aufgabe beschreiben"></textarea><button class="prompt-command-submit" id="promptCommandSubmit" type="submit" aria-label="Absenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg></button><footer class="prompt-command-meta"><button type="button" class="prompt-flow-button" id="promptFlowButton" aria-haspopup="listbox" aria-expanded="false"><span id="promptFlowLabel">Mit Rückfragen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-flow-menu" id="promptFlowMenu" role="listbox" aria-label="Ablauf wählen" hidden><button type="button" role="option" data-flow-mode="guided" aria-checked="true">Mit Rückfragen<small>Fragt nur nach, wo es das Ergebnis ändert</small></button><button type="button" role="option" data-flow-mode="auto" aria-checked="false">Ohne Rückfragen<small>Briefing rein, Prompt raus</small></button><button type="button" role="option" data-flow-mode="expert" aria-checked="false">Selbst einstellen<small>Alle Schritte bleiben offen</small></button></div><span id="promptHomeMeta">Kontingent wird geladen</span><span><b id="promptHomePlan">Free</b></span><span class="prompt-command-error" id="promptCommandError" role="status"></span></footer></form><section class="prompt-latest" aria-label="Letztes Projekt"><span class="prompt-latest-icon">${icons.folder}</span><div class="prompt-latest-copy"><strong>Letztes Projekt</strong><small id="promptLatestTitle">Gespeicherten Arbeitsstand fortsetzen</small></div><button type="button" class="prompt-latest-action" id="promptLatestAction">Weiterarbeiten →</button></section></section>`}
+  function markup(){return `<section class="prompt-command-home" aria-label="Prompt.ai Start"><header class="prompt-home-intro"><span class="prompt-system-line">Workspace bereit</span><h1>Hallo <span id="promptHomeName">Lars</span>.</h1><p>Was möchtest du heute umsetzen?</p></header><form class="prompt-command-panel" id="promptCommandForm"><div class="prompt-command-top"><button class="prompt-mode-button" id="promptModeButton" type="button" aria-haspopup="listbox" aria-expanded="false">${icons.website}<span id="promptModeLabel">Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-mode-menu" id="promptModeMenu" role="listbox" aria-label="Arbeitsart wählen" hidden><button type="button" class="prompt-mode-option" role="option" data-command-mode="website" aria-checked="true">${icons.website}<span>Internetseite erstellen<small>Neues Website-Projekt</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="free" aria-checked="false">${icons.prompt}<span>Freier Prompt<small>Text, Bild, Video, Code & mehr</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="revision" aria-checked="false">${icons.revision}<span>Website überarbeiten<small>Bestehende Seite gezielt ändern</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="check" aria-checked="false">${icons.shield}<span>Projekt prüfen<small>Aktuellen Stand prüfen lassen</small></span></button></div></div><textarea class="prompt-command-input" id="promptCommandInput" rows="5" minlength="8" placeholder="Beschreibe kurz, was entstehen soll …" aria-label="Projekt oder Aufgabe beschreiben"></textarea><button class="prompt-command-submit" id="promptCommandSubmit" type="submit" aria-label="Absenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg></button><div class="prompt-attach-list" id="promptAttachList" aria-live="polite"></div><footer class="prompt-command-meta"><button type="button" class="prompt-attach-button" id="promptAttachButton" aria-haspopup="menu" aria-expanded="false" title="Anhang hinzufügen">+</button><div class="prompt-attach-menu" id="promptAttachMenu" role="menu" hidden><button type="button" role="menuitem" data-attach="file">Bild oder Datei</button><button type="button" role="menuitem" data-attach="url">Link einfügen</button></div><button type="button" class="prompt-flow-button" id="promptFlowButton" aria-haspopup="listbox" aria-expanded="false"><span id="promptFlowLabel">Mit Rückfragen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-flow-menu" id="promptFlowMenu" role="listbox" aria-label="Ablauf wählen" hidden><button type="button" role="option" data-flow-mode="guided" aria-checked="true">Mit Rückfragen<small>Fragt nur nach, wo es das Ergebnis ändert</small></button><button type="button" role="option" data-flow-mode="auto" aria-checked="false">Ohne Rückfragen<small>Briefing rein, Prompt raus</small></button><button type="button" role="option" data-flow-mode="expert" aria-checked="false">Selbst einstellen<small>Alle Schritte bleiben offen</small></button></div><span id="promptHomeMeta">Kontingent wird geladen</span><span><b id="promptHomePlan">Free</b></span><span class="prompt-command-error" id="promptCommandError" role="status"></span></footer></form><section class="prompt-latest" aria-label="Letztes Projekt"><span class="prompt-latest-icon">${icons.folder}</span><div class="prompt-latest-copy"><strong>Letztes Projekt</strong><small id="promptLatestTitle">Gespeicherten Arbeitsstand fortsetzen</small></div><button type="button" class="prompt-latest-action" id="promptLatestAction">Weiterarbeiten →</button></section></section>`}
   function ensureHome(){const page=$('#welcomePage');if(!page)return null;let home=$('.prompt-command-home',page);if(!home){page.insertAdjacentHTML('beforeend',markup());home=$('.prompt-command-home',page);bindHome(home)}return home}
   function modeCopy(mode){return mode==='free'?{label:'Freier Prompt',placeholder:'Beschreibe, welchen Prompt du brauchst …',icon:icons.prompt}:mode==='revision'?{label:'Website überarbeiten',placeholder:'Was soll an der bestehenden Website geändert werden?',icon:icons.revision}:{label:'Internetseite erstellen',placeholder:'Beschreibe kurz, was entstehen soll …',icon:icons.website}}
   function closeModeMenu(home){const menu=$('#promptModeMenu',home);if(menu)menu.hidden=true;$('#promptModeButton',home)?.setAttribute('aria-expanded','false')}
@@ -170,6 +236,23 @@
   async function submitCommand(event){event.preventDefault();applyFlow(flowMode());const home=ensureHome(),input=$('#promptCommandInput',home),error=$('#promptCommandError',home),mode=home.dataset.commandMode||'website',brief=input.value.trim();if(brief.length<8){error.textContent='Bitte kurz beschreiben.';input.focus();return}error.textContent='';const button=$('#promptCommandSubmit',home);button.disabled=true;try{if(window.PromptAiHomeEntry?.submitBrief)await window.PromptAiHomeEntry.submitBrief(mode,brief);else if(mode==='website')await window.PromptAiProjectStart?.startFromBrief?.(brief);else{window.PromptAiHomeEntry?.[mode==='free'?'openFreePrompt':'openRevision']?.();setTimeout(()=>{const field=$('#simpleIntakeText');if(field){field.value=brief;$('#simpleIntakeContinue')?.click()}},40)}}finally{setTimeout(()=>{button.disabled=false},350)}}
   function proxy(id){const target=$(`#${id}`);if(!target)return;if(target.disabled||target.getAttribute('aria-disabled')==='true'){const message=target.title||'Diese Funktion ist in deinem Tarif noch nicht verfügbar.';const error=$('#promptCommandError');if(error)error.textContent=message;return}target.click()}
   function bindHome(home){home.dataset.commandMode='website';$('#promptModeButton',home).addEventListener('click',()=>{const menu=$('#promptModeMenu',home),open=menu.hidden;menu.hidden=!open;$('#promptModeButton',home).setAttribute('aria-expanded',String(open))});home.querySelectorAll('[data-command-mode]').forEach(option=>option.addEventListener('click',()=>selectMode(option.dataset.commandMode)));$('#promptCommandForm',home).addEventListener('submit',submitCommand);
+    $('#promptAttachButton',home).addEventListener('click',()=>{
+      const menu=$('#promptAttachMenu',home),open=menu.hidden;
+      menu.hidden=!open;$('#promptAttachButton',home).setAttribute('aria-expanded',String(open));
+    });
+    home.querySelectorAll('[data-attach]').forEach(button=>button.addEventListener('click',()=>{
+      $('#promptAttachMenu',home).hidden=true;$('#promptAttachButton',home).setAttribute('aria-expanded','false');
+      if(button.dataset.attach==='file')attachFile();else attachUrl();
+    }));
+    document.addEventListener('click',event=>{
+      if(event.target.closest?.('#promptAttachButton,#promptAttachMenu'))return;
+      const m=$('#promptAttachMenu',home);if(m)m.hidden=true;
+      $('#promptAttachButton',home)?.setAttribute('aria-expanded','false');
+    });
+    for(const selector of ['#urlReferences','#imageReferences','#documentReferences']){
+      const host=document.querySelector(selector);
+      if(host)new MutationObserver(()=>setTimeout(syncAttachments,60)).observe(host,{childList:true,subtree:true});
+    }
     $('#promptFlowButton',home).addEventListener('click',()=>{const menu=$('#promptFlowMenu',home),open=menu.hidden;menu.hidden=!open;$('#promptFlowButton',home).setAttribute('aria-expanded',String(open))});
     home.querySelectorAll('[data-flow-mode]').forEach(button=>button.addEventListener('click',()=>{$('#promptFlowMenu',home).hidden=true;$('#promptFlowButton',home).setAttribute('aria-expanded','false');selectFlow(button.dataset.flowMode)}));
     document.addEventListener('click',event=>{if(event.target.closest?.('#promptFlowButton,#promptFlowMenu'))return;const m=$('#promptFlowMenu',home);if(m)m.hidden=true;$('#promptFlowButton',home)?.setAttribute('aria-expanded','false')});$('#promptLatestAction',home).addEventListener('click',()=>proxy('workspaceLastProjectBtn'));document.addEventListener('click',event=>{if(!event.target.closest?.('.prompt-command-top')){$('#promptModeMenu',home).hidden=true;$('#promptModeButton',home).setAttribute('aria-expanded','false')}});$('#promptCommandInput',home).addEventListener('input',()=>{$('#promptCommandError',home).textContent='';syncMeta()});
@@ -188,7 +271,7 @@
   function syncHome(){const visible=homeVisible();document.documentElement.classList.toggle('prompt-home-surface',visible);if(!visible)return;const home=ensureHome();if(!home)return;$('#promptHomeName',home).textContent=resolvedName()||'Lars';const access=window.PromptAiAccess||{},plan=access.isAdmin?'Ultimate':String(access.plan||'free');$('#promptHomePlan',home).textContent=plan.charAt(0).toUpperCase()+plan.slice(1);const title=projectTitle(),original=$('#workspaceLastProjectBtn'),latest=$('.prompt-latest',home);
     // Ohne gespeichertes Projekt bot die Zeile etwas an, das es nicht gibt.
     if(latest)latest.hidden=!title;
-    $('#promptLatestTitle',home).textContent=title||'Gespeicherten Arbeitsstand fortsetzen';$('#promptLatestAction',home).disabled=Boolean(original?.disabled);syncMeta();syncFlowUi();applyFlow(flowMode());ensureThemeToggle();const topbar=$('body>.topbar')||$('.topbar');if(topbar){topbar.hidden=false;topbar.removeAttribute('aria-hidden')}}
+    $('#promptLatestTitle',home).textContent=title||'Gespeicherten Arbeitsstand fortsetzen';$('#promptLatestAction',home).disabled=Boolean(original?.disabled);syncMeta();syncFlowUi();applyFlow(flowMode());syncAttachments();ensureThemeToggle();const topbar=$('body>.topbar')||$('.topbar');if(topbar){topbar.hidden=false;topbar.removeAttribute('aria-hidden')}}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(syncHome,25)}
   function init(){installStyles();syncHome();const observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','style']});new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});document.addEventListener('click',event=>{if(event.target.closest?.('#brandHome,.guided-clean-exit,#promptWorkflowLoaderClose'))setTimeout(syncHome,80)},true);window.addEventListener('promptai:access',schedule);window.addEventListener('promptai:quota',syncMeta);window.addEventListener('pageshow',schedule);window.addEventListener('promptai:home',syncHome);window.SiteBriefCloud?.subscribe?.(schedule);let count=0;const warm=setInterval(()=>{syncHome();if(++count>24)clearInterval(warm)},180)}
   window.PromptAiHomeSurface={sync:syncHome};
