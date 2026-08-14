@@ -349,6 +349,9 @@
     });
   }
   function selectMode(mode){const home=ensureHome();if(!home)return;
+    // Eine Fehlerzeile aus einem vorherigen Versuch (z.B. "Bitte kurz beschreiben") galt nur für
+    // den Modus, in dem sie entstand - beim Wechsel muss sie mit weg, sonst klebt sie dauerhaft.
+    const errorSlot=$('#promptCommandError',home);if(errorSlot)errorSlot.textContent='';
     // Gesperrt heisst hier: sofort der Tarifhinweis, kein stiller Wechsel und keine Vorschau
     // einer Funktion, die ohnehin nicht nutzbar ist.
     if(commandModeLocked(mode)){closeModeMenu(home);document.querySelector('#plansDialog')?.showModal();return}
