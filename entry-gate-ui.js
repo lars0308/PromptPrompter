@@ -9,17 +9,29 @@
       .account-dialog.guest-gate .dialog-head{display:none!important}
       #gateActions{display:none}
       .account-dialog.guest-gate:not(.gate-expanded) .auth-layout{display:none!important}
-      .account-dialog.guest-gate:not(.gate-expanded) #gateActions{display:grid;gap:14px;max-width:420px;margin-top:6px}
+      /* The gate is a standalone page, so it uses the full height instead of clustering at the
+         top with dead space underneath: hero and actions share the space, the legal row sits on
+         the bottom edge. */
+      .account-dialog.guest-gate:not(.gate-expanded) .account-body{display:flex;flex-direction:column;min-height:100dvh;padding-bottom:max(20px,env(safe-area-inset-bottom))!important}
+      .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{display:flex;flex-direction:column;flex:1;min-height:0}
+      .account-dialog.guest-gate:not(.gate-expanded) .auth-hero{padding-bottom:0}
+      /* auto on both sides so the leftover height is shared above and below the actions instead
+         of piling up in one gap. */
+      .account-dialog.guest-gate:not(.gate-expanded) #gateActions{display:grid;gap:18px;max-width:420px;margin-top:auto;margin-bottom:auto;padding-top:26px}
+      .account-dialog.guest-gate:not(.gate-expanded) #gateLegalRow{margin-top:auto;padding-top:22px}
       .gate-primary-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
       .gate-primary-actions button{min-height:54px;padding:0 14px;border-radius:14px;font-size:15px;font-weight:750}
       .gate-guest-btn{min-height:64px;padding:0 18px;border:1px solid var(--accent);border-radius:16px;background:var(--accent);color:#fff;font-size:17px;font-weight:800;box-shadow:0 16px 34px rgba(45,147,201,.24)}
       .gate-guest-note{margin:0;color:var(--muted);font-size:9px;text-align:center}
-      .gate-plans-pick{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;margin-top:4px;padding:14px 16px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:14px;background:color-mix(in srgb,var(--accent) 6%,var(--surface));text-align:left}
+      .gate-plans-pick{display:block;width:100%;margin-top:8px;padding:18px 20px;border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--accent) 7%,var(--surface));text-align:left;transition:border-color .16s ease,background .16s ease,transform .16s ease}
+      .gate-plans-pick:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface));transform:translateY(-1px)}
+      .gate-plans-copy{display:block;min-width:0}
       .gate-plans-pick span,.gate-plans-pick strong,.gate-plans-pick small{display:block}
-      .gate-plans-pick span{font-size:8px;font-weight:800;letter-spacing:.12em;color:var(--accent)}
-      .gate-plans-pick strong{margin:3px 0;font-size:13px}
-      .gate-plans-pick small{color:var(--muted);font-size:9px;line-height:1.4}
-      .gate-plans-pick:after{content:"→";grid-row:1/3;align-self:center;color:var(--accent);font-size:16px}
+      .gate-plans-pick .gate-plans-kicker{font-size:8px;font-weight:800;letter-spacing:.12em;color:var(--accent)}
+      .gate-plans-pick strong{margin:4px 0 3px;font-size:14px}
+      .gate-plans-pick small{color:var(--muted);font-size:9px;line-height:1.45}
+      .gate-plans-tiers{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+      .gate-plans-tiers i{padding:5px 10px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:99px;background:var(--surface);color:var(--ink);font-size:9px;font-style:normal;font-weight:750;white-space:nowrap}
       .gate-theme-pick{justify-self:center;margin-top:2px;display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--muted);font-size:9px}
       .gate-theme-pick:hover{color:var(--ink)}
       @media(max-width:360px){.gate-primary-actions{grid-template-columns:1fr}}
@@ -28,16 +40,16 @@
         .account-dialog.guest-gate:not(.gate-expanded) .auth-hero{max-width:100%;width:100%;text-align:center}
         .account-dialog.guest-gate:not(.gate-expanded) .auth-brand{justify-content:center}
         .account-dialog.guest-gate:not(.gate-expanded) .auth-hero h1{max-width:100%}
-        .account-dialog.guest-gate:not(.gate-expanded) #gateActions{max-width:640px;width:100%;gap:18px;margin-top:10px}
+        .account-dialog.guest-gate:not(.gate-expanded) #gateActions{max-width:640px;width:100%;gap:20px;margin-top:auto;margin-bottom:auto}
         .gate-primary-actions{gap:14px}
         .gate-primary-actions button{min-height:64px;font-size:17px;border-radius:16px}
         .gate-guest-btn{min-height:74px;font-size:19px;border-radius:18px}
         .gate-guest-note{font-size:11px}
-        .gate-plans-pick{padding:20px 22px;border-radius:18px}
-        .gate-plans-pick span{font-size:9px}
-        .gate-plans-pick strong{font-size:17px;margin:5px 0}
+        .gate-plans-pick{padding:24px 26px;border-radius:18px}
+        .gate-plans-pick .gate-plans-kicker{font-size:9px}
+        .gate-plans-pick strong{font-size:18px;margin:6px 0 4px}
         .gate-plans-pick small{font-size:11px}
-        .gate-plans-pick:after{font-size:20px}
+        .gate-plans-tiers i{font-size:11px;padding:6px 13px}
         .gate-theme-pick{font-size:11px}
       }
     `;document.head.appendChild(s);
@@ -46,14 +58,41 @@
   function ensureGateActions(){
     const hero=$('#accountLoggedOut .auth-hero');if(!hero||$('#gateActions'))return;
     const box=document.createElement('div');box.id='gateActions';
-    box.innerHTML='<div class="gate-primary-actions"><button type="button" class="outline-btn" id="gateSignInPick">Anmelden</button><button type="button" class="outline-btn" id="gateSignUpPick">Registrieren</button></div><button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen</button><p class="gate-guest-note">Ohne Konto, jederzeit später upgradebar.</p><button type="button" class="gate-plans-pick" id="gatePlansPick"><span>MEHR FUNKTIONEN</span><strong>Lieber direkt mit einem Abo starten?</strong><small>Pro und Ultimate im Vergleich ansehen.</small></button><button type="button" class="gate-theme-pick" id="gateThemePick">Anderes Farbschema verwenden</button>';
+    box.innerHTML='<div class="gate-primary-actions"><button type="button" class="outline-btn" id="gateSignInPick">Anmelden</button><button type="button" class="outline-btn" id="gateSignUpPick">Registrieren</button></div><button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen</button><p class="gate-guest-note">Ohne Konto, jederzeit später upgradebar.</p><button type="button" class="gate-plans-pick" id="gatePlansPick"><span class="gate-plans-copy"><span class="gate-plans-kicker">ABO ABSCHLIESSEN</span><strong>Alle drei Tarife im Vergleich</strong><small>Kostenlos, Pro und Ultimate nebeneinander – mit allen Leistungen und Preisen.</small><span class="gate-plans-tiers"><i>Kostenlos 0 €</i><i id="gateProTier">Pro 15,99 €</i><i id="gateUltimateTier">Ultimate 25,99 €</i></span></span></button><button type="button" class="gate-theme-pick" id="gateThemePick">Anderes Farbschema verwenden</button>';
     hero.insertAdjacentElement('afterend',box);
     const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
     $('#gateSignInPick',box).addEventListener('click',reveal);
     $('#gateSignUpPick',box).addEventListener('click',reveal);
     $('#gateGuestBtn',box).addEventListener('click',()=>$('#guestContinueBtn')?.click());
-    $('#gatePlansPick',box).addEventListener('click',()=>$('#plansDialog')?.showModal());
+    $('#gatePlansPick',box).addEventListener('click',()=>openPlansFromGate());
     $('#gateThemePick',box).addEventListener('click',()=>$('#themeToggleBtn')?.click());
+  }
+
+  // The price labels in the plans dialog are the single place live Stripe pricing is written to
+  // (ui-regression-fixes.applyPricing). Mirroring them keeps the chips correct without a second
+  // source; watchPricing below reacts to the text changing, which settle() alone would miss
+  // because a characterData change is not a childList or attribute mutation.
+  function syncTierChips(){
+    const pro=$('#proPriceLabel')?.textContent?.trim(),ultimate=$('#ultimatePriceLabel')?.textContent?.trim();
+    const chip=(id,label,price)=>{const node=$(id);if(!node||!price)return;const text=`${label} ${price.replace(/\s*\/\s*Monat$/,'').trim()}`;if(node.textContent!==text)node.textContent=text};
+    chip('#gateProTier','Pro',pro);chip('#gateUltimateTier','Ultimate',ultimate);
+  }
+  function watchPricing(){
+    for(const id of ['#proPriceLabel','#ultimatePriceLabel']){
+      const label=$(id);if(!label||label.__gatePriceWatched)continue;
+      label.__gatePriceWatched=true;
+      new MutationObserver(syncTierChips).observe(label,{childList:true,characterData:true,subtree:true});
+    }
+  }
+
+  // Opened from the login page, so closing the plans dialog has to land back on the login page
+  // rather than on whatever sits behind it.
+  function openPlansFromGate(){
+    const plans=$('#plansDialog');if(!plans)return;
+    const account=$('#accountDialog'),wasOpen=Boolean(account?.open);
+    if(!plans.open)plans.showModal();
+    if(!wasOpen)return;
+    plans.addEventListener('close',()=>{const dialog=$('#accountDialog');if(dialog&&!dialog.open){try{dialog.showModal()}catch{}}},{once:true});
   }
 
   function resetExpansion(){
@@ -61,7 +100,7 @@
     if(!dialog.classList.contains('guest-gate'))dialog.classList.remove('gate-expanded');
   }
 
-  function settle(){styles();ensureGateActions();resetExpansion()}
+  function settle(){styles();ensureGateActions();watchPricing();syncTierChips();resetExpansion()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
   function init(){settle();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});window.addEventListener('promptai:access',schedule);window.addEventListener('pageshow',schedule)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();

@@ -13,6 +13,13 @@
       body.prompt-unified-ui .welcome-page{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:var(--prompt-content)!important}
       html[data-clean-project-flow="1"] body.prompt-unified-ui #workflowApp{width:100%!important;max-width:none!important}
       html[data-clean-project-flow="1"] body.prompt-unified-ui .workspace{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:var(--prompt-content)!important}
+      /* The frame is the visible card. The <dialog> box around it is transparent, but it still
+         clips: a 1233px card inside a 1000px dialog (#legalDialog, #appActionDialog,
+         #agentLaunchDialog) hung out on both sides and cut the text off. The box therefore gets at
+         least the same room as the widest card it can hold. The three dialogs that paint their own
+         background keep their own size. */
+      body.prompt-unified-ui #legalDialog{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:none!important}
+      body.prompt-unified-ui #appActionDialog,body.prompt-unified-ui #agentLaunchDialog{width:min(900px,calc(100vw - 28px))!important;max-width:none!important}
       body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog) .dialog-frame{width:min(var(--prompt-content),calc(100vw - 32px))!important;max-width:var(--prompt-content)!important;margin:16px auto!important}
       body.prompt-unified-ui #adminDialog .dialog-frame{width:min(1380px,calc(100vw - 32px))!important;max-width:1380px!important}
       body.prompt-unified-ui #libraryDialog .dialog-frame,body.prompt-unified-ui #settingsDialog .dialog-frame,body.prompt-unified-ui #accountDialog .dialog-frame{width:min(1280px,calc(100vw - 32px))!important;max-width:1280px!important}
@@ -47,7 +54,7 @@
         body.prompt-unified-ui .welcome-page{width:100%!important;max-width:none!important;padding-left:15px!important;padding-right:15px!important}
         html[data-clean-project-flow="1"] body.prompt-unified-ui .workspace{width:100%!important;max-width:none!important}
         body.prompt-unified-ui .topbar-menu{left:10px!important;right:10px!important;top:86px!important;bottom:auto!important;width:auto!important;max-height:calc(100dvh - 98px)!important;border-radius:16px!important}
-        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog) .dialog-frame{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important}
+        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#cookieBanner) .dialog-frame{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important}
         .free-prompt-brief-card{grid-template-columns:1fr}.free-prompt-brief-card button{width:100%}
       }
       @media(prefers-reduced-motion:reduce){body.prompt-unified-ui .topbar-menu.open,body.prompt-unified-ui .topbar-menu[data-open="true"],body.prompt-unified-ui dialog[open] .dialog-frame,body.prompt-unified-ui .step-panel.active,body.prompt-unified-ui .library-pane.active,body.prompt-unified-ui .admin-pane.active,.free-prompt-result:not([hidden]){animation:none!important;transition:none!important}}

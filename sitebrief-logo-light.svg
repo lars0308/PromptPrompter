@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Prompt.ai</title>
+  <desc id="desc">Helle Fassung: ein geometrisches P: dunkler Bogen, angeschnittener Schaft mit blauer Spitze.</desc>
+  <!-- Der Körper des P: waagerechte Oberkante, angeschnittene obere linke Ecke,
+       runder Bogen nach rechts, Schaft nach unten. Die Punze ist als zweiter
+       Teilpfad ausgespart (fill-rule evenodd). -->
+  <path fill-rule="evenodd" fill="#eef5fb" d="
+    M151 94
+    L270 94
+    A91.5 91.5 0 0 1 270 277
+    L219 277
+    L219 318
+    L155 262
+    L155 159
+    L219 159
+    Z
+    M277 150
+    A36 36 0 0 1 277 222
+    L219 222
+    L219 150
+    Z
+  "/>
+  <!-- Die blaue Spitze schließt den Schaft ab, oben und unten im gleichen Winkel. -->
+  <path fill="#1f63db" d="M155 262 L219 318 L219 371 L155 419 Z"/>
+</svg>

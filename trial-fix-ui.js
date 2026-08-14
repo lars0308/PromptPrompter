@@ -6,12 +6,13 @@
   const proPrice=()=>String(window.SiteBriefCloud?.config?.pricing?.pro||'15,99 € / Monat');
 
   function trialCopy(subscription){
-    if(!subscription||subscription.plan!=='pro'||subscription.status!=='trialing')return null;
+    // Pro and Ultimate can both be in a trial now.
+    if(!subscription||!['pro','ultimate'].includes(subscription.plan)||subscription.status!=='trialing')return null;
     const end=subscription.current_period_end?new Date(subscription.current_period_end):null;
     const validEnd=end&&!Number.isNaN(end.getTime());
     const remaining=validEnd?Math.max(0,Math.ceil((end.getTime()-Date.now())/DAY)):null;
     const when=validEnd?fmt(end):'';
-    let lead='Pro-Testphase aktiv.';
+    let lead=`${subscription.plan==='ultimate'?'Ultimate':'Pro'}-Testphase aktiv.`;
     if(remaining!==null)lead=remaining<=0?'Deine Pro-Testphase endet heute.':`Noch ${remaining} ${remaining===1?'Tag':'Tage'} kostenlos.`;
     const until=when?` Kostenlos bis ${when}.`:'';
     return `${lead}${until} Danach ${proPrice()}. Über „Abo verwalten“ kannst du die Testphase vor Ablauf kündigen.`;
@@ -28,7 +29,7 @@
     const badge=$('#currentPlanBadge'),title=$('#currentPlanTitle'),description=$('#currentPlanDescription'),manage=$('#manageSubscriptionBtn');
     if(copy){
       if(badge)badge.textContent='TESTPHASE';
-      if(title)title.textContent='Pro · Testphase';
+      if(title)title.textContent=`${subscription?.plan==='ultimate'?'Ultimate':'Pro'} · Testphase`;
       if(description)description.textContent=copy;
       if(manage)manage.textContent='Abo verwalten';
       document.documentElement.dataset.proTrial='1';
@@ -43,14 +44,15 @@
       const response=await fetch('/api/offer',{cache:'no-store'}),data=await response.json(),offer=data?.offer;
       if(!offer)return;
       const pro=$('#startProCheckoutBtn'),ultimate=$('#startUltimateCheckoutBtn');
-      if(pro)pro.textContent=offer.cta_label||(Number(offer.trial_days)>0?`${offer.trial_days} Tage kostenlos testen`:'Pro wählen');
-      if(ultimate&&Number(offer.trial_days)>0)ultimate.textContent='Ultimate wählen';
+      if(pro)pro.textContent=offer.cta_label||(Number(offer.trial_days)>0?`${offer.trial_days} Tage kostenlos testen`:'Jetzt kaufen');
+      // The trial applies to Pro and Ultimate alike now, so both buttons say the same thing.
+      if(ultimate)ultimate.textContent=offer.cta_label||(Number(offer.trial_days)>0?`${offer.trial_days} Tage kostenlos testen`:'Jetzt kaufen');
     }catch{}
   }
 
   function adminTrialHint(){
     const input=$('#adminOfferTrialDays');if(!input||$('#proTrialOnlyHint'))return;
-    const hint=document.createElement('small');hint.id='proTrialOnlyHint';hint.textContent='Der Testzeitraum gilt ausschließlich für Pro. Ultimate bleibt davon unberührt.';hint.style.cssText='display:block;margin-top:7px;color:var(--muted);font-size:10px;line-height:1.45';
+    const hint=document.createElement('small');hint.id='proTrialOnlyHint';hint.textContent='Gilt für Pro und Ultimate und wird beim Kauf an Stripe übergeben. Laufende Abos bleiben unberührt.';hint.style.cssText='display:block;margin-top:7px;color:var(--muted);font-size:10px;line-height:1.45';
     input.insertAdjacentElement('afterend',hint);
   }
 

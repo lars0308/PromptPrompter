@@ -2,19 +2,22 @@ const {getEntitlements}=require('./entitlements');
 const {authenticatedUser}=require('./supabase-user');
 const {serviceFetch}=require('./admin');
 
+// monthly_tokens is the internal cost guard behind the countable units. 0 = no limit, which is
+// the default until real numbers exist: a budget guessed in advance would throttle accounts for
+// no reason.
 const PLAN_LIMITS=Object.freeze({
-  free:{free_prompts:10,website_generations:3,ai_previews:0},
-  pro:{free_prompts:100,website_generations:25,ai_previews:50},
-  ultimate:{free_prompts:500,website_generations:100,ai_previews:250}
+  free:{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:0},
+  pro:{free_prompts:100,website_generations:25,ai_previews:50,monthly_tokens:0},
+  ultimate:{free_prompts:500,website_generations:100,ai_previews:250,monthly_tokens:0}
 });
 let limitsCache=null,limitsCacheAt=0;
 const LIMITS_CACHE_MS=30000;
 async function loadPlanLimits(){
   if(limitsCache&&Date.now()-limitsCacheAt<LIMITS_CACHE_MS)return limitsCache;
   try{
-    const rows=(await serviceFetch('/rest/v1/sitebrief_quota_limits?select=plan,free_prompts,website_generations,ai_previews')).data||[];
+    const rows=(await serviceFetch('/rest/v1/sitebrief_quota_limits?select=plan,free_prompts,website_generations,ai_previews,monthly_tokens')).data||[];
     const merged={free:{...PLAN_LIMITS.free},pro:{...PLAN_LIMITS.pro},ultimate:{...PLAN_LIMITS.ultimate}};
-    for(const row of rows){if(merged[row.plan])merged[row.plan]={free_prompts:Number(row.free_prompts)||0,website_generations:Number(row.website_generations)||0,ai_previews:Number(row.ai_previews)||0}}
+    for(const row of rows){if(merged[row.plan])merged[row.plan]={free_prompts:Number(row.free_prompts)||0,website_generations:Number(row.website_generations)||0,ai_previews:Number(row.ai_previews)||0,monthly_tokens:Math.max(0,Number(row.monthly_tokens)||0)}}
     limitsCache=merged;limitsCacheAt=Date.now();return merged;
   }catch{return limitsCache||PLAN_LIMITS}
 }
@@ -40,8 +43,47 @@ function nextResetText(value){return new Intl.DateTimeFormat('de-DE',{day:'2-dig
 
 async function usageRows(userId,start,end){
   const actions=Object.values(METRIC_ACTIONS).join(',');
-  const path=`/rest/v1/sitebrief_usage_events?select=action&user_id=eq.${encodeURIComponent(userId)}&success=eq.true&action=in.(${encodeURIComponent(actions).replace(/%2C/g,',')})&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=2000`;
+  const path=`/rest/v1/sitebrief_usage_events?select=action,key_source&user_id=eq.${encodeURIComponent(userId)}&success=eq.true&action=in.(${encodeURIComponent(actions).replace(/%2C/g,',')})&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=2000`;
   return (await serviceFetch(path)).data||[];
+}
+// A run on the visitor's own key costs us nothing but the orchestration, so it counts half: two of
+// them use up one unit of the monthly allowance. Whole numbers stay whole - only own runs bring
+// halves into the sum, and the display rounds them down.
+const OWN_KEY_WEIGHT=0.5;
+const rowWeight=row=>row?.key_source==='account'?OWN_KEY_WEIGHT:1;
+
+// Tokens paid by the visitor never touch the budget: the budget exists to cap our cost.
+async function tokensUsed(userId,start,end){
+  const path=`/rest/v1/sitebrief_usage_events?select=total_tokens&user_id=eq.${encodeURIComponent(userId)}&total_tokens=gt.0&key_source=neq.account&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=5000`;
+  const rows=(await serviceFetch(path)).data||[];
+  return rows.reduce((sum,row)=>sum+(Number(row.total_tokens)||0),0);
+}
+// Reaching the budget never blocks a request - it switches the routing to the cheapest AI of the
+// plan (see api/generate.js). Administrators are never downgraded, so the console keeps testing
+// against the real chain.
+// An administrator can grant a single account extra tokens for the month from the token area. The
+// bonus is added on top of the plan budget, so it postpones the saver downgrade without changing
+// what the plan includes.
+async function tokenBonus(userId){
+  try{
+    const path=`/rest/v1/sitebrief_user_admin_state?select=monthly_token_bonus&user_id=eq.${encodeURIComponent(userId)}&limit=1`;
+    const rows=(await serviceFetch(path)).data||[];
+    return Math.max(0,Number(rows[0]?.monthly_token_bonus)||0);
+  }catch{return 0}
+}
+async function getTokenBudget(req){
+  const off={limit:0,used:0,remaining:0,bonus:0,exhausted:false,resetAt:monthWindow().end.toISOString()};
+  try{
+    const entitlement=await getEntitlements(req);
+    if(entitlement.isAdmin)return off;
+    const limits=await limitsFor(entitlement.plan||'free'),planLimit=Math.max(0,Number(limits.monthly_tokens)||0);
+    if(!planLimit)return off;
+    const user=await authenticatedUser(req);
+    if(!user?.id)return off;
+    const bonus=await tokenBonus(user.id),limit=planLimit+bonus;
+    const {start,end}=monthWindow(),used=await tokensUsed(user.id,start,end);
+    return {limit,used,bonus,remaining:Math.max(0,limit-used),exhausted:used>=limit,resetAt:end.toISOString()};
+  }catch{return off}
 }
 
 async function getQuotaSummary(req){
@@ -49,10 +91,11 @@ async function getQuotaSummary(req){
   let user=null;try{user=await authenticatedUser(req)}catch{}
   let available=true,rows=[];
   if(user){try{rows=await usageRows(user.id,start,end)}catch{available=false}}
-  const counts={free_prompts:0,website_generations:0,ai_previews:0};
-  for(const row of rows){for(const [metric,action] of Object.entries(METRIC_ACTIONS))if(row?.action===action)counts[metric]++}
-  const metrics={};for(const key of Object.keys(counts))metrics[key]=metricResult(limits[key],counts[key]);
-  return {plan,isAdmin:Boolean(entitlement.isAdmin),authenticated:Boolean(user),available,enforced:Boolean(user)&&available&&!entitlement.isAdmin,periodStart:start.toISOString(),periodEnd:end.toISOString(),metrics};
+  const counts={free_prompts:0,website_generations:0,ai_previews:0},ownRuns={free_prompts:0,website_generations:0,ai_previews:0};
+  for(const row of rows)for(const [metric,action] of Object.entries(METRIC_ACTIONS))if(row?.action===action){counts[metric]+=rowWeight(row);if(rowWeight(row)!==1)ownRuns[metric]++}
+  const metrics={};for(const key of Object.keys(counts))metrics[key]={...metricResult(limits[key],Math.floor(counts[key])),exact:counts[key],ownRuns:ownRuns[key]};
+  const tokens=await getTokenBudget(req);
+  return {plan,isAdmin:Boolean(entitlement.isAdmin),authenticated:Boolean(user),available,enforced:Boolean(user)&&available&&!entitlement.isAdmin,periodStart:start.toISOString(),periodEnd:end.toISOString(),metrics,tokens};
 }
 
 async function assertQuota(req,metric){
@@ -70,14 +113,24 @@ async function assertQuota(req,metric){
   return {allowed:true,summary,item};
 }
 
-async function consumeWebsiteGeneration(req){
+// One preview run = three images. Counting every image would have made a project with two
+// regenerations eat nine of them, so the run is what is booked - written server-side, once.
+async function consumePreviewRun(req,keySource='system'){
+  const checked=await assertQuota(req,'ai_previews');
+  if(!checked.summary.authenticated||!checked.summary.available)return checked.summary;
+  const user=await authenticatedUser(req);
+  await serviceFetch('/rest/v1/sitebrief_usage_events',{method:'POST',headers:{Prefer:'return=minimal'},body:{user_id:user.id,action:METRIC_ACTIONS.ai_previews,provider:'prompt-ai',model:'',success:true,error_message:'',project_name:'Vorschau-Durchlauf',project_type:'Website',project_goal:'',key_source:keySource==='account'?'account':'system'}});
+  return getQuotaSummary(req);
+}
+
+async function consumeWebsiteGeneration(req,keySource='system'){
   const checked=await assertQuota(req,'website_generations');
   if(!checked.summary.authenticated||!checked.summary.available)return getQuotaSummary(req);
   const user=await authenticatedUser(req);
-  await serviceFetch('/rest/v1/sitebrief_usage_events',{method:'POST',headers:{Prefer:'return=minimal'},body:{user_id:user.id,action:METRIC_ACTIONS.website_generations,provider:'prompt-ai',model:'',success:true,error_message:'',project_name:'Website-Projekt',project_type:'Website',project_goal:''}});
+  await serviceFetch('/rest/v1/sitebrief_usage_events',{method:'POST',headers:{Prefer:'return=minimal'},body:{user_id:user.id,action:METRIC_ACTIONS.website_generations,provider:'prompt-ai',model:'',success:true,error_message:'',project_name:'Website-Projekt',project_type:'Website',project_goal:'',key_source:keySource==='account'?'account':'system'}});
   return getQuotaSummary(req);
 }
 
 function quotaErrorPayload(error){return {error:error?.message||'Monatskontingent nicht verfügbar.',code:error?.code||'QUOTA_ERROR',metric:error?.metric||null,quota:error?.quota||null}}
 
-module.exports={PLAN_LIMITS,METRIC_ACTIONS,getQuotaSummary,assertQuota,consumeWebsiteGeneration,quotaErrorPayload};
+module.exports={PLAN_LIMITS,METRIC_ACTIONS,getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,consumePreviewRun,quotaErrorPayload};

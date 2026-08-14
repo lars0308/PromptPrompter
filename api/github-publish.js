@@ -8,8 +8,8 @@ async function publishNew(token,repoNameInput,files){
   const repoName=String(repoNameInput||'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-').slice(0,80);
   if(!repoName||!Object.keys(files).length)throw Object.assign(new Error('Repository-Name und Dateien fehlen.'),{status:400});
   const repo=await github('/user/repos',token,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:repoName,private:false,description:'Erstellt mit Prompt.ai',auto_init:true})});
-  for(const [path,content] of Object.entries(files).slice(0,20))await github(`/repos/${repo.full_name}/contents/${encodeURIComponent(path)}`,token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`Add ${path}`,content:Buffer.from(String(content)).toString('base64')})});
-  return {url:repo.html_url,fullName:repo.full_name};
+  for(const [path,content] of Object.entries(files).slice(0,40))await github(`/repos/${repo.full_name}/contents/${encodeURIComponent(path)}`,token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`Add ${path}`,content:Buffer.from(String(content)).toString('base64')})});
+  return {url:repo.html_url,fullName:repo.full_name,branch:repo.default_branch||'main'};
 }
 async function publishExisting(token,targetRepoInput,branchInput,files){
   const repo=parseRepoInput(targetRepoInput);
@@ -17,12 +17,23 @@ async function publishExisting(token,targetRepoInput,branchInput,files){
   if(!Object.keys(files).length)throw Object.assign(new Error('Dateien fehlen.'),{status:400});
   const repoData=await github(`/repos/${repo.slug}`,token);
   const branch=String(branchInput||repoData.default_branch||'main').trim();
-  for(const [path,content] of Object.entries(files).slice(0,20)){
+  for(const [path,content] of Object.entries(files).slice(0,40)){
     let sha;
     try{const existing=await github(`/repos/${repo.slug}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`,token);sha=existing.sha}catch{}
     await github(`/repos/${repo.slug}/contents/${encodeURIComponent(path)}`,token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`Update ${path} via Prompt.ai`,content:Buffer.from(String(content)).toString('base64'),branch,...(sha?{sha}:{})})});
   }
-  return {url:repoData.html_url,fullName:repoData.full_name};
+  return {url:repoData.html_url,fullName:repoData.full_name,branch};
+}
+// A static Probelauf is only worth uploading if it can also be looked at. Pages is one call; when
+// it fails (org policy, private repo on a free plan) the repository link still works, so the
+// failure is reported and never blocks the upload.
+async function enablePages(token,fullName,branch){
+  try{
+    const existing=await github(`/repos/${fullName}/pages`,token).catch(()=>null);
+    if(existing?.html_url)return {url:existing.html_url,enabled:true};
+    const page=await github(`/repos/${fullName}/pages`,token,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:{branch:branch||'main',path:'/'}})});
+    return {url:page?.html_url||'',enabled:Boolean(page?.html_url)};
+  }catch(error){return {url:'',enabled:false,error:error.message||'GitHub Pages konnte nicht aktiviert werden.'}}
 }
 module.exports=async function(req,res){
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
@@ -34,8 +45,13 @@ module.exports=async function(req,res){
     if(!token)throw Object.assign(new Error('Verbinde zuerst GitHub unter Einstellungen → Verbindungen.'),{status:503});
     const action=String(req.body?.action||'publish');
     if(action==='list-repos')return res.status(200).json({repos:await listRepos(token)});
-    if(action==='publish-existing')return res.status(200).json(await publishExisting(token,req.body?.targetRepo,req.body?.branch,req.body?.files||{}));
-    return res.status(200).json(await publishNew(token,req.body?.repoName,req.body?.files||{}));
+    const wantPages=req.body?.pages===true;
+    if(action==='publish-existing'){
+      const result=await publishExisting(token,req.body?.targetRepo,req.body?.branch,req.body?.files||{});
+      return res.status(200).json({...result,pages:wantPages?await enablePages(token,result.fullName,result.branch):null});
+    }
+    const created=await publishNew(token,req.body?.repoName,req.body?.files||{});
+    return res.status(200).json({...created,pages:wantPages?await enablePages(token,created.fullName,created.branch):null});
   }catch(error){
     return res.status(error.status||500).json({error:error.message||'GitHub-Veröffentlichung fehlgeschlagen'});
   }

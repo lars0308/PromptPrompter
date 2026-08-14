@@ -27,8 +27,13 @@
       body.prompt-unified-ui .topbar-menu{position:fixed!important;z-index:220!important;right:16px!important;top:90px!important;display:none!important;width:min(360px,calc(100vw - 32px))!important;padding:12px!important;border:1px solid var(--ui-line)!important;border-radius:18px!important;background:var(--ui-card)!important;box-shadow:var(--ui-shadow)!important;overflow:auto!important}
       body.prompt-unified-ui .topbar-menu.open,body.prompt-unified-ui .topbar-menu[data-open="true"]{display:grid!important;gap:5px!important}
       body.prompt-unified-ui .topbar-menu:before{content:'MENÜ';display:block;padding:7px 9px 9px;color:var(--ui-blue);font-size:9px;font-weight:850;letter-spacing:.11em}
-      body.prompt-unified-ui .topbar-menu>button{display:flex!important;min-height:48px!important;width:100%!important;align-items:center!important;justify-content:flex-start!important;padding:0 13px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:var(--ink)!important;text-decoration:none!important;font-size:13px!important;font-weight:700!important;text-align:left!important}
-      body.prompt-unified-ui .topbar-menu>button:hover{background:var(--ui-soft)!important;transform:none!important;box-shadow:none!important}
+      /* :not([hidden]) is required. The hidden attribute only carries the user-agent's
+         display:none, so an unconditional display:flex!important here republished every gated
+         entry - Verwaltung, Projekte, Abonnement, App installieren and Abmelden were all visible
+         to guests even though the app had explicitly hidden them. */
+      body.prompt-unified-ui .topbar-menu>[hidden]{display:none!important}
+      body.prompt-unified-ui .topbar-menu>button:not([hidden]){display:flex!important;min-height:48px!important;width:100%!important;align-items:center!important;justify-content:flex-start!important;padding:0 13px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:var(--ink)!important;text-decoration:none!important;font-size:13px!important;font-weight:700!important;text-align:left!important}
+      body.prompt-unified-ui .topbar-menu>button:not([hidden]):hover{background:var(--ui-soft)!important;transform:none!important;box-shadow:none!important}
       body.prompt-unified-ui .topbar-menu .theme-toggle{border:0!important;box-shadow:none!important}.topbar-menu .theme-toggle span{margin-right:4px}
       body.prompt-unified-ui .topbar-menu-backdrop:not([hidden]){position:fixed!important;display:block!important;z-index:210!important;inset:0!important;background:rgba(15,20,25,.24)!important;backdrop-filter:blur(3px)!important}
 
@@ -104,16 +109,24 @@
       body.prompt-unified-ui .project-mode-dialog{background:transparent!important}.project-mode-frame{border:1px solid var(--ui-line)!important;border-radius:22px!important;background:var(--ui-card)!important;box-shadow:var(--ui-shadow)!important}.project-mode-card{border:1px solid var(--ui-line)!important;border-radius:13px!important;background:var(--ui-card)!important;box-shadow:none!important}.project-mode-card:hover:not(:disabled){border-color:var(--ui-blue)!important;transform:none!important}.project-mode-head h2{font-family:Arial,Helvetica,sans-serif!important;font-weight:800!important}.project-mode-head span,.project-mode-card i{color:var(--ui-blue)!important}
 
       @media(max-width:820px){
-        body.prompt-unified-ui .topbar{height:70px!important;margin:8px 10px 0!important}.brand-copy strong{font-size:17px!important}.upgrade-btn{display:none!important}
+        /* .upgrade-btn was unscoped here, so it hid every upgrade button on small screens - not
+           just the topbar one that moves into the menu, but also the "Tarife ansehen" button in
+           the login card. Scoped to the topbar. */
+        body.prompt-unified-ui .topbar{height:70px!important;margin:8px 10px 0!important}.brand-copy strong{font-size:17px!important}body.prompt-unified-ui .topbar .upgrade-btn{display:none!important}
         body.prompt-unified-ui .topbar-menu{right:10px!important;left:10px!important;top:auto!important;bottom:10px!important;width:auto!important;max-height:min(72dvh,620px)!important;border-radius:20px!important;padding:12px 12px calc(12px + env(safe-area-inset-bottom))!important}
         body.prompt-unified-ui .topbar-menu>button{min-height:52px!important;font-size:14px!important}
         body.prompt-unified-ui .welcome-page{width:100%!important;padding:32px 15px 45px!important}.welcome-hero{padding-left:4px!important;padding-right:4px!important}.welcome-hero h1{font-size:43px!important}
-        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog){width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important}
-        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog) .dialog-frame{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#cookieBanner){width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important}
+        body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#cookieBanner) .dialog-frame{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
         body.prompt-unified-ui .dialog-head{padding:14px 15px!important}.dialog-head h2{font-size:25px!important}
         body.prompt-unified-ui .settings-body,body.prompt-unified-ui .account-body,body.prompt-unified-ui .library-pane,body.prompt-unified-ui .library-tools,body.prompt-unified-ui .quick-revision-body,body.prompt-unified-ui .admin-body,body.prompt-unified-ui .clarification-body{padding-left:15px!important;padding-right:15px!important}
         body.prompt-unified-ui .library-tabs,body.prompt-unified-ui .admin-tabs{padding-left:12px!important;padding-right:12px!important}
-        body.prompt-unified-ui .ai-connection-grid,body.prompt-unified-ui .admin-stats{grid-template-columns:1fr!important}
+        body.prompt-unified-ui .ai-connection-grid{grid-template-columns:1fr!important}
+        /* Four full-width stat cards filled the phone screen before the first real content. Two per
+           row says the same in half the height. */
+        body.prompt-unified-ui .admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+        body.prompt-unified-ui .admin-stats article{padding:14px!important}
+        body.prompt-unified-ui .admin-stats strong{font-size:23px!important}
         body.prompt-unified-ui .field-grid.two,body.prompt-unified-ui .field-grid.three{grid-template-columns:1fr!important}
         body.prompt-unified-ui .project-mode-dialog{width:100vw!important;height:100dvh!important}.project-mode-frame{min-height:100dvh!important;border:0!important;border-radius:0!important;padding:24px 15px 36px!important}
         body.prompt-unified-ui .project-mode-grid{grid-template-columns:1fr!important}

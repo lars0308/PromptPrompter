@@ -1,8 +1,10 @@
 const {requireAdmin,serviceFetch}=require('../server/admin');
 const {SUPABASE_URL,PUBLISHABLE_KEY}=require('../server/supabase-user');
 const {stripeRequest,stripeGet}=require('../server/stripe-rest');
+const {isPromptKey}=require('../server/prompt-templates');
 
 const uuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
+const ADMIN_EMAIL=String(process.env.PROMPT_AI_ADMIN_EMAIL||'service.battermann@gmx.de').trim().toLowerCase();
 const AI_PROVIDERS=['gateway','openai','gemini','cloudflare'];
 const validAiProvider=value=>{const provider=String(value||'').toLowerCase();if(!AI_PROVIDERS.includes(provider))throw Object.assign(new Error('Unbekannter KI-Anbieter.'),{status:400});return provider};
 async function audit(adminId,action,targetId,details={}){try{await serviceFetch('/rest/v1/sitebrief_admin_audit',{method:'POST',headers:{Prefer:'return=minimal'},body:{admin_user_id:adminId,action,target_user_id:uuid(targetId)?targetId:null,details}})}catch{}}
@@ -47,7 +49,17 @@ module.exports=async function(req,res){
       if(!uuid(body.id))return res.status(400).json({error:'Ungültige Vorschau-KI.'});await serviceFetch(`/rest/v1/sitebrief_preview_ai_routes?id=eq.${encodeURIComponent(body.id)}`,{method:'DELETE'});await audit(admin.id,action,null,{id:body.id});return res.status(200).json({ok:true});
     }
 
-    if(['suspend','unsuspend','set-plan','send-password-reset','cancel-subscription','refund-latest'].includes(action)&&!uuid(body.userId))return res.status(400).json({error:'Ungültiger Benutzer.'});
+    if(['suspend','unsuspend','set-plan','send-password-reset','cancel-subscription','refund-latest','set-admin'].includes(action)&&!uuid(body.userId))return res.status(400).json({error:'Ungültiger Benutzer.'});
+    if(action==='set-admin'){
+      const makeAdmin=body.admin!==false;
+      // The owner address always keeps its rights, so the console can never lock itself out.
+      const target=await serviceFetch(`/auth/v1/admin/users/${body.userId}`);
+      const email=String(target.data?.email||'').trim().toLowerCase();
+      if(!makeAdmin&&email===ADMIN_EMAIL)return res.status(400).json({error:'Dem Eigentümer-Konto können die Administratorrechte nicht entzogen werden.'});
+      if(makeAdmin)await serviceFetch('/rest/v1/sitebrief_admins?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:{user_id:body.userId}});
+      else await serviceFetch(`/rest/v1/sitebrief_admins?user_id=eq.${encodeURIComponent(body.userId)}`,{method:'DELETE'});
+      await audit(admin.id,action,body.userId,{admin:makeAdmin,email});return res.status(200).json({ok:true});
+    }
     if(action==='suspend'){
       const days=Math.max(1,Math.min(3650,Number(body.days)||30)),until=new Date(Date.now()+days*86400000).toISOString();
       await serviceFetch(`/auth/v1/admin/users/${body.userId}`,{method:'PUT',body:{ban_duration:`${days*24}h`}});
@@ -98,16 +110,80 @@ module.exports=async function(req,res){
     }
     if(action==='save-quota-limits'){
       const plans=body.plans&&typeof body.plans==='object'?body.plans:{};
-      const rows=['free','pro','ultimate'].filter(plan=>plans[plan]).map(plan=>({plan,free_prompts:Math.max(0,Math.min(100000,Number(plans[plan].free_prompts)||0)),website_generations:Math.max(0,Math.min(100000,Number(plans[plan].website_generations)||0)),ai_previews:Math.max(0,Math.min(100000,Number(plans[plan].ai_previews)||0)),updated_by:admin.id,updated_at:new Date().toISOString()}));
+      const rows=['free','pro','ultimate'].filter(plan=>plans[plan]).map(plan=>({plan,free_prompts:Math.max(0,Math.min(100000,Number(plans[plan].free_prompts)||0)),website_generations:Math.max(0,Math.min(100000,Number(plans[plan].website_generations)||0)),ai_previews:Math.max(0,Math.min(100000,Number(plans[plan].ai_previews)||0)),updated_by:admin.id,updated_at:new Date().toISOString(),monthly_tokens:Math.max(0,Math.min(2000000000,Number(plans[plan].monthly_tokens)||0))}));
       if(!rows.length)return res.status(400).json({error:'Keine gültigen Tarifkontingente übergeben.'});
       await serviceFetch('/rest/v1/sitebrief_quota_limits?on_conflict=plan',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:rows});
       await audit(admin.id,action,null,{plans:rows.map(r=>r.plan)});
       return res.status(200).json({ok:true});
     }
+    // Token budgets live in their own admin area and are saved on their own, so a change there can
+    // never overwrite the countable monthly quotas and the other way round.
+    if(action==='save-token-budgets'){
+      const plans=body.plans&&typeof body.plans==='object'?body.plans:{};
+      const known=(await serviceFetch('/rest/v1/sitebrief_quota_limits?select=plan,free_prompts,website_generations,ai_previews')).data||[];
+      const byPlan=Object.fromEntries(known.map(row=>[row.plan,row]));
+      const rows=['free','pro','ultimate'].filter(plan=>plans[plan]!==undefined).map(plan=>{
+        const current=byPlan[plan]||{};
+        return {plan,free_prompts:Math.max(0,Number(current.free_prompts)||0),website_generations:Math.max(0,Number(current.website_generations)||0),ai_previews:Math.max(0,Number(current.ai_previews)||0),monthly_tokens:Math.max(0,Math.min(2000000000,Number(plans[plan])||0)),updated_by:admin.id,updated_at:new Date().toISOString()};
+      });
+      if(!rows.length)return res.status(400).json({error:'Keine gültigen Token-Budgets übergeben.'});
+      await serviceFetch('/rest/v1/sitebrief_quota_limits?on_conflict=plan',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:rows});
+      await audit(admin.id,action,null,Object.fromEntries(rows.map(row=>[row.plan,row.monthly_tokens])));
+      return res.status(200).json({ok:true});
+    }
+    if(action==='set-token-bonus'){
+      if(!uuid(body.userId))return res.status(400).json({error:'Ungültiger Benutzer.'});
+      const bonus=Math.max(0,Math.min(2000000000,Number(body.tokens)||0));
+      await serviceFetch('/rest/v1/sitebrief_user_admin_state?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:{user_id:body.userId,monthly_token_bonus:bonus,updated_at:new Date().toISOString()}});
+      await audit(admin.id,action,body.userId,{tokens:bonus});
+      return res.status(200).json({ok:true,tokens:bonus});
+    }
     if(action==='save-maintenance'){
       const row={id:'main',enabled:Boolean(body.enabled),reason:String(body.reason||'').trim().slice(0,500),eta:String(body.eta||'').trim().slice(0,200),updated_by:admin.id,updated_at:new Date().toISOString()};
       await serviceFetch('/rest/v1/sitebrief_maintenance?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:row});
       await audit(admin.id,action,null,{enabled:row.enabled});
+      return res.status(200).json({ok:true});
+    }
+    // Master prompts: every save creates a new version instead of overwriting, so an older
+    // wording is always one click away and a rework can sit next to the running one.
+    if(action==='prompt-load'){
+      if(!uuid(body.id))return res.status(400).json({error:'Unbekannte Prompt-Version.'});
+      const {data}=await serviceFetch(`/rest/v1/sitebrief_prompt_templates?id=eq.${encodeURIComponent(body.id)}&select=id,prompt_key,label,body,version,active&limit=1`);
+      const row=Array.isArray(data)?data[0]:null;
+      if(!row)return res.status(404).json({error:'Diese Prompt-Version gibt es nicht mehr.'});
+      return res.status(200).json({template:row});
+    }
+    if(action==='prompt-save'){
+      const key=String(body.key||'');
+      if(!isPromptKey(key))return res.status(400).json({error:'Unbekannter Prompt-Bereich.'});
+      const text=String(body.body||'').trim();
+      if(text.length<40)return res.status(400).json({error:'Der Prompt-Text ist zu kurz.'});
+      if(text.length>20000)return res.status(400).json({error:'Der Prompt-Text ist zu lang (max. 20.000 Zeichen).'});
+      const {data:existing}=await serviceFetch(`/rest/v1/sitebrief_prompt_templates?prompt_key=eq.${encodeURIComponent(key)}&select=version&order=version.desc&limit=1`);
+      const version=(Number(Array.isArray(existing)?existing[0]?.version:0)||0)+1;
+      const label=String(body.label||'').trim().slice(0,120)||`Version ${version}`;
+      const activate=body.activate!==false;
+      if(activate)await serviceFetch(`/rest/v1/sitebrief_prompt_templates?prompt_key=eq.${encodeURIComponent(key)}&active=is.true`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:{active:false,updated_at:new Date().toISOString()}});
+      const {data}=await serviceFetch('/rest/v1/sitebrief_prompt_templates',{method:'POST',headers:{Prefer:'return=representation'},body:{prompt_key:key,label,body:text,version,active:activate,created_by:admin.id}});
+      await audit(admin.id,action,null,{key,version,active:activate});
+      return res.status(200).json({template:Array.isArray(data)?data[0]:null});
+    }
+    if(action==='prompt-activate'){
+      const key=String(body.key||'');
+      if(!isPromptKey(key))return res.status(400).json({error:'Unbekannter Prompt-Bereich.'});
+      await serviceFetch(`/rest/v1/sitebrief_prompt_templates?prompt_key=eq.${encodeURIComponent(key)}&active=is.true`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:{active:false,updated_at:new Date().toISOString()}});
+      // No id means: use the built-in default again.
+      if(body.id){
+        if(!uuid(body.id))return res.status(400).json({error:'Unbekannte Prompt-Version.'});
+        await serviceFetch(`/rest/v1/sitebrief_prompt_templates?id=eq.${encodeURIComponent(body.id)}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:{active:true,updated_at:new Date().toISOString()}});
+      }
+      await audit(admin.id,action,null,{key,id:body.id||null});
+      return res.status(200).json({ok:true});
+    }
+    if(action==='prompt-delete'){
+      if(!uuid(body.id))return res.status(400).json({error:'Unbekannte Prompt-Version.'});
+      await serviceFetch(`/rest/v1/sitebrief_prompt_templates?id=eq.${encodeURIComponent(body.id)}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+      await audit(admin.id,action,null,{id:body.id});
       return res.status(200).json({ok:true});
     }
     return res.status(400).json({error:'Unbekannte Admin-Aktion.'});

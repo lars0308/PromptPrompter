@@ -4,6 +4,7 @@
   const CONTINUE_KEY='sitebrief-v6-continue-workflow';
   const PENDING_MODE_KEY='prompt-ai-new-project-mode-v2';
   const PENDING_BRIEF_KEY='prompt-ai-new-project-brief-v1';
+  const FRESH_PROJECT_KEY='prompt-ai-fresh-project-v1';
   const SIMPLE_START_KEY='prompt-ai-v1-simple-start';
   const CHECKPOINT_KEY='prompt-ai-ui-checkpoint-v2';
   const ADMIN_EMAIL='service.battermann@gmx.de';
@@ -37,7 +38,7 @@
 
   function ensureDialog(){
     let dialog=$('#projectModeDialog');if(dialog)return dialog;
-    dialog=document.createElement('dialog');dialog.id='projectModeDialog';dialog.className='project-mode-dialog';dialog.innerHTML=`<div class="project-mode-frame"><button type="button" class="project-mode-close" aria-label="Schließen">×</button><div class="project-mode-head"><span>WEBSITE-PROJEKT</span><h2>Wie möchtest du die Internetseite vorbereiten?</h2><p>Diese Auswahl gilt für das ganze Projekt. Während des Ablaufs bleibt der Arbeitsweg fest.</p></div><div class="project-mode-grid"><button type="button" class="project-mode-card" data-project-mode="guided"><b>Geführt</b><small>Prompt.ai fragt nur nach Angaben, die den Website-Auftrag wirklich verändern.</small><i>Auswählen →</i></button><button type="button" class="project-mode-card" data-project-mode="auto"><b>Auto</b><small>Beschreibung und Referenzen rein. Technik, Regeln und Richtungen werden möglichst automatisch vorbereitet.</small><i>Auswählen →</i></button><button type="button" class="project-mode-card" data-project-mode="expert"><b>Experte</b><small>Volle Kontrolle über Agent, KI, Modell, Ausgabeziel, Module, Skills, Vorschauen und Feinschliff.</small><i>Auswählen →</i></button></div><p class="project-mode-foot">Geführt ist in Free enthalten. Auto ist ab Pro verfügbar, Experte in Ultimate.</p></div>`;
+    dialog=document.createElement('dialog');dialog.id='projectModeDialog';dialog.className='project-mode-dialog';dialog.innerHTML=`<div class="project-mode-frame"><button type="button" class="project-mode-close" aria-label="Schließen">×</button><div class="project-mode-head"><span>WEBSITE-PROJEKT</span><h2>Wie möchtest du die Internetseite vorbereiten?</h2><p>Diese Auswahl gilt für das ganze Projekt. Während des Ablaufs bleibt der Arbeitsweg fest.</p></div><div class="project-mode-grid"><button type="button" class="project-mode-card" data-project-mode="guided"><b>Mit Rückfragen</b><small>Prompt.ai fragt nur nach Angaben, die den Website-Auftrag wirklich verändern.</small><i>Auswählen →</i></button><button type="button" class="project-mode-card" data-project-mode="auto"><b>Ohne Rückfragen</b><small>Beschreibung und Referenzen rein. Technik, Regeln und Richtungen werden ohne Nachfragen vorbereitet.</small><i>Auswählen →</i></button><button type="button" class="project-mode-card" data-project-mode="expert"><b>Selbst einstellen</b><small>Volle Kontrolle über Agent, KI, Modell, Ausgabeziel, Bausteine, Skills, Vorschauen und Feinschliff.</small><i>Auswählen →</i></button></div><p class="project-mode-foot">„Mit Rückfragen“ ist in Free enthalten. „Ohne Rückfragen“ ab Pro, „Selbst einstellen“ in Ultimate.</p></div>`;
     document.body.appendChild(dialog);
     dialog.querySelector('.project-mode-close').onclick=()=>dialog.close();dialog.addEventListener('cancel',e=>{e.preventDefault();dialog.close()});
     return dialog;
@@ -46,14 +47,13 @@
     const dialog=ensureDialog();$$('[data-project-mode]',dialog).forEach(btn=>{const mode=btn.dataset.projectMode,ok=allowed(mode);btn.disabled=!ok;btn.querySelector('i').textContent=ok?'Auswählen →':mode==='auto'?'Pro erforderlich':'Ultimate erforderlich'});
   }
   function chooseMode(){
-    if((access().plan||'free')==='free'&&!access().isAdmin)return Promise.resolve('guided');
-    const dialog=ensureDialog();refreshCards();
-    return new Promise(resolve=>{
-      const cleanup=()=>{$$('[data-project-mode]',dialog).forEach(btn=>btn.onclick=null);dialog.removeEventListener('close',onClose)};
-      const onClose=()=>{cleanup();resolve(null)};dialog.addEventListener('close',onClose,{once:true});
-      $$('[data-project-mode]',dialog).forEach(btn=>btn.onclick=()=>{if(btn.disabled)return;const mode=btn.dataset.projectMode;cleanup();dialog.close();resolve(mode)});
-      try{dialog.showModal()}catch{resolve(null)}
-    });
+    // This used to open a full-page "Mit Rückfragen / Ohne Rückfragen / Selbst einstellen"
+    // dialog for every plan above Free. The same three choices already live in the console's
+    // inline "Ablauf" picker (promptai-home-final.js, .prompt-setup-sheet) before a project
+    // is even started, so asking again here was a duplicate stop for the same decision.
+    // Free already skipped this dialog outright; every plan does now, keeping whatever the
+    // console (or a previous visit) last set as the active mode.
+    return Promise.resolve($('.mode-switch button.active')?.dataset.mode||'guided');
   }
   function hasCurrentProject(){return Boolean($('#projectName')?.value?.trim()||$('#projectDescription')?.value?.trim())}
   async function confirmReplace(reset=false){
@@ -65,6 +65,10 @@
   function persistNewProject(mode,brief=''){
     try{
       localStorage.removeItem(STORAGE_KEY);
+      // Clearing the store is not enough: browsers restore typed form values across a reload, so
+      // the old project name, customer and website came back into a brand new project. The flag
+      // tells the app to wipe the fields itself once it is up.
+      sessionStorage.setItem(FRESH_PROJECT_KEY,'1');
       localStorage.setItem(CHECKPOINT_KEY,JSON.stringify({mode,step:1,surface:'workflow',at:Date.now()}));
       sessionStorage.setItem(PENDING_MODE_KEY,mode);
       if(brief.trim()){
@@ -75,7 +79,10 @@
     }catch{}
   }
   async function startNew(trigger,brief=''){
-    const reset=trigger?.id==='resetBtn';if(!await confirmReplace(reset))return;
+    // Starting a new project is the plain path through the app, not a destructive action: the
+    // previous state is kept in the project history and the libraries are untouched. Only the
+    // explicit "Projekt zurücksetzen" still asks.
+    const reset=trigger?.id==='resetBtn';if(reset&&!await confirmReplace(true))return;
     const mode=await chooseMode();if(!mode)return;
     persistNewProject(mode,brief);location.reload();
   }

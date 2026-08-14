@@ -1,0 +1,85 @@
+PROMPT.AI – ÜBERSICHT FÜR PROMOTION
+=====================================
+
+WAS ES IST
+----------
+Prompt.ai verwandelt eine kurz beschriebene Idee in einen vollständigen,
+strukturierten Auftrag ("Master-Prompt"), mit dem eine KI (ChatGPT, Claude,
+Codex, Gemini, Cursor, v0, ...) direkt und ohne Rückfragen arbeiten kann.
+Kein Prompt-Engineering nötig – ein normaler Satz reicht als Start.
+
+Zwei Wege in der App:
+1. Internetseite erstellen – geführter Ablauf zu einem fertigen Website-Auftrag
+2. Freier Prompt – für alles andere: Text, Bild, Video, Musik, PowerPoint,
+   Code, Social-Media-Posts, E-Mails, Recherche, Business-Dokumente u.v.m.
+
+ABLAUF "INTERNETSEITE ERSTELLEN"
+---------------------------------
+1. Beschreiben
+   Ein paar Sätze reichen. Gibt es schon eine Website oder Google-Einträge,
+   liest Prompt.ai sie automatisch aus und übernimmt Öffnungszeiten, Kontakt
+   und Leistungen.
+2. Richtung wählen
+   Drei fertig gestaltete Vorschläge (Konzepte) werden erzeugt – auf Free als
+   HTML-Vorschau, auf Pro/Ultimate zusätzlich als KI-generiertes Bild. Man
+   wählt die passende Richtung.
+3. Auftrag mitnehmen
+   Am Ende steht ein vollständiger Master-Prompt mit allen Fakten, der
+   Seitenliste und klaren Regeln – copy-paste-fertig für die KI der Wahl.
+
+Während des Ablaufs lassen sich jederzeit Referenzen anhängen (Links, Bilder,
+Dokumente über den "+"-Button), Skills und Module dazuwählen und der Ablauf-
+Modus wechseln:
+- Geführt: fragt nur nach, wo eine Entscheidung wirklich etwas ändert
+- Automatisch: sinnvolle Standardwerte, Module werden empfohlen, Vorschauen
+  entstehen direkt
+- Experte: freie Navigation zwischen allen Schritten, volle manuelle Kontrolle
+
+WEITERE ARBEITSARTEN (KONSOLE)
+-------------------------------
+- Freier Prompt – alles außerhalb von Websites, direkt auf der Startseite
+- Website überarbeiten (ab Pro) – bestehende Seite gezielt weiterentwickeln
+- Projekt prüfen (ab Pro) – ein fertig gebautes Projekt (ZIP, Ordner,
+  GitHub-Repo) als Live-Vorschau prüfen lassen
+
+SKILLS & MODULE (AB PRO)
+--------------------------
+Eigene Agent-Skills und Module lassen sich anlegen und pro Projekt oder
+dauerhaft zuschalten – sie geben der KI verbindliche Arbeitsabläufe,
+Prüfregeln oder feste Code-/Design-/Inhaltsvorgaben mit. Skills werden nach
+Ziel-Agent gefiltert (z. B. Claude, Codex) oder gelten global.
+
+TARIFE
+------
+Free – 0 €
+  - Geführter Ablauf, 1 Referenz-URL, HTML-Vorschauen
+  - 1× Vorschau neu erstellen
+  - Agent: Codex
+
+Pro – 15,99 € / Monat
+  - Geführter + automatischer Ablauf
+  - Bis zu 3 Referenz-URLs, 3 Referenzbilder
+  - KI-Bild-Vorschauen zusätzlich zu HTML
+  - 2× Vorschau neu erstellen
+  - Skills, Module, eigene Profile, Kundendokumente
+  - Website überarbeiten, Projekt prüfen
+  - Agenten: Codex, Claude Code
+  - Bibliothek mit bis zu 10 Elementen
+
+Ultimate – 25,99 € / Monat
+  - Alles aus Pro plus Experten-Modus (volle manuelle Kontrolle)
+  - Bis zu 5 Referenz-URLs, 5 Referenzbilder
+  - 3× Vorschau neu erstellen
+  - Unbegrenzte Bibliothek
+  - ZIP- und GitHub-Export
+  - Alle KI-Agenten (Claude Code, Codex, Gemini, ChatGPT, Cursor, v0,
+    Universal)
+
+TECHNISCHE ECKPUNKTE
+---------------------
+- Web-App, läuft im Browser, für Desktop und Handy nutzbar
+- Speichert den Fortschritt automatisch – "Letztes Projekt" lässt sich jederzeit
+  fortsetzen
+- Zeigt live Zeichen- und ungefähre Token-Anzahl beim Formulieren des Auftrags
+- Ergebnis ist modellunabhängig: ein Master-Prompt, der in jede KI eingesetzt
+  werden kann

@@ -1,5 +1,5 @@
+const MAX_API_KEY_SLOTS=4;
 const {authenticatedUser,ownSubscription,ownApiAddon}=require('./supabase-user');
-const ADMIN_EMAIL=String(process.env.PROMPT_AI_ADMIN_EMAIL||'service.battermann@gmx.de').trim().toLowerCase();
 
 async function ownRow(req, table, select){
   const authorization=req?.headers?.authorization||req?.headers?.Authorization||'';
@@ -15,18 +15,24 @@ async function getEntitlements(req){
   const [subscription,admin,apiAddon]=await Promise.all([
     ownRow(req,'sitebrief_subscriptions','plan,status'),
     ownRow(req,'sitebrief_admins','user_id'),
-    ownRow(req,'sitebrief_addons','addon,status')
+    ownRow(req,'sitebrief_addons','addon,status,quantity')
   ]);
+  // The row is read with the caller's own token under an own-row RLS policy; comparing the ids
+  // keeps that guarantee even if the policy is ever changed. Membership in sitebrief_admins is
+  // what grants admin now - the owner address is one entry in that table, not the only way in.
   let isAdmin=false;
   if(admin?.user_id){
-    try{const user=await authenticatedUser(req);isAdmin=String(user?.email||'').trim().toLowerCase()===ADMIN_EMAIL&&String(user?.id||'')===String(admin.user_id)}catch{isAdmin=false}
+    try{const user=await authenticatedUser(req);const id=String(user?.id||'');isAdmin=Boolean(id)&&id===String(admin.user_id)}catch{isAdmin=false}
   }
   const active=['active','trialing'].includes(subscription?.status);
   const paidPlan=active&&['pro','ultimate'].includes(subscription?.plan)?subscription.plan:'free';
   const addonActive=apiAddon?.addon==='own_api_keys'&&['active','trialing'].includes(apiAddon?.status);
   const plan=isAdmin?'ultimate':paidPlan;
-  const ownApiKeys=isAdmin||plan==='ultimate'||(plan==='pro'&&addonActive);
-  return {plan,isAdmin,ownApiKeys,maxConcepts:plan==='ultimate'?5:plan==='pro'?4:3};
+  // One bought slot, one provider the account may store a key for. Nothing is included in a plan
+  // any more - the slots are the product.
+  const apiKeySlots=isAdmin?MAX_API_KEY_SLOTS:addonActive?Math.max(1,Math.min(MAX_API_KEY_SLOTS,Number(apiAddon?.quantity)||1)):0;
+  const ownApiKeys=apiKeySlots>0;
+  return {plan,isAdmin,ownApiKeys,apiKeySlots,maxConcepts:plan==='ultimate'?5:plan==='pro'?4:3};
 }
 
 module.exports={getEntitlements};

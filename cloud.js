@@ -158,7 +158,7 @@ const Cloud = {
       this.client.from('sitebrief_ai_connections').select('provider,last4,updated_at').eq('user_id', userId).order('provider', { ascending: true }),
       this.client.from('sitebrief_subscriptions').select('plan,status,current_period_end').eq('user_id', userId).maybeSingle(),
       this.client.from('sitebrief_admins').select('user_id').eq('user_id', userId).maybeSingle(),
-      this.client.from('sitebrief_addons').select('addon,status,current_period_end').eq('user_id',userId).eq('addon','own_api_keys').maybeSingle(),
+      this.client.from('sitebrief_addons').select('addon,status,current_period_end,quantity').eq('user_id',userId).eq('addon','own_api_keys').maybeSingle(),
       this.client.from('sitebrief_user_profiles').select('display_name,company_name,website,default_client_type').eq('user_id',userId).maybeSingle(),
       this.client.from('sitebrief_review_credits').select('credits').eq('user_id',userId).maybeSingle()
     ]);
@@ -174,7 +174,7 @@ const Cloud = {
       skills: (skillsRes.data || []).map(x => ({ ...x, sourceFile: x.source_file || null })),
       projects: projectsRes.data || [],
       aiConnections: connectionsRes.data || [],
-      subscription: {...(subscriptionRes.data || {plan:'free',status:'active'}),isAdmin:Boolean(adminRes.data),ownApiKeys:Boolean(adminRes.data)||subscriptionRes.data?.plan==='ultimate'||(['active','trialing'].includes(addonRes.data?.status))},
+      subscription: {...(subscriptionRes.data || {plan:'free',status:'active'}),isAdmin:Boolean(adminRes.data),apiKeySlots:Boolean(adminRes.data)?4:(['active','trialing'].includes(addonRes.data?.status)?Math.max(1,Math.min(4,Number(addonRes.data?.quantity)||1)):0),ownApiKeys:Boolean(adminRes.data)||(['active','trialing'].includes(addonRes.data?.status))},
       userProfile:userProfileRes.data?{displayName:userProfileRes.data.display_name||'',companyName:userProfileRes.data.company_name||'',website:userProfileRes.data.website||'',defaultClientType:userProfileRes.data.default_client_type||''}:null,
       reviewCredits:Number(reviewCreditsRes.data?.credits)||0
     };

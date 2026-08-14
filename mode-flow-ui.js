@@ -29,9 +29,9 @@
   function syncMode(){
     const mode=currentMode();document.documentElement.dataset.promptMode=mode;
     const card=$('#modeRouteCard'),copy={
-      guided:['Geführt · KI-Interview','Du beschreibst das Projekt und ergänzt Referenzen. Prompt.ai richtet die technischen Startwerte ein, stellt nur relevante Rückfragen und zeigt dir danach Blueprint, Richtungen und Feinschliff.'],
-      auto:['Auto · Briefing rein, Prompt raus','Du beschreibst das Projekt und kannst Referenzen ergänzen. Die KI wählt Startwerte, Regeln und Richtungsumfang; nur echte Blocker werden noch gefragt. Danach entsteht der Master-Prompt automatisch.'],
-      expert:['Experte · volle Kontrolle','Alle acht Schritte bleiben offen. Agent, Modell, Ausgabeziel, Module, Skills, Regler, Vorschauen und Feinschliff werden von dir bewusst bestimmt und wirken direkt auf den Master-Prompt.']
+      guided:['Mit Rückfragen · KI-Interview','Du beschreibst das Projekt. Prompt.ai richtet die technischen Startwerte ein, stellt nur relevante Rückfragen und zeigt dir danach Blueprint, Richtungen und Feinschliff.'],
+      auto:['Ohne Rückfragen · Briefing rein, Prompt raus','Du beschreibst das Projekt. Die KI wählt Startwerte, Regeln und Richtungsumfang; nur echte Blocker werden noch gefragt. Danach entsteht der Master-Prompt automatisch.'],
+      expert:['Selbst einstellen · volle Kontrolle','Alle acht Schritte bleiben offen. Agent, Modell, Ausgabeziel, Module, Skills, Regler, Vorschauen und Feinschliff werden von dir bewusst bestimmt und wirken direkt auf den Master-Prompt.']
     }[mode];if(card){card.querySelector('strong').textContent=copy[0];card.querySelector('small').textContent=copy[1]}
     if(mode==='expert')$('#modeFlowPanel')?.setAttribute('hidden','');else $('#modeFlowPanel')?.removeAttribute('hidden');
     scheduleRoute();
@@ -70,19 +70,36 @@
   }
 
   function activeNext(step){return $(`[data-step-panel="${step}"] .next-btn`)}
-  function scheduleRoute(){clearTimeout(autoTimer);autoTimer=setTimeout(route,120)}
+  // click() is a silent no-op here while the mode-handoff cover is up: it marks every other body
+  // child visibility:hidden (#promptModeHandoff itself stays visible and does the actual
+  // covering, via an opaque full-viewport background), and a button that isn't being rendered
+  // never runs its click activation - even forcing the button's own visibility back to visible
+  // doesn't help, the hidden ancestor still wins. Lifting the cover class only changes rendering
+  // that's already fully hidden behind the still-opaque, still-on-top loading screen, so nothing
+  // becomes visibly different - it just lets the auto-piloted steps actually advance underneath it.
+  function fireClick(el){if(!el)return;document.documentElement.classList.remove('prompt-route-pending');el.click()}
+  // Throttled, not debounced: other start-up scripts relabel every open <dialog> each time one is
+  // built (promptai-full-app-design.js's labelDynamicDialogs), which fires this observer dozens of
+  // times within a couple hundred milliseconds. A reset-on-every-call debounce never got a quiet
+  // gap to actually run route() during that churn, so the auto-piloted steps (2-4, 6-7) could sit
+  // there indefinitely instead of advancing. Scheduling once and ignoring calls until it fires
+  // guarantees route() still runs within ~120ms of the first change in a burst.
+  function scheduleRoute(){if(autoTimer)return;autoTimer=setTimeout(()=>{autoTimer=0;route()},120)}
   async function route(){
     const mode=currentMode(),step=currentStep(),workflow=$('#workflowApp');if(!step||mode==='expert'||!workflow||workflow.hidden)return;
-    if(step!==lastStep){lastStep=step;if(step===1)setStatus(mode==='auto'?'Beschreibe dein Projekt':'Erster Schritt: Projekt beschreiben',mode==='auto'?'Danach kannst du optional Referenzen ergänzen. Alles Weitere übernimmt Prompt.ai.':'Danach kannst du Referenzen ergänzen; technische Entscheidungen werden für dich vorbereitet.',false);if(step===2)setStatus('Referenzen sind optional','Website, Screenshots, PDFs oder Hinweise hier ergänzen. Dann weiter – Prompt.ai übernimmt die Auswertung.',false)}
+    if(step!==lastStep){lastStep=step;if(step===1)setStatus(mode==='auto'?'Beschreibe dein Projekt':'Erster Schritt: Projekt beschreiben',mode==='auto'?'Referenzen hängst du oben über das Plus an. Alles Weitere übernimmt Prompt.ai.':'Referenzen hängst du oben über das Plus an; technische Entscheidungen werden für dich vorbereitet.',false);if(step===2)setStatus('Referenzen werden übernommen','Was du beim Start über das Plus angehängt hast, gilt bereits – ein eigener Schritt dafür entfällt.',true)}
+    if(step===2){
+      const next=activeNext(2);if(next&&!next.disabled)setTimeout(()=>fireClick(next),120);return;
+    }
     if(step===3){
       await prepareIntake();setStatus(mode==='auto'?'Projekt wird automatisch geprüft':'KI prüft, ob noch etwas Wichtiges fehlt',mode==='auto'?'Nur bei einem echten Blocker unterbricht Prompt.ai den Ablauf.':'Falls eine Antwort das Ergebnis wirklich verändert, bekommst du eine konkrete Frage.',true);
-      const next=activeNext(3);if(next&&!next.disabled)setTimeout(()=>next.click(),120);return;
+      const next=activeNext(3);if(next&&!next.disabled)setTimeout(()=>fireClick(next),120);return;
     }
     if(step===4){
-      setStatus('Passende Regeln werden ausgewählt','Module und Skills werden aus deinem Projektkontext vorbereitet.',true);$('#recommendModulesBtn')?.click();const next=activeNext(4);if(next)setTimeout(()=>next.click(),180);return;
+      setStatus('Passende Regeln werden ausgewählt','Module und Skills werden aus deinem Projektkontext vorbereitet.',true);fireClick($('#recommendModulesBtn'));const next=activeNext(4);if(next)setTimeout(()=>fireClick(next),180);return;
     }
     if(mode==='auto'&&step===6){setStatus('KI entwickelt die Richtungen','Sobald die Richtungen fertig sind, entscheidest du mit einem Klick, ob die Vorschau übernommen wird.',true);waitForConcepts();return}
-    if(mode==='auto'&&step===7){setStatus('Master-Prompt wird zusammengesetzt','Die automatisch gewählte Richtung wird mit allen Eingaben und Regeln verbunden.',true);const next=activeNext(7);if(next)setTimeout(()=>next.click(),160);return}
+    if(mode==='auto'&&step===7){setStatus('Master-Prompt wird zusammengesetzt','Die automatisch gewählte Richtung wird mit allen Eingaben und Regeln verbunden.',true);const next=activeNext(7);if(next)setTimeout(()=>fireClick(next),160);return}
     if(mode==='guided'&&step===6)setStatus('Wähle eine Richtung','Prompt.ai erzeugt die Richtungen. Du entscheidest nur noch, welche davon weitergeführt wird.',false);
     if(mode==='guided'&&step===7)setStatus('Gezielt nachschärfen','Nur wenn du möchtest: eine konkrete Änderung ergänzen. Danach entsteht der Master-Prompt.',false);
     if(step===8){appendInputManifest();const panel=$('#modeFlowPanel');if(panel&&!panel.hidden)panel.setAttribute('hidden','')}

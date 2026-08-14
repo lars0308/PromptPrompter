@@ -32,17 +32,38 @@
       html[data-clean-project-flow="1"] #stepProject .field-large{margin:0 0 18px}html[data-clean-project-flow="1"] #stepProject .field-large>span{display:none}
       html[data-clean-project-flow="1"] #stepReferences .reference-url-add{grid-template-columns:1fr!important;gap:8px;margin-top:0}html[data-clean-project-flow="1"] #stepReferences #addUrlBtn{width:100%}
       html[data-clean-project-flow="1"] #stepReferences .dropzone{grid-template-columns:42px 1fr!important;gap:12px;min-height:100px;margin-top:14px;padding:15px;border-color:#cfd5da;border-radius:10px;background:#f8f9fa}html[data-clean-project-flow="1"] #stepReferences .dropzone button{grid-column:1/-1;width:100%}
-      html[data-clean-project-flow="1"] #stepReferences .reference-note-block{margin-top:18px;padding-top:13px;border-color:#e2e5e8;grid-template-columns:62px 1fr}
+      /* The guided step is meant to be one decision: paste a link or move on. The rights notice
+         and the separate "weiter ohne Referenzen" block sat between the input and the step's own
+         Weiter button and made it unclear what to press. */
+      html[data-clean-project-flow="1"] #stepReferences .reference-note-block,
+      html[data-clean-project-flow="1"] #stepReferences .no-references-note,
+      html[data-clean-project-flow="1"] #stepReferences .reference-lead{display:none!important}
       html[data-clean-project-flow="1"] #stepReferences .client-context-card{margin:26px 0 0;padding:18px;border:1px solid #e0e4e7!important;border-radius:12px!important;background:#f8f9fa!important;box-shadow:none!important}
       html[data-clean-project-flow="1"] #stepReferences .client-context-card .selection-head{border-top:0;padding-top:0}
       html[data-clean-project-flow="1"] .streamline-working{min-height:430px!important;margin:auto 0;padding:32px 18px!important}
       html[data-clean-project-flow="1"] .streamline-working strong{font-size:30px!important}.streamline-working small{font-size:12px!important}
       html[data-clean-project-flow="1"] #stepPreviews .preview-step-head{display:block!important}.guided-clean-project-flow #stepPreviews .preview-generation-controls{margin-top:18px}
-      html[data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{display:grid!important;grid-template-columns:minmax(0,1fr) 100px!important;gap:9px;padding:12px!important;border:1px solid #e0e4e7!important;border-radius:10px!important;background:#f8f9fa!important}
+      html[data-clean-project-flow="1"] #stepPreviews #regenerateConceptsBtn{display:inline-flex!important;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:2px 8px;width:auto!important;max-width:100%!important;height:auto!important;min-height:46px;padding:10px 16px!important;white-space:normal!important;text-align:center}html[data-clean-project-flow="1"] #stepPreviews #regenerateConceptsBtn small{color:var(--muted);font-size:11px!important}html[data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{display:grid!important;grid-template-columns:minmax(0,1fr)!important;justify-items:end;gap:9px;padding:12px!important;border:1px solid #e0e4e7!important;border-radius:10px!important;background:#f8f9fa!important}
       html[data-clean-project-flow="1"] #stepPreviews #generateConceptsBtn{grid-column:1/-1;width:100%}
       html[data-clean-project-flow="1"] #stepPreviews .generation-status{margin:16px 0 8px;color:#66717a;font-size:11px}
-      html[data-clean-project-flow="1"] #stepPreviews .concept-gallery{display:grid;grid-template-columns:1fr;gap:14px}
-      html[data-clean-project-flow="1"] #stepPreviews .concept-option{border:1px solid #d9dde1!important;border-radius:14px!important;background:#fff!important;overflow:hidden}
+      /* The directions are the decision on this screen, so they get the room: one per row, a
+         larger frame and space between caption, details and buttons instead of a tight grid. */
+      html[data-clean-project-flow="1"] #stepPreviews .concept-gallery{display:grid;grid-template-columns:1fr;gap:24px;margin-top:24px}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-option{border:1px solid #d9dde1!important;border-radius:18px!important;background:#fff!important;overflow:hidden;padding:16px}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-screen{aspect-ratio:4/3;border-radius:12px}
+      /* Top right, away from the mini page's own footer bar which it used to sit on top of. */
+      html[data-clean-project-flow="1"] #stepPreviews .preview-zoom-hint{top:9px;right:9px;bottom:auto}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-caption{margin-top:16px}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-caption h3{font-size:21px;letter-spacing:-.02em}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-caption p{margin-top:6px;line-height:1.5}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-details{margin-top:10px}
+      html[data-clean-project-flow="1"] #stepPreviews .concept-card-actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
+      html[data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{margin-bottom:24px}
+      @media(min-width:821px){
+        html[data-clean-project-flow="1"] #stepPreviews .concept-gallery{grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:28px}
+        html[data-clean-project-flow="1"] #stepPreviews .concept-screen{aspect-ratio:16/9}
+        html[data-clean-project-flow="1"] #stepPreviews .concept-card-actions{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+      }
       html[data-clean-project-flow="1"] #stepRefine .quick-refinements{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px}html[data-clean-project-flow="1"] #stepRefine .quick-refinements button{flex:0 0 auto;border:1px solid #d5dade;border-radius:999px;background:#fff;padding:8px 11px;font-size:10px}
       html[data-clean-project-flow="1"] #stepRefine #selectedPreviewLarge{margin:18px 0}
       html[data-clean-project-flow="1"] #stepPrompt .master-prompt{min-height:360px!important;border:1px solid #cfd5da!important;border-radius:10px!important;background:#fff!important;padding:16px!important;font-size:12px!important;line-height:1.55!important}
@@ -71,7 +92,6 @@
       html[data-theme="dark"][data-clean-project-flow="1"] .text-btn{color:var(--muted)}
       html[data-theme="dark"][data-clean-project-flow="1"] .step-actions{border-color:var(--line)!important}
       html[data-theme="dark"][data-clean-project-flow="1"] #stepReferences .dropzone{border-color:var(--line);background:var(--surface-soft)}
-      html[data-theme="dark"][data-clean-project-flow="1"] #stepReferences .reference-note-block{border-color:var(--line)}
       html[data-theme="dark"][data-clean-project-flow="1"] #stepReferences .client-context-card{border-color:var(--line)!important;background:var(--surface-soft)!important}
       html[data-theme="dark"][data-clean-project-flow="1"] #stepPreviews .preview-generation-controls{border-color:var(--line)!important;background:var(--surface-soft)!important}
       html[data-theme="dark"][data-clean-project-flow="1"] #stepPreviews .generation-status{color:var(--muted)}
@@ -84,7 +104,7 @@
 
   function header(){
     const workspace=$('.workspace');if(!workspace||$('#guidedCleanHead'))return;
-    const h=document.createElement('div');h.id='guidedCleanHead';h.className='guided-clean-head';h.innerHTML='<div class="guided-clean-brand"><img src="./sitebrief-logo.svg?v=4" alt=""><strong>Prompt.ai</strong></div><button type="button" class="guided-clean-exit" aria-label="Projekt schließen">×</button>';
+    const h=document.createElement('div');h.id='guidedCleanHead';h.className='guided-clean-head';h.innerHTML='<div class="guided-clean-brand"><img src="./sitebrief-logo.svg?v=6" alt=""><strong>Prompt.ai</strong></div><button type="button" class="guided-clean-exit" aria-label="Projekt schließen">×</button>';
     workspace.prepend(h);
     $('.guided-clean-exit',h).onclick=()=>{const home=$('#brandHome');if(home){home.click();return}const flow=$('#workflowApp'),welcome=$('#welcomePage');if(flow)flow.hidden=true;if(welcome)welcome.hidden=false};
   }
@@ -111,8 +131,22 @@
     const title=panel.querySelector(':scope > h1')||panel.querySelector('.preview-step-head h1');if(title)title.textContent=c[1];
     lead(panel,c[2]);
     if(n===1){const desc=$('#projectDescription');if(desc)desc.placeholder='z. B. Moderne Internetseite für einen Dachdecker in Lindhorst. Regional, hochwertig und mit Grün als Hauptfarbe.';const next=$('#stepProject .next-btn');if(next)next.innerHTML='Weiter <i>→</i>'}
-    if(n===2){const back=$('#stepReferences .back-btn');if(back)back.textContent='← Beschreibung';const next=$('#stepReferences .next-btn');if(next)next.innerHTML='Weiter zur Vorschau <i>→</i>'}
-    if(n===6){const back=$('#stepPreviews .back-btn');if(back)back.textContent='← Referenzen'}
+    if(n===2){
+      const back=$('#stepReferences .back-btn');if(back)back.textContent='← Beschreibung';
+      const next=$('#stepReferences .next-btn');if(next)next.innerHTML='Weiter zur Vorschau <i>→</i>';
+      // Uploads are hidden on plans without image references, so the lead must not promise them.
+      const uploads=$('#stepReferences .dropzone');
+      lead(panel,uploads&&uploads.offsetParent!==null?c[2]:'Optional: Link zu einer Website oder einem Google-Eintrag hinzufügen.');
+      // Zwei Texte auf dieser Seite waren Absätze, wo eine Zeile reicht. Die Aufzählung
+      // möglicher Unterlagen ("Speisekarten, Sitzpläne, Preislisten ...") sagt nichts, was
+      // man nicht selbst weiß; die Formate und die Grenze dagegen schon.
+      const formats=$('#uploadZone small');
+      const short='PDF, PNG, JPG, WebP, TXT, MD, CSV oder JSON · max. 12 MB';
+      if(formats&&formats.textContent!==short)formats.textContent=short;
+      const clientLead=$('.client-context-lead');
+      if(clientLead)clientLead.textContent='Echte Fakten statt Stil: aus der Website oder dem Google-Eintrag deines Kunden übernimmt Prompt.ai Adresse, Zeiten und Leistungen.';
+    }
+    if(n===6){const back=$('#stepPreviews .back-btn');if(back)back.textContent='← Beschreibung'}
     if(n===7){const back=$('#stepRefine .back-btn');if(back)back.textContent='← Vorschau'}
   }
 

@@ -25,8 +25,8 @@
       .streamline-working{display:none!important;visibility:visible!important;pointer-events:none!important;min-height:300px;place-items:center;text-align:center;padding:42px 18px}.step-panel.active>.streamline-working{display:grid!important}.streamline-working-inner{width:min(430px,100%)}.streamline-working i{display:block;width:38px;height:38px;margin:0 auto 18px;border:2px solid var(--line);border-top-color:#278bc2;border-radius:50%;animation:streamlineSpin .85s linear infinite}.streamline-working span{display:block;color:#278bc2;font-size:9px;font-weight:900;letter-spacing:.13em}.streamline-working strong{display:block;margin-top:7px;font-size:clamp(22px,4vw,31px);letter-spacing:-.035em}.streamline-working small{display:block;margin-top:8px;color:var(--muted);font-size:11px;line-height:1.5}.streamline-working b{display:block;width:150px;height:3px;margin:22px auto 0;overflow:hidden;border-radius:99px;background:var(--line)}.streamline-working b:after{content:'';display:block;width:38%;height:100%;background:#278bc2;animation:streamlineTrack 1.15s ease-in-out infinite}@keyframes streamlineSpin{to{transform:rotate(360deg)}}@keyframes streamlineTrack{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
       html[data-prompt-mode="guided"] #stepAgent>.streamline-working,html[data-prompt-mode="guided"] #stepModules>.streamline-working,html[data-prompt-mode="guided"] #stepBlueprint>.streamline-working,html[data-prompt-mode="auto"] #stepAgent>.streamline-working,html[data-prompt-mode="auto"] #stepModules>.streamline-working,html[data-prompt-mode="auto"] #stepBlueprint>.streamline-working{visibility:visible!important;pointer-events:none!important}
       .streamline-preview-note{display:none;margin:0 0 16px;padding:12px 14px;border:1px solid color-mix(in srgb,#278bc2 32%,var(--line));border-radius:13px;background:color-mix(in srgb,#278bc2 5%,var(--surface));color:var(--muted);font-size:11px;line-height:1.5}.streamline-preview-note strong{color:var(--ink)}html[data-prompt-mode="auto"] .streamline-preview-note{display:block}
-      html:not([data-prompt-mode="expert"]) #stepPreviews .preview-step-head{gap:16px}html:not([data-prompt-mode="expert"]) #stepPreviews .preview-generation-controls{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}html[data-prompt-mode="guided"] #stepPreviews .preview-generation-controls{grid-template-columns:minmax(180px,1fr) 100px auto!important}
-      @media(max-width:760px){.streamline-working{min-height:260px;padding:30px 14px}html[data-prompt-mode="guided"] #stepPreviews .preview-generation-controls{grid-template-columns:1fr 94px!important}html[data-prompt-mode="guided"] #stepPreviews #generateConceptsBtn{grid-column:1/-1;width:100%!important}}
+      html:not([data-prompt-mode="expert"]) #stepPreviews .preview-step-head{gap:16px}html:not([data-prompt-mode="expert"]) #stepPreviews .preview-generation-controls{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}html[data-prompt-mode="guided"] #stepPreviews .preview-generation-controls{grid-template-columns:minmax(0,1fr)!important}
+      @media(max-width:760px){.streamline-working{min-height:260px;padding:30px 14px}html[data-prompt-mode="guided"] #stepPreviews .preview-generation-controls{grid-template-columns:minmax(0,1fr)!important}html[data-prompt-mode="guided"] #stepPreviews #generateConceptsBtn{grid-column:1/-1;width:100%!important}}
     `;document.head.appendChild(s);
   }
 
@@ -56,12 +56,19 @@
   }
 
   function syncCopy(){
-    const m=mode(),expert=m==='expert',h2=$('#stepReferences h1'),h6=$('#stepPreviews h1'),h7=$('#stepRefine h1'),h8=$('#stepPrompt h1'),k6=$('#stepPreviews .section-kicker'),k7=$('#stepRefine .section-kicker'),k8=$('#stepPrompt .section-kicker'),next2=$('#stepReferences .next-btn'),back6=$('#stepPreviews .back-btn'),next6=$('#stepPreviews .next-btn'),generate=$('#generateConceptsBtn');
+    const m=mode(),expert=m==='expert',h2=$('#stepReferences h1'),h6=$('#stepPreviews h1'),h7=$('#stepRefine h1'),h8=$('#stepPrompt h1'),k6=$('#stepPreviews .section-kicker'),k7=$('#stepRefine .section-kicker'),k8=$('#stepPrompt .section-kicker'),next2=$('#stepReferences .next-btn'),back3=$('#stepAgent .back-btn'),back6=$('#stepPreviews .back-btn'),next6=$('#stepPreviews .next-btn'),generate=$('#generateConceptsBtn');
     for(const [el,key] of [[h2,'streamOriginal'],[h6,'streamOriginal'],[h7,'streamOriginal'],[h8,'streamOriginal'],[k6,'streamOriginal'],[k7,'streamOriginal'],[k8,'streamOriginal'],[next2,'streamOriginalHtml'],[back6,'streamOriginalHtml'],[next6,'streamOriginalHtml'],[generate,'streamOriginalHtml']])if(el&&!el.dataset[key])el.dataset[key]=key.endsWith('Html')?el.innerHTML:el.textContent;
-    if(expert){for(const el of [h2,h6,h7,h8,k6,k7,k8])if(el?.dataset.streamOriginal)setText(el,el.dataset.streamOriginal);for(const el of [next2,back6,next6,generate])if(el?.dataset.streamOriginalHtml)setHtml(el,el.dataset.streamOriginalHtml);return}
+    if(back3&&!back3.dataset.streamOriginalBack)back3.dataset.streamOriginalBack=back3.dataset.back;
+    if(expert){for(const el of [h2,h6,h7,h8,k6,k7,k8])if(el?.dataset.streamOriginal)setText(el,el.dataset.streamOriginal);for(const el of [next2,back6,next6,generate])if(el?.dataset.streamOriginalHtml)setHtml(el,el.dataset.streamOriginalHtml);if(back3?.dataset.streamOriginalBack)back3.dataset.back=back3.dataset.streamOriginalBack;return}
     setText(h2,'Hast du Referenzen?');setText(h6,'So könnte deine Internetseite aussehen.');setText(k6,'03 — VORSCHAU');
     if(m==='guided'){setText(h7,'Noch etwas ändern?');setText(k7,'04 — FEINSCHLIFF');setText(h8,'Dein Master-Prompt.');setText(k8,'05 — MASTER-PROMPT')}else{setText(h8,'Dein Master-Prompt.');setText(k8,'04 — MASTER-PROMPT')}
-    setHtml(next2,'Weiter zur Vorschau <i>→</i>');setHtml(back6,'← Referenzen');if(back6&&back6.dataset.back!=='2')back6.dataset.back='2';setHtml(next6,m==='auto'?'Diese Vorschau übernehmen <i>→</i>':'Auswahl verfeinern <i>→</i>');setText(generate,'Vorschau erstellen');
+    // Steps 2-5 are all auto-piloted in guided/auto mode now (references come in via the
+    // console's plus button before the flow even starts), so the two real "back" targets
+    // that remain both skip straight to step 1 instead of the now-unused step 2.
+    setHtml(next2,'Weiter zur Vorschau <i>→</i>');
+    if(back3&&back3.dataset.back!=='1')back3.dataset.back='1';
+    setHtml(back6,'← Beschreibung');if(back6&&back6.dataset.back!=='1')back6.dataset.back='1';
+    setHtml(next6,m==='auto'?'Diese Vorschau übernehmen <i>→</i>':'Auswahl verfeinern <i>→</i>');setText(generate,'Vorschau erstellen');
   }
 
   function maybeSkipInitial(){

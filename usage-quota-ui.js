@@ -9,6 +9,10 @@
   let cache=null,cacheAt=0,inFlight=null,websitePass=false,websitePending=false;
 
   const plan=()=>window.PromptAiAccess?.plan||cache?.plan||'free';
+  // Der Stand wird woanders gebraucht (Startseite), soll aber nur an einer Stelle geholt
+  // werden - deshalb ein Blick auf den Zwischenspeicher statt einer zweiten Abfrage.
+  const emit=()=>{try{window.dispatchEvent(new CustomEvent('promptai:quota',{detail:cache}))}catch{}};
+  window.PromptAiQuota={summary:()=>cache||null,limits:()=>LIMITS[plan()]||null,refresh:()=>loadSummary(true)};
   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const setHtml=(node,value)=>{if(node&&node.innerHTML!==value)node.innerHTML=value};
   const resetDate=value=>value?new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(value)):'zum nächsten Monatsanfang';
@@ -18,7 +22,9 @@
     if($('#quotaUiStyles'))return;const s=document.createElement('style');s.id='quotaUiStyles';s.textContent=`
       .plan-quota-summary{display:block!important;margin-top:4px!important;color:var(--ui-blue,var(--accent))!important;font-size:8px!important;font-weight:800!important;letter-spacing:.01em!important;line-height:1.35!important;text-transform:none!important}.plan-quota-box{margin:14px 0;padding:13px 14px;border:1px solid var(--ui-line,var(--line));border-radius:12px;background:var(--ui-soft,var(--surface-soft))}.plan-quota-box>strong{display:block;margin-bottom:8px;font-size:10px;letter-spacing:.03em}.plan-quota-lines{display:grid;gap:6px}.plan-quota-line{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:9px;line-height:1.35}.plan-quota-line b{color:var(--ink);font-size:9px;text-align:right}.plan-quota-box>small{display:block;margin-top:9px;color:var(--muted);font-size:8px;line-height:1.4}
       .sub-quota-section{margin-top:22px}.sub-quota-card{border:1px solid var(--ui-line,var(--line));border-radius:14px;overflow:hidden;background:var(--ui-card,var(--surface))}.sub-quota-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:15px 16px;border-bottom:1px solid var(--ui-line,var(--line));align-items:center}.sub-quota-row:last-child{border-bottom:0}.sub-quota-copy strong{display:block;font-size:12px}.sub-quota-copy small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.35}.sub-quota-count{text-align:right}.sub-quota-count b{display:block;font-size:15px}.sub-quota-count small{display:block;margin-top:2px;color:var(--muted);font-size:8px}.sub-quota-track{grid-column:1/-1;height:4px;border-radius:99px;background:var(--ui-soft,var(--surface-soft));overflow:hidden}.sub-quota-track i{display:block;height:100%;background:var(--ui-blue,var(--accent));border-radius:inherit;transition:width .35s ease}.sub-quota-note{margin:9px 2px 0;color:var(--muted);font-size:8px;line-height:1.45}.sub-quota-note.warn{color:var(--warn)}
-      @media(max-width:680px){.sub-quota-row{padding:14px}.plan-quota-line{font-size:9px}}
+      .prompt-saver-notice{margin:0 0 16px;padding:12px 14px;border:1px solid color-mix(in srgb,#d99a32 45%,var(--ui-line,var(--line)));border-left:3px solid #d99a32;border-radius:6px;background:color-mix(in srgb,#d99a32 8%,transparent);color:var(--ink);font-size:12px!important;line-height:1.5}
+      .prompt-low-quota{border-color:color-mix(in srgb,var(--wk-rust,#a9541b) 40%,var(--ui-line,var(--line)));border-left-color:var(--wk-rust,#a9541b);background:color-mix(in srgb,var(--wk-rust,#a9541b) 6%,transparent)}
+      @media(max-width:680px){.sub-quota-row{padding:14px}.plan-quota-line{font-size:9px}.prompt-saver-notice{margin-bottom:12px;padding:11px 12px}}
     `;document.head.appendChild(s)}
 
   async function quotaApi(action,extra={}){
@@ -28,7 +34,7 @@
   function localSummary(){const p=plan(),limits=LIMITS[p]||LIMITS.free;return {plan:p,authenticated:Boolean(window.SiteBriefCloud?.user),available:false,isAdmin:Boolean(window.PromptAiAccess?.isAdmin),periodEnd:new Date(Date.UTC(new Date().getUTCFullYear(),new Date().getUTCMonth()+1,1)).toISOString(),metrics:Object.fromEntries(ORDER.map(k=>[k,{limit:limits[k],used:0,remaining:limits[k]}]))}}
   async function loadSummary(force=false){
     if(!force&&cache&&Date.now()-cacheAt<30000)return cache;if(inFlight)return inFlight;
-    inFlight=quotaApi('quota-summary').then(data=>{cache=data;cacheAt=Date.now();renderAll();return data}).catch(()=>{if(!cache)cache=localSummary();renderAll();return cache}).finally(()=>{inFlight=null});return inFlight;
+    inFlight=quotaApi('quota-summary').then(data=>{cache=data;cacheAt=Date.now();renderAll();return data}).catch(()=>{if(!cache)cache=localSummary();renderAll();return cache}).finally(()=>{inFlight=null;emit()});return inFlight;
   }
 
   function quotaSummaryText(p){const q=LIMITS[p]||LIMITS.free;return `${q.free_prompts} Prompts · ${q.website_generations} Websites · ${q.ai_previews?`${q.ai_previews} KI-Vorschauen`:'KI-Vorschauen nicht enthalten'}`}
@@ -51,10 +57,49 @@
   function syncSubscription(){
     const body=$('#subscriptionOverviewBody');if(!body||!body.childElementCount)return;let section=$('#subscriptionQuotaSection',body);if(!section){section=document.createElement('section');section.id='subscriptionQuotaSection';section.className='sub-quota-section';const after=body.querySelector('.sub-trial')||body.querySelector('.sub-hero');if(after)after.insertAdjacentElement('afterend',section);else body.prepend(section)}
     const summary=cache||localSummary(),reset=resetDate(summary.periodEnd),admin=summary.isAdmin?' Dein Administratorkonto wird zum Testen nicht gesperrt.':'';
-    const html=`<div class="sub-section-head"><div><span>KI-NUTZUNG DIESEN MONAT</span><h4>Dein verbleibendes Kontingent</h4></div><small>Reset ${esc(reset)}</small></div><div class="sub-quota-card">${ORDER.map(k=>metricHtml(k,summary.metrics?.[k],summary)).join('')}</div><p class="sub-quota-note${summary.available===false?' warn':''}">${summary.authenticated===false?'Melde dich an, damit Prompt.ai dein Monatskontingent kontenübergreifend zählen kann.':summary.available===false?'Der Live-Zähler ist gerade nicht erreichbar. Deine Funktionen bleiben verfügbar.':`Am ${esc(reset)} werden die Zähler automatisch auf dein volles Monatskontingent zurückgesetzt.${admin}`}</p>`;
+    const html=`<div class="sub-section-head"><div><span>KI-NUTZUNG DIESEN MONAT</span><h4>Dein verbleibendes Kontingent</h4></div><small>Reset ${esc(reset)}</small></div><div class="sub-quota-card">${ORDER.map(k=>metricHtml(k,summary.metrics?.[k],summary)).join('')}</div>${summary.tokens?.limit?`<p class="sub-quota-note${summary.tokens.exhausted?' warn':''}">${summary.tokens.exhausted?`Token-Kontingent aufgebraucht (${Number(summary.tokens.used).toLocaleString('de-DE')} von ${Number(summary.tokens.limit).toLocaleString('de-DE')}). Bis zum Reset arbeitet Prompt.ai mit der sparsameren KI.`:`Tokens diesen Monat: ${Number(summary.tokens.used).toLocaleString('de-DE')} von ${Number(summary.tokens.limit).toLocaleString('de-DE')}.`}</p>`:''}<p class="sub-quota-note${summary.available===false?' warn':''}">${summary.authenticated===false?'Melde dich an, damit Prompt.ai dein Monatskontingent kontenübergreifend zählen kann.':summary.available===false?'Der Live-Zähler ist gerade nicht erreichbar. Deine Funktionen bleiben verfügbar.':`Am ${esc(reset)} werden die Zähler automatisch auf dein volles Monatskontingent zurückgesetzt.${admin}`}</p>`;
     setHtml(section,html);
   }
-  function renderAll(){syncPlanCards();syncSubscription()}
+  // Never silent: when the token budget is spent the app keeps working on the cheaper AI, and the
+  // visitor is told so instead of wondering why the results got weaker.
+  function syncSaverNotice(){
+    const summary=cache,active=Boolean(summary?.tokens?.exhausted&&!summary?.isAdmin);
+    const host=$('#workflowApp');
+    let note=$('#promptSaverNotice');
+    // The note lives inside the workflow, so it hides and shows with it. Removing it while the
+    // workflow is temporarily hidden would drop it for good: the next render only runs on a DOM
+    // change, and returning to the workflow is not necessarily one.
+    if(!active||!host){note?.remove();return}
+    if(!note){note=document.createElement('p');note.id='promptSaverNotice';note.className='prompt-saver-notice';host.prepend(note)}
+    const text=`Sparmodus: Dein Token-Kontingent für diesen Monat ist aufgebraucht. Prompt.ai arbeitet weiter, aktuell mit der sparsameren KI. Am ${resetDate(summary?.tokens?.resetAt||summary?.periodEnd)} steht wieder das volle Kontingent bereit.`;
+    if(note.textContent!==text)note.textContent=text;
+  }
+  // Ein Kontingent, das ohne Vorwarnung endet, endet immer im falschen Moment - mitten im Projekt
+  // eines Kunden. Ab 15% Rest steht es im Arbeitsbereich, mit der Zahl und dem Datum des Resets.
+  // Die Meldung geht nicht weg, solange es knapp ist: sie ist kein Hinweis, den man wegklickt,
+  // sondern der Zustand des Kontos.
+  const LOW_QUOTA_SHARE=0.15;
+  function lowMetrics(summary){
+    if(!summary||summary.isAdmin||summary.authenticated===false||summary.available===false)return [];
+    return ORDER.map(key=>{
+      const item=summary.metrics?.[key],limit=Number(item?.limit||0);
+      if(limit<=0)return null;
+      const remaining=Math.max(0,Number(item?.remaining??limit-Number(item?.used||0)));
+      // Aufgebraucht meldet der Server beim Versuch selbst - hier geht es um das, was davor kommt.
+      if(remaining<=0||remaining>Math.ceil(limit*LOW_QUOTA_SHARE))return null;
+      return {key,remaining,limit};
+    }).filter(Boolean);
+  }
+  function syncLowQuotaNotice(){
+    const low=lowMetrics(cache),host=$('#workflowApp')||$('#welcomePage');
+    let note=$('#promptLowQuotaNotice');
+    if(!low.length||!host){note?.remove();return}
+    if(!note){note=document.createElement('p');note.id='promptLowQuotaNotice';note.className='prompt-saver-notice prompt-low-quota';host.prepend(note)}
+    const parts=low.map(item=>`${item.remaining} von ${item.limit} ${LABELS[item.key]}`).join(' · ');
+    const text=`Dein Kontingent wird knapp: ${parts} übrig. Am ${resetDate(cache?.periodEnd)} startet es neu – vorher lässt es sich über die Tarife aufstocken.`;
+    if(note.textContent!==text)note.textContent=text;
+  }
+  function renderAll(){syncPlanCards();syncSubscription();syncSaverNotice();syncLowQuotaNotice()}
 
   function quotaMessage(metric,summary){const item=summary?.metrics?.[metric],reset=resetDate(summary?.periodEnd);return `Dein Monatskontingent für ${LABELS[metric]||'diese Funktion'} ist aufgebraucht. Am ${reset} wird es automatisch zurückgesetzt.${item?.limit?` Dein Tarif enthält ${item.limit} pro Monat.`:''}`}
   async function checkWebsite(){

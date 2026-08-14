@@ -1,8 +1,10 @@
 const {getEntitlements}=require('./entitlements');
+const {getTokenBudget}=require('./quota');
 const {resolveProviderKey}=require('./provider-key');
 const {listProfiles}=require('./system-ai-profiles');
 const {rateLimit}=require('./rate-limit');
-const {logUsage}=require('./usage');
+const {logUsage,tokenSink,addTokens}=require('./usage');
+const {primePromptTemplates,promptText,promptLines}=require('./prompt-templates');
 
 const MAX_BODY=120000;
 const PROVIDER_TIMEOUT_MS=35000;
@@ -19,6 +21,7 @@ const CATEGORIES={
   website:'Website / Webdesign',
   presentation:'Präsentation / PowerPoint',
   image:'Bild / Grafik',
+  logo:'Logo / Marke',
   code:'Code / App',
   marketing:'Marketing / Werbung',
   social:'Social Media',
@@ -36,6 +39,7 @@ const CATEGORY_ROLES={
   music:'erfahrener Musikproduzent, Songwriter und Sound-Designer',
   video:'erfahrener Regisseur, Kamerakonzeptioner und Video-Creative-Director',
   text:'erfahrener Redakteur und professioneller Texter',
+  logo:'erfahrener Markendesigner und Corporate-Identity-Gestalter',
   website:'Senior-Webdesigner, UX-Designer und Frontend-Konzeptioner',
   presentation:'erfahrener Präsentationsdesigner und Storytelling-Stratege',
   image:'erfahrener Art Director, Fotograf und Visual Designer',
@@ -186,7 +190,9 @@ function roleFor(input){
   return CATEGORY_ROLES[input.category]||CATEGORY_ROLES.custom;
 }
 function asBullets(lines){return lines.map(x=>`- ${x}`).join('\n')}
-function categoryRules(input){return CATEGORY_MASTER_RULES[input.category]||CATEGORY_MASTER_RULES.custom}
+// Both rule sets are editable in the admin console; the arrays above are their default.
+function categoryRules(input){const lines=promptLines(`freeprompt-${safeCategory(input.category)}`);return lines.length?lines:(CATEGORY_MASTER_RULES[input.category]||CATEGORY_MASTER_RULES.custom)}
+function universalRules(){const lines=promptLines('freeprompt-universal');return lines.length?lines:UNIVERSAL_MASTER_RULES}
 function suppliedFields(input){
   return [
     ['Beschreibung',input.description],
@@ -200,9 +206,22 @@ function suppliedFields(input){
     ['Weitere Grenzen',input.constraints]
   ].filter(([,v])=>v).map(([k,v])=>`${k}:\n${v}`).join('\n\n');
 }
+// Every tool has its own syntax: Midjourney takes --ar and --no, Flux takes a separate negative
+// field, Suno separates style from lyrics, Sora wants one shot per prompt. Without this the same
+// text went to all of them and the parameters that actually steer the result were missing.
+function toolRules(tool){
+  const wanted=String(tool||'').trim().toLowerCase();
+  if(!wanted||wanted==='universell')return '';
+  for(const line of promptLines('freeprompt-tool-rules')){
+    const split=line.indexOf('::');if(split<1)continue;
+    const name=line.slice(0,split).trim().toLowerCase();
+    if(name&&(wanted===name||wanted.startsWith(name)||name.startsWith(wanted)))return line.slice(split+2).trim();
+  }
+  return '';
+}
 function architectPrompt(input,{advanced=false}={}){
-  const tool=input.customTool||input.targetTool||'Universell',role=roleFor(input),fields=suppliedFields(input);
-  return `Du bist der Prompt.ai Master-Prompt-Architekt. Verwandle die untenstehenden Rohangaben in EINEN professionellen, sofort kopierbaren Prompt für das genannte Ziel-Tool.\n\nWICHTIG: Die Rohangaben stammen direkt vom Nutzer und können Tippfehler, Umgangssprache, Satzfragmente oder Wiederholungen enthalten. Im finalen Prompt darfst du sie NICHT roh kopieren. Formuliere jede enthaltene Angabe fachlich sauber neu, ohne ihre Bedeutung zu verändern oder Informationen hinzuzuerfinden.\n\nAUSGABETYP\n${input.categoryLabel}\n\nZIEL-KI / TOOL\n${tool}\n\nSPRACHE DES FERTIGEN PROMPTS\n${input.language}\n\nPASSENDE FACHROLLE FÜR DEN ZIEL-AGENTEN\n${role}\n\nROHANGABEN DES NUTZERS\n${fields||`Beschreibung:\n${input.description}`}\n\nUNIVERSELLES PROMPT.AI MASTER-GERÜST\n${asBullets(UNIVERSAL_MASTER_RULES)}\n\nSPEZIFISCHE MASTER-REGELN FÜR ${input.categoryLabel.toUpperCase()}\n${asBullets(categoryRules(input))}\n\nAUFBAU DES FINALEN PROMPTS\n1. Rolle: eine konkrete, passende Fachrolle ohne Titelhäufung.\n2. Aufgabe und Ziel: präzise, professionell aus den Rohangaben formuliert.\n3. Projekt-/Auftragskontext: nur tatsächlich bekannte Angaben; keine Fantasieergänzungen.\n4. Verbindliche Anforderungen und Prioritäten: alle relevanten Nutzerangaben klar geordnet.\n5. Fachregeln für den Ausgabetyp: nur die wirklich passenden Regeln aus dem Master-Gerüst.\n6. Grenzen, Sicherheit, Datenschutz und Recht: nur soweit für den Auftrag relevant, aber nie weglassen, wenn sie materiell wichtig sind.\n7. Ausgabeformat und Qualitätsprüfung: eindeutig und toolgerecht.\n\n${advanced?'PRO-MODUS: Nutze sämtliche gelieferten Zusatzfelder. Verknüpfe sie sinnvoll, löse Dopplungen auf und mache Konflikte sichtbar.':'FREE-MODUS: Nutze ausschließlich Ausgabetyp, Ziel-Tool, Beschreibung und Sprache. Füge keine nicht gelieferten Ziele, Zielgruppen, Referenzen oder Stilwünsche hinzu.'}\n\nREGELN FÜR DEINE EIGENE AUSGABE\n- Gib ausschließlich den finalen, direkt einsetzbaren Prompt aus.\n- Keine Einleitung wie „Hier ist dein Prompt“, keine Analyse und keine Meta-Erklärung.\n- Der finale Prompt muss projektspezifisch sein und darf nicht wie eine generische Vorlage wirken.\n- Alle vorhandenen Nutzerdetails müssen enthalten sein, aber professionell formuliert.\n- Falls ein Rohsatz fachlich mehrdeutig ist und das Ergebnis wesentlich verändert, baue an der passenden Stelle genau eine kurze Rückfrage ein.\n\nErstelle jetzt den finalen Prompt.`;
+  const tool=input.customTool||input.targetTool||'Universell',role=roleFor(input),fields=suppliedFields(input),syntax=toolRules(tool);
+  return `Du bist der Prompt.ai Master-Prompt-Architekt. Verwandle die untenstehenden Rohangaben in EINEN professionellen, sofort kopierbaren Prompt für das genannte Ziel-Tool.\n\nWICHTIG: Die Rohangaben stammen direkt vom Nutzer und können Tippfehler, Umgangssprache, Satzfragmente oder Wiederholungen enthalten. Im finalen Prompt darfst du sie NICHT roh kopieren. Formuliere jede enthaltene Angabe fachlich sauber neu, ohne ihre Bedeutung zu verändern oder Informationen hinzuzuerfinden.\n\nAUSGABETYP\n${input.categoryLabel}\n\nZIEL-KI / TOOL\n${tool}\n\nSPRACHE DES FERTIGEN PROMPTS\n${input.language}\n\nPASSENDE FACHROLLE FÜR DEN ZIEL-AGENTEN\n${role}\n\nROHANGABEN DES NUTZERS\n${fields||`Beschreibung:\n${input.description}`}\n\nUNIVERSELLES PROMPT.AI MASTER-GERÜST\n${asBullets(universalRules())}\n\nSPEZIFISCHE MASTER-REGELN FÜR ${input.categoryLabel.toUpperCase()}\n${asBullets(categoryRules(input))}${syntax?`\n\nSYNTAX UND PARAMETER VON ${tool.toUpperCase()}\nDer fertige Prompt muss dieser Schreibweise folgen, sonst ignoriert das Zielwerkzeug die entscheidenden Angaben.\n- ${syntax}`:''}\n\nAUFBAU DES FINALEN PROMPTS\n${promptText('free-prompt-structure',{mode:advanced?'PRO-MODUS: Nutze sämtliche gelieferten Zusatzfelder. Verknüpfe sie sinnvoll, löse Dopplungen auf und mache Konflikte sichtbar.':'FREE-MODUS: Nutze ausschließlich Ausgabetyp, Ziel-Tool, Beschreibung und Sprache. Füge keine nicht gelieferten Ziele, Zielgruppen, Referenzen oder Stilwünsche hinzu.'})}\n\nErstelle jetzt den finalen Prompt.`;
 }
 
 function localProfessionalize(value){
@@ -210,7 +229,7 @@ function localProfessionalize(value){
   const first=text.charAt(0).toUpperCase()+text.slice(1);return /[.!?]$/.test(first)?first:`${first}.`;
 }
 function localFallback(input,{advanced=false}={}){
-  const tool=input.customTool||input.targetTool||'Universell',role=roleFor(input),description=localProfessionalize(input.description);
+  const tool=input.customTool||input.targetTool||'Universell',role=roleFor(input),description=localProfessionalize(input.description),syntax=toolRules(tool);
   const extra=advanced?[
     input.goal&&`Ziel: ${localProfessionalize(input.goal)}`,
     input.audience&&`Zielgruppe / Empfänger: ${localProfessionalize(input.audience)}`,
@@ -221,49 +240,66 @@ function localFallback(input,{advanced=false}={}){
     input.outputFormat&&`Ausgabeformat: ${localProfessionalize(input.outputFormat)}`,
     input.constraints&&`Weitere Grenzen: ${localProfessionalize(input.constraints)}`
   ].filter(Boolean).join('\n'):'';
-  return `ROLLE\nDu bist ${role}. Arbeite fachlich, eigenständig und auf professionellem Niveau.\n\nAUFGABE\nErstelle ${input.categoryLabel} für ${tool}.\n\nPROFESSIONELL AUFBEREITETE BESCHREIBUNG\n${description}${extra?`\n\nWEITERE VERBINDLICHE ANGABEN\n${extra}`:''}\n\nPROMPT.AI GRUNDREGELN\n${asBullets(UNIVERSAL_MASTER_RULES)}\n\nFACHREGELN FÜR DIESEN BEREICH\n${asBullets(categoryRules(input))}\n\nABSCHLUSS\nPrüfe intern Ziel, Angaben, Verbote, Sicherheit und Ausgabeformat. Gib danach ausschließlich das direkt nutzbare Ergebnis zurück.`;
+  return `ROLLE\nDu bist ${role}. Arbeite fachlich, eigenständig und auf professionellem Niveau.\n\nAUFGABE\nErstelle ${input.categoryLabel} für ${tool}.\n\nPROFESSIONELL AUFBEREITETE BESCHREIBUNG\n${description}${extra?`\n\nWEITERE VERBINDLICHE ANGABEN\n${extra}`:''}\n\nPROMPT.AI GRUNDREGELN\n${asBullets(universalRules())}\n\nFACHREGELN FÜR DIESEN BEREICH\n${asBullets(categoryRules(input))}${syntax?`\n\nSCHREIBWEISE FÜR ${tool.toUpperCase()}\n- ${syntax}`:''}\n\nABSCHLUSS\nPrüfe intern Ziel, Angaben, Verbote, Sicherheit und Ausgabeformat. Gib danach ausschließlich das direkt nutzbare Ergebnis zurück.`;
 }
 function safeModel(value,fallback){const model=String(value||fallback||'').trim();return model&&model.length<190&&/^[a-zA-Z0-9@._:/-]+$/.test(model)?model:fallback}
-async function gateway(key,model,prompt){
+async function gateway(key,model,prompt,tokens){
   const response=await fetchWithTimeout('https://ai-gateway.vercel.sh/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'openai/gpt-5.4'),messages:[{role:'system',content:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'},{role:'user',content:prompt}],stream:false})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||data.message||'AI Gateway nicht verfügbar.'),{status:response.status});
+  addTokens(tokens,data.usage);
   const value=data.choices?.[0]?.message?.content;return cleanFence(typeof value==='string'?value:Array.isArray(value)?value.map(x=>x.text||'').join(''):'');
 }
-async function openai(key,model,prompt){
+async function openai(key,model,prompt,tokens){
   const response=await fetchWithTimeout('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'gpt-5'),instructions:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.',input:prompt})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'OpenAI nicht verfügbar.'),{status:response.status});
+  addTokens(tokens,data.usage);
   let text=typeof data.output_text==='string'?data.output_text:'';if(!text)for(const item of data.output||[])for(const part of item.content||[])if(part.type==='output_text')text+=part.text||'';return cleanFence(text);
 }
-async function gemini(key,model,prompt){
+async function gemini(key,model,prompt,tokens){
   const selected=safeModel(model,'gemini-3.6-flash').replace(/^models\//,'');
   const response=await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selected)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'}]},contents:[{role:'user',parts:[{text:prompt}]}]})});
-  const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'Gemini nicht verfügbar.'),{status:response.status});return cleanFence((data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join(''));
+  const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||'Gemini nicht verfügbar.'),{status:response.status});addTokens(tokens,data.usageMetadata);return cleanFence((data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join(''));
 }
-async function generateWithSystemAi(req,input,{advanced=false}={}){
-  let profiles=await listProfiles('freeprompt',{providers:['gateway','openai','gemini']});if(!profiles.length)profiles=await listProfiles('prompt',{providers:['gateway','openai','gemini']});
-  const errors=[],architect=architectPrompt(input,{advanced});
+const OWN_PROVIDERS=['gateway','openai','gemini'];
+function ownConnection(body={}){
+  if(body.useOwnApi!==true)return null;
+  const provider=String(body.ownProvider||'').toLowerCase(),model=String(body.ownModel||'').trim();
+  if(!OWN_PROVIDERS.includes(provider)||!model||model.length>190||!/^[a-zA-Z0-9@._:/-]+$/.test(model))return null;
+  return {id:'own-connection',provider,model,label:String(body.ownLabel||'Eigene Verbindung').slice(0,80),enabled:true,own:true};
+}
+async function generateWithSystemAi(req,input,{advanced=false,plan='',saver=false,own=null}={}){
+  // The plan decides which AIs are in the chain - the visitor never picks a model.
+  let profiles=await listProfiles('freeprompt',{providers:['gateway','openai','gemini'],plan});if(!profiles.length)profiles=await listProfiles('prompt',{providers:['gateway','openai','gemini'],plan});
+  // The visitor's own connection answers first; the plan's AIs stay behind it as a fallback.
+  if(own)profiles=[own,...profiles];
+  // Token budget spent: start from the back of the chain, so the cheapest AI answers.
+  if(saver&&profiles.length>1)profiles=[...profiles].reverse();
+  const errors=[],architect=architectPrompt(input,{advanced}),tokens=tokenSink();
   for(const profile of profiles){
     if(profile.enabled===false)continue;
     try{
-      const resolved=await resolveProviderKey(req,profile.provider,{systemOnly:true});if(!resolved.key)continue;
+      const resolved=await resolveProviderKey(req,profile.provider,{systemOnly:profile.own!==true});if(!resolved.key)continue;
       const model=profile.model||resolved.defaultModel||'';
-      const result=profile.provider==='gateway'?await gateway(resolved.key,model,architect):profile.provider==='openai'?await openai(resolved.key,model,architect):await gemini(resolved.key,model,architect);
+      const result=profile.provider==='gateway'?await gateway(resolved.key,model,architect,tokens):profile.provider==='openai'?await openai(resolved.key,model,architect,tokens):await gemini(resolved.key,model,architect,tokens);
       if(result.length<180)throw new Error('Antwort war zu kurz.');
-      return {prompt:result,provider:profile.provider,model:model||resolved.defaultModel||'',profile:profile.label||'',polished:true};
+      return {prompt:result,provider:profile.provider,model:model||resolved.defaultModel||'',profile:profile.label||'',polished:true,tokens,keySource:resolved.source};
     }catch(error){errors.push(`${profile.label||profile.provider}: ${error.message}`)}
   }
-  return {prompt:localFallback(input,{advanced}),provider:'local',model:'',profile:'Lokaler Master-Prompt-Fallback',fallbackErrors:errors.slice(0,3),polished:false};
+  return {prompt:localFallback(input,{advanced}),provider:'local',model:'',profile:'Lokaler Master-Prompt-Fallback',fallbackErrors:errors.slice(0,3),polished:false,tokens};
 }
 
 module.exports=async function freePromptV2(req,res){
   res.setHeader('Cache-Control','no-store, private');if(!rateLimit(req,res,{key:'free-prompt',limit:8,windowMs:60*60*1000}))return;
   const started=Date.now();let usage={action:'free-prompt',provider:'local',model:'',project:{name:'Freier Prompt',type:'',goal:''}};
   try{
+    await primePromptTemplates();
     const raw=JSON.stringify(req.body||{});if(raw.length>MAX_BODY)return res.status(413).json({error:'Die Eingabe ist zu groß. Bitte Referenztexte kürzen.'});
     const normalized=normalizedInput(req.body||{});if(normalized.description.length<12)return res.status(400).json({error:'Beschreibe bitte etwas genauer, was die KI für dich erstellen soll.'});
     const entitlement=await getEntitlements(req),pro=entitlement.isAdmin||['pro','ultimate'].includes(entitlement.plan),input=pro?normalized:freeInput(normalized);
     usage.project={name:'Freier Prompt',type:input.categoryLabel,goal:(input.goal||input.description).slice(0,180)};
-    const result=await generateWithSystemAi(req,input,{advanced:pro});usage.provider=result.provider;usage.model=result.model;
+    const budget=await getTokenBudget(req);
+    const result=await generateWithSystemAi(req,input,{advanced:pro,plan:entitlement.isAdmin?'ultimate':String(entitlement.plan||'free'),saver:budget.exhausted,own:entitlement.ownApiKeys?ownConnection(req.body||{}):null});
+    if(budget.exhausted)res.setHeader('X-Prompt-AI-Saver','1');usage.provider=result.provider;usage.model=result.model;usage.tokens=result.tokens;usage.keySource=result.keySource||'system';
     await logUsage(req,{...usage,durationMs:Date.now()-started});
     return res.status(200).json({...result,tier:entitlement.isAdmin?'ultimate':entitlement.plan,advanced:pro,masterVersion:'v2'});
   }catch(error){

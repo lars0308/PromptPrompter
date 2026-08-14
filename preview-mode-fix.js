@@ -1,1 +1,26 @@
-(()=>{'use strict';const fix=()=>{const s=document.getElementById('previewFormat');if(!s)return;const auto=s.querySelector('option[value="image-auto"]');if(auto)auto.remove();const gemini=s.querySelector('option[value="image-gemini"]');if(gemini)gemini.remove();const image=s.querySelector('option[value="image-cloudflare"]');if(image)image.textContent='KI-Bild · automatisch';if(s.value==='image-gemini'||s.value==='image-auto'){s.value='image-cloudflare';s.dispatchEvent(new Event('change',{bubbles:true}))}const status=document.getElementById('generationStatus');if(status&&s.value==='image-cloudflare'){const clean=()=>{status.textContent=status.textContent.replace(/Cloudflare Workers AI|Cloudflare|Gemini/gi,'Prompt.ai Vorschau-KI').replace(/unter Einstellungen\s*→\s*KI-Verbindungen verbunden sein/gi,'zentral verfügbar sein')};new MutationObserver(clean).observe(status,{childList:true,subtree:true,characterData:true});clean()}};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix();window.addEventListener('promptai:access',fix);window.addEventListener('promptai:system-ai-ready',fix)})();
+(()=>{
+  'use strict';
+  // The preview selector used to be rewritten here after app.js had built it: the automatic entry
+  // and the Gemini entry were removed and the Cloudflare option was relabelled "KI-Bild ·
+  // automatisch". Both scripts rebuilt the same <select> on promptai:access, so which version a
+  // visitor saw depended on the order the events happened to fire - the label said "automatisch"
+  // while the value was a fixed provider, and options appeared and disappeared between renders.
+  // There is no preview picker any more - the plan decides. All that is left here is keeping
+  // provider names out of the status line.
+  const fix=()=>{
+    const status=document.getElementById('generationStatus');
+    if(!status||status.dataset.previewLabelGuard==='1')return;
+    status.dataset.previewLabelGuard='1';
+    // Assigning textContent always replaces the text node, so writing it unconditionally inside
+    // an observer of this very node feeds itself forever. Only write when something changed.
+    const clean=()=>{
+      const next=status.textContent.replace(/Cloudflare Workers AI/gi,'Prompt.ai Vorschau-KI').replace(/unter Einstellungen\s*→\s*KI-Verbindungen verbunden sein/gi,'zentral verfügbar sein');
+      if(next!==status.textContent)status.textContent=next;
+    };
+    new MutationObserver(clean).observe(status,{childList:true,subtree:true,characterData:true});
+    clean();
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix();
+  window.addEventListener('promptai:access',fix);
+  window.addEventListener('promptai:system-ai-ready',fix);
+})();

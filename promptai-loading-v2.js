@@ -84,10 +84,27 @@
   function ensureHandoff(){
     let simple=false;try{simple=sessionStorage.getItem(SIMPLE_START_KEY)==='1'}catch{}if(!simple||!workflowVisible())return;
     document.documentElement.classList.add('prompt-skip-intake-brief');
-    let overlay=$('#promptBriefHandoff');if(!overlay){overlay=document.createElement('section');overlay.id='promptBriefHandoff';overlay.className='prompt-handoff-loader';overlay.setAttribute('aria-live','polite');overlay.innerHTML='<div><span class="prompt-process-kicker">PROMPT.AI</span><strong class="prompt-process-title">Beschreibung übernommen</strong></div>';document.body.appendChild(overlay);renderLines(overlay,lineSet('briefing'),durationFor(inputLength()))}
+    let overlay=$('#promptBriefHandoff');if(!overlay){overlay=document.createElement('section');overlay.id='promptBriefHandoff';overlay.className='prompt-handoff-loader';overlay.setAttribute('aria-live','polite');overlay.innerHTML='<div><span class="prompt-process-kicker">PROMPT.AI</span><strong class="prompt-process-title">Beschreibung übernommen</strong></div>';document.body.appendChild(overlay);
+      // Wie lange die Zeilen laufen, steht hier - und nur hier. renderLines rechnet mit
+      // demselben Mindestwert, und das Ende unten wartet darauf, statt vorher abzubrechen.
+      // Fest, nicht aus der Textlänge gerechnet: durationFor() geht bis 11 Sekunden, und
+      // so lange stehenzubleiben ist kein Übergang mehr, sondern ein Hänger. Der Schritt
+      // ist längst gewechselt - der Schirm zeigt nur noch, dass etwas übernommen wurde.
+      const runFor=2800;
+      overlay.dataset.startedAt=String(Date.now());overlay.dataset.runFor=String(runFor);
+      renderLines(overlay,lineSet('briefing'),runFor);
+    }
     const text=String($('#projectDescription')?.value||'').trim();
     if(currentStep()===1&&text.length>=20){const panel=$('#stepProject');if(panel?.dataset.promptV2Advance!=='1'){panel.dataset.promptV2Advance='1';setTimeout(()=>{if(currentStep()===1)$('#stepProject .next-btn')?.click()},50)}}
-    if(currentStep()!==1&&currentStep()>0){finishLines(overlay);setTimeout(()=>{flashCompletion('Briefing ist bereit',lineSet('briefing'));overlay?.remove();document.documentElement.classList.remove('prompt-skip-intake-brief');try{sessionStorage.removeItem(SIMPLE_START_KEY)}catch{}},420)}
+    // Der Schritt wechselt nach etwa 50 Millisekunden - der Ladeschirm verschwand deshalb,
+    // bevor die erste Zeile überhaupt zu Ende gelaufen war. Er bleibt jetzt so lange stehen,
+    // wie seine Zeilen brauchen, und schließt danach wie gehabt: fertigstellen, einmal
+    // aufblinken, weg.
+    if(currentStep()!==1&&currentStep()>0&&overlay.dataset.closing!=='1'){
+      overlay.dataset.closing='1';
+      const rest=Math.max(0,Number(overlay.dataset.startedAt||Date.now())+Number(overlay.dataset.runFor||2600)-Date.now());
+      setTimeout(()=>{finishLines(overlay);setTimeout(()=>{flashCompletion('Briefing ist bereit',lineSet('briefing'));overlay?.remove();document.documentElement.classList.remove('prompt-skip-intake-brief');try{sessionStorage.removeItem(SIMPLE_START_KEY)}catch{}},420)},rest);
+    }
   }
 
   function decorateFlowTransition(){

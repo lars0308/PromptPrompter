@@ -8,18 +8,22 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" href="./sitebrief-logo.svg?v=4" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=4" />
+  <link rel="icon" href="./sitebrief-logo.svg?v=6" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=6" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
-  <script src="./theme-init.js?v=2"></script>
-  <link rel="stylesheet" href="./styles.css?v=20260813-6" />
+  <script src="./theme-init.js?v=6"></script>
+  <link rel="stylesheet" href="./styles.css?v=20260816-4" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
     html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
+    /* Set by theme-init.js before the first paint when a project start is being handed over, so
+       the welcome page cannot flash between the reload and the handoff overlay. */
+    html.prompt-handoff-pending #welcomePage{visibility:hidden!important}
     #promptAppBoot{display:none;position:fixed;z-index:2147483647;inset:0;place-items:center;padding:28px 22px;background:var(--paper,#f5f6f7);color:var(--ink,#171814);opacity:1;transition:opacity .28s ease;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
     html.prompt-app-booting #promptAppBoot{display:grid}
     #promptAppBoot.is-leaving{opacity:0;pointer-events:none}
     #promptAppBoot>div{width:min(520px,100%);text-align:center}
+    html[data-theme="dark"] #promptAppBoot img{content:url("./sitebrief-logo-trace-light.svg?v=7")}
     #promptAppBoot img{display:block;width:min(126px,31vw);height:min(126px,31vw);margin:0 auto;object-fit:contain;filter:drop-shadow(0 16px 32px rgba(20,88,129,.10))}
     #promptAppBoot strong{display:block;margin-top:17px;font-size:clamp(28px,7vw,42px);line-height:1;letter-spacing:-.045em}
     .brand-ai-suffix{color:var(--accent,#1b76aa)}
@@ -32,22 +36,21 @@
   </style>
 </head>
 <body>
-  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo.svg?v=4" alt="Prompt.ai"><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><p>Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div></section>
-  <div id="publicNotices" class="public-notices" aria-live="polite"></div>
+  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo-trace.svg?v=7" alt="Prompt.ai"><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><p class="prompt-fill-progress" style="--prompt-fill:6%">Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div></section>
   <aside id="offerBanner" class="offer-banner" hidden>
     <div><span id="offerEyebrow">AKTION</span><strong id="offerTitle"></strong><p id="offerDescription"></p></div>
     <button type="button" class="solid-btn mini" id="offerCta">Kostenlos testen</button><button type="button" class="offer-close" id="offerClose" aria-label="Aktion ausblenden">×</button>
   </aside>
   <header class="topbar">
     <a class="brand" href="#" id="brandHome" aria-label="Prompt.ai Start">
-      <span class="brand-mark"><img src="./sitebrief-logo.svg?v=4" alt="" /></span>
+      <span class="brand-mark"><img src="./sitebrief-logo.svg?v=6" alt="" /></span>
       <span class="brand-copy"><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT</small></span>
     </a>
 
     <div class="mode-switch" id="modeSwitch" aria-label="Arbeitsmodus" hidden>
-      <button type="button" data-mode="guided" class="active">Geführt</button>
-      <button type="button" data-mode="auto">Auto</button>
-      <button type="button" data-mode="expert">Experte</button>
+      <button type="button" data-mode="guided" class="active">Mit Rückfragen</button>
+      <button type="button" data-mode="auto">Ohne Rückfragen</button>
+      <button type="button" data-mode="expert">Selbst einstellen</button>
     </div>
 
     <div class="top-actions">
@@ -74,6 +77,7 @@
       <div class="welcome-quick-actions">
         <button type="button" class="solid-btn" id="workspaceNewProjectBtn">Neues Projekt</button>
         <button type="button" class="outline-btn" id="workspaceRevisionBtn">Webseite überarbeiten</button>
+        <button type="button" class="outline-btn" id="workspaceBuildSiteBtn">Probelauf</button>
         <button type="button" class="outline-btn" id="workspaceLastProjectBtn">Letztes Projekt öffnen</button>
         <button type="button" class="outline-btn" id="workspaceLibraryBtn">Bibliothek öffnen</button>
         <button type="button" class="outline-btn" id="showPlansBtn">Abonnieren</button>
@@ -111,19 +115,19 @@
 
         <label class="field field-large">
           <span>Kurzbeschreibung</span>
-          <textarea id="projectDescription" rows="7" placeholder="z. B. Prompt.ai soll Agenturen und Selbstständigen helfen, aus einem Kundenbriefing eine eigenständige Website-Richtung und einen präzisen Umsetzungsauftrag zu entwickeln."></textarea>
+          <textarea id="projectDescription" autocomplete="off" rows="7" placeholder="z. B. Prompt.ai soll Agenturen und Selbstständigen helfen, aus einem Kundenbriefing eine eigenständige Website-Richtung und einen präzisen Umsetzungsauftrag zu entwickeln."></textarea>
           <small><span id="descriptionCount">0</span> Zeichen</small>
         </label>
 
         <div class="field-grid three">
-          <label class="field"><span>Projektname <em>optional</em></span><input id="projectName" type="text" placeholder="z. B. Prompt.ai Kundenportal" /></label>
+          <label class="field"><span>Projektname <em>optional</em></span><input id="projectName" autocomplete="off" type="text" placeholder="z. B. Prompt.ai Kundenportal" /></label>
           <label class="field"><span>Projektart</span><select id="projectType"></select></label>
           <label class="field"><span>Hauptziel</span><select id="projectGoal"></select></label>
         </div>
 
         <div class="field-grid two">
-          <label class="field"><span>Zielgruppe <em>optional</em></span><input id="projectAudience" type="text" placeholder="z. B. kleine Agenturen, Webdesigner und Selbstständige mit Kundenprojekten" /></label>
-          <label class="field"><span>Besonderer Wunsch <em>optional</em></span><input id="projectSpecial" type="text" placeholder="z. B. redaktionelle Wirkung, keine typischen Software-Karten" /></label>
+          <label class="field"><span>Zielgruppe <em>optional</em></span><input id="projectAudience" autocomplete="off" type="text" placeholder="z. B. kleine Agenturen, Webdesigner und Selbstständige mit Kundenprojekten" /></label>
+          <label class="field"><span>Besonderer Wunsch <em>optional</em></span><input id="projectSpecial" autocomplete="off" type="text" placeholder="z. B. redaktionelle Wirkung, keine typischen Software-Karten" /></label>
         </div>
 
         <div class="understanding" id="projectUnderstanding" hidden>
@@ -167,8 +171,9 @@
         </div>
 
         <div class="no-references-note"><span>Keine Referenzen zur Hand? Kein Problem — einfach weiter.</span><button type="button" class="text-btn" id="skipReferencesBtn">Nein, weiter ohne Referenzen <i>→</i></button></div>
+        <p class="project-extras-note" id="projectConfirmExtras"></p>
 
-        <section class="client-context-card" id="clientContextCard"><div class="selection-head"><div><span>KUNDENINFORMATIONEN</span></div></div><p class="client-context-lead">Hier geht es um echte Fakten, nicht um Stil: die eigene Website deines Kunden, ein Google-Eintrag oder eine andere Datenquelle, aus der Prompt.ai Adresse, Öffnungszeiten oder Leistungen übernehmen darf.</p><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" type="text" placeholder="z. B. Prompt.ai Studio" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Website, Google-Link oder Datenquelle</span><input id="clientWebsite" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Quelle hinzufügen & auslesen</button><small id="clientImportStatus"></small></div><div id="clientSources" class="source-list"></div></section>
+        <section class="client-context-card" id="clientContextCard"><div class="selection-head"><div><span>KUNDENINFORMATIONEN</span></div></div><p class="client-context-lead">Hier geht es um echte Fakten, nicht um Stil: die eigene Website deines Kunden, ein Google-Eintrag oder eine andere Datenquelle, aus der Prompt.ai Adresse, Öffnungszeiten oder Leistungen übernehmen darf.</p><div class="field-grid two"><label class="field"><span>Auftraggeber / Firma</span><input id="clientName" autocomplete="off" type="text" placeholder="z. B. Prompt.ai Studio" /></label><label class="field"><span>Art</span><select id="clientType"><option value="kunde">Kundenprojekt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="intern">Internes Projekt</option></select></label><label class="field"><span>Website, Google-Link oder Datenquelle</span><input id="clientWebsite" autocomplete="off" type="url" placeholder="https://…" /></label><label class="field"><span>Ansprechpartner <em>optional</em></span><input id="clientContact" autocomplete="off" type="text" /></label></div><div class="inline-actions"><button type="button" class="outline-btn" id="importClientWebsiteBtn">Quelle hinzufügen & auslesen</button><small id="clientImportStatus"></small></div><div id="clientSources" class="source-list"></div></section>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="1">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="3">Agent auswählen <i>→</i></button></div>
       </section>
@@ -280,16 +285,16 @@
       <section class="step-panel preview-step" data-step-panel="6" id="stepPreviews">
         <div class="section-kicker">06 — VORSCHAUEN</div>
         <div class="preview-step-head">
-          <div><h1>3–5 echte Richtungen.</h1></div>
-          <div class="preview-generation-controls">
-            <label class="compact-field"><span>Vorschau</span><select id="previewFormat"><option value="html" selected>HTML-Seiten · kostenlos</option><option value="image-cloudflare">KI-Bilder · Cloudflare Free</option><option value="image-gemini">KI-Bilder · Gemini</option></select></label>
-            <label class="compact-field"><span>Anzahl</span><select id="conceptCount"><option>3</option><option>4</option><option selected>5</option></select></label>
-            <button type="button" class="solid-btn" id="generateConceptsBtn">Vorschauen erzeugen</button>
-          </div>
+          <div><h1>Drei echte Richtungen.</h1></div>
         </div>
         <div id="generationStatus" class="generation-status">Noch keine Vorschauen erzeugt.</div>
-        <div class="task-progress preview-progress" id="previewProgress" hidden><div class="task-progress-label"><b id="previewProgressPercent">0 %</b><small id="previewProgressText">Vorschauen werden vorbereitet…</small></div><div class="task-progress-track"><i id="previewProgressFill"></i></div></div>
+        <div class="task-progress preview-progress" id="previewProgress" hidden><div class="task-progress-label"><b id="previewProgressPercent">0 %</b><small id="previewProgressText">Vorschauen werden vorbereitet…</small></div><div class="task-progress-track"><i id="previewProgressFill"></i></div><button type="button" class="outline-btn mini task-progress-cancel" id="cancelPreviewBtn" hidden>Abbrechen</button></div>
         <div id="conceptGallery" class="concept-gallery"></div>
+        <!-- Below the three results, not above them: the previews are already there when the step
+             opens, so nothing at the top may look like the button that starts them. -->
+        <div class="preview-generation-controls">
+          <button type="button" class="outline-btn" id="regenerateConceptsBtn" hidden>Andere Vorschauen erstellen <small id="regenerateConceptsHint"></small></button>
+        </div>
 
         <div class="step-actions"><button type="button" class="text-btn back-btn" data-back="5">← Zurück</button><button type="button" class="solid-btn next-btn" data-next="7" id="toRefineBtn">Auswahl verfeinern <i>→</i></button></div>
       </section>
@@ -335,7 +340,7 @@
 
         <div class="prompt-meta" id="promptMeta"></div>
         <textarea id="masterPrompt" class="master-prompt" spellcheck="false"></textarea>
-        <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn agent-open-btn" id="openAgentBtn">Agent öffnen</button><button type="button" class="outline-btn" id="downloadPromptBtn">Master-Prompt speichern</button><button type="button" class="outline-btn" id="downloadProjectSourcesBtn">Projekt-Quellen speichern</button><button type="button" class="outline-btn" id="downloadHandoffPackageBtn">Komplettes Übergabe-ZIP</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
+        <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Prompt &amp; Quellen kopieren</button><button type="button" class="outline-btn agent-open-btn" id="openAgentBtn">Agent öffnen</button><button type="button" class="outline-btn" id="downloadPromptBtn">Master-Prompt speichern</button><button type="button" class="outline-btn" id="downloadProjectSourcesBtn">Projekt-Quellen speichern</button><button type="button" class="outline-btn" id="downloadHandoffPackageBtn">Komplettes Übergabe-ZIP</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
         <section class="prompt-handoff" id="promptHandoff"><div><span>MIT DER KI ÜBERGEBEN</span><h2>Vorschau und Referenzen gehören zum Prompt.</h2><p id="promptHandoffText">Prompt.ai stellt die ausgewählte Vorschau, Bildreferenzen, Unterlagen und eine Linkliste als gemeinsames Übergabepaket zusammen.</p></div><div class="prompt-handoff-preview" id="promptHandoffPreview"></div></section>
         <section class="client-result-card">
           <div><span>PROJEKTUNTERLAGEN</span><h2>Mehr als eine kurze Zusammenfassung</h2></div>
@@ -343,8 +348,8 @@
           <small id="clientResultHint"></small>
         </section>
         <section class="export-result-card">
-          <div><span>DIREKTE ERSTELLUNG</span><h2>Website bauen und direkt ansehen</h2><p id="exportResultHint">Prompt.ai erstellt ein vollständiges Projektpaket. Statische Websites werden direkt angezeigt; ein sicherer Vorschau-Läufer für hochgeladene Next.js-Projekte folgt als eigener Ausbau.</p></div>
-          <div class="client-result-actions"><button type="button" class="solid-btn" id="buildWebsiteBtn">Website jetzt erstellen</button><button type="button" class="outline-btn" id="downloadGeneratedWebsiteBtn" hidden>Erstellte Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn">Auf GitHub veröffentlichen</button></div>
+          <div><span>PROBELAUF</span><h2>Briefing zur Probe bauen lassen</h2><p id="exportResultHint">Prompt.ai baut aus genau diesem Projekt eine Seite und zeigt sie hier an. Das ist der Nachweis, dass dein Briefing trägt – keine fertige Website und hier auch nicht als Datei zum Mitnehmen. Mit Ultimate kannst du das Ergebnis stattdessen in ein GitHub-Repository legen – zusammen mit Master-Prompt, Seitenstruktur und Quellen – und dort weiterarbeiten oder die Seite über GitHub Pages ansehen.</p></div>
+          <div class="client-result-actions"><button type="button" class="solid-btn" id="buildWebsiteBtn">Probelauf starten</button><button type="button" class="outline-btn" id="downloadGeneratedWebsiteBtn" hidden>Erstellte Website als ZIP</button><button type="button" class="outline-btn" id="publishGithubBtn">In GitHub-Repository legen</button></div>
           <div class="website-build-status" id="websiteBuildStatus" aria-live="polite"></div>
           <section class="website-build-progress" id="websiteBuildProgress" hidden aria-live="polite" aria-label="Fortschritt der Website-Erstellung">
             <div class="build-progress-head"><div><span>ERSTELLUNG LÄUFT</span><strong id="websiteBuildStage">Briefing wird vorbereitet</strong></div><b id="websiteBuildPercent">0 %</b></div>
@@ -356,7 +361,7 @@
             <small id="websiteBuildTruthNote">Der Prozentwert steigt nur, wenn ein echter Arbeitsschritt abgeschlossen ist.</small>
           </section>
           <div class="website-requirements" id="websiteRequirements" hidden></div>
-          <button type="button" class="text-btn" id="downloadWebsiteZipBtn">Einfaches Starterpaket herunterladen</button>
+          <button type="button" class="text-btn" id="downloadWebsiteZipBtn" hidden>Einfaches Starterpaket herunterladen</button>
         </section>
 
         <section class="revision-studio" id="revisionStudio">
@@ -506,9 +511,7 @@
       </header>
       <div class="settings-body">
         <div class="settings-upgrade-note" id="settingsUpgradeNote"></div>
-        <section class="settings-section">
-          <div class="settings-heading"><strong>Eigene Verbindungen</strong></div>
-          <div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein Prompt.ai-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
+        <section class="settings-section" id="apiKeySection" hidden><div class="settings-heading"><strong>Eigene KI-Verbindungen</strong></div><p class="settings-note" id="apiKeySlotsNote"></p><div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein Prompt.ai-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
           <div class="connection-login-row" id="connectionUpgradeRow" hidden><span>Eigene KI-Verbindungen sind ab Ultimate enthalten oder als Zusatz für 5,99 € / Monat buchbar.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
           <div class="ai-connection-grid" id="aiConnectionGrid">
             <article class="ai-connection-card recommended">
@@ -566,11 +569,27 @@
               <small class="connection-message" id="cloudflareConnectionMessage"></small>
             </article>
           </div>
+          </section>
+        <section class="settings-section" id="userPreferenceSection">
+          <div class="settings-heading"><strong>Darstellung &amp; Voreinstellungen</strong></div>
+          <p class="settings-note">Gilt auf diesem Gerät und für neue Projekte. Laufende Projekte bleiben unverändert.</p>
+          <div class="field-grid two">
+            <label class="field"><span>Farbschema</span><select id="setColorScheme"><option value="system">Automatisch (Gerät)</option><option value="light">Immer hell</option><option value="dark">Immer dunkel</option></select></label>
+            <label class="field"><span>Ziel-KI für neue Projekte</span><select id="setDefaultAgent"></select></label>
+            <label class="field"><span>Projektbeziehung für neue Projekte</span><select id="setDefaultClientType"><option value="kunde">Kundenprojekt</option><option value="eigenes">Eigenes Projekt</option></select></label>
+            <label class="field"><span>Startseite beim Öffnen</span><select id="setStartView"><option value="home">Startseite</option><option value="last">Letztes Projekt fortsetzen</option></select></label>
+          </div>
+          <label class="check-row"><input id="setConfirmBeforePrompt" type="checkbox" checked /><span><strong>Vor dem Master-Prompt noch einmal bestätigen</strong><small>Zeigt die Zusammenfassung der Projektdaten, bevor der Auftrag erstellt wird.</small></span></label>
+          <label class="check-row"><input id="setReduceMotion" type="checkbox" /><span><strong>Bewegung reduzieren</strong><small>Blendet Animationen in Ladebildschirmen und Übergängen aus.</small></span></label>
+          <div class="settings-danger-row"><div><strong>Lokale Projektdaten löschen</strong><small>Entfernt Entwurf, Bibliothek und Einstellungen von diesem Gerät. In der Cloud gespeicherte Projekte bleiben erhalten.</small></div><button type="button" class="text-btn danger" id="clearLocalDataBtn">Auf diesem Gerät löschen</button></div>
+        </section>
+        <section class="settings-section">
+          <div class="settings-heading"><strong>GitHub-Verbindung</strong></div>
           <div class="connection-login-row" id="githubLoginRow" hidden><span>Zum Verbinden von GitHub zuerst anmelden.</span><button type="button" class="outline-btn mini" id="githubSettingsLoginBtn">Zum Speichern anmelden</button></div>
-          <div class="connection-login-row" id="githubUpgradeRow" hidden><span>Die eigene GitHub-Verbindung ist ab Pro enthalten.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
+          <div class="connection-login-row" id="githubUpgradeRow" hidden><span>Für die eigene GitHub-Verbindung ist ein Ultimate-Abo erforderlich.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
           <div class="ai-connection-grid" id="githubConnectionGrid" hidden>
             <article class="ai-connection-card">
-              <div class="ai-connection-head"><div><span>PRO · EXPORT</span><strong>GitHub</strong></div><span class="connection-status" id="githubConnectionStatus">Nicht verbunden</span></div>
+              <div class="ai-connection-head"><div><span>ULTIMATE · REPOSITORY</span><strong>GitHub</strong></div><span class="connection-status" id="githubConnectionStatus">Nicht verbunden</span></div>
               <label class="field"><span>GitHub Personal Access Token</span><input id="githubToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_… oder ghp_…" /></label>
               <div class="connection-actions"><button type="button" class="solid-btn mini" id="githubConnectBtn">Speichern & verbinden</button><button type="button" class="outline-btn mini" id="githubTestBtn">Testen</button><button type="button" class="text-btn" id="githubDisconnectBtn" hidden>Trennen</button></div>
               <small class="connection-message" id="githubConnectionMessage">Token benötigt Berechtigung zum Erstellen und Schreiben von Repositories.</small>
@@ -625,7 +644,7 @@
       <div class="account-body">
         <div id="accountLoggedOut">
           <section class="auth-hero">
-            <div class="auth-brand"><img src="sitebrief-logo.svg?v=4" alt="" /><div><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><span>Aus Ideen wird ein klares Projekt</span></div></div>
+            <div class="auth-brand"><img src="sitebrief-logo.svg?v=6" alt="" /><div><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><span>Aus Ideen wird ein klares Projekt</span></div></div>
             <span class="auth-kicker">DEIN PROJEKT BEGINNT HIER</span>
             <h1>Von der ersten Idee zum klaren Auftrag.</h1>
           </section>
@@ -651,8 +670,8 @@
         <div id="accountLoggedIn" hidden>
           <section class="account-overview-head"><div class="account-user"><span>MEIN PROFIL</span><h2>Persönliche Angaben und Sicherheit</h2><strong id="accountEmail">–</strong><small id="accountUserId"></small></div><div class="cloud-stats" id="cloudStats"></div></section>
           <section class="account-profile-settings"><div class="account-section-head"><div><strong>Profildaten</strong></div></div><div class="field-grid two"><label class="field"><span>Name</span><input id="userDisplayName" type="text" /></label><label class="field"><span>Firma / Agentur</span><input id="userCompanyName" type="text" /></label><label class="field"><span>Website</span><input id="userWebsite" type="url" /></label><label class="field"><span>Standard-Auftraggeber</span><select id="userDefaultClientType"><option value="">Nicht festgelegt</option><option value="eigenes-projekt">Eigenes Projekt</option><option value="kunde">Kundenprojekt</option><option value="intern">Internes Projekt</option></select></label></div><div class="account-save-row"><button type="button" class="solid-btn" id="saveUserProfileBtn">Änderungen speichern</button><small id="userProfileMessage"></small></div></section>
-          <section class="api-addon-card" id="apiAddonCard"><div><span>OPTIONALES ADD-ON</span><strong>Eigene KI-API-Keys</strong></div><div><b>5,99 € / Monat</b><button type="button" class="solid-btn" id="startApiAddonCheckoutBtn">Add-on buchen</button></div></section>
-          <section class="account-tool-card"><div><strong>Face ID &amp; Biometrie</strong></div><div><button type="button" class="outline-btn" id="faceIdBtn">Face ID einrichten</button><small id="faceIdMessage"></small></div></section>
+          
+          <section class="api-addon-card" id="apiAddonCard"><div><span>OPTIONALES ADD-ON</span><strong>Eigene KI-API-Keys</strong><small id="apiAddonState">Pro gebuchtem Platz kannst du einen Anbieter-Key hinterlegen.</small></div><div><b id="apiAddonPrice">5,99 € / Monat je Platz</b><label class="compact-field"><span>Plätze</span><select id="apiAddonSlots"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label><button type="button" class="solid-btn" id="startApiAddonCheckoutBtn">Plätze buchen</button></div></section>
           <section class="account-support-card"><div class="account-section-head"><div><strong>Support-Anfrage</strong></div></div><div class="field-grid two"><label class="field"><span>Thema</span><select id="supportCategory"><option value="technical">Technisches Problem</option><option value="billing">Zahlung &amp; Tarif</option><option value="account">Konto &amp; Anmeldung</option><option value="feedback">Idee &amp; Feedback</option></select></label><label class="field"><span>Betreff</span><input id="supportSubject" type="text" maxlength="120" placeholder="Worum geht es?" /></label></div><label class="field"><span>Nachricht</span><textarea id="supportMessage" rows="4" maxlength="3000" placeholder="Was ist passiert und wobei brauchst du Hilfe?"></textarea></label><div class="account-save-row"><button type="button" class="solid-btn" id="sendSupportBtn">Anfrage senden</button><small id="supportStatus"></small></div></section>
           <div class="inline-actions"><button type="button" class="solid-btn" id="syncNowBtn">Jetzt synchronisieren</button><button type="button" class="outline-btn" id="signOutBtn">Abmelden</button></div>
           <p id="syncMessage" class="auth-message"></p>
@@ -698,20 +717,42 @@
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>TARIFE</span><h2>Passender Umfang für dein Projekt</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="plans-grid">
-        <details class="plan-card" data-plan-card="free">
-          <summary class="plan-card-summary"><span><b>Kostenlos</b><small>Für eigene Ideen und erste Projekte</small></span><strong>0 €</strong><i aria-hidden="true">+</i></summary>
-          <div class="plan-card-detail"><ul><li>Geführter Ablauf mit Codex als Ziel-Agent</li><li>Drei responsive HTML-Richtungen</li><li>Master-Prompt, Blueprint und Projektbericht</li><li>Website-Grundscan und einfache Überarbeitung</li><li>Kurze Grundprüfung zu Datenschutz und Impressum</li></ul><aside class="single-check-note"><strong>Erweiterte Prüfung für ein Projekt – 3,99 €</strong><small>Ein einmaliges Prüfguthaben ohne Abo. Prompt.ai untersucht dein Briefing genauer auf fehlende Angaben und Widersprüche, stellt gezielte Rückfragen und ergänzt Prüfhinweise zu Datenschutz, Impressum, Barrierefreiheit, Sicherheit, Performance und SEO. Das Guthaben wird erst verbraucht, wenn du die erweiterte Prüfung startest.</small><button type="button" class="solid-btn mini" id="buySingleReviewBtn">Einmalig für 3,99 € prüfen</button></aside><button type="button" class="outline-btn" id="startFreeBtn">Kostenlos weiterarbeiten</button></div>
-        </details>
-        <details class="plan-card recommended" data-plan-card="pro">
-          <summary class="plan-card-summary"><span><b>Pro</b><small>Für vollständige Kundenprojekte</small></span><strong id="proPriceLabel">15,99 € / Monat</strong><i aria-hidden="true">+</i></summary>
-          <div class="plan-card-detail"><ul><li>Claude Code oder Codex, geführt oder automatisch</li><li>Vier individuelle Richtungen und erweiterte Projektprüfung</li><li>Website-Überarbeitung mit Referenzen, Seitenauswahl und Dateien</li><li>Eigene Module, Skills und Projektprofile</li><li>Ausgearbeitetes Kundenbriefing und Übergabe-Dokument</li><li>Website-Dateipaket mit direkter HTML-Vorschau</li></ul><button type="button" class="solid-btn" id="startProCheckoutBtn">Pro wählen</button></div>
-        </details>
-        <details class="plan-card" data-plan-card="ultimate">
-          <summary class="plan-card-summary"><span><b>Ultimate</b><small>Für Agenturen und volle Kontrolle</small></span><strong id="ultimatePriceLabel">25,99 € / Monat</strong><i aria-hidden="true">+</i></summary>
-          <div class="plan-card-detail"><ul><li>Alle Funktionen aus Pro</li><li>Alle Ziel-Agenten und fünf Richtungen</li><li>Prompt-Werkstatt mit Technik-, Design- und Abnahmeregeln</li><li>Mehrere Prompts als benannte Schnellvarianten</li><li>Eigene KI-Verbindungen inklusive</li><li>Expertenmodus und GitHub-Veröffentlichung</li></ul><button type="button" class="outline-btn" id="startUltimateCheckoutBtn">Ultimate wählen</button></div>
-        </details>
+        <article class="plan-card" data-plan-card="free">
+          <div class="plan-card-summary"><span><b>Kostenlos</b><small>Für eigene Ideen und erste Projekte</small></span><strong>0 €</strong></div>
+          <div class="plan-card-detail"><p class="plan-card-includes">Zum Ausprobieren:</p><ul><li>Ablauf mit Rückfragen, Ziel-Agent Codex</li><li>Drei Richtungen als HTML-Vorschau <em>(ohne KI-Bilder)</em></li><li>Master-Prompt, Seitenstruktur und gesicherte Fakten</li><li>10 freie Prompts und 3 Website-Projekte im Monat</li><li>Grundprüfung zu Datenschutz und Impressum</li></ul><aside class="single-check-note"><strong>Erweiterte Prüfung für ein Projekt – 3,99 €</strong><small>Einmalig, ohne Abo. Prüft dein Briefing auf Lücken und Widersprüche und ergänzt Hinweise zu Datenschutz, Impressum, Barrierefreiheit, Sicherheit, Performance und SEO. Verbraucht wird das Guthaben erst beim Start.</small><button type="button" class="solid-btn mini" id="buySingleReviewBtn">Einmalig für 3,99 € prüfen</button></aside><button type="button" class="outline-btn plan-card-buy" id="startFreeBtn">Kostenlos starten</button></div>
+        </article>
+        <article class="plan-card recommended" data-plan-card="pro">
+          <b class="plan-card-badge">EMPFOHLEN</b>
+          <div class="plan-card-summary"><span><b>Pro</b><small>Für alle, die regelmäßig Projekte abgeben</small></span><strong id="proPriceLabel">15,99 € / Monat</strong></div>
+          <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Kostenlos</b>, plus:</p><ul><li><b>KI-Bilder</b> statt HTML-Vorschauen – 50 Durchläufe im Monat</li><li>100 freie Prompts, 25 Website-Projekte</li><li>Claude Code zusätzlich zu Codex, mit und ohne Rückfragen</li><li>Erweiterte Projektprüfung mit gezielten Rückfragen</li><li>Website überarbeiten, Kundenbriefing, Übergabe-Dokument</li><li><b>Bibliothek:</b> je 10 Vorlagen, Bausteine und Agent-Skills</li><li>Eigene KI-Verbindung für 5,99 € dazubuchbar</li></ul><button type="button" class="solid-btn plan-card-buy" id="startProCheckoutBtn">Jetzt kaufen</button></div>
+        </article>
+        <article class="plan-card" data-plan-card="ultimate">
+          <div class="plan-card-summary"><span><b>Ultimate</b><small>Für Vielnutzer, Agenturen und eigene KI</small></span><strong id="ultimatePriceLabel">25,99 € / Monat</strong></div>
+          <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Pro</b>, plus:</p><ul><li><b>Bibliothek ohne Grenze</b> – so viele Vorlagen, Bausteine und Skills wie du willst</li><li><b>2 eigene KI-Verbindungen inklusive</b> – dein Anbieter, dein Modell, deine Version</li><li>Eigene Aufrufe zählen nur <b>halb</b> aufs Kontingent</li><li>500 freie Prompts, 100 Website-Projekte, 250 Bild-Durchläufe</li><li><b>Website-Probelauf:</b> dein Briefing wird zur Probe gebaut und angezeigt</li><li><b>GitHub:</b> Repositories ansehen, neue anlegen, Dateien samt Briefing hochladen und die Seite über Pages öffnen</li><li>Alle Ziel-Agenten und der Modus „Selbst einstellen“</li></ul><button type="button" class="outline-btn plan-card-buy" id="startUltimateCheckoutBtn">Jetzt kaufen</button></div>
+        </article>
       </div>
       <div class="plans-footer"><button type="button" class="text-btn" id="manageSubscriptionBtn">Bestehendes Abo verwalten</button><small>Die Zahlung und Aboverwaltung erfolgt sicher über Stripe.</small></div>
+    </form>
+  </dialog>
+
+  <dialog id="projectExtrasDialog" class="library-dialog project-extras-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head"><div><span>FÜR DIESES PROJEKT</span><h2>Bausteine &amp; Skills</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
+      <div class="project-extras-body">
+        <p class="project-extras-lead">Was hier an ist, wird in den Master-Prompt geschrieben. Die Voreinstellung kommt aus deiner Bibliothek – hier gilt sie nur für dieses eine Projekt.</p>
+        <div id="projectExtrasList"></div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="websiteBuildDialog" class="library-dialog website-build-dialog">
+    <form method="dialog" class="dialog-frame">
+      <header class="dialog-head"><div><span>PROBELAUF</span><h2>Briefing zur Probe bauen lassen</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
+      <div class="website-build-body">
+        <p class="website-build-project" id="websiteBuildProject"></p>
+        <div class="website-build-blocked" id="websiteBuildBlocked" hidden></div>
+        <div id="websiteBuildMount"></div>
+      </div>
     </form>
   </dialog>
 
@@ -721,10 +762,10 @@
       <div class="admin-body">
         <nav class="admin-tabs" aria-label="Adminbereiche"><button type="button" class="active" data-admin-tab="overview">Übersicht</button><button type="button" data-admin-tab="users">Benutzer &amp; Abos</button><button type="button" data-admin-tab="support">Support</button><button type="button" data-admin-tab="messages">Mitteilungen</button><button type="button" data-admin-tab="offer">Aktion &amp; Testphase</button><button type="button" data-admin-tab="maintenance">Wartung</button></nav>
         <p id="adminMessage" class="auth-message"></p>
-        <section class="admin-pane active" data-admin-pane="overview"><div id="adminStats" class="admin-stats"></div><div class="admin-section-head"><div><span>NUTZUNG</span><h3>Verwendete KI-Modelle</h3></div><button type="button" class="outline-btn mini" id="adminReloadBtn">Neu laden</button></div><div id="adminUsage" class="admin-usage"></div><div class="admin-section-head admin-runs-head"><div><span>LETZTE VERARBEITUNGEN</span><h3>Prompts und Projekte</h3><p>Aus Datenschutzgründen werden Projektname, Art, Ziel und Verarbeitung angezeigt – nicht der vollständige vertrauliche Prompttext.</p></div></div><div id="adminRuns" class="admin-runs"></div></section>
-        <section class="admin-pane" data-admin-pane="users"><div class="admin-section-head"><div><span>TARIFE</span><h3>Monatskontingente</h3><p>Wie viel freie Prompts, Website-Generierungen und KI-Vorschauen jeder Tarif pro Kalendermonat enthält.</p></div></div><div class="admin-quota-grid" id="adminQuotaGrid"><div class="admin-quota-col"><strong>Kostenlos</strong><label class="field"><span>Freie Prompts</span><input id="quotaFreeFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaFreeWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaFreeAiPreviews" type="number" min="0" max="100000" /></label></div><div class="admin-quota-col"><strong>Pro</strong><label class="field"><span>Freie Prompts</span><input id="quotaProFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaProWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaProAiPreviews" type="number" min="0" max="100000" /></label></div><div class="admin-quota-col"><strong>Ultimate</strong><label class="field"><span>Freie Prompts</span><input id="quotaUltimateFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaUltimateWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaUltimateAiPreviews" type="number" min="0" max="100000" /></label></div></div><button type="button" class="solid-btn" id="saveQuotaLimitsBtn">Kontingente speichern</button><div class="admin-section-head"><div><span>KONTEN</span><h3>Registrierte Benutzer</h3></div><input id="adminUserSearch" type="search" placeholder="E-Mail oder Firma suchen" /></div><div id="adminUsers" class="admin-users"></div></section>
-        <section class="admin-pane" data-admin-pane="support"><div class="admin-section-head"><div><span>SUPPORT</span><h3>Anfragen der Benutzer</h3></div></div><div id="adminSupport" class="admin-support"></div></section>
-        <section class="admin-pane" data-admin-pane="messages"><div class="admin-split"><div><div class="admin-section-head"><div><span>AKTIVE MELDUNGEN</span><h3>Mitteilungen</h3></div></div><div id="adminAnnouncements" class="admin-announcements"></div></div><div class="admin-editor"><span>NEUE MITTEILUNG</span><label class="field"><span>Titel</span><input id="announcementTitle" maxlength="120" /></label><label class="field"><span>Text</span><textarea id="announcementBody" rows="5" maxlength="2000"></textarea></label><div class="field-grid two"><label class="field"><span>Stufe</span><select id="announcementLevel"><option value="info">Info</option><option value="success">Erfolg</option><option value="warning">Warnung</option><option value="critical">Kritisch</option></select></label><label class="field"><span>Ende <em>optional</em></span><input id="announcementEndsAt" type="datetime-local" /></label></div><label class="check-row"><input id="announcementActive" type="checkbox" checked /><span><strong>Sofort anzeigen</strong><small>Ist nach dem Speichern für Nutzer sichtbar.</small></span></label><button type="button" class="solid-btn" id="saveAnnouncementBtn">Mitteilung veröffentlichen</button></div></div></section>
+        <section class="admin-pane active" data-admin-pane="overview"><div class="admin-section-head"><div><span>ÜBERBLICK</span><h3>Aktueller Stand</h3></div><button type="button" class="outline-btn mini" id="adminReloadBtn">Neu laden</button></div><div id="adminStats" class="admin-stats"></div><details class="admin-fold"><summary><div><span>NUTZUNG</span><strong>Verwendete KI-Modelle</strong></div><em data-fold-count="usage"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><div id="adminUsage" class="admin-usage"></div></div></details><details class="admin-fold"><summary><div><span>LETZTE VERARBEITUNGEN</span><strong>Prompts und Projekte</strong></div><em data-fold-count="runs"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><p class="admin-fold-note">Aus Datenschutzgründen werden Projektname, Art, Ziel und Verarbeitung angezeigt – nicht der vollständige vertrauliche Prompttext.</p><div id="adminRuns" class="admin-runs"></div></div></details></section>
+        <section class="admin-pane" data-admin-pane="users"><div class="admin-section-head"><div><span>TARIFE</span><h3>Monatskontingente</h3><p>Wie viel freie Prompts, Website-Generierungen und KI-Vorschauen jeder Tarif pro Kalendermonat enthält. Die Token-Budgets stehen im Bereich <strong>Tokens</strong>.</p></div></div><div class="admin-quota-grid" id="adminQuotaGrid"><details class="admin-quota-col"><summary><strong>Kostenlos</strong><i aria-hidden="true">+</i></summary><label class="field"><span>Freie Prompts</span><input id="quotaFreeFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaFreeWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaFreeAiPreviews" type="number" min="0" max="100000" /></label></details><details class="admin-quota-col"><summary><strong>Pro</strong><i aria-hidden="true">+</i></summary><label class="field"><span>Freie Prompts</span><input id="quotaProFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaProWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaProAiPreviews" type="number" min="0" max="100000" /></label></details><details class="admin-quota-col"><summary><strong>Ultimate</strong><i aria-hidden="true">+</i></summary><label class="field"><span>Freie Prompts</span><input id="quotaUltimateFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaUltimateWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaUltimateAiPreviews" type="number" min="0" max="100000" /></label></details></div><button type="button" class="solid-btn" id="saveQuotaLimitsBtn">Kontingente speichern</button><details class="admin-fold"><summary><div><span>KONTEN</span><strong>Registrierte Benutzer</strong></div><em data-fold-count="users"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><input id="adminUserSearch" type="search" placeholder="E-Mail oder Firma suchen" /><div id="adminUsers" class="admin-users"></div></div></details></section>
+        <section class="admin-pane" data-admin-pane="support"><details class="admin-fold"><summary><div><span>SUPPORT</span><strong>Anfragen der Benutzer</strong></div><em data-fold-count="support"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><div id="adminSupport" class="admin-support"></div></div></details></section>
+        <section class="admin-pane" data-admin-pane="messages"><div class="admin-split"><div><details class="admin-fold"><summary><div><span>AKTIVE MELDUNGEN</span><strong>Mitteilungen</strong></div><em data-fold-count="announcements"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><div id="adminAnnouncements" class="admin-announcements"></div></div></details></div><div class="admin-editor"><span>NEUE MITTEILUNG</span><label class="field"><span>Titel</span><input id="announcementTitle" maxlength="120" /></label><label class="field"><span>Text</span><textarea id="announcementBody" rows="5" maxlength="2000"></textarea></label><div class="field-grid two"><label class="field"><span>Stufe</span><select id="announcementLevel"><option value="info">Info</option><option value="success">Erfolg</option><option value="warning">Warnung</option><option value="critical">Kritisch</option></select></label><label class="field"><span>Ende <em>optional</em></span><input id="announcementEndsAt" type="datetime-local" /></label></div><label class="check-row"><input id="announcementActive" type="checkbox" checked /><span><strong>Sofort anzeigen</strong><small>Ist nach dem Speichern für Nutzer sichtbar.</small></span></label><button type="button" class="solid-btn" id="saveAnnouncementBtn">Mitteilung veröffentlichen</button></div></div></section>
         <section class="admin-pane" data-admin-pane="offer"><div class="admin-offer-editor"><div class="admin-section-head"><div><span>STRIPE & STARTSEITE</span><h3>Testphase oder Rabattaktion</h3></div></div><label class="check-row"><input id="offerEnabled" type="checkbox" /><span><strong>Aktion aktiv</strong><small>Banner wird öffentlich angezeigt und hat Vorrang vor Stripe-Metadaten.</small></span></label><div class="field-grid two"><label class="field"><span>Kleine Überschrift</span><input id="adminOfferEyebrow" placeholder="JETZT KOSTENLOS TESTEN" /></label><label class="field"><span>Button</span><input id="adminOfferCta" placeholder="Kostenlos testen" /></label></div><label class="field"><span>Hauptüberschrift</span><input id="adminOfferTitle" placeholder="Pro 14 Tage kostenlos testen" /></label><label class="field"><span>Beschreibung</span><textarea id="adminOfferDescription" rows="3"></textarea></label><div class="field-grid three"><label class="field"><span>Testtage</span><input id="adminOfferTrialDays" type="number" min="0" max="365" /></label><label class="field"><span>Rabatt in %</span><input id="adminOfferDiscount" type="number" min="0" max="100" /></label><label class="field"><span>Ende <em>optional</em></span><input id="adminOfferEndsAt" type="datetime-local" /></label></div><label class="field"><span>Stripe Coupon-ID <em>nur bei automatischem Rabatt</em></span><input id="adminOfferCoupon" placeholder="z. B. Coupon-ID" /></label><button type="button" class="solid-btn" id="saveOfferBtn">Aktion speichern</button></div></section>
         <section class="admin-pane" data-admin-pane="maintenance"><div class="admin-offer-editor"><div class="admin-section-head"><div><span>WARTUNGSMODUS</span><h3>Prompt.ai sperren</h3><p>Solange aktiv, sehen alle Nutzer außer dir ein Fenster, das sie nicht schließen können, bis du die Wartung hier wieder deaktivierst.</p></div></div><label class="check-row"><input id="maintenanceEnabled" type="checkbox" /><span><strong>Wartung aktiv</strong><small>Sperrt die App sofort für alle Nutzer außer Administratoren.</small></span></label><label class="field"><span>Grund</span><textarea id="maintenanceReason" rows="3" placeholder="z. B. Wir aktualisieren gerade die Zahlungsanbindung."></textarea></label><label class="field"><span>Voraussichtliche Dauer</span><input id="maintenanceEta" placeholder="z. B. ca. 30 Minuten, bis 18 Uhr" /></label><button type="button" class="solid-btn" id="saveMaintenanceBtn">Wartung speichern</button></div></section>
       </div>
@@ -754,12 +795,12 @@
   <dialog class="cookie-banner" id="cookieBanner" aria-label="Cookie-Hinweis">
     <div class="cookie-banner-box">
       <div><span class="section-kicker">COOKIES</span><h2>Bevor es losgeht</h2></div>
-      <p>Wir verwenden technisch notwendige Cookies, damit Anmeldung und Sitzung funktionieren. Optionale Cookies (z.&nbsp;B. Analyse) setzen wir aktuell nicht ohne deine Zustimmung ein. Mehr dazu in unserer <button type="button" class="link-btn" id="cookieBannerPrivacyLink">Datenschutzerklärung</button>.</p>
+      <p>Wir nutzen nur technisch notwendige Cookies für Anmeldung und Sitzung. Analyse-Cookies setzen wir nicht ohne deine Zustimmung ein. Mehr dazu in der <button type="button" class="link-btn" id="cookieBannerPrivacyLink">Datenschutzerklärung</button>.</p>
       <div class="cookie-banner-settings" id="cookieBannerSettings" hidden>
         <label class="cookie-category"><input type="checkbox" checked disabled /><span><strong>Technisch notwendig</strong><small>Anmeldung, Sitzung, Sicherheit und deine Cookie-Auswahl selbst. Immer aktiv, da die App sonst nicht funktioniert.</small></span></label>
         <label class="cookie-category disabled"><input type="checkbox" disabled /><span><strong>Analyse &amp; Marketing</strong><small>Setzen wir aktuell nicht ein. Es gibt daher nichts zu aktivieren.</small></span></label>
       </div>
-      <div class="cookie-banner-actions"><button type="button" class="text-btn" id="cookieBannerSettingsBtn">Einstellungen</button><button type="button" class="outline-btn" id="cookieBannerEssentialBtn">Nur notwendige</button><button type="button" class="solid-btn" id="cookieBannerAcceptBtn">Alle akzeptieren</button></div>
+      <div class="cookie-banner-actions"><button type="button" class="text-btn" id="cookieBannerSettingsBtn">Einstellungen</button><button type="button" class="solid-btn" id="cookieBannerEssentialBtn">Nur notwendige</button><button type="button" class="solid-btn" id="cookieBannerAcceptBtn">Alle akzeptieren</button></div>
     </div>
   </dialog>
 
@@ -772,16 +813,16 @@
         <span class="footer-divider">·</span>
         <a href="#" id="footerCookieLink" class="footer-link">Cookies</a>
       </nav>
-      <small class="prompt-footer-text">© <span id="currentYear">2024</span> Prompt.ai. Alle Rechte vorbehalten.</small>
+      <small class="prompt-footer-text">© <span id="currentYear">2026</span> Prompt.ai. Alle Rechte vorbehalten.</small>
     </div>
   </footer>
 
-  <script type="module" src="./cloud.js?v=20260813-2"></script>
-  <script src="./maintenance-mode.js?v=20260813-2" defer></script>
-  <script src="./entry-gate-ui.js?v=20260813-4" defer></script>
-  <script src="./legal-pages.js?v=20260813-2" defer></script>
-  <script src="./app.js?v=20260813-6" defer></script>
-  <script src="./admin-console.js?v=20260813-11" defer></script>
+  <script type="module" src="./cloud.js?v=20260816-1"></script>
+  <script src="./maintenance-mode.js?v=20260816-2" defer></script>
+  <script src="./entry-gate-ui.js?v=20260816-3" defer></script>
+  <script src="./legal-pages.js?v=20260816-1" defer></script>
+  <script src="./app.js?v=20260816-22" defer></script>
+  <script src="./admin-console.js?v=20260816-18" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
 </body>
 </html>

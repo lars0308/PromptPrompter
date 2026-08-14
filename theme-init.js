@@ -7,5 +7,73 @@
   try{
     const internalReload=sessionStorage.getItem('sitebrief-v6-continue-workflow')==='1'||Boolean(sessionStorage.getItem('prompt-ai-mode-handoff-v1'));
     if(!internalReload)document.documentElement.classList.add('prompt-app-booting');
+    // Starting a project reloads the page, and the welcome page painted for a moment before the
+    // handoff overlay existed - a flash of the screen the visitor just left. Hiding it from the
+    // very first paint costs nothing: this reload is always on its way into the workflow.
+    if(sessionStorage.getItem('prompt-ai-v1-simple-start')==='1'){
+      document.documentElement.classList.add('prompt-handoff-pending');
+      // Never leave the page hidden if the handoff never completes.
+      setTimeout(()=>document.documentElement.classList.remove('prompt-handoff-pending'),9000);
+    }
   }catch{}
+  // The footer year lived in an inline script at the very end of index.html. On a device with a
+  // cached shell that script is the cached one too, so the year froze. Setting it here - in the
+  // first script of the page - keeps it correct as soon as any newer file is loaded.
+  const setYear=()=>{const node=document.getElementById('currentYear');if(node)node.textContent=String(new Date().getFullYear())};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setYear,{once:true});else setYear();
+  addEventListener('pageshow',setYear);
+
+  // Shared driver for the "headline fills blue" loading language. Loading screens report the
+  // progress they actually have instead of running a fixed-length animation, and finish() closes
+  // the screen the same way everywhere: snap to full, blink blue once, then hand back.
+  // Lives in the first blocking script so the boot screen can report progress before anything
+  // else is parsed.
+  const FLASH_MS=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches?0:420}catch{return 420}})();
+  // A screen that appears and disappears within a few hundred milliseconds reads as a glitch, not
+  // as progress. Every loading screen therefore stays for at least this long; if the work took
+  // longer anyway, only the closing blink is added.
+  const MIN_VISIBLE_MS=FLASH_MS?1600:0;
+  window.PromptAiFill={
+    flashMs:FLASH_MS,
+    minVisibleMs:MIN_VISIBLE_MS,
+    // Marks the moment a screen went up, so finish() knows how much of the minimum is left.
+    begin(node){if(node&&!node.dataset.fillStart)node.dataset.fillStart=String(Date.now())},
+    // Milliseconds a screen still has to stay: the rest of the minimum, at least one blink.
+    tail(startedAt){
+      if(!FLASH_MS)return 0;
+      const started=Number(startedAt)||0;
+      const elapsed=started?Date.now()-started:0;
+      return Math.max(FLASH_MS,MIN_VISIBLE_MS-elapsed);
+    },
+    set(node,value){
+      if(!node)return;
+      const pct=Math.max(0,Math.min(100,Number(value)||0));
+      if(node.dataset.fillDone==='1')return;
+      if(!node.dataset.fillStart)node.dataset.fillStart=String(Date.now());
+      if(node.classList.contains('prompt-fill-sweep'))node.dataset.fillOrigin='sweep';
+      node.classList.remove('prompt-fill-sweep');
+      node.classList.add('prompt-fill-progress');
+      // Never walk backwards: several sources may report on the same headline.
+      const previous=Number(node.dataset.fillValue||0);
+      if(pct<previous)return;
+      node.dataset.fillValue=String(pct);
+      node.style.setProperty('--prompt-fill',pct.toFixed(1)+'%');
+    },
+    finish(node,done){
+      const end=typeof done==='function'?done:()=>{};
+      if(!node||node.dataset.fillDone==='1'||!FLASH_MS){if(node)node.dataset.fillDone='1';end();return}
+      node.dataset.fillDone='1';
+      if(node.classList.contains('prompt-fill-sweep'))node.dataset.fillOrigin='sweep';
+      node.classList.remove('prompt-fill-sweep');
+      node.classList.add('prompt-fill-progress','prompt-fill-complete');
+      node.style.setProperty('--prompt-fill','100%');
+      const wait=this.tail(node.dataset.fillStart);
+      // The blink repeats for as long as the screen is held, instead of one flash and then silence.
+      node.style.setProperty('--prompt-flash-count',String(Math.max(1,Math.round(wait/FLASH_MS))));
+      setTimeout(end,wait);
+    },
+    // Screens that can run more than once (the master-prompt overlay) hand the headline back to
+    // the state it started in, so the next wait animates again instead of sitting at 100%.
+    reset(node){if(!node)return;delete node.dataset.fillDone;delete node.dataset.fillValue;delete node.dataset.fillStart;node.style.removeProperty('--prompt-flash-count');node.classList.remove('prompt-fill-complete');node.style.removeProperty('--prompt-fill');if(node.dataset.fillOrigin==='sweep'){node.classList.remove('prompt-fill-progress');node.classList.add('prompt-fill-sweep')}}
+  };
 })();
