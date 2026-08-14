@@ -16,8 +16,7 @@
       .intro-frame{display:grid;gap:0;padding:26px 26px 22px}
       .intro-kicker{display:block;color:var(--accent);font-size:9px;font-weight:900;letter-spacing:.14em}
       .intro-frame h2{margin:9px 0 0;font-size:clamp(24px,5vw,31px);line-height:1.08;letter-spacing:-.035em}
-      .intro-frame>p{margin:12px 0 0;color:var(--muted);font-size:13px;line-height:1.6}
-      .intro-steps{display:grid;gap:11px;margin:20px 0 0;padding:0;list-style:none}
+      .intro-steps{display:grid;gap:11px;margin:18px 0 0;padding:0;list-style:none}
       .intro-steps li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:13px;align-items:start}
       .intro-steps b{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-size:12px;font-weight:850}
       .intro-steps strong{display:block;font-size:14px}
@@ -33,16 +32,15 @@
     node=document.createElement('dialog');node.id='welcomeIntroDialog';node.className='intro-dialog';
     node.innerHTML=`<form method="dialog" class="intro-frame">
       <span class="intro-kicker">SO FUNKTIONIERT PROMPT.AI</span>
-      <h2>Aus deiner Idee wird ein Auftrag, mit dem eine KI wirklich arbeiten kann.</h2>
-      <p>Du beschreibst dein Vorhaben in normalen Worten. Prompt.ai macht daraus ein vollständiges Briefing – und du gibst es der KI deiner Wahl.</p>
+      <h2>Du beschreibst deine Idee. Wir machen daraus einen Auftrag, mit dem die KI direkt loslegen kann.</h2>
       <ol class="intro-steps">
-        <li><b>1</b><div><strong>Beschreiben</strong><small>Ein paar Sätze reichen. Hast du schon eine Website oder Google-Einträge, liest Prompt.ai sie aus und übernimmt Öffnungszeiten, Kontakt und Leistungen.</small></div></li>
-        <li><b>2</b><div><strong>Richtung wählen</strong><small>Du bekommst drei gestaltete Vorschläge zu sehen und entscheidest, welcher passt.</small></div></li>
-        <li><b>3</b><div><strong>Auftrag mitnehmen</strong><small>Fertig ist ein Master-Prompt mit Fakten, Seitenliste und Regeln – für ChatGPT, Claude, Codex oder wen du willst.</small></div></li>
+        <li><b>1</b><div><strong>Beschreiben</strong><small>Ein paar Sätze reichen. Hast du schon eine Website? Die lesen wir aus und übernehmen Kontakt, Leistungen und Öffnungszeiten.</small></div></li>
+        <li><b>2</b><div><strong>Richtung wählen</strong><small>Du siehst drei fertige Vorschläge und entscheidest, welcher passt.</small></div></li>
+        <li><b>3</b><div><strong>Auftrag mitnehmen</strong><small>Fertig ist ein Master-Prompt mit allen Fakten – für ChatGPT, Claude, Codex oder was du sonst nutzt.</small></div></li>
       </ol>
       <div class="intro-foot">
         <button type="submit" class="solid-btn" id="welcomeIntroStart">Los geht’s</button>
-        <small>Für einen freien Prompt (Bild, Video, Text, Logo …) brauchst du keinen dieser Schritte – das geht direkt auf der Startseite.</small>
+        <small>Für alles andere – Bild, Video, Text, Logo – brauchst du diese Schritte nicht. Das geht direkt auf der Startseite.</small>
       </div>
     </form>`;
     document.body.appendChild(node);
