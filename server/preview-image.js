@@ -1,7 +1,23 @@
 const {resolveProviderKey}=require('./provider-key');const {getEntitlements}=require('./entitlements');const {rateLimit}=require('./rate-limit');const {logUsage}=require('./usage');const {listProfiles}=require('./system-ai-profiles');
 const {primePromptTemplates,promptText}=require('./prompt-templates');
 const {getTokenBudget}=require('./quota');
-function hint(p={}){const t=`${p.description||''} ${p.type||''} ${p.goal||''}`.toLowerCase();if(/handwerk|elektr|hausmeister|garten|reparatur|maler|sanitär|tischler|bau\b|montage/.test(t))return'real hands-on trade or service work, tools, materials, outdoor work or work in progress';if(/restaurant|café|cafe|döner|doener|pizza|bistro|küche|food|imbiss|bar\b|bäck/.test(t))return'real food, ingredients, kitchen or dining atmosphere';if(/friseur|beauty|kosmetik|nagel|nail|barber|salon|spa\b/.test(t))return'a credible beauty, salon or treatment environment';if(/fitness|gym|training|sport|crossfit/.test(t))return'training, gym space or athletic energy';if(/web-?app|software|saas|dashboard|tool\b|plattform|portal/.test(t))return'the digital product interface and its real workflow';return'the exact real subject matter described by the project brief'}
+// Der Auftragssatz beginnt fast immer mit einer Anweisung an uns ("bau mir eine Website für …").
+// Diese Verben gehören nicht zum Gewerbe des Kunden und dürfen die Einordnung nicht bestimmen:
+// "bau mir eine Website für einen Kosmetikladen" traf sonst über `bau` das Handwerk-Muster - und
+// damit stand "tools, materials, outdoor work" im Bildauftrag. Genau daher das Werkzeug im
+// Kosmetikstudio.
+const BRIEF_VERBS=/\b(bau(e|en)?|erstell(e|en)?|mach(e|en)?|entwickl(e|er|n)?|gestalt(e|en)?|programmier(e|en)?|design(e|en)?|brauche|möchte|will|hätte gern)\b\s*(mir|uns|bitte)?\s*(eine|einen|ein|die|der|das)?\s*(neue|moderne|schöne|einfache)?\s*(website|webseite|internetseite|homepage|seite|landingpage|shop)?/gi;
+function hint(p={}){
+  const t=`${p.description||''} ${p.type||''} ${p.goal||''}`.toLowerCase().replace(BRIEF_VERBS,' ');
+  // Das Gewerbe zuerst, die allgemeinen Muster danach: ein Kosmetikstudio ist kein Bauunternehmen,
+  // nur weil im selben Satz gebaut werden soll.
+  if(/friseur|beauty|kosmetik|nagel|nail|barber|salon|spa\b|wellness|massage/.test(t))return'a credible beauty, salon or treatment environment';
+  if(/restaurant|café|cafe|döner|doener|pizza|bistro|küche|food|imbiss|bar\b|bäck/.test(t))return'real food, ingredients, kitchen or dining atmosphere';
+  if(/handwerk|elektr|hausmeister|garten|reparatur|maler|sanitär|tischler|montage|bauunternehm|baufirma|baustelle|hochbau|tiefbau|rohbau|dachdeck|zimmerei/.test(t))return'real hands-on trade or service work, tools, materials, outdoor work or work in progress';
+  if(/fitness|gym|training|sport|crossfit/.test(t))return'training, gym space or athletic energy';
+  if(/web-?app|software|saas|dashboard|plattform|portal/.test(t))return'the digital product interface and its real workflow';
+  return'the exact real subject matter described by the project brief';
+}
 function headerInstruction(p={},c={}){
   if(c.layoutVariant==='minimal')return'This design has NO navigation bar, NO header, NO footer and NO separate sections — it is only the hero image filling the entire frame with one small headline inside it. Do not add a logo, menu, buttons or any other UI chrome on top of the image.';
   const nav=c.navStyle==='logo-hamburger'?'The header/top bar contains ONLY a small logo or brand name on one side and a hamburger/burger menu icon (three short horizontal lines) on the other side — do NOT render a normal navigation bar with multiple visible menu items or text links.':'The header/top bar is a normal, complete navigation bar with the logo and several menu items or text links visible, not just an icon.';

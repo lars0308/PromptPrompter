@@ -1376,8 +1376,27 @@
     try{ new URL(value); }catch{ el.referenceUrl.setCustomValidity("Bitte eine gültige URL eingeben."); el.referenceUrl.reportValidity(); return; }
     el.referenceUrl.setCustomValidity("");
     if(state.urls.some(x => x.url === value)){ el.referenceUrl.value=""; return; }
-    state.urls.push({id:uid("url"),url:value,label:label.trim(),aspects:["Layout","Stimmung"],like:"",dislike:""});
+    const item={id:uid("url"),url:value,label:label.trim(),aspects:["Layout","Stimmung"],like:"",dislike:""};
+    state.urls.push(item);
     el.referenceUrl.value=""; renderReferences(); saveState(); updateGuide();
+    readReferenceUrl(item);
+  }
+  // Ein angehängter Link war für die Prüfung bloß eine Zeichenkette: referencePayload() reichte
+  // die Adresse mit leerer summary weiter, also konnten sich die Rückfragen auf nichts stützen,
+  // was auf der Seite tatsächlich steht. Der Inhalt wird deshalb gleich beim Anhängen gelesen und
+  // liegt damit vor der Prüfung vor - in Konzepten und Master-Prompt landet er über denselben Weg.
+  async function readReferenceUrl(item){
+    if(!item||item.readState)return;
+    item.readState="loading";renderReferences();
+    try{
+      const res=await sitebriefApiFetch("/api/site-context",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:item.url}),timeoutMs:30000});
+      const data=await res.json();
+      if(!res.ok)throw new Error(data.error||"nicht lesbar");
+      item.title=data.siteName||data.title||item.title||"";
+      item.summary=[data.description,data.summary].filter(Boolean).join("\n").slice(0,4000);
+      item.readState=item.summary?"read":"empty";
+    }catch{item.readState="failed"}
+    finally{renderReferences();saveState()}
   }
 
   function renderAspectChips(container, item){
@@ -1833,13 +1852,28 @@
     const note=(className,text)=>{if(firstMessage)return;firstMessage=text;el.generationStatus.className=className;el.generationStatus.textContent=text};
     const tick=()=>{done++;const text=done>=total?`${total} von ${total} Bildern fertig.`:`Bild ${Math.min(done+1,total)} von ${total} wird erstellt.`;setTaskProgress("preview",Math.round(38+(done/total)*54),text);previewStage(text,{pin:true,ratio:done/total,done:done>=total});renderConcepts();renderSelectedPreview()};
 
+    const askForImage=async concept=>{
+      const payload={action:"preview-image",...previewDesignPayload(),project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
+      const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000,cancelToken:previewCancel?.signal});
+      const data=await res.json();
+      if(!res.ok){const err=new Error(data.error||"Bildvorschau fehlgeschlagen");err.status=res.status;throw err}
+      return data;
+    };
+    // Ein aufgebrauchtes Kontingent oder ein gesperrter Tarif ändern sich beim zweiten Versuch
+    // nicht - alles andere (Zeitüberschreitung, kurzer Ausfall eines Anbieters) sehr wohl.
+    const permanentFailure=err=>err?.status===403||/quota|rate.?limit|429|resource_exhausted|exceeded/i.test(String(err?.message||""));
     const run=async concept=>{
       if(previewCancel?.signal?.aborted)return;
       try{
-        const payload={action:"preview-image",...previewDesignPayload(),project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
-        const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000,cancelToken:previewCancel?.signal});
-        const data=await res.json();
-        if(!res.ok){const err=new Error(data.error||"Bildvorschau fehlgeschlagen");err.status=res.status;throw err}
+        let data;
+        try{data=await askForImage(concept)}
+        catch(err){
+          // Beim ersten Fehlversuch stand bisher sofort "nicht verfügbar" und das Bild blieb leer.
+          if(err?.cancelled||previewCancel?.signal?.aborted||permanentFailure(err))throw err;
+          await new Promise(resolve=>setTimeout(resolve,900));
+          if(previewCancel?.signal?.aborted)return;
+          data=await askForImage(concept);
+        }
         concept.previewImage=data.imageDataUrl||"";
         // Whether a preview is a real AI image or the built-in HTML layout is impossible to tell
         // from a screenshot. Administrators see which model answered, so the question is settled by
