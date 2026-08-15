@@ -325,6 +325,11 @@ html.prompt-full-redesign .account-dialog .dialog-frame::before{display:none!imp
 html.prompt-full-redesign .account-dialog .account-body{padding:clamp(20px,4vw,52px)!important}
 html.prompt-full-redesign .auth-hero h1{font-size:clamp(43px,7vw,78px)!important;font-weight:740!important;letter-spacing:-.065em!important}
 html.prompt-full-redesign .auth-brand img{border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:none!important}
+/* Registrierung: dieselbe Karte, nur mit den Feldern, die beim Anmelden niemand braucht. */
+html.prompt-full-redesign .auth-signup-fields{display:grid!important;gap:var(--sp-3)!important;margin:var(--sp-2) 0 var(--sp-1)!important;padding-top:var(--sp-4)!important;border-top:1px solid var(--line)!important}
+html.prompt-full-redesign .auth-signup-fields[hidden]{display:none!important}
+html.prompt-full-redesign .auth-signup-fields .field span small{margin-left:6px;color:var(--muted);font-size:9px;font-weight:600;text-transform:none;letter-spacing:0}
+html.prompt-full-redesign .auth-signup-note{margin:0!important;color:var(--mist)!important;font-size:11px!important;line-height:1.5!important}
 html.prompt-full-redesign .auth-form-card,
 html.prompt-full-redesign .auth-access-card,
 html.prompt-full-redesign .guest-limit-box,
@@ -416,8 +421,18 @@ html.prompt-full-redesign .prompt-completion-flash .prompt-process-fill{animatio
 html.prompt-full-redesign .legal-body{width:100%!important;max-width:none!important;padding:26px 30px 44px!important;overflow-x:hidden!important;color:var(--ink)!important}
 html.prompt-full-redesign .legal-body h3{padding-top:18px;border-top:1px solid var(--line);color:var(--accent-strong)!important;font-family:ui-monospace,SFMono-Regular,monospace!important}
 html.prompt-full-redesign .legal-placeholder-note{border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line))!important;border-radius:12px!important;background:color-mix(in srgb,var(--warn) 8%,var(--surface))!important}
-html.prompt-full-redesign .cookie-banner{background:var(--paper)!important;color:var(--ink)!important}
-html.prompt-full-redesign .cookie-banner-box{max-width:620px!important;padding:28px!important;border:1px solid var(--line)!important;border-radius:18px!important;background:var(--surface)!important;box-shadow:var(--shadow-soft)!important}
+html.prompt-full-redesign .cookie-banner{background:transparent!important;color:var(--ink)!important}
+/* Ein schmaler Streifen ganz unten über die volle Breite - keine Karte, die
+   mitten auf der Seite schwebt und den Blick vom Inhalt wegzieht. */
+html.prompt-full-redesign .cookie-banner-box{
+  width:100%!important;max-width:none!important;
+  margin:0!important;padding:12px clamp(16px,3vw,44px)!important;
+  align-items:center!important;gap:6px 22px!important;
+  border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;
+  background:var(--surface)!important;box-shadow:0 -10px 30px rgba(12,20,26,.14)!important;
+}
+html.prompt-full-redesign .cookie-banner-box>div:first-child{gap:8px 12px!important}
+html.prompt-full-redesign .cookie-banner p{max-width:none!important;font-size:12px!important;line-height:1.45!important}
 html.prompt-full-redesign #promptMaintenanceOverlay{background:var(--paper)!important;color:var(--ink)!important}
 html.prompt-full-redesign #promptMaintenanceOverlay>div{position:relative;padding:34px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-soft)}
 
@@ -1779,8 +1794,28 @@ html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
      weiter unten in styles.css. */
   /* Die kurzen Nachrichtenfenster (Bestätigen, Agent öffnen) sind keine Arbeitsflächen
      und dürfen nicht auf Monitorbreite gezogen werden - sie tragen vier Zeilen Text. */
-  html.prompt-full-redesign dialog.library-dialog:not(.app-action-dialog):not(.agent-launch-dialog):not(.guest-gate){
-    width:min(1480px,calc(100vw - 72px))!important;max-width:none!important;
+  /* Alles andere ist eine Seite, kein Kasten. Die vorherige Deckelung auf 1480px
+     traf auf ein margin:0!important aus styles.css - dadurch klebten Einstellungen,
+     Profil, Verwaltung und die Rückfragen linksbündig am Rand und rechts blieb
+     tote Fläche. Das Fenster nimmt den Bildschirm ein, der Rahmen darin sitzt
+     über die vorhandene Inhaltsbreite mittig. */
+  html.prompt-full-redesign dialog.library-dialog:not(.app-action-dialog):not(.agent-launch-dialog):not(.guest-gate):not(.plans-dialog){
+    width:100vw!important;max-width:none!important;
+    height:100dvh!important;max-height:none!important;
+    margin:0!important;padding:0!important;
+    border:0!important;border-radius:0!important;background:transparent!important;
+  }
+  /* Der Rahmen bekommt seine Breite aus unified-ui-v1.js (--prompt-content) und
+     zentriert sich per margin:auto - hier muss nur sichergestellt sein, dass er
+     im vollflächigen Fenster auch wirklich mittig landen darf. */
+  html.prompt-full-redesign dialog.library-dialog:not(.app-action-dialog):not(.agent-launch-dialog):not(.guest-gate):not(.plans-dialog)>.dialog-frame{
+    margin-left:auto!important;margin-right:auto!important;
+  }
+  /* Rechtstexte werden in unified-ui-v1.js über die ID gedeckelt - ohne dieselbe
+     ID bliebe das Fenster links kleben. */
+  html.prompt-full-redesign body dialog#legalDialog{
+    width:100vw!important;max-width:none!important;margin:0!important;
+    border:0!important;border-radius:0!important;background:transparent!important;
   }
   /* Die Einstiegsseite ist technisch ein Dialog, gemeint ist aber eine Seite. Die Deckelung
      oben machte daraus einen 1480px-Kasten, hinter dem rechts die App hervorsah. */

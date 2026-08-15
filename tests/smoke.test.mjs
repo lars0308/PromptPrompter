@@ -134,8 +134,16 @@ test('the entry gate fills the page and its plans card carries no arrow button',
   const gate=await text('entry-gate-ui.js');
   assert.doesNotMatch(gate,/gate-plans-arrow/,'the blue circle with the arrow is gone');
   assert.match(gate,/\.account-body\{display:flex;flex-direction:column;min-height:100dvh/);
-  assert.match(gate,/#gateActions\{display:grid;justify-items:center;gap:34px;max-width:460px;margin-top:auto;margin-bottom:auto/,'leftover height is split above and below the actions');
+  assert.match(gate,/#gateActions\{display:grid;justify-items:stretch;gap:18px;max-width:520px;margin-top:auto;margin-bottom:auto/,'leftover height is split above and below the actions');
   assert.match(gate,/#gateLegalRow\{margin-top:auto/,'the legal row sits on the bottom edge');
+});
+test('the login page carries its two entry points in the header and the headline across the full width',async()=>{
+  const gate=await text('entry-gate-ui.js');
+  assert.match(gate,/top\.className='gate-top'/,'Anmelden and Kostenlos testen share one header row');
+  assert.match(gate,/id="gateSignInPick">Anmelden<\/button>'\s*\+'<button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen/,'both buttons sit next to each other');
+  assert.match(gate,/grid-template-areas:'hero hero' 'actions shot' 'proof proof'/,'the hero spans both columns');
+  assert.match(gate,/\.auth-hero h1\{grid-column:1\/-1;max-width:none/,'no character cap squeezes the headline any more');
+  assert.doesNotMatch(gate,/\.gate-login-pick\{position:absolute/,'the sign-in button is a header item, not an overlay');
 });
 test('admin quota tiers are collapsed accordions and accounts can be promoted to admin',async()=>{
   const html=await text('index.html'),css=await text('styles.css'),core=await text('admin-console-core.js'),api=await text('api/admin-action.js'),overview=await text('api/admin-overview.js');
@@ -964,4 +972,57 @@ test('the master prompt turns the chosen direction into a buildable component sp
   assert.match(src,/deckungsgleich mit der Bildvorschau/);
   for(const part of ['Kopfzeile','Hero:','Karten und Flächen','Primärbutton','Formularfelder','Typografie:','Fußzeile:','Zustände','Mobil'])
     assert.ok(src.includes(part),part);
+});
+
+test('work dialogs use the page instead of clinging to the left edge',async()=>{
+  // styles.css sets margin:0!important on these dialogs. A width cap on top of that produced a
+  // left-aligned box with dead space on the right - the dialog has to fill the page instead.
+  const css=await text('promptai-full-app-design.css');
+  assert.match(css,/dialog\.library-dialog:not\(\.app-action-dialog\):not\(\.agent-launch-dialog\):not\(\.guest-gate\):not\(\.plans-dialog\)\{\s*width:100vw!important/,'the work dialogs fill the viewport');
+  assert.match(css,/:not\(\.plans-dialog\)>\.dialog-frame\{\s*margin-left:auto!important;margin-right:auto!important/,'the frame inside stays centred');
+  assert.match(css,/body dialog#legalDialog\{\s*width:100vw!important/,'the legal pages are pinned by their id elsewhere');
+  assert.doesNotMatch(css,/width:min\(1480px,calc\(100vw - 72px\)\)!important/,'the old cap is gone');
+});
+test('the cookie notice is a full-width strip at the very bottom',async()=>{
+  const css=await text('promptai-full-app-design.css');
+  assert.match(css,/\.cookie-banner-box\{\s*width:100%!important;max-width:none!important/,'no floating card any more');
+  assert.match(css,/border:0!important;border-top:1px solid var\(--line\)!important;border-radius:0!important/,'only the top edge is drawn');
+});
+test('the console starts in the arbeitsart the settings ask for',async()=>{
+  const home=await text('promptai-home-final.js'),prefs=await text('user-preferences-ui.js'),html=await text('index.html');
+  assert.match(html,/id="setDefaultCommandMode"/);
+  assert.match(html,/id="setOutputLanguage"/);
+  assert.match(prefs,/defaultCommandMode:'website',outputLanguage:'Deutsch'/);
+  assert.match(home,/function preferredMode\(\)/);
+  assert.match(home,/return commandModeLocked\(wish\)\?'website':wish/,'a locked mode never becomes the start mode');
+  assert.match(home,/if\(!home\|\|home\.dataset\.modeTouched==='1'\)return/,'a manual pick wins over the preference');
+});
+test('the chosen result language reaches both the master prompt and the free prompt',async()=>{
+  const app=await text('app.js'),free=await text('free-prompt-ui.js');
+  assert.match(app,/function languageRequirement\(\)/);
+  assert.match(app,/## 11\. UMSETZUNGSANFORDERUNGEN\\n\$\{languageRequirement\(\)\}/);
+  assert.match(free,/language:window\.PromptAiPreferences\?\.outputLanguage\|\|'Deutsch'/);
+});
+test('the preferred target agent survives the profile that used to overwrite it',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/const preferredAgent=window\.PromptAiPreferences\?\.defaultAgent;/);
+  assert.match(app,/if\(preferredAgent&&AGENT_NAMES\[preferredAgent\]\)state\.targetAgent=preferredAgent/);
+});
+test('registering asks for the name that ends up in the client documents',async()=>{
+  const html=await text('index.html'),app=await text('app.js'),cloud=await text('cloud.js');
+  assert.match(html,/id="authSignUpFields" hidden/,'the extra fields stay out of the sign-in view');
+  for(const id of ['authName','authCompany','authClientType','authLanguage'])assert.match(html,new RegExp(`id="${id}"`),id);
+  assert.match(app,/function setAuthMode\(register\)/);
+  assert.match(app,/el\.signUpBtn\.addEventListener\("click",\(\)=>\{if\(authRegisterMode\)signUp\(\);else setAuthMode\(true\)\}\)/,'the first click opens the form, the second creates the account');
+  assert.match(app,/if\(!profile\.displayName\)\{el\.authMessage\.textContent="Bitte trag noch deinen Namen ein\."/);
+  assert.match(cloud,/async signUp\(email, password, profile\)/);
+  assert.match(cloud,/meta\.display_name = profile\.displayName/,'the name survives an unconfirmed email in the user metadata');
+});
+test('the first-run intro explains the console before the three steps',async()=>{
+  const intro=await text('welcome-intro-ui.js');
+  assert.match(intro,/class="intro-console"/);
+  assert.match(intro,/Das Menü oben<\/b> legt die Arbeitsart fest/);
+  assert.match(intro,/Das große Feld<\/b> ist alles, was du ausfüllen musst/);
+  assert.match(intro,/Das Plus darunter<\/b> hängt Bilder, PDFs oder den Link/);
+  assert.match(intro,/overflow-y:auto;overscroll-behavior:contain/,'the longer content scrolls instead of being cut off');
 });

@@ -68,14 +68,17 @@
       .gate-proof small{color:var(--muted);font-size:11.5px;line-height:1.5}
       /* auto on both sides so the leftover height is shared above and below the actions instead
          of piling up in one gap. */
-      .account-dialog.guest-gate:not(.gate-expanded) #gateActions{display:grid;justify-items:center;gap:34px;max-width:460px;margin-top:auto;margin-bottom:auto;padding-top:26px}
+      .account-dialog.guest-gate:not(.gate-expanded) #gateActions{display:grid;justify-items:stretch;gap:18px;max-width:520px;margin-top:auto;margin-bottom:auto;padding-top:26px}
       .account-dialog.guest-gate:not(.gate-expanded) #gateLegalRow{margin-top:auto;padding-top:22px}
-      /* A single small entry point for returning AND new visitors - it opens the same form that
-         already offers "Anmelden" and "Neues Konto" side by side, so one button covers both. */
-      .gate-login-pick{position:absolute;top:2px;right:0;min-height:38px;padding:0 16px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:750}
-      .gate-cta{display:grid;justify-items:center;gap:10px;width:100%}
-      .gate-guest-btn{min-height:64px;padding:0 18px;border:1px solid var(--accent);border-radius:16px;background:var(--accent);color:#fff;font-size:17px;font-weight:800;box-shadow:0 16px 34px rgba(45,147,201,.24)}
-      .gate-guest-note{margin:0;color:var(--muted);font-size:9px;text-align:center}
+      /* Anmelden und Kostenlos testen stehen dort, wo man sie auf jeder Produktseite sucht:
+         oben rechts, nebeneinander. Beide führen weiter - der eine ins Formular mit
+         "Anmelden" und "Neues Konto", der andere direkt in den Gastlauf. */
+      .gate-top{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0 0}
+      .gate-login-pick{min-height:42px;padding:0 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-size:13px;font-weight:750}
+      .gate-login-pick:hover{border-color:var(--accent);color:var(--accent)}
+      .gate-cta{display:grid;justify-items:stretch;gap:10px;width:100%}
+      .gate-guest-btn{min-height:42px;padding:0 20px;border:1px solid var(--accent);border-radius:12px;background:var(--accent);color:#fff;font-size:13px;font-weight:800;box-shadow:0 12px 26px rgba(45,147,201,.22)}
+      .gate-guest-note{margin:0;color:var(--muted);font-size:11px;text-align:left}
       /* A short, honest "how it works" - not invented changelog copy, the same three steps the
          first-run intro dialog already uses once you're past the gate. */
       .gate-highlights{display:grid;gap:14px;width:100%;padding:0;margin:0;list-style:none}
@@ -113,31 +116,39 @@
            der Einstieg, rechts das Ding. Zentrierter Text auf leerer Fläche war das Problem. */
         .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{
           display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.92fr);
-          grid-template-areas:'hero shot' 'actions shot' 'proof proof';
+          grid-template-areas:'hero hero' 'actions shot' 'proof proof';
           align-items:start;column-gap:clamp(40px,6vw,84px);row-gap:0;
-          max-width:1180px;margin:0 auto;padding-top:clamp(28px,7vh,86px);
+          max-width:1320px;margin:0 auto;padding-top:clamp(24px,5vh,58px);
           /* Die einspaltige Regel oben setzt flex:1 und min-height:0 - beides bleibt sonst stehen
              und lässt den Kasten unter seine Inhaltshöhe schrumpfen, worauf die Belegreihe unter
              der Fußzeile herauslief. */
           flex:0 0 auto;min-height:auto;
         }
-        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero{grid-area:hero;max-width:100%;width:100%;text-align:left}
-        .account-dialog.guest-gate:not(.gate-expanded) .auth-brand{justify-content:flex-start}
-        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero h1{max-width:15ch}
-        .account-dialog.guest-gate:not(.gate-expanded) #gateActions{
-          grid-area:actions;justify-items:start;max-width:520px;width:100%;
-          gap:26px;margin:22px 0 0;padding-top:0;
+        /* Kopfzeile und Spruch laufen über die ganze Breite: Marke links, Anmelden und
+           Kostenlos testen rechts, darunter der Satz ohne Zeichenbremse. Vorher stand er
+           in einer 15-Zeichen-Spalte neben dem Bild und brach nach drei Wörtern um. */
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero{
+          grid-area:hero;display:grid;grid-template-columns:minmax(0,1fr) auto;
+          align-items:center;column-gap:24px;max-width:100%;width:100%;text-align:left;
         }
-        .account-dialog.guest-gate:not(.gate-expanded) .gate-shot{grid-area:shot;justify-self:end;margin-top:14px}
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-brand{grid-column:1;justify-content:flex-start;margin:0}
+        .account-dialog.guest-gate:not(.gate-expanded) .gate-top{grid-column:2;grid-row:1;justify-self:end;margin:0}
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-kicker{grid-column:1/-1;margin-top:clamp(26px,5vh,58px)}
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-hero h1{grid-column:1/-1;max-width:none;text-wrap:balance}
+        .account-dialog.guest-gate:not(.gate-expanded) #gateActions{
+          grid-area:actions;justify-items:stretch;max-width:560px;width:100%;
+          gap:20px;margin:6px 0 0;padding-top:0;align-self:start;
+        }
+        /* "Weiter unten": das Bild beginnt erst unter dem Spruch auf Höhe der linken Spalte. */
+        .account-dialog.guest-gate:not(.gate-expanded) .gate-shot{grid-area:shot;justify-self:end;align-self:start;margin-top:6px;max-width:100%}
         .account-dialog.guest-gate:not(.gate-expanded) .gate-proof{
           grid-area:proof;grid-template-columns:repeat(3,minmax(0,1fr));
           gap:26px;margin:clamp(48px,7vh,86px) 0 clamp(30px,5vh,58px);
         }
         .gate-cta{justify-items:start}
-        .gate-guest-note{text-align:left}
-        .gate-login-pick{top:6px;font-size:13px}
-        .gate-guest-btn{min-height:60px;font-size:17px;border-radius:15px;padding:0 30px}
-        .gate-guest-note{font-size:11px}
+        .gate-guest-note{text-align:left;font-size:11px}
+        .gate-login-pick{font-size:13px}
+        .gate-guest-btn{min-height:44px;font-size:13.5px;border-radius:12px;padding:0 22px}
         .gate-plans-pick{padding:18px 22px;border-radius:16px}
         .gate-plans-pick .gate-plans-kicker{font-size:9px}
         .gate-plans-pick strong{font-size:16px;margin:6px 0 4px}
@@ -155,9 +166,15 @@
 
   function ensureGateActions(){
     const hero=$('#accountLoggedOut .auth-hero');if(!hero||$('#gateActions'))return;
+    // Anmelden und Kostenlos testen gehören in die Kopfzeile, nicht mitten in die Seite.
+    const top=document.createElement('div');top.className='gate-top';
+    top.innerHTML='<button type="button" class="gate-login-pick" id="gateSignInPick">Anmelden</button>'
+      +'<button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen</button>';
+    ($('.auth-brand',hero)||hero).insertAdjacentElement('afterend',top);
+
     const box=document.createElement('div');box.id='gateActions';
-    box.innerHTML='<button type="button" class="gate-login-pick" id="gateSignInPick">Anmelden</button>'
-      +'<div class="gate-cta"><button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen</button><p class="gate-guest-note">Ohne Konto, jederzeit später upgradebar.</p></div>'
+    box.innerHTML=''
+      +'<div class="gate-cta"><p class="gate-guest-note">Kostenlos testen läuft ohne Konto: drei vollständige Durchläufe, danach jederzeit upgradebar.</p></div>'
       +'<button type="button" class="gate-plans-pick" id="gatePlansPick"><span class="gate-plans-copy"><span class="gate-plans-kicker">ABO ABSCHLIESSEN</span><strong>Alle drei Tarife im Vergleich</strong><small>Kostenlos, Pro und Ultimate nebeneinander – mit allen Leistungen und Preisen.</small><span class="gate-plans-tiers"><i>Kostenlos 0 €</i><i id="gateProTier">Pro 15,99 €</i><i id="gateUltimateTier">Ultimate 25,99 €</i></span></span></button>'
       +'<button type="button" class="gate-theme-pick" id="gateThemePick">Anderes Farbschema verwenden</button>';
     hero.insertAdjacentElement('afterend',box);
@@ -180,8 +197,10 @@
     shot.insertAdjacentElement('afterend',proof);
     rotateShot(shot);
     const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
-    $('#gateSignInPick',box).addEventListener('click',reveal);
-    $('#gateGuestBtn',box).addEventListener('click',()=>$('#guestContinueBtn')?.click());
+    // Die beiden Kopfzeilen-Knöpfe liegen in .gate-top, die übrigen in #gateActions - deshalb
+    // wird hier im Dokument gesucht statt in einem der beiden Kästen.
+    $('#gateSignInPick',top).addEventListener('click',reveal);
+    $('#gateGuestBtn',top).addEventListener('click',()=>$('#guestContinueBtn')?.click());
     $('#gatePlansPick',box).addEventListener('click',()=>openPlansFromGate());
     $('#gateThemePick',box).addEventListener('click',()=>$('#themeToggleBtn')?.click());
   }

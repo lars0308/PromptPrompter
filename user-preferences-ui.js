@@ -6,7 +6,7 @@
   const KEY='prompt-ai-preferences-v1';
   const THEME_KEY='sitebrief-theme';
   const START_KEY='sitebrief-v6-continue-workflow';
-  const DEFAULTS={colorScheme:'system',defaultAgent:'',defaultClientType:'kunde',startView:'home',confirmBeforePrompt:true,reduceMotion:false};
+  const DEFAULTS={colorScheme:'system',defaultAgent:'',defaultClientType:'kunde',startView:'home',defaultCommandMode:'website',outputLanguage:'Deutsch',confirmBeforePrompt:true,reduceMotion:false};
 
   const read=()=>{try{return {...DEFAULTS,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{return {...DEFAULTS}}};
   const write=value=>{try{localStorage.setItem(KEY,JSON.stringify(value))}catch{}};
@@ -50,6 +50,8 @@
     if($('#setDefaultAgent')&&prefs.defaultAgent)$('#setDefaultAgent').value=prefs.defaultAgent;
     set('#setDefaultClientType',prefs.defaultClientType);
     set('#setStartView',prefs.startView);
+    set('#setDefaultCommandMode',prefs.defaultCommandMode);
+    set('#setOutputLanguage',prefs.outputLanguage);
     set('#setConfirmBeforePrompt',prefs.confirmBeforePrompt);
     set('#setReduceMotion',prefs.reduceMotion);
   }
@@ -61,6 +63,8 @@
       defaultAgent:value('#setDefaultAgent',prefs.defaultAgent),
       defaultClientType:value('#setDefaultClientType',prefs.defaultClientType),
       startView:value('#setStartView',prefs.startView),
+      defaultCommandMode:value('#setDefaultCommandMode',prefs.defaultCommandMode),
+      outputLanguage:value('#setOutputLanguage',prefs.outputLanguage),
       confirmBeforePrompt:value('#setConfirmBeforePrompt',prefs.confirmBeforePrompt),
       reduceMotion:value('#setReduceMotion',prefs.reduceMotion)
     };

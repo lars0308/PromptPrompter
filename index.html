@@ -578,7 +578,10 @@
             <label class="field"><span>Ziel-KI für neue Projekte</span><select id="setDefaultAgent"></select></label>
             <label class="field"><span>Projektbeziehung für neue Projekte</span><select id="setDefaultClientType"><option value="kunde">Kundenprojekt</option><option value="eigenes">Eigenes Projekt</option></select></label>
             <label class="field"><span>Startseite beim Öffnen</span><select id="setStartView"><option value="home">Startseite</option><option value="last">Letztes Projekt fortsetzen</option></select></label>
+            <label class="field"><span>Voreingestellte Arbeitsart</span><select id="setDefaultCommandMode"><option value="website">Internetseite erstellen</option><option value="free">Freier Prompt</option><option value="revision">Website überarbeiten</option><option value="check">Projekt prüfen</option></select></label>
+            <label class="field"><span>Sprache der Ergebnisse</span><select id="setOutputLanguage"><option value="Deutsch">Deutsch</option><option value="English">English</option></select></label>
           </div>
+          <p class="settings-note">Die Arbeitsart steht beim Öffnen im Menü über dem Textfeld. Ist sie in deinem Tarif nicht enthalten, startet die Seite mit „Internetseite erstellen“.</p>
           <label class="check-row"><input id="setConfirmBeforePrompt" type="checkbox" checked /><span><strong>Vor dem Master-Prompt noch einmal bestätigen</strong><small>Zeigt die Zusammenfassung der Projektdaten, bevor der Auftrag erstellt wird.</small></span></label>
           <label class="check-row"><input id="setReduceMotion" type="checkbox" /><span><strong>Bewegung reduzieren</strong><small>Blendet Animationen in Ladebildschirmen und Übergängen aus.</small></span></label>
           <div class="settings-danger-row"><div><strong>Lokale Projektdaten löschen</strong><small>Entfernt Entwurf, Bibliothek und Einstellungen von diesem Gerät. In der Cloud gespeicherte Projekte bleiben erhalten.</small></div><button type="button" class="text-btn danger" id="clearLocalDataBtn">Auf diesem Gerät löschen</button></div>
@@ -653,6 +656,15 @@
               <div class="auth-form-heading"><span>SICHER ANMELDEN</span><strong>Willkommen zurück</strong></div>
               <label class="field"><span>E-Mail</span><input id="authEmail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="name@beispiel.de" /></label>
               <label class="field"><span>Passwort</span><input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="8" /></label>
+              <section class="auth-signup-fields" id="authSignUpFields" hidden>
+                <label class="field"><span>Name</span><input id="authName" type="text" autocomplete="name" placeholder="Vor- und Nachname" /></label>
+                <label class="field"><span>Firma oder Agentur <small>optional</small></span><input id="authCompany" type="text" autocomplete="organization" placeholder="z. B. Studio Nordlicht" /></label>
+                <div class="field-grid two">
+                  <label class="field"><span>Du arbeitest meistens an</span><select id="authClientType"><option value="kunde">Kundenprojekten</option><option value="eigenes-projekt">eigenen Projekten</option><option value="intern">internen Projekten</option></select></label>
+                  <label class="field"><span>Sprache der Ergebnisse</span><select id="authLanguage"><option value="Deutsch">Deutsch</option><option value="English">English</option></select></label>
+                </div>
+                <p class="auth-signup-note">Name und Firma stehen später in Kundenbriefing und Übergabeprotokoll. Alles lässt sich im Profil ändern.</p>
+              </section>
               <div class="auth-form-meta"><label class="remember-login"><input id="rememberEmail" type="checkbox" checked /><span>E-Mail merken</span></label><button type="button" class="text-btn" id="forgotPasswordBtn">Passwort vergessen?</button></div>
               <div class="auth-primary-actions"><button type="button" class="solid-btn" id="signInBtn">Anmelden <i>→</i></button><button type="button" class="outline-btn" id="signUpBtn">Neues Konto</button></div>
               <section class="password-recovery-panel" id="passwordRecoveryPanel" hidden><strong>Neues Passwort festlegen</strong><label class="field"><span>Neues Passwort</span><input id="newAccountPassword" type="password" autocomplete="new-password" minlength="10" /></label><button type="button" class="solid-btn" id="saveNewPasswordBtn">Passwort speichern</button></section>
