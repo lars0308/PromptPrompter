@@ -91,7 +91,10 @@
         content:'';position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;
         background:var(--logo-blue,var(--accent));
       }
-      html.prompt-full-redesign #topbarMenuToggle.prompt-drawer-has-dot{position:relative!important}
+      /* Kein position:relative hier. Der Knopf ist bereits absolut in der Kopfzeile platziert und
+         damit Bezugsrahmen genug für den Punkt. Ein position:relative mit einer Klasse mehr im
+         Selektor schlug die absolute Platzierung und schob den Knopf aus der Kopfzeile heraus -
+         sichtbar wurde das erst, sobald der Punkt tatsächlich erschien. */
       html.prompt-full-redesign .topbar-menu .prompt-drawer-legal,
       html.prompt-full-redesign .topbar-menu>div:has(>button.prompt-drawer-legal){
         display:flex!important;flex-wrap:wrap!important;gap:0 14px!important;

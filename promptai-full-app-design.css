@@ -330,6 +330,30 @@ html.prompt-full-redesign .auth-signup-fields{display:grid!important;gap:var(--s
 html.prompt-full-redesign .auth-signup-fields[hidden]{display:none!important}
 html.prompt-full-redesign .auth-signup-fields .field span small{margin-left:6px;color:var(--muted);font-size:9px;font-weight:600;text-transform:none;letter-spacing:0}
 html.prompt-full-redesign .auth-signup-note{margin:0!important;color:var(--mist)!important;font-size:11px!important;line-height:1.5!important}
+/* Impressum und Datenschutz gehören an die Unterkante der Seite, nicht mitten in den freien
+   Raum unter dem letzten Kasten. Die Seite ist dafür eine Spalte über die volle Fensterhöhe,
+   und die Fußzeile schiebt sich mit ihrem eigenen margin-top ganz nach unten. */
+html.prompt-home-surface body{
+  display:flex!important;flex-direction:column!important;min-height:100dvh!important;
+}
+/* Flex-Kinder schrumpfen sonst unter ihre Inhaltshöhe, sobald die Seite länger wird als das
+   Fenster - der bekannteste Weg, sich mit einer Spalte den Inhalt abzuschneiden. */
+html.prompt-home-surface body>*{flex-shrink:0!important}
+html.prompt-home-surface body>#promptFooter{
+  margin-top:auto!important;width:100%!important;
+  padding-bottom:max(0px,env(safe-area-inset-bottom))!important;
+}
+html.prompt-home-surface #promptFooter[hidden]{display:none!important}
+
+/* Der blaue Punkt am Menü sagt für sich genommen nicht, warum er da ist. In der Verwaltung
+   trägt ihn deshalb der Reiter, aus dem er stammt - und mit dem Öffnen ist er weg. */
+html.prompt-full-redesign .admin-tabs button[data-admin-dot="1"]{
+  display:inline-flex!important;align-items:center!important;gap:7px!important;
+}
+html.prompt-full-redesign .admin-tabs button[data-admin-dot="1"]:after{
+  content:"";width:8px;height:8px;border-radius:50%;
+  background:var(--logo-blue,var(--accent))!important;
+}
 /* styles.css gibt den Einstellungsabschnitten overflow:hidden mit. Aufgeklappt reichte der
    Inhalt darüber hinaus und der letzte Block - "Lokale Projektdaten löschen" - wurde
    abgeschnitten. Ein aufklappbarer Abschnitt darf seinen eigenen Inhalt nicht beschneiden. */
@@ -1830,6 +1854,28 @@ html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
      zentriert sich per margin:auto - hier muss nur sichergestellt sein, dass er
      im vollflächigen Fenster auch wirklich mittig landen darf. */
   html.prompt-full-redesign dialog.library-dialog:not(.app-action-dialog):not(.agent-launch-dialog):not(.guest-gate):not(.plans-dialog)>.dialog-frame{
+    margin-left:auto!important;margin-right:auto!important;
+  }
+  /* Dieselbe Behandlung für die Fenster, die keinen .dialog-frame tragen, sondern eine eigene
+     Hülle: Projektstände, Probelauf-Vorschau, freier Prompt, Kurzabfrage. Sie standen als
+     760-900px-Kästen mitten auf einem 1920px-Bildschirm. Ausgenommen bleibt die Bildlupe -
+     die ist eine Lupe und keine Arbeitsfläche. */
+  html.prompt-full-redesign :is(
+    dialog.history-dialog,dialog.project-mode-dialog,dialog.simple-intake-dialog,
+    dialog.free-prompt-dialog,dialog.free-prompt-result-dialog,dialog.project-preview-dialog,
+    dialog.subscription-overview-dialog
+  ){
+    width:100vw!important;max-width:none!important;
+    height:100dvh!important;max-height:none!important;
+    margin:0!important;padding:0!important;
+    border:0!important;border-radius:0!important;background:transparent!important;
+  }
+  html.prompt-full-redesign :is(
+    dialog.history-dialog,dialog.project-mode-dialog,dialog.simple-intake-dialog,
+    dialog.free-prompt-dialog,dialog.free-prompt-result-dialog,dialog.project-preview-dialog,
+    dialog.subscription-overview-dialog
+  )>:is(.history-frame,.project-mode-frame,.simple-intake-shell,.free-prompt-shell,.free-prompt-result-frame,.project-preview-shell,.dialog-frame){
+    width:min(var(--prompt-content),calc(100vw - 64px))!important;max-width:none!important;
     margin-left:auto!important;margin-right:auto!important;
   }
   /* Rechtstexte werden in unified-ui-v1.js über die ID gedeckelt - ohne dieselbe

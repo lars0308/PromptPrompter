@@ -1055,3 +1055,45 @@ test('an opened settings section shows its last block instead of clipping it',as
   assert.match(css,/#settingsDialog \.settings-section,[\s\S]{0,200}?height:auto!important;max-height:none!important;overflow:visible!important/,'styles.css clipped the section with overflow:hidden');
   assert.match(css,/\.settings-danger-row\{\s*display:grid!important;grid-template-columns:minmax\(0,1fr\) auto!important/,'title, description and button are laid out, not run together');
 });
+
+test('a bought single review is visible and can actually be spent',async()=>{
+  const app=await text('app.js'),home=await text('promptai-home-final.js');
+  assert.match(app,/const paidReview=state\.plan==="free" && !state\.isAdmin && state\.reviewCredits>0;/);
+  assert.match(app,/if\(\(state\.engine!=="local"\|\|paidReview\) && state\.settings\.aiClarifications/,'a free account has no external generator, so the review never ran for it');
+  assert.match(app,/function publishReviewCredits\(\)/);
+  assert.match(app,/window\.dispatchEvent\(new CustomEvent\('promptai:credits'/);
+  assert.match(home,/function creditNote\(\)/);
+  assert.match(home,/'1 gekaufte Prüfung bereit'/);
+  assert.match(app,/`\$\{state\.reviewCredits\} Prüfung im Guthaben`/,'the buy button reports the credit instead of selling it twice');
+});
+test('the header menu button keeps its place when the notice dot appears',async()=>{
+  const drawer=await text('promptai-nav-drawer.js');
+  assert.doesNotMatch(drawer,/#topbarMenuToggle\.prompt-drawer-has-dot\{position:relative!important\}/,'that rule outranked the absolute placement and pushed the button out of the header');
+  assert.match(drawer,/#topbarMenuToggle\.prompt-drawer-has-dot:after\{/,'the dot itself stays');
+});
+test('the notice dot means unseen, names its reason and clears on opening',async()=>{
+  const core=await text('admin-console-core.js'),css=await text('promptai-full-app-design.css');
+  assert.match(core,/const SEEN_KEY='prompt-ai-support-seen-v1'/);
+  assert.match(core,/function unseenCount\(\)/);
+  assert.match(core,/if\(button\.dataset\.adminTab==='support'\)markSupportSeen\(\)/,'opening the support tab is what marks it seen');
+  assert.match(core,/tab\.dataset\.adminDot='1'/,'the reason is visible inside the console too');
+  assert.match(css,/\.admin-tabs button\[data-admin-dot="1"\]:after/);
+});
+test('the start page runs to the bottom edge and keeps its diagonals on a phone',async()=>{
+  const css=await text('promptai-full-app-design.css'),home=await text('promptai-home-final.js');
+  assert.match(css,/html\.prompt-home-surface body>#promptFooter\{\s*margin-top:auto!important/);
+  assert.match(css,/html\.prompt-home-surface body>\*\{flex-shrink:0!important\}/,'a flex column must not shrink its children below their content');
+  assert.doesNotMatch(home,/html\.prompt-home-surface #promptFooter\{display:none!important\}/,'the footer was hidden on phones');
+  assert.doesNotMatch(home,/@media\(max-width:700px\)\{html\.prompt-home-surface body:before\{display:none\}/,'the diagonals were switched off on phones');
+});
+test('the windows without a dialog-frame use the page as well',async()=>{
+  const css=await text('promptai-full-app-design.css');
+  assert.match(css,/dialog\.history-dialog,dialog\.project-mode-dialog,dialog\.simple-intake-dialog/);
+  assert.match(css,/\)>:is\(\.history-frame,\.project-mode-frame,\.simple-intake-shell,\.free-prompt-shell/);
+  assert.doesNotMatch(css,/previewLightbox[^}]*width:100vw/,'the lightbox stays a lightbox');
+});
+test('the result rating says what it still needs instead of doing nothing',async()=>{
+  const src=await text('product-polish.js');
+  assert.match(src,/\.outcome-learning\{display:block;/,'the block was invisible until a build was loaded');
+  assert.match(src,/Zum Bewerten fehlt noch das gebaute Projekt/,'pressing the button used to return silently');
+});

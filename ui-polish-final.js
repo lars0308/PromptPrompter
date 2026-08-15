@@ -23,7 +23,7 @@
       body.prompt-unified-ui dialog:not(#previewLightbox):not(#welcomeIntroDialog):not(#appActionDialog):not(.guest-gate) .dialog-frame{width:min(var(--prompt-content),100%,calc(100vw - 32px))!important;max-width:min(var(--prompt-content),100%)!important;margin:16px auto!important}
       body.prompt-unified-ui #adminDialog .dialog-frame{width:min(1380px,calc(100vw - 32px))!important;max-width:1380px!important}
       body.prompt-unified-ui #libraryDialog .dialog-frame,body.prompt-unified-ui #settingsDialog .dialog-frame,body.prompt-unified-ui #accountDialog:not(.guest-gate) .dialog-frame{width:min(1280px,calc(100vw - 32px))!important;max-width:1280px!important}
-      .free-prompt-body{width:min(var(--prompt-content),100%)!important}.project-preview-body{width:min(1320px,100%)!important}#quickRevisionDialog .quick-revision-body{width:min(var(--prompt-content),100%)!important}
+      .free-prompt-body{width:min(var(--prompt-content),100%)!important}.project-preview-body{width:min(var(--prompt-content),100%)!important}#quickRevisionDialog .quick-revision-body{width:min(var(--prompt-content),100%)!important}
 
       body.prompt-unified-ui .solid-btn:not(.upgrade-btn):not(.danger-btn),body.prompt-unified-ui button.solid-btn:not(.upgrade-btn):not(.danger-btn){background:var(--ui-blue,#1689c7)!important;border-color:var(--ui-blue,#1689c7)!important;color:#fff!important;border-radius:9px!important;box-shadow:none!important}
       body.prompt-unified-ui .outline-btn{background:var(--ui-card,var(--surface))!important;border-color:var(--ui-line,var(--line))!important;color:var(--ink)!important;border-radius:9px!important;box-shadow:none!important}

@@ -28,10 +28,27 @@
   function maintenance(){const item=state.data?.maintenance||{};ui.maintenanceEnabled.checked=Boolean(item.enabled);ui.maintenanceReason.value=item.reason||'';ui.maintenanceEta.value=item.eta||''}
   // Eine offene Anfrage soll auffallen, ohne dass man die Verwaltung erst aufmacht: der Punkt
   // hängt am Verwaltungs-Eintrag und - über das Ereignis - am Menüknopf in der Kopfzeile.
+  // Er bedeutet „noch nicht angesehen", nicht „noch nicht bearbeitet": vorher blieb er stehen,
+  // solange irgendeine Anfrage offen war, also praktisch dauerhaft und ohne erkennbaren Grund.
+  // Angesehen heißt: der Support-Bereich der Verwaltung war offen. Kommt danach eine neuere
+  // Anfrage herein, ist der Punkt wieder da.
+  const SEEN_KEY='prompt-ai-support-seen-v1';
+  const seenMark=()=>{try{return String(localStorage.getItem(SEEN_KEY)||'')}catch{return ''}};
+  function openRequests(){return (state.data?.support||[]).filter(item=>String(item.status||'open')==='open')}
+  // Der jüngste Zeitstempel reicht als Marke - Anfragen kommen nur hinzu, nie rückdatiert.
+  function newestMark(list){return list.map(item=>String(item.created_at||'')).sort().pop()||''}
+  function unseenCount(){const list=openRequests(),mark=newestMark(list);return mark&&mark>seenMark()?list.length:0}
+  function markSupportSeen(){
+    const mark=newestMark(openRequests());
+    if(mark)try{localStorage.setItem(SEEN_KEY,mark)}catch{}
+    supportBadge();
+  }
   function supportBadge(){
-    const open=(state.data?.support||[]).filter(item=>String(item.status||'open')==='open').length;
-    if(ui.button){if(open)ui.button.dataset.drawerDot='1';else delete ui.button.dataset.drawerDot}
-    window.dispatchEvent(new CustomEvent('promptai:support-open',{detail:{open}}));
+    const unseen=unseenCount(),tab=$('[data-admin-tab="support"]');
+    if(ui.button){if(unseen)ui.button.dataset.drawerDot='1';else delete ui.button.dataset.drawerDot}
+    // Damit in der Verwaltung selbst zu sehen ist, woher der Punkt kommt.
+    if(tab){if(unseen)tab.dataset.adminDot='1';else delete tab.dataset.adminDot}
+    window.dispatchEvent(new CustomEvent('promptai:support-open',{detail:{open:unseen}}));
   }
   function render(){stats();usage();runs();userRows();support();announcements();offer();quota();maintenance();supportBadge()}
   async function load({quiet=false}={}){if(!quiet)message('Admin-Daten werden geladen…');try{state.data=await api('/api/admin-overview');render();
@@ -54,7 +71,7 @@
     ui.button.addEventListener('click',()=>{ui.dialog.showModal();load()});$('#adminReloadBtn').addEventListener('click',()=>load());ui.search.addEventListener('input',userRows);
     warmSupportBadge();window.addEventListener('sitebrief:admin',warmSupportBadge);window.addEventListener('promptai:access',warmSupportBadge);
     try{new MutationObserver(warmSupportBadge).observe(ui.button,{attributes:true,attributeFilter:['hidden']})}catch{}
-    $$('.admin-tabs button').forEach(button=>button.addEventListener('click',()=>{$$('.admin-tabs button').forEach(x=>x.classList.toggle('active',x===button));$$('.admin-pane').forEach(pane=>pane.classList.toggle('active',pane.dataset.adminPane===button.dataset.adminTab))}));
+    $$('.admin-tabs button').forEach(button=>button.addEventListener('click',()=>{$$('.admin-tabs button').forEach(x=>x.classList.toggle('active',x===button));$$('.admin-pane').forEach(pane=>pane.classList.toggle('active',pane.dataset.adminPane===button.dataset.adminTab));if(button.dataset.adminTab==='support')markSupportSeen()}));
     ui.users.addEventListener('click',async event=>{const button=event.target.closest('[data-admin-action]');if(!button)return;const row=button.closest('[data-user-id]'),userId=row.dataset.userId,type=button.dataset.adminAction,ask=(message,options={})=>window.PromptAiDialog.confirm(message,options);if(type==='make-admin'&&await ask('Diesem Konto volle Administratorrechte geben? Es erhält damit Zugriff auf alle Benutzerdaten, Tarife und Systemeinstellungen.',{title:'Admin machen',confirmLabel:'Admin machen',danger:true}))return action({action:'set-admin',userId,admin:true},'Konto ist jetzt Administrator.');
       if(type==='revoke-admin'&&await ask('Diesem Konto die Administratorrechte wieder entziehen?',{title:'Adminrechte entziehen',confirmLabel:'Entziehen',danger:true}))return action({action:'set-admin',userId,admin:false},'Administratorrechte wurden entzogen.');
       if(type==='set-plan')return action({action:'set-plan',userId,plan:$('[data-user-plan]',row).value},'Tarif wurde geändert.');if(type==='password'&&await ask('Eine Passwort-Reset-Mail an diesen Benutzer senden?',{title:'Reset-Mail senden',confirmLabel:'E-Mail senden'}))return action({action:'send-password-reset',userId},'Reset-Mail wurde versendet.');if(type==='cancel-subscription'&&await ask('Das Stripe-Abo wirklich zum Ende des aktuellen Zeitraums kündigen?',{title:'Abo kündigen',confirmLabel:'Abo kündigen',danger:true}))return action({action:'cancel-subscription',userId},'Abo wird zum Laufzeitende gekündigt.');if(type==='refund-latest'&&await ask('Die letzte bezahlte Stripe-Rechnung vollständig erstatten? Diese Aktion kann nicht rückgängig gemacht werden.',{title:'Zahlung erstatten',confirmLabel:'Vollständig erstatten',danger:true}))return action({action:'refund-latest',userId},'Die letzte Zahlung wurde erstattet.');if(type==='unsuspend'&&await ask('Benutzer wieder entsperren?',{title:'Benutzer entsperren',confirmLabel:'Entsperren'}))return action({action:'unsuspend',userId},'Benutzer wurde entsperrt.');if(type==='suspend'){const days=await window.PromptAiDialog.prompt('Wie viele Tage soll das Konto gesperrt werden?','30',{title:'Benutzer sperren',inputLabel:'Tage',confirmLabel:'Weiter'});if(days===null)return;const reason=await window.PromptAiDialog.prompt('Warum wird das Konto gesperrt?','Verstoß gegen die Nutzungsbedingungen',{title:'Grund der Sperre',inputLabel:'Begründung',confirmLabel:'Benutzer sperren'});if(reason===null)return;return action({action:'suspend',userId,days:Number(days),reason},'Benutzer wurde gesperrt.')}});

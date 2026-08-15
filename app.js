@@ -581,7 +581,16 @@
     const nextTier=state.plan==='pro'?'Ultimate':'Pro';
     if(el.upgradeBtn){el.upgradeBtn.hidden=state.plan!=='free'||state.isAdmin;el.upgradeBtn.innerHTML=`Upgrade auf <span class="upgrade-target">${nextTier}</span>`}
     if(el.upgradeMenuBtn){el.upgradeMenuBtn.hidden=state.plan==='ultimate'||state.isAdmin;el.upgradeMenuBtn.innerHTML=`Upgrade auf <span class="upgrade-target">${nextTier}</span>`}
-    if(el.buySingleReviewBtn)el.buySingleReviewBtn.hidden=state.plan!=="free"||state.isAdmin;
+    // Gekauft heißt: nicht noch einmal kaufen, sondern sehen, dass es da ist. Vorher stand hier
+    // weiter der Kaufknopf, und das Guthaben tauchte nirgends auf.
+    if(el.buySingleReviewBtn){
+      const owned=state.reviewCredits>0;
+      el.buySingleReviewBtn.hidden=state.plan!=="free"||state.isAdmin;
+      el.buySingleReviewBtn.disabled=owned;
+      el.buySingleReviewBtn.textContent=owned
+        ?`${state.reviewCredits} Prüfung im Guthaben`
+        :"Einmalig für 3,99 € prüfen";
+    }
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
     renderProjectOptions();
@@ -666,6 +675,7 @@
       window.dispatchEvent(new CustomEvent('sitebrief:admin',{detail:{isAdmin:state.isAdmin}}));
       state.ownApiKeys=Boolean(subscription.ownApiKeys);state.apiKeySlots=Math.max(0,Number(subscription.apiKeySlots)||0);
       state.reviewCredits=Number(bundle.reviewCredits)||0;
+      publishReviewCredits();
       state.subscriptionStatus=subscription.status||'active';state.subscriptionPeriodEnd=subscription.current_period_end||null;
       state.userProfile={...state.userProfile,...(bundle.userProfile||{})};
       state.plan=state.isAdmin?"ultimate":(["active","trialing"].includes(subscription.status)&&["pro","ultimate"].includes(subscription.plan)?subscription.plan:"free");
@@ -1286,6 +1296,13 @@
     return {ready:questions.length===0,questions:questions.slice(0,state.settings.maxQuestions),warnings,blockers,assumptions:[]};
   }
 
+  // Das Guthaben lebte nur in einer Karte, die der geführte Ablauf nicht mehr anzeigt. Hier
+  // kommt es aus app.js heraus, damit die Startseite es nennen kann, wo der Kunde auch steht.
+  function publishReviewCredits(){
+    const credits=Math.max(0,Number(state.reviewCredits)||0);
+    window.PromptAiAccess={...(window.PromptAiAccess||{}),reviewCredits:credits};
+    window.dispatchEvent(new CustomEvent('promptai:credits',{detail:{reviewCredits:credits}}));
+  }
   function renderAiReviewCard(){
     if(!el.aiReviewCard) return;
     if(el.buyReviewInlineBtn)el.buyReviewInlineBtn.hidden=state.plan!=="free"||state.isAdmin||state.reviewCredits>0;
@@ -1369,7 +1386,7 @@
     try{
       if(state.engine==="local"){
         const usesCredit=state.plan==="free"&&!state.isAdmin&&state.reviewCredits>0;
-        if(usesCredit)state.reviewCredits=await window.SiteBriefCloud.useReviewCredit();review=localProjectReview(usesCredit);
+        if(usesCredit){state.reviewCredits=await window.SiteBriefCloud.useReviewCredit();publishReviewCredits()}review=localProjectReview(usesCredit);
       }
       else{
         const payload={action:"review",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),settings:settingsForApi(),template:selectedTemplate()||{},modules:selectedModules(),clarifications:state.clarifications};
@@ -1844,7 +1861,12 @@
     if(el.cancelPreviewBtn)el.cancelPreviewBtn.hidden=false;
     try{
       if(!cloudReady()&&guestRunsRemaining()===0){showAccountGate();return;}
-      if(state.engine!=="local" && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
+      // Die gekaufte Einzelprüfung war unerreichbar: die Prüfung lief nur mit externem Generator,
+      // und den hat ein Free-Konto nicht. Der Knopf dafür sitzt außerdem in Schritt 3, den der
+      // geführte Ablauf gar nicht mehr zeigt. Liegt ein Guthaben vor, läuft die Prüfung also auch
+      // lokal - genau dafür wurde sie bezahlt.
+      const paidReview=state.plan==="free" && !state.isAdmin && state.reviewCredits>0;
+      if((state.engine!=="local"||paidReview) && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
         const ready=await runProjectReview(false);
         if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}
       }
