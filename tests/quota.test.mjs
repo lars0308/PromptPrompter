@@ -178,3 +178,22 @@ test('the repository gets the briefing, not only the build, and the page can be 
   assert.match(html,/In GitHub-Repository legen/);
   assert.match(html,/<li><b>GitHub:<\/b> Repositories ansehen, neue anlegen/);
 });
+
+test('the plan numbers exist once in the browser, not three times',async()=>{
+  const defaults=await text('plan-defaults.js'),ui=await text('usage-quota-ui.js'),admin=await text('admin-console-core.js'),server=await text('server/quota.js'),boot=await text('admin-console.js');
+  // Drei Kopien derselben Zahlen hiessen: eine Aenderung wird an zweien vergessen.
+  assert.match(defaults,/free:Object\.freeze\(\{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:150000\}\)/);
+  assert.match(defaults,/ultimate:Object\.freeze\(\{free_prompts:500,website_generations:100,ai_previews:250,monthly_tokens:6000000\}\)/);
+  assert.ok(boot.includes('./plan-defaults.js'),'die eine Quelle muss auch geladen werden');
+  assert.match(ui,/const DEFAULT_LIMITS=window\.PromptAiPlanDefaults\?\.all\?\.\(\)/);
+  assert.match(admin,/const QUOTA_DEFAULTS=window\.PromptAiPlanDefaults\?\.all\?\.\(\)/);
+  // Und der Server bleibt die Wahrheit - dieselben Zahlen.
+  assert.match(server,/free:\{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:150000\}/);
+  assert.match(server,/ultimate:\{free_prompts:500,website_generations:100,ai_previews:250,monthly_tokens:6000000\}/);
+});
+
+test('the retired single review leaves no dead code behind',async()=>{
+  const hook=await text('api/stripe-webhook.js');
+  assert.doesNotMatch(hook,/addReviewCredit/,'die Funktion wird seit dem Monatsvorrat nicht mehr aufgerufen');
+  assert.match(hook,/async function addBudgetTopUp/);
+});

@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  const DEFAULT_LIMITS={free:{free_prompts:10,website_generations:3,ai_previews:0},pro:{free_prompts:100,website_generations:25,ai_previews:50},ultimate:{free_prompts:500,website_generations:100,ai_previews:250}};
+  const DEFAULT_LIMITS=window.PromptAiPlanDefaults?.all?.()||{free:{free_prompts:10,website_generations:3,ai_previews:0},pro:{free_prompts:100,website_generations:25,ai_previews:50},ultimate:{free_prompts:500,website_generations:100,ai_previews:250}};
   const LIMITS=new Proxy({},{get(_,plan){return window.SiteBriefCloud?.config?.quotaLimits?.[plan]||DEFAULT_LIMITS[plan]||DEFAULT_LIMITS.free}});
   const LABELS={free_prompts:'Freie Prompts',website_generations:'Website-Generierungen',ai_previews:'KI-Vorschauen'};
   const DESCRIPTIONS={free_prompts:'Neue freie Prompt-Ergebnisse',website_generations:'Neue Website-Richtungen / Projektgenerierungen',ai_previews:'KI-erzeugte Bildvorschauen'};

@@ -18,7 +18,6 @@ async function addBudgetTopUp(userId,purchaseId,product){
   if(!r.ok)throw new Error('Monatsvorrat konnte nicht gutgeschrieben werden');
   return {purchaseId,product,units:TOP_UP_UNITS};
 }
-async function addReviewCredit(userId,purchaseId){const {headers}=service(),r=await fetch(`${SUPABASE_URL}/rest/v1/rpc/sitebrief_add_review_credit`,{method:'POST',headers,body:JSON.stringify({p_user_id:userId,p_purchase_id:purchaseId,p_amount:1})});if(!r.ok)throw new Error('Einzelprüfung konnte nicht gutgeschrieben werden')}
 function browserHome(req){const host=String(req.headers['x-forwarded-host']||req.headers.host||'www.prompt-ai.app').trim();return `https://${host}/`}
 function stripeStatus(o,deleted=false){if(deleted)return'canceled';return ['active','trialing'].includes(o.status)?o.status:o.status==='past_due'?'past_due':'canceled'}
 function stripePeriod(o){const seconds=o.status==='trialing'&&o.trial_end?o.trial_end:o.current_period_end;return seconds?new Date(seconds*1000).toISOString():null}
