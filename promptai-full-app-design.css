@@ -2021,3 +2021,13 @@ html.prompt-full-redesign #libraryDialog #libraryProjectList{
   display:grid!important;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))!important;
   width:100%!important;max-width:none!important;gap:var(--sp-4)!important;
 }
+
+/* Farbvorschläge in den Rückfragen: die Palette steht als Hex im Text, davor die Farben selbst -
+   sonst müsste man sich "#7B2233" vorstellen, statt sie zu sehen. */
+html.prompt-full-redesign .suggestion-swatch{
+  display:inline-flex!important;gap:3px!important;margin-right:8px!important;vertical-align:-2px!important;
+}
+html.prompt-full-redesign .suggestion-swatch b{
+  display:block!important;width:12px!important;height:12px!important;
+  border:1px solid rgba(0,0,0,.22)!important;border-radius:4px!important;
+}

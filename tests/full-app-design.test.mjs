@@ -514,3 +514,36 @@ test('the master prompt is written in the format the target AI reads best',async
   assert.ok(claude.trim().endsWith('Beginne jetzt mit der Umsetzung auf Basis dieses Briefings.'));
   for(const part of ['## ROLLE','## 1. PROJEKT','## 9.','## 12.'])assert.ok(claude.includes(part),part);
 });
+
+test('the handoff carries the instruction file the chosen tool actually reads',async()=>{
+  const app=await read('app.js');
+  // Codex und die AGENTS.md-nativen Werkzeuge lesen AGENTS.md, Claude Code CLAUDE.md, Gemini
+  // GEMINI.md, Cursor zusätzlich eine Regel-Datei mit Frontmatter.
+  assert.match(app,/const AGENT_MEMORY_FILE=\{claude:"CLAUDE\.md",codex:"AGENTS\.md",gemini:"GEMINI\.md"/);
+  assert.match(app,/files\[AGENT_MEMORY_FILE\[state\.targetAgent\]\|\|'AGENTS\.md'\]=agentMemoryDocument\(\)/);
+  assert.match(app,/if\(state\.targetAgent==='cursor'\)files\['\.cursor\/rules\/prompt-ai\.mdc'\]=cursorRuleDocument\(\)/);
+  assert.match(app,/alwaysApply: true/,'Cursor liest die Regel nur mit Frontmatter');
+  // Die Datei verweist auf den Auftrag, sie wiederholt ihn nicht.
+  assert.match(app,/MASTER-PROMPT\.md\\` vollständig lesen/);
+});
+
+test('the clarification round may ask about colour and structure, with usable proposals',async()=>{
+  const templates=await read('server/prompt-templates.js'),app=await read('app.js'),css=await read('promptai-full-app-design.css');
+  // Geschmack war vorher pauschal verboten - jetzt erlaubt, aber gedeckelt und nur dort, wo der
+  // Auftrag eine Richtung andeutet und offen lässt.
+  assert.match(templates,/Gestaltung und persönlicher Geschmack gehören ausdrücklich dazu/);
+  assert.match(templates,/Höchstens zwei deiner Fragen betreffen Gestaltung/);
+  assert.doesNotMatch(templates,/Stelle keine Geschmacksfragen, deren Antwort/,'die alte Pauschalsperre muss weg sein');
+  // Farbe: keine Rückfrage ins Leere, sondern fertige Paletten mit Hex-Werten.
+  assert.match(templates,/biete 2-4 fertige Paletten an/);
+  assert.match(templates,/drei bis vier Hex-Werte in der Reihenfolge Grundton, Fläche, Akzent, Text/);
+  assert.match(templates,/Aufbau und Navigation/);
+  assert.match(templates,/Bring eigene Vorschläge ein, wo der Auftrag schweigt/);
+  // Fällt die KI-Prüfung aus, stehen trotzdem Vorschläge da - abgeleitet aus der genannten Farbe.
+  assert.match(app,/const PALETTE_BASES=\{rot:\["#7B2233"/);
+  assert.match(app,/for\(const value of palettesFor\(project\(\)\)\)suggestions\.push\(value\)/);
+  // Und man sieht die Farbe, statt den Hex-Wert zu lesen.
+  assert.match(app,/function swatchMarkup\(text\)\{/);
+  assert.match(app,/\$\{swatchMarkup\(s\)\}\$\{escapeHtml\(s\)\}/);
+  assert.match(css,/\.suggestion-swatch b\{/);
+});
