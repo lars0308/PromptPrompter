@@ -3037,7 +3037,19 @@ ${agentMemoryDocument()}`;
   // gewährt. Ein Knopf, der Sicherheit verspricht und keine hat, ist schlechter als keiner.
   // Ein echter Login über Face ID braucht eine Challenge vom Server und eine Signaturprüfung;
   // solange die fehlt, gibt es hier nichts.
-  async function sendSupportRequest(){if(!cloudReady())return;const subject=el.supportSubject.value.trim(),message=el.supportMessage.value.trim();if(subject.length<4||message.length<15){el.supportStatus.textContent='Bitte Betreff und Anliegen etwas genauer ausfüllen.';return}try{el.sendSupportBtn.disabled=true;el.supportStatus.textContent='Wird gesendet…';await window.SiteBriefCloud.createSupportRequest({category:el.supportCategory.value,subject,message});el.supportSubject.value='';el.supportMessage.value='';el.supportStatus.textContent='Anfrage wurde gesendet ✓'}catch(err){el.supportStatus.textContent=err?.message||'Anfrage konnte nicht gesendet werden.'}finally{el.sendSupportBtn.disabled=false}}
+  // Anfragen samt Antwort direkt unter dem Formular: ohne das bleibt jede Anfrage ein Brief in
+  // einen Briefkasten, von dem man nicht weiss, ob ihn jemand leert.
+  async function renderOwnSupport(){
+    const host=document.getElementById('supportHistory');
+    if(!host||!cloudReady())return;
+    let rows=[];try{rows=await window.SiteBriefCloud.ownSupportRequests()}catch{return}
+    if(!rows.length){host.hidden=true;host.innerHTML='';return}
+    const label={open:'Offen',in_progress:'In Bearbeitung',answered:'Beantwortet',closed:'Geschlossen'};
+    host.hidden=false;
+    host.innerHTML=`<b>Deine Anfragen</b>${rows.map(row=>`<article><span>${escapeHtml(label[row.status]||row.status)} · ${new Date(row.created_at).toLocaleDateString('de-DE')}</span><strong>${escapeHtml(row.subject||'')}</strong>${row.reply?`<p class="support-reply">${escapeHtml(row.reply)}</p>`:'<p class="support-pending">Noch keine Antwort – wir melden uns.</p>'}</article>`).join('')}`;
+  }
+  window.PromptAiSupport={refresh:renderOwnSupport};
+  async function sendSupportRequest(){if(!cloudReady())return;const subject=el.supportSubject.value.trim(),message=el.supportMessage.value.trim();if(subject.length<4||message.length<15){el.supportStatus.textContent='Bitte Betreff und Anliegen etwas genauer ausfüllen.';return}try{el.sendSupportBtn.disabled=true;el.supportStatus.textContent='Wird gesendet…';await window.SiteBriefCloud.createSupportRequest({category:el.supportCategory.value,subject,message});el.supportSubject.value='';el.supportMessage.value='';el.supportStatus.textContent='Angekommen ✓ Wir melden uns per E-Mail und hier in der App. Deine Anfragen stehen unten.';renderOwnSupport()}catch(err){el.supportStatus.textContent=err?.message||'Anfrage konnte nicht gesendet werden.'}finally{el.sendSupportBtn.disabled=false}}
   async function pendingNameSuggestion(found){
     const current=el.clientName.value.trim();
     if(!await customConfirm(`Auf der Website steht „${found}" als Unternehmen, im Projekt steht „${current}". Soll der gefundene Name übernommen werden?`,{title:'Gefundener Unternehmensname',confirmLabel:'Übernehmen',cancelLabel:'Behalten'}))return;

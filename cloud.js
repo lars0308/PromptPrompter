@@ -196,6 +196,16 @@ const Cloud = {
     };
   },
 
+  // Der Absender sah nie, was aus seiner Anfrage wurde. Er liest jetzt seine eigenen Anfragen
+  // samt Antwort - mehr gibt die Zeilensicherheit ihm auch nicht frei.
+  async ownSupportRequests(){
+    const userId=this.assertUser();
+    const {data,error}=await this.client.from('sitebrief_support_requests')
+      .select('id,category,subject,message,status,reply,replied_at,created_at')
+      .eq('user_id',userId).order('created_at',{ascending:false}).limit(20);
+    if(error)throw error;
+    return Array.isArray(data)?data:[];
+  },
   async createSupportRequest({category,subject,message}){
     const userId=this.assertUser();
     const {error}=await this.client.from('sitebrief_support_requests').insert({user_id:userId,category,subject,message});

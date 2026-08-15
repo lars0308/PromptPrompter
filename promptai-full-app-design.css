@@ -2101,3 +2101,33 @@ html.prompt-full-redesign .plan-card-fairuse{
   html.prompt-full-redesign .prompt-footer-links .footer-divider{display:none!important}
   html.prompt-full-redesign .prompt-footer-links .footer-link{font-size:11.5px!important}
 }
+
+/* Support: die eigenen Anfragen samt Antwort stehen unter dem Formular, die Antwort abgesetzt.
+   Ohne das ist jede Anfrage ein Brief in einen Briefkasten, von dem man nicht weiss, ob ihn
+   jemand leert. */
+html.prompt-full-redesign .support-history{
+  display:grid!important;gap:var(--sp-3)!important;margin-top:var(--sp-5)!important;
+  padding-top:var(--sp-4)!important;border-top:1px solid var(--line)!important;
+}
+html.prompt-full-redesign .support-history>b{color:var(--mist)!important;font:850 9px/1 ui-monospace,monospace!important;letter-spacing:.14em!important;text-transform:uppercase!important}
+html.prompt-full-redesign .support-history article{
+  display:grid!important;gap:4px!important;padding:var(--sp-4)!important;
+  border:1px solid var(--line)!important;border-radius:var(--r-md)!important;background:var(--surface)!important;
+}
+html.prompt-full-redesign .support-history span{color:var(--mist)!important;font-size:11px!important}
+html.prompt-full-redesign .support-history strong{font-size:14px!important}
+html.prompt-full-redesign .support-history .support-reply{
+  margin:6px 0 0!important;padding:var(--sp-3)!important;border-left:3px solid var(--accent)!important;
+  background:var(--surface-soft)!important;font-size:13px!important;line-height:1.55!important;white-space:pre-line!important;
+}
+html.prompt-full-redesign .support-history .support-pending{margin:4px 0 0!important;color:var(--mist)!important;font-size:12.5px!important}
+html.prompt-full-redesign .admin-support-answer{display:grid!important;gap:var(--sp-2)!important;margin-top:var(--sp-3)!important}
+html.prompt-full-redesign .admin-support-answer textarea{
+  width:100%!important;border:1px solid var(--line)!important;border-radius:var(--r-sm)!important;
+  background:var(--surface-soft)!important;color:var(--ink)!important;padding:var(--sp-3)!important;font:inherit!important;font-size:13px!important;
+}
+html.prompt-full-redesign .admin-support-reply{
+  margin:var(--sp-3) 0 0!important;padding:var(--sp-3)!important;border-left:3px solid var(--good,#2e9e6b)!important;
+  background:var(--surface-soft)!important;font-size:12.5px!important;line-height:1.5!important;white-space:pre-line!important;
+}
+html.prompt-full-redesign .admin-support-reply b{display:block!important;margin-bottom:3px!important;font-size:10px!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--mist)!important}

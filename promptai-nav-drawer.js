@@ -173,6 +173,8 @@
         $('#accountBtn')?.click();
         setTimeout(()=>{
           const card=document.querySelector('.account-support-card');if(!card)return;
+          // Beim Oeffnen gleich die eigenen Anfragen samt Antwort nachladen.
+          window.PromptAiSupport?.refresh?.();
           // Der Block ist eingeklappt (collapseSections) - erst öffnen, dann hinscrollen.
           const head=card.querySelector('.account-section-head, :scope > div:first-child');
           if(card.dataset.collapsed==='1'||card.classList.contains('is-collapsed'))head?.click();

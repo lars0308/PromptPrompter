@@ -710,3 +710,19 @@ test('the drawer can be closed again, on every device',async()=>{
   assert.match(drawer,/if\(e\.target\.closest\?\.\('#topbarMenu'\)\)return;/);
   assert.doesNotMatch(drawer,/if\(e\.target\.closest\?\.\('\.topbar-menu-backdrop'\)\)close\(\)/,'der Vorhang heißt nicht überall gleich');
 });
+
+test('a support request gets an answer, and the sender sees it',async()=>{
+  const admin=await read('api/admin-action.js'),core=await read('admin-console-core.js'),cloud=await read('cloud.js'),app=await read('app.js'),html=await read('index.html'),sql=await read('supabase/migrations/20260816_add_support_reply.sql');
+  // Antworten gehört zur Anfrage, nicht ins private Mailprogramm.
+  assert.match(sql,/add column if not exists reply text not null default ''/);
+  assert.match(sql,/auth\.uid\(\) = user_id/,'lesen darf nur, wer die Anfrage gestellt hat');
+  assert.match(admin,/action==='support-reply'/);
+  assert.match(admin,/status:'answered'/,'die Antwort setzt den Stand mit');
+  assert.match(core,/data-support-send/);
+  assert.match(core,/action:'support-reply',id:card\.dataset\.supportId,reply/);
+  // Und der Absender sieht Stand und Antwort unter dem Formular.
+  assert.match(cloud,/async ownSupportRequests\(\)\{/);
+  assert.match(app,/async function renderOwnSupport\(\)\{/);
+  assert.match(app,/Angekommen ✓ Wir melden uns per E-Mail und hier in der App/);
+  assert.match(html,/id="supportHistory"/);
+});

@@ -104,6 +104,15 @@ module.exports=async function(req,res){
       if(!uuid(body.id)||!['open','in_progress','answered','closed'].includes(body.status))return res.status(400).json({error:'Ungültige Support-Anfrage.'});
       await serviceFetch(`/rest/v1/sitebrief_support_requests?id=eq.${body.id}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:{status:body.status,updated_at:new Date().toISOString()}});await audit(admin.id,action,null,{id:body.id,status:body.status});return res.status(200).json({ok:true});
     }
+    // Antworten gehoert zur Anfrage, nicht ins private Mailprogramm: der Absender sieht sie in
+    // der App, und der Stand springt automatisch auf "beantwortet".
+    if(action==='support-reply'){
+      const text=String(body.reply||'').trim().slice(0,4000);
+      if(!uuid(body.id)||text.length<2)return res.status(400).json({error:'Antwort fehlt.'});
+      await serviceFetch(`/rest/v1/sitebrief_support_requests?id=eq.${body.id}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:{reply:text,replied_at:new Date().toISOString(),status:'answered',updated_at:new Date().toISOString()}});
+      await audit(admin.id,action,null,{id:body.id});
+      return res.status(200).json({ok:true});
+    }
     if(action==='save-offer'){
       const trialDays=Math.max(0,Math.min(365,Number(body.trialDays)||0)),discountPercent=Math.max(0,Math.min(100,Number(body.discountPercent)||0));
       // Ein geleertes Feld ist eine Entscheidung, kein fehlender Wert. Vorher stand hier
