@@ -624,7 +624,7 @@
       el.buySingleReviewBtn.textContent=`Monatsvorrat auffüllen · ${window.PromptAiPrices?.topUp||PRICE_FALLBACK.topUp}`;
       const topUpTitle=document.getElementById('topUpNoteTitle');
       if(topUpTitle)topUpTitle.textContent=`Monatsvorrat auffüllen – ${window.PromptAiPrices?.topUp||PRICE_FALLBACK.topUp}`;
-      el.buySingleReviewBtn.title='Einmalig eine Million Einheiten zusätzlich für diesen Monat.';
+      el.buySingleReviewBtn.title='Einmalig eine halbe Million Einheiten zusätzlich für diesen Monat.';
     }
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());

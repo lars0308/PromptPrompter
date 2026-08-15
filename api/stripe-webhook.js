@@ -8,7 +8,11 @@ async function upsertAddon(userId,payload){const {headers}=service(),r=await fet
 // Free einen echten KI-Lauf im Monat hat, verkauft er nichts mehr, was es nicht schon gibt. Aus
 // demselben Kauf wird jetzt Monatsvorrat: eine Million Einheiten oben drauf. Alte Kaeufe mit dem
 // alten Produktnamen landen an derselben Stelle.
-const TOP_UP_UNITS=1000000;
+// 4,99 EUR fuer eine Million haette Ultimate untergraben: Pro plus vier Aufladungen waere bei
+// gleichem Volumen ~41 EUR statt 55 EUR gewesen. Ultimate kostet 34 EUR mehr als Pro fuer 3,5
+// Mio zusaetzliche Einheiten, also rund 10 EUR je Million - die Aufladung liegt jetzt auf
+// derselben Rate: eine halbe Million fuer 4,99 EUR.
+const TOP_UP_UNITS=500000;
 async function addBudgetTopUp(userId,purchaseId,product){
   const {headers}=service();
   const read=await fetch(`${SUPABASE_URL}/rest/v1/sitebrief_user_admin_state?select=monthly_token_bonus&user_id=eq.${encodeURIComponent(userId)}&limit=1`,{headers});
