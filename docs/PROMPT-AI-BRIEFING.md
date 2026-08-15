@@ -1,6 +1,14 @@
 # Prompt.ai — Briefing & Zusammenfassung
 
-*Stand: 16. August 2026 · prompt-ai.app*
+*Stand: 17. August 2026 · prompt-ai.app*
+
+**Neu in diesem Stand**
+
+- **KI-Auswahl auf die aktuelle Generation umgestellt.** Google schaltet Gemini 2.5 Flash und Pro zum 16. Oktober 2026 ab — darauf liefen sechs der Routen. Die bisherigen Modelle bleiben als Netz dahinter stehen.
+- **Ein abgeschaltetes Modell wirft nichts mehr um.** Vorher galt „Modell existiert nicht" als endgültiger Fehler und die Kette brach ab, obwohl drei Ersatzwege danebenstanden.
+- **Die Kostenbremse bremst jetzt wirklich.** Bei aufgebrauchtem Budget griff der Ablauf nach dem letzten Eintrag der Kette — dem Notausgang, also dem teuersten Modell. Die Sparwahl steht jetzt am Profil.
+- **Die Gestaltung liegt in einer Datei statt in vierunddreißig Skripten.** Dabei kam ein alter Fehler ans Licht: ein nie geschlossener Regelblock hatte einen ganzen Abschnitt unwirksam gemacht — der Browser las 143 Regeln statt 1337.
+- **Support-Antworten und Monatsbudgets sind in der Datenbank scharf geschaltet.** Die Budgets standen auf 0, wodurch Balken, Sparmodus und der freie KI-Durchlauf wirkungslos waren.
 
 ---
 
@@ -54,6 +62,22 @@ Die Anweisungsdatei ist der Punkt, den andere Werkzeuge übersehen: Jedes KI-Wer
 | Cursor | `AGENTS.md` + `.cursor/rules/prompt-ai.mdc` |
 
 Sie wiederholt den Auftrag nicht, sondern nennt die Lesereihenfolge und die verbindlichen Punkte.
+
+### Welche KI dahinter arbeitet
+
+Die Ziel-KI ist, wofür der Auftrag gebaut wird. Wer ihn *baut*, hängt am Tarif und ist in der Verwaltung einstellbar — je Aufgabe eine eigene Kette aus Erstwahl, Ausweich und Notausgang.
+
+| Aufgabe | Kostenlos | Pro | Ultimate |
+|---|---|---|---|
+| Projekt analysieren | Qwen 3 30B | Gemini 3.1 Flash-Lite | Gemini 3.6 Flash |
+| Rückfragen stellen | Qwen 3 30B | Gemini 3.6 Flash | Claude Sonnet 5 |
+| Master-Prompt & Website | Qwen 3 30B | Claude Haiku 4.5 | Claude Sonnet 5 |
+| Ergebnisse auswerten | Qwen 3 30B | Gemini 3.1 Flash-Lite | Gemini 3.1 Flash-Lite |
+| Bilder | — | Gemini 3.1 Flash Image → Flux 2 Klein | GPT-Image-2 → Flux 2 Max → Flux 2 Pro |
+
+Hinter jeder Erstwahl stehen drei weitere Stufen. Fällt eine aus — Störung, Abrechnung, Abschaltung —, rutscht die Anfrage auf die nächste, ohne dass der Kunde etwas merkt. Ganz hinten steht ein Notausgang direkt bei Google und Cloudflare, am Gateway vorbei.
+
+**Warum das so gewählt ist:** Claude schreibt lange, streng gegliederte Dokumente am zuverlässigsten — deshalb baut er den Master-Prompt. Analysieren und Auswerten sind Fleißarbeit ohne Publikum; dafür genügt das billigste brauchbare Modell. Ein Projektlauf kostet uns damit rund 5 Cent in Pro und rund 13 Cent in Ultimate.
 
 ---
 
@@ -112,6 +136,8 @@ Intern zählen wir Tokens plus einen festen Gegenwert für Bilder (5.000 je Bild
 - **Bei 15 %:** einmal pro Sitzung eine Meldung oben am Rand
 - **Bei 0 %:** kein Stopp — bezahlte Tarife laufen auf einem kleineren Modell weiter, kostenlos geht es lokal weiter
 
+Welches Modell das kleinere ist, steht am Profil („Sparwahl") und nicht im Ratespiel. Das war ein echter Fehler: Vorher nahm der Ablauf einfach den letzten Eintrag der Kette — und das ist der Notausgang, also bewusst das robusteste und damit teuerste Modell. Die Kostenbremse machte einen Lauf teurer statt günstiger.
+
 Grobe Kostenwerte je Aktion: Projektlauf ~45.000 · freier Prompt ~4.000 · Bildvorschau-Durchlauf ~20.000 · Probelauf ~50.000 · Sandbox ~10.000.
 
 ---
@@ -149,7 +175,8 @@ Grobe Kostenwerte je Aktion: Projektlauf ~45.000 · freier Prompt ~4.000 · Bild
 | **Anhänge** | Endung, Größe (max. 12 MB) und Dateisignatur werden geprüft. Eine umbenannte Programmdatei fällt durch. |
 | **Fremde Inhalte** | Referenzen, importierte Seiten und Unterlagen gelten im Prompt ausdrücklich als Daten, nicht als Anweisungen. |
 | **Fehlerbericht** | Nur Meldung, Datei, Zeile — keine Eingaben, keine Projektinhalte, höchstens fünf pro Sitzung. |
-| **Kostenschutz** | Monatsvorrat als Bremse; Probelauf und Sandbox zusätzlich pro Konto gedeckelt. |
+| **Kostenschutz** | Monatsvorrat als Bremse mit ausdrücklicher Sparwahl; Probelauf und Sandbox zusätzlich pro Konto gedeckelt. |
+| **Ausfall eines Modells** | Ein abgeschaltetes oder umbenanntes Modell lässt die Kette weiterlaufen statt abzubrechen. Eine Beanstandung an der Eingabe landet weiterhin sofort beim Kunden. |
 | **Recht** | Impressum, Datenschutz mit allen Auftragsverarbeitern, Nutzungsbedingungen, Widerrufsbelehrung mit Muster-Formular, Zustimmung zum sofortigen Leistungsbeginn vor jedem Kauf (als Zeitpunkt bei Stripe hinterlegt), Cookie-Einwilligung jederzeit widerrufbar. |
 
 ---
@@ -157,12 +184,13 @@ Grobe Kostenwerte je Aktion: Projektlauf ~45.000 · freier Prompt ~4.000 · Bild
 ## 9. Technik
 
 - **Frontend:** statische Seite ohne Framework, rund 60 JavaScript-Dateien, auf Vercel
+- **Gestaltung:** drei Stylesheets in fester Reihenfolge — `styles.css`, `promptai-ui-layers.css`, `promptai-full-app-design.css`
 - **Backend:** Vercel-Funktionen unter `/api`
 - **Daten & Anmeldung:** Supabase
 - **Zahlung:** Stripe (Abos, Einmalkäufe, Kundenportal)
 - **KI:** Vercel AI Gateway, OpenAI, Gemini, Cloudflare Workers AI — Reihenfolge je Aufgabe und Tarif in der Verwaltung einstellbar
 - **Bauen:** Vercel Sandbox (isolierte MicroVM)
-- **Tests:** 283 Quelltext-Prüfungen (`npm test`) und 9 echte Browser-Durchläufe (`npm run e2e`)
+- **Tests:** 292 Quelltext-Prüfungen (`npm test`) und 9 echte Browser-Durchläufe (`npm run e2e`)
 
 ---
 
@@ -183,11 +211,11 @@ Dazu: Webhook auf `https://www.prompt-ai.app/api/stripe-webhook` mit `checkout.s
 
 Für die Support-Benachrichtigung zusätzlich: `SUPPORT_NOTIFY_TO` (deine Adresse) und entweder `RESEND_API_KEY` oder `MAIL_WEBHOOK_URL`. Fehlen sie, läuft alles weiter — nur ohne Mail.
 
-**In der Verwaltung:** Monatsbudgets eintragen (Free 150.000 · Pro 2.500.000 · Ultimate 6.000.000) — ohne sie greift der Vorrats-Mechanismus nicht. System-KI-Kette prüfen. Rechtstexte: alle eckigen Klammern füllen.
+**In der Verwaltung:** Rechtstexte — alle eckigen Klammern füllen. Monatsbudgets und System-KI-Kette sind eingetragen. Einmal prüfen: ob die Modellnamen `google/gemini-3.1-flash-lite`, `google/gemini-3.6-flash` und `anthropic/claude-sonnet-5` im Vercel AI Gateway wirklich so heißen („Modelle laden" im KI-Studio). Heißen sie anders, arbeitet die App auf der Stufe dahinter weiter — nur eben nicht auf der gewünschten.
 
 **Hosting:** Vercel Pro (Hobby ist nicht für kommerzielle Nutzung) und Supabase Pro (Free pausiert nach 7 Tagen ohne Zugriff) — spätestens ab dem ersten zahlenden Kunden.
 
-**Datenbank:** Migration `20260816_add_support_reply.sql` einspielen.
+**Datenbank:** eingespielt — `20260816_add_support_reply.sql` (Support-Antwort) und `20260817_add_profile_saver_flag.sql` (Sparwahl).
 
 **Gewerbe:** Tätigkeit beim Gewerbeamt um Softwarevertrieb erweitern. Umsatzsteuer bei digitalen Leistungen ins EU-Ausland mit dem Steuerberater klären. *(Keine Rechts- oder Steuerberatung — Orientierung.)*
 
@@ -195,10 +223,10 @@ Für die Support-Benachrichtigung zusätzlich: `SUPPORT_NOTIFY_TO` (deine Adress
 
 ## 11. Offene Punkte in der Entwicklung
 
-- **Stylesheets zusammenführen** — vier Ebenen liegen übereinander; die schlimmste Pauschalregel ist entschärft, die Zusammenführung steht aus. Ein bis zwei Tage, jetzt mit Testnetz.
 - **Team-Zugänge für Ultimate** — mehrere Personen an einem Projekt. Braucht Projekte teilen, Rechte, Einladungen, neue Zugriffsregeln.
 - **Wochenpass** — 7 Tage Pro als Einmalkauf. Braucht einen befristeten Tarif; ein halber bis ganzer Tag.
 - **Hilfeseite** — die fünf häufigsten Fragen, sobald bekannt ist, welche das sind.
+- **Nach dem 16. Oktober 2026** — Google schaltet Gemini 2.5 Flash und Pro ab. Die App ist umgestellt, die alten Modelle stehen nur noch als Netz dahinter. Danach lassen sie sich ersatzlos entfernen.
 
 ---
 
