@@ -2082,3 +2082,11 @@ html.prompt-full-redesign .suggestion-swatch b{
   display:block!important;width:12px!important;height:12px!important;
   border:1px solid rgba(0,0,0,.22)!important;border-radius:4px!important;
 }
+
+/* Die Fair-Use-Zeile steht auf der Karte, nicht im Kleingedruckten: wer kauft, soll vorher
+   wissen, was nach dem Monatsvorrat passiert - es hoert nichts auf, es wird nur guenstiger. */
+html.prompt-full-redesign .plan-card-fairuse{
+  margin:var(--sp-3) 0 0!important;padding-top:var(--sp-3)!important;
+  border-top:1px solid var(--line)!important;
+  color:var(--mist)!important;font-size:11.5px!important;line-height:1.5!important;
+}

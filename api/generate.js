@@ -79,5 +79,9 @@ function tooLarge(req,res){
 module.exports=async function generateRouter(req,res){if(req.method==='POST'){
   if(tooLarge(req,res))return;
   const authed=signedIn(req);
-  if(!rateLimit(req,res,authed?{key:'generate',limit:40,windowMs:60000}:{key:'generate-guest',limit:24,windowMs:900000}))return;
+  // Vorrang bei der Verarbeitung heisst hier konkret: wie viele Anfragen pro Minute durchgehen,
+  // bevor gebremst wird. Ultimate laeuft weiter, wenn es eng wird, Free wird als Erstes gebremst.
+  const plan=authed?await planOf(req):'guest';
+  const perMinute=plan==='ultimate'?90:plan==='pro'?45:20;
+  if(!rateLimit(req,res,authed?{key:`generate-${plan}`,limit:perMinute,windowMs:60000}:{key:'generate-guest',limit:24,windowMs:900000}))return;
   const action=String(req.body?.action||'');if(['quota-summary','quota-check','quota-consume'].includes(action))return quotaRoute(req,res,action);if(action==='free-prompt'){if(!await enforce(req,res,'free_prompts'))return;return freePrompt(req,res)}if(action==='preview-image'){if(!await enforce(req,res,'ai_previews'))return;return previewImage(req,res)}if(action==='concepts')return websiteConceptRoute(req,res);if(action==='master-prompt')return runSystemProfiles(req,res);if(action==='sandbox-build')return sandboxBuild(req,res);if(req.body?.systemAiProfileId&&req.body?.useOwnApi!==true)return runSystemProfiles(req,res)}return core(req,res)};

@@ -21,7 +21,16 @@
     const counts=new Map(),kept=[];for(const row of rows){const n=counts.get(row.projectId)||0;if(n>=6)continue;counts.set(row.projectId,n+1);kept.push(row);if(kept.length>=18)break}write(HISTORY_KEY,kept);
   }
   function storePrompt({prompt,title='Master-Prompt',source='master',projectId=''}){
-    const value=String(prompt||'').trim();if(value.length<160)return;const sig=hash(value),rows=read(PROMPT_KEY,[]);if(rows.some(x=>x.hash===sig&&Date.now()-x.at<24*60*60*1000))return;const state=currentState()||{};rows.unshift({id:`${Date.now()}-${sig}`,hash:sig,title:String(title||projectTitle(state)).slice(0,100),source,projectId:projectId||String(state.projectId||state.currentProjectId||'local'),at:Date.now(),prompt:value});write(PROMPT_KEY,rows.slice(0,30));saveCloudPrompt(rows[0]);
+    const value=String(prompt||'').trim();if(value.length<160)return;const sig=hash(value),rows=read(PROMPT_KEY,[]);if(rows.some(x=>x.hash===sig&&Date.now()-x.at<24*60*60*1000))return;const state=currentState()||{};rows.unshift({id:`${Date.now()}-${sig}`,hash:sig,title:String(title||projectTitle(state)).slice(0,100),source,projectId:projectId||String(state.projectId||state.currentProjectId||'local'),at:Date.now(),prompt:value});write(PROMPT_KEY,rows.slice(0,historyLimit()));saveCloudPrompt(rows[0]);
+  }
+  // Wie viele Projektstände aufgehoben werden, gehört zum Tarif: kostenlos die letzten paar,
+  // ab Pro ein ordentlicher Verlauf, ab Ultimate ohne Grenze - Agenturen holen auch nach Monaten
+  // noch einen alten Auftrag zurück.
+  function historyLimit(){
+    const access=window.PromptAiAccess||{};
+    if(access.isAdmin)return 500;
+    const plan=String(access.plan||'free');
+    return plan==='ultimate'?500:plan==='pro'?60:10;
   }
   async function saveCloudPrompt(row){
     const cloud=window.SiteBriefCloud;if(!cloud?.user||!cloud?.client)return;try{await cloud.client.from('sitebrief_prompt_versions').insert({user_id:cloud.user.id,project_id:row.projectId||'local',project_title:row.title||'',prompt:row.prompt,prompt_hash:row.hash,source:row.source||'master'})}catch{}

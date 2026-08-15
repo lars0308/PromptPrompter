@@ -554,8 +554,11 @@ test('what costs us money is either gated or counted',async()=>{
   const core=await read('server/generate-core.js'),models=await read('api/models.js'),site=await read('api/site-context.js');
   // "Website überarbeiten" führt die Oberfläche ab Pro - die Schnittstelle ließ den Modus für
   // jeden durch, auf unsere Kosten und in keinem Kontingent.
-  assert.match(core,/if\(entitlement\.plan==="free"&&!entitlement\.ownApiKeys\) return res\.status\(403\)/);
+  assert.match(core,/if\(action==="website"\|\|action==="revision-brief"\)return res\.status\(403\)/);
   assert.doesNotMatch(core,/action!=="revision-brief"\) return res\.status\(403\)/);
+  // Free darf die KI benutzen, solange das Guthaben reicht - aber nur angemeldet.
+  assert.match(core,/if\(!freeUser\?\.id\)return res\.status\(403\)/);
+  assert.match(core,/if\(freeBudget\.exhausted\)return res\.status\(403\)/);
   // Die Lern-Auswertung ist der längste Aufruf im Produkt: kürzerer Ausschnitt, Sperre pro Stunde.
   assert.match(models,/key:'learning-feedback',limit:4,windowMs:60\*60\*1000/);
   assert.match(models,/html:String\(out\.html\|\|''\)\.slice\(0,12000\)/);
@@ -602,4 +605,24 @@ test('picking a flow in the settings never opens the workflow behind the start p
   // Und falls doch je beides sichtbar wird, stellt der Zustand sich selbst richtig.
   assert.match(home,/function enforceSurface\(\)\{/);
   assert.match(home,/function syncHome\(\)\{enforceSurface\(\);/);
+});
+
+test('the monthly budget is a cost brake with a visible share, not a wall',async()=>{
+  const quota=await read('server/quota.js'),home=await read('promptai-home-final.js'),app=await read('app.js'),html=await read('index.html');
+  // Innen Tokens, außen Prozent - Rohverbrauch sagt niemandem etwas.
+  assert.match(quota,/free:\{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:150000\}/);
+  assert.match(home,/const RUN_COST=\{website:45000,revision:45000,check:20000,free:4000\}/);
+  assert.match(home,/return withCredit\(`Noch \$\{info\.percent\} % · \$\{rest\}`\)/);
+  assert.match(home,/Dieser Auftrag verbraucht etwa \$\{share\} % deines Monats/);
+  assert.match(home,/if\(!info\|\|info\.percent>15\)return;/,'die Warnung kommt einmal, nicht dauernd');
+  assert.match(home,/\.prompt-budget-bar\{/);
+  // Free bekommt einen echten Durchlauf, aber nur angemeldet und nur mit Guthaben.
+  assert.match(app,/const freeAiRun=state\.plan==="free" && !state\.isAdmin && cloudReady\(\) && budgetLeft\(\)/);
+  // Und die Karten sagen vorher, was nach dem Vorrat passiert.
+  assert.match(html,/plan-card-fairuse/);
+  assert.match(html,/Ein echter KI-Durchlauf im Monat/);
+  assert.match(html,/Mehrere Marken- und Projektprofile/);
+  assert.match(html,/Projektstände ohne Grenze/);
+  assert.match(html,/Vorrang bei der Verarbeitung/);
+  assert.doesNotMatch(html,/Alle Ziel-Agenten und der Modus/,'die Zeile ist wertlos, seit jede Ziel-KI frei ist');
 });

@@ -2,14 +2,20 @@ const {getEntitlements}=require('./entitlements');
 const {authenticatedUser}=require('./supabase-user');
 const {serviceFetch}=require('./admin');
 
-// monthly_tokens is the internal cost guard behind the countable units. 0 = no limit, which is
-// the default until real numbers exist: a budget guessed in advance would throttle accounts for
-// no reason.
+// monthly_tokens ist das eigentliche Mass: es zaehlt, was uns eine Nutzung wirklich kostet, und
+// nicht, wie oft ein Knopf gedrueckt wurde. Es ist keine Nutzungsgrenze, sondern eine
+// Kostenbremse - ist es aufgebraucht, laeuft alles weiter, nur auf der guenstigeren KI
+// (siehe api/generate.js, saver). Die Werte sind so gewaehlt, dass sie die Zahlen der
+// Tarifseite mit voller Qualitaet abdecken: ein Projektlauf kostet grob 45.000 Einheiten,
+// ein freier Prompt 4.000, ein Bild-Durchlauf 20.000, ein Probelauf 50.000.
 const PLAN_LIMITS=Object.freeze({
-  free:{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:0},
-  pro:{free_prompts:100,website_generations:25,ai_previews:50,monthly_tokens:0},
-  ultimate:{free_prompts:500,website_generations:100,ai_previews:250,monthly_tokens:0}
+  free:{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:150000},
+  pro:{free_prompts:100,website_generations:25,ai_previews:50,monthly_tokens:2500000},
+  ultimate:{free_prompts:500,website_generations:100,ai_previews:250,monthly_tokens:6000000}
 });
+// Bilder und Rechenzeit haben keine Tokens. Damit sie trotzdem im selben Budget stehen, bekommen
+// sie einen festen Gegenwert - sonst waere ausgerechnet das Teuerste unsichtbar.
+const UNIT_EQUIVALENT=Object.freeze({'preview-image':5000,'sandbox-build':10000});
 let limitsCache=null,limitsCacheAt=0;
 const LIMITS_CACHE_MS=30000;
 async function loadPlanLimits(){
@@ -56,7 +62,17 @@ const rowWeight=row=>row?.key_source==='account'?OWN_KEY_WEIGHT:1;
 async function tokensUsed(userId,start,end){
   const path=`/rest/v1/sitebrief_usage_events?select=total_tokens&user_id=eq.${encodeURIComponent(userId)}&total_tokens=gt.0&key_source=neq.account&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=5000`;
   const rows=(await serviceFetch(path)).data||[];
-  return rows.reduce((sum,row)=>sum+(Number(row.total_tokens)||0),0);
+  const tokens=rows.reduce((sum,row)=>sum+(Number(row.total_tokens)||0),0);
+  return tokens+await equivalentUsed(userId,start,end);
+}
+// Bild- und Sandbox-Laeufe tragen keine Tokens; sie zaehlen mit ihrem Gegenwert.
+async function equivalentUsed(userId,start,end){
+  const actions=Object.keys(UNIT_EQUIVALENT);
+  try{
+    const path=`/rest/v1/sitebrief_usage_events?select=action&user_id=eq.${encodeURIComponent(userId)}&success=eq.true&key_source=neq.account&action=in.(${actions.join(',')})&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=2000`;
+    const rows=(await serviceFetch(path)).data||[];
+    return rows.reduce((sum,row)=>sum+(UNIT_EQUIVALENT[row?.action]||0),0);
+  }catch{return 0}
 }
 // Reaching the budget never blocks a request - it switches the routing to the cheapest AI of the
 // plan (see api/generate.js). Administrators are never downgraded, so the console keeps testing
@@ -176,4 +192,4 @@ async function assertSandboxBudget(req){
 }
 function quotaErrorPayload(error){return {error:error?.message||'Monatskontingent nicht verfügbar.',code:error?.code||'QUOTA_ERROR',metric:error?.metric||null,quota:error?.quota||null}}
 
-module.exports={PLAN_LIMITS,METRIC_ACTIONS,BUILD_LIMIT,SANDBOX_LIMIT,assertBuildBudget,assertSandboxBudget,getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,consumePreviewRun,quotaErrorPayload};
+module.exports={PLAN_LIMITS,UNIT_EQUIVALENT,METRIC_ACTIONS,BUILD_LIMIT,SANDBOX_LIMIT,assertBuildBudget,assertSandboxBudget,getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,consumePreviewRun,quotaErrorPayload};

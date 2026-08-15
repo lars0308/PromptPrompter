@@ -15,7 +15,12 @@ test('monthly quotas match the public Free Pro and Ultimate allowances',async()=
     assert.match(src,/pro:\{free_prompts:100,website_generations:25,ai_previews:50/);
     assert.match(src,/ultimate:\{free_prompts:500,website_generations:100,ai_previews:250/);
   }
-  assert.match(server,/monthly_tokens:0\}/,'no token limit until an administrator sets one');
+  // Das Guthaben ist die Kostenbremse hinter den sichtbaren Zahlen - und es ist gesetzt.
+  assert.match(server,/monthly_tokens:150000\}/);
+  assert.match(server,/monthly_tokens:2500000\}/);
+  assert.match(server,/monthly_tokens:6000000\}/);
+  // Bilder und Rechenzeit tragen keine Tokens und zaehlen deshalb mit einem Gegenwert.
+  assert.match(server,/const UNIT_EQUIVALENT=Object\.freeze\(\{'preview-image':5000,'sandbox-build':10000\}\)/);
 });
 
 test('existing generate endpoint exposes and enforces quota actions without another serverless function',async()=>{

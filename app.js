@@ -47,9 +47,9 @@
   // Three previews, for every plan. More was a choice nobody could judge; fewer is not a real set.
   const PREVIEW_COUNT=3;
   const PLAN_RULES = {
-    free:{label:"Free",modes:["guided"],libraryItems:0,concepts:3,previewRetries:1,agents:Object.keys(AGENT_NAMES),clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,aiPreviews:false,maxRefUrls:1,maxRefImages:0},
-    pro:{label:"Pro",modes:["guided","auto"],libraryItems:10,concepts:3,previewRetries:2,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:false,github:false,existing:true,aiPreviews:true,maxRefUrls:3,maxRefImages:3},
-    ultimate:{label:"Ultimate",modes:["guided","auto","expert"],libraryItems:Infinity,concepts:3,previewRetries:3,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true,existing:true,aiPreviews:true,maxRefUrls:5,maxRefImages:5}
+    free:{label:"Free",modes:["guided"],libraryItems:0,concepts:3,previewRetries:1,agents:Object.keys(AGENT_NAMES),clientDocs:false,modules:false,customProfiles:false,profileLimit:0,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,aiPreviews:false,maxRefUrls:1,maxRefImages:0},
+    pro:{label:"Pro",modes:["guided","auto"],libraryItems:10,concepts:3,previewRetries:2,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,profileLimit:1,generatorChoice:true,advanced:false,zip:false,github:false,existing:true,aiPreviews:true,maxRefUrls:3,maxRefImages:3},
+    ultimate:{label:"Ultimate",modes:["guided","auto","expert"],libraryItems:Infinity,concepts:3,previewRetries:3,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,profileLimit:Infinity,generatorChoice:true,advanced:true,zip:true,github:true,existing:true,aiPreviews:true,maxRefUrls:5,maxRefImages:5}
   };
   const DEFAULT_SETTINGS = {
     aiClarifications:true,maxQuestions:4,criticalBehavior:"block",askMissing:true,askConflict:true,askInfeasible:true,suggestAlternatives:true,
@@ -331,6 +331,18 @@
   }
 
   function cloudReady(){ return Boolean(state.cloud.configured && state.cloud.user && window.SiteBriefCloud?.client); }
+  // Wie viel vom Monatsguthaben noch da ist. Das Guthaben ist keine Nutzungsgrenze, sondern die
+  // Kostenbremse: ist es leer, laeuft alles weiter - in bezahlten Tarifen auf der guenstigeren
+  // KI, im kostenlosen wieder lokal.
+  function budgetInfo(){
+    const tokens=window.PromptAiQuota?.summary?.()?.tokens;
+    if(!tokens||!Number(tokens.limit))return null;
+    const limit=Number(tokens.limit)||0,used=Math.max(0,Number(tokens.used)||0);
+    const share=limit?Math.max(0,Math.min(1,1-used/limit)):1;
+    return {limit,used,remaining:Math.max(0,limit-used),share,percent:Math.round(share*100),exhausted:Boolean(tokens.exhausted)||used>=limit};
+  }
+  function budgetLeft(){const info=budgetInfo();return !info||!info.exhausted}
+  window.PromptAiBudget={info:budgetInfo,left:budgetLeft};
 
   function applyTheme(theme,{remember=true}={}){
     const resolved=theme==="dark"?"dark":"light";
@@ -1260,6 +1272,10 @@
 
   async function createProfileFromDialog(){
     if(!planRules().customProfiles){el.plansDialog?.showModal();return;}
+    // Ein eigenes Profil gehoert zu Pro, mehrere zu Ultimate: wer fuer mehrere Kunden arbeitet,
+    // braucht je Marke eine eigene Arbeitsweise - das ist der Unterschied, nicht die Menge.
+    const profileLimit=Number(planRules().profileLimit??Infinity);
+    if(!state.isAdmin&&state.profiles.length>=profileLimit){el.plansDialog?.showModal();return;}
     const name=el.newProfileName.value.trim();if(!name)return;const item={id:uid("profile"),name,description:el.newProfileDescription.value.trim(),config:profileConfigFromCurrent(),isDefault:false};state.profiles.unshift(item);state.activeProfileId=item.id;saveProfiles();renderProfileUi();el.newProfileName.value="";el.newProfileDescription.value="";if(cloudReady())try{await window.SiteBriefCloud.saveProfile(item);await syncSettings()}catch{};
   }
 
@@ -1897,7 +1913,11 @@
       // und den hat ein Free-Konto nicht. Der Knopf dafür sitzt außerdem in Schritt 3, den der
       // geführte Ablauf gar nicht mehr zeigt. Liegt ein Guthaben vor, läuft die Prüfung also auch
       // lokal - genau dafür wurde sie bezahlt.
-      const paidReview=state.plan==="free" && !state.isAdmin && state.reviewCredits>0;
+      // Free bekommt einen echten KI-Durchlauf im Monat: solange das Guthaben reicht, prüft die
+      // KI wirklich, statt nur lokal zu raten. Danach übernimmt wieder der lokale Weg - der
+      // Server entscheidet das ebenso, hier steht nur, wann es sich lohnt zu fragen.
+      const freeAiRun=state.plan==="free" && !state.isAdmin && cloudReady() && budgetLeft();
+      const paidReview=state.plan==="free" && !state.isAdmin && (state.reviewCredits>0 || freeAiRun);
       if((state.engine!=="local"||paidReview) && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
         const ready=await runProjectReview(false);
         if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}

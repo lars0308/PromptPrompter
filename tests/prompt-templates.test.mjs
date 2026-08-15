@@ -133,7 +133,9 @@ test('the admin console reports what the tokens were spent on',async()=>{
 test('a spent token budget downgrades the AI instead of blocking the request',async()=>{
   const quota=await text('server/quota.js'),router=await text('api/generate.js'),free=await text('server/free-prompt-v2.js'),image=await text('server/preview-image.js'),migration=await text('supabase/migrations/20260815_add_token_budget.sql');
   assert.match(migration,/add column if not exists monthly_tokens integer not null default 0/,'0 = no limit until real numbers exist');
-  assert.match(quota,/free:\{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:0\}/);
+  // Das Budget ist jetzt gesetzt: es misst, was uns eine Nutzung kostet, statt Knopfdruecke.
+  assert.match(quota,/free:\{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:150000\}/);
+  assert.match(quota,/ultimate:\{free_prompts:500,website_generations:100,ai_previews:250,monthly_tokens:6000000\}/);
   assert.match(quota,/if\(entitlement\.isAdmin\)return off;/,'an administrator is never downgraded');
   assert.match(quota,/if\(!planLimit\)return off;/,'no limit means the budget never triggers');
   assert.match(quota,/exhausted:used>=limit/);

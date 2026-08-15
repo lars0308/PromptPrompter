@@ -94,6 +94,9 @@
       .prompt-setup-line{display:inline-flex;align-items:center;gap:7px;max-width:calc(100% - 46px);min-height:30px;padding:0 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--home-muted);font:650 11px/1 Arial,Helvetica,sans-serif;text-align:left;cursor:pointer}
       .prompt-setup-line:hover,.prompt-setup-line[aria-expanded="true"]{border-color:#33465a;color:#e7f1f9}
       .prompt-setup-line>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .prompt-budget-bar{flex:0 0 auto;position:relative;width:34px;height:5px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}
+      .prompt-budget-bar i{display:block;height:100%;border-radius:3px;background:var(--home-blue-deep,#68b9ed);transition:width .3s ease}
+      .prompt-budget-bar[data-low="1"] i{background:var(--home-orange,#ff9d78)}
       .prompt-setup-icon{flex:0 0 auto;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
       .prompt-setup-tag{flex:0 0 auto;color:#8fd0f5;font:850 8.5px/1.4 ui-monospace,monospace;font-style:normal;letter-spacing:.1em;text-transform:uppercase}
       @media(max-width:700px){.prompt-setup-tag{display:none}}
@@ -171,12 +174,13 @@
       @media(max-width:700px){
         .prompt-command-meta{
           display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;
-          grid-template-areas:'plus flow flow' 'info info plan'!important;
+          grid-template-areas:'plus flow flow' 'bar info plan'!important;
           row-gap:9px!important;column-gap:12px!important;align-items:center!important;
         }
         .prompt-command-meta>.prompt-attach-button{grid-area:plus}
         .prompt-command-meta>#promptSetupButton{grid-area:flow;justify-self:start}
         .prompt-command-meta>#promptHomeMeta{grid-area:info;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .prompt-command-meta>.prompt-budget-bar{grid-area:bar;align-self:center}
         .prompt-command-meta>.prompt-plan-chip{grid-area:plan;justify-self:end;margin-left:0!important}
         .prompt-command-meta>.prompt-command-error{grid-column:1/-1}
         .prompt-command-meta span+span{padding-left:0!important;border-left:0!important}
@@ -202,9 +206,27 @@
     return credits===1?'1 gekaufte Prüfung bereit':`${credits} gekaufte Prüfungen bereit`;
   }
   function withCredit(line){const note=creditNote();return note?(line?`${line} · ${note}`:note):line}
+  // Was eine Nutzung kostet, misst der Monatsvorrat - Tokens im Hintergrund, Prozent im Bild.
+  // Zahlen wie "2,4 Millionen Token" sagen niemandem etwas; ein Anteil und eine Uebersetzung in
+  // Projekte schon. Ein Projektlauf kostet grob 45.000 Einheiten, ein freier Prompt 4.000.
+  const RUN_COST={website:45000,revision:45000,check:20000,free:4000};
+  const RUN_LABEL={website:'Projekte',revision:'Projekte',check:'Prüfungen',free:'Prompts'};
+  function budget(){
+    const tokens=window.PromptAiQuota?.summary?.()?.tokens;
+    const limit=Number(tokens?.limit||0);
+    if(!limit)return null;
+    const used=Math.max(0,Number(tokens.used)||0),remaining=Math.max(0,limit-used);
+    return {limit,used,remaining,share:Math.max(0,Math.min(1,remaining/limit)),percent:Math.max(0,Math.min(100,Math.round(remaining/limit*100)))};
+  }
   function quotaLine(mode){
-    const summary=window.PromptAiQuota?.summary?.();
     if(window.PromptAiAccess?.isAdmin)return 'unbegrenzt';
+    const info=budget();
+    if(info){
+      const cost=RUN_COST[mode]||RUN_COST.website,runs=Math.floor(info.remaining/cost);
+      const rest=runs>0?`reicht für etwa ${runs} ${RUN_LABEL[mode]||'Projekte'}`:'kleineres Modell übernimmt';
+      return withCredit(`Noch ${info.percent} % · ${rest}`);
+    }
+    const summary=window.PromptAiQuota?.summary?.();
     if(!summary?.metrics)return withCredit('');
     const [key,label]=METRIC[mode]||METRIC.website,item=summary.metrics[key];
     if(!item)return withCredit('');
@@ -212,6 +234,33 @@
     if(!limit)return withCredit(`${label} nicht im Tarif`);
     const left=Math.max(0,Number(item.remaining??limit-Number(item.used||0)));
     return withCredit(`${left}/${limit} ${label}`);
+  }
+  // Der Balken sitzt vor der Zeile: eine Laenge sieht man schneller als eine Zahl.
+  function syncBudgetBar(home){
+    const meta=$('.prompt-command-meta',home);if(!meta)return;
+    const info=window.PromptAiAccess?.isAdmin?null:budget();
+    let bar=$('.prompt-budget-bar',meta);
+    if(!info){bar?.remove();return}
+    if(!bar){
+      bar=document.createElement('span');bar.className='prompt-budget-bar';bar.innerHTML='<i></i>';
+      meta.insertBefore(bar,$('#promptHomeMeta',meta));
+    }
+    bar.title=`Noch ${info.percent} % deines Monatsvorrats`;
+    bar.dataset.low=info.percent<=15?'1':'0';
+    const fill=bar.firstElementChild;
+    if(fill.style.width!==`${info.percent}%`)fill.style.width=`${info.percent}%`;
+    warnLowBudget(info);
+  }
+  // Einmal je Sitzung, wenn es eng wird - und nur dann, denn eine Meldung, die jedes Mal kommt,
+  // liest nach dem zweiten Mal niemand mehr.
+  const LOW_KEY='prompt-ai-budget-warned-v1';
+  function warnLowBudget(info){
+    if(!info||info.percent>15)return;
+    try{if(sessionStorage.getItem(LOW_KEY))return;sessionStorage.setItem(LOW_KEY,'1')}catch{}
+    const text=info.percent<=0
+      ?'Monatsvorrat leer – es läuft weiter, jetzt auf einem kleineren Modell.'
+      :`Noch ${info.percent} % Monatsvorrat – danach übernimmt ein kleineres Modell.`;
+    window.PromptAiToast?.show?.(text,'error');
   }
   // Grobe, ehrliche Schätzung: der ausgelesene Text der Quellen und Unterlagen, so wie er auch
   // im Auftrag landet. Bilder werden pauschal veranschlagt, weil ihre Kosten nicht an Zeichen hängen.
@@ -236,10 +285,17 @@
     // mit dem, was tatsächlich an die KI geht, nichts zu tun hat.
     const attached=attachmentTokens();
     const total=tokenGuess(text)+attached;
-    const next=text
-      ?`${text.length} Zeichen · ≈${total} Token${attached?` (davon ≈${attached} aus Anhängen)`:''}`
-      :(attached?`≈${attached} Token aus Anhängen`:quotaLine(home.dataset.commandMode||'website'));
+    const mode=home.dataset.commandMode||'website';
+    // Waehrend man schreibt zaehlt nicht die Tokenzahl, sondern was der Auftrag vom Monat
+    // wegnimmt - das ist die Groesse, die man vor dem Absenden wirklich abwaegt.
+    const info=window.PromptAiAccess?.isAdmin?null:budget();
+    const cost=(RUN_COST[mode]||RUN_COST.website)+total;
+    const share=info&&info.limit?Math.max(1,Math.round(cost/info.limit*100)):0;
+    const next=text||attached
+      ?(share?`Dieser Auftrag verbraucht etwa ${share} % deines Monats`:`${text.length} Zeichen · ≈${total} Token${attached?` (davon ≈${attached} aus Anhängen)`:''}`)
+      :quotaLine(mode);
     if(slot.textContent!==next)slot.textContent=next;
+    syncBudgetBar(home);
   }
 
   // Anhänge laufen über die vorhandenen Eingaben der Referenzen: der Dateiknopf öffnet

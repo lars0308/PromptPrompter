@@ -1062,7 +1062,9 @@ test('an opened settings section shows its last block instead of clipping it',as
 
 test('a bought single review is visible and can actually be spent',async()=>{
   const app=await text('app.js'),home=await text('promptai-home-final.js');
-  assert.match(app,/const paidReview=state\.plan==="free" && !state\.isAdmin && state\.reviewCredits>0;/);
+  // Der gekaufte Einzelcheck oeffnet denselben Weg wie der freie Monatslauf.
+  assert.match(app,/const paidReview=state\.plan==="free" && !state\.isAdmin && \(state\.reviewCredits>0 \|\| freeAiRun\);/);
+  assert.match(app,/const freeAiRun=state\.plan==="free" && !state\.isAdmin && cloudReady\(\) && budgetLeft\(\);/);
   assert.match(app,/if\(\(state\.engine!=="local"\|\|paidReview\) && state\.settings\.aiClarifications/,'a free account has no external generator, so the review never ran for it');
   assert.match(app,/function publishReviewCredits\(\)/);
   assert.match(app,/window\.dispatchEvent\(new CustomEvent\('promptai:credits'/);
@@ -1130,7 +1132,7 @@ test('generate is rate limited and size capped, guests included',async()=>{
   const api=await text('api/generate.js');
   assert.match(api,/const \{rateLimit\}=require\('\.\.\/server\/rate-limit'\)/);
   assert.match(api,/key:'generate-guest',limit:24,windowMs:900000/,'a hard ceiling without an account');
-  assert.match(api,/key:'generate',limit:40,windowMs:60000/);
+  assert.match(api,/key:`generate-\$\{plan\}`,limit:perMinute,windowMs:60000/);
   assert.match(api,/const MAX_REQUEST_CHARS=600000/);
   assert.match(api,/res\.status\(413\)/,'a million characters get a clear answer, not a bill');
 });
