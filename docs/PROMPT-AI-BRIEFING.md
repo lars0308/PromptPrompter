@@ -11,6 +11,11 @@
 - **Support-Antworten und Monatsbudgets sind in der Datenbank scharf geschaltet.** Die Budgets standen auf 0, wodurch Balken, Sparmodus und der freie KI-Durchlauf wirkungslos waren.
 - **Der Zwischenspeicher der Anbieter wird genutzt und gemessen.** Der Regeltext am Anfang jeder Anfrage ist immer derselbe und kostet wiederholt nur einen Bruchteil — aber nicht von allein.
 - **Prompt.ai merkt sich Vorlieben je Kunde.** Ein kurzer Zettel im Profil, den der Kunde selbst sieht, ändert und löscht.
+- **Die Ansprache stimmt jetzt mit der Ausgabe überein.** Die Startseite versprach Handwerksbetriebe, geliefert wird ein ZIP mit `CLAUDE.md` und Cursor-Rules. Sie spricht jetzt Entwickler und Agenturen an — der stärkste Punkt aus dem externen Gutachten.
+- **Ein Preis, der nicht aus Stripe kommt, sagt es.** Vorher fiel die App still auf den fest hinterlegten Betrag zurück; ein Tippfehler in einer Kennung blieb dadurch unbemerkt.
+- **Die Tarif-Ansicht ist aus dem Hauptmenü in die Verwaltung gewandert.** Sie stand zwischen Bibliothek und Abonnement, also dort, wo jeder andere Eintrag zu einer Funktion des Produkts führt.
+
+*Abschnitt 14 nennt offen, was wir selbst als schwach ansehen.*
 
 ---
 
@@ -22,7 +27,13 @@ Der Kern ist nicht „noch ein KI-Chat", sondern die Lücke davor: **Die meisten
 
 **Positionierung:** Damit die KI beim ersten Mal das Richtige baut.
 
-**Zielgruppe — hier steht eine Entscheidung offen.** Gedacht war die App für Entwickler, Web-Agenturen und Leute, die ohnehin viel mit KI arbeiten. Die Texte auf der Startseite sprechen aber bis heute Handwerksbetriebe und kleine Dienstleister an, und das passt nicht zur Ausgabe: Wer ein ZIP mit `AGENTS.md`, XML-Abschnitten und Cursor-Rules verwerten kann, ist Entwickler oder Agenturinhaber. Ein Dachdecker bekommt damit ein Lastenheft, keine Website. Die Texte werden auf die tatsächliche Zielgruppe umgeschrieben; siehe Abschnitt 11.
+**Zielgruppe:** Entwickler, Web-Agenturen und alle, die täglich mit Claude Code, Codex oder Cursor arbeiten.
+
+Das war lange nicht deckungsgleich mit den Texten. Die Startseite sprach Handwerksbetriebe und kleine Dienstleister an, während am Ende ein ZIP mit `AGENTS.md`, XML-Abschnitten und Cursor-Rules herauskommt — wer das verwerten kann, ist Entwickler oder Agenturinhaber. Ein Dachdecker bekäme damit ein Lastenheft, keine Website. Ein externes Gutachten nannte das den fundamentalen Konstruktionsfehler; tatsächlich war es ein Textproblem. Die Ansprache ist umgestellt, die Beispiele haben die Sicht gewechselt: nicht mehr „Dönerladen in Hannover", sondern „Kundenprojekt: Dachdecker in Lindhorst" oder „Relaunch für einen Bestandskunden".
+
+**Die Branchen bleiben trotzdem drin** — sie füttern die Branchenerkennung, die dem Prompt die Pflichtbereiche eines Gewerks mitgibt. Nur steht der Kunde jetzt richtig darin: als der, der baut.
+
+**Was Prompt.ai bewusst nicht ist:** kein Hosting und kein Veröffentlichungsdienst. Der fertige Code wird vom Kunden selbst weitergegeben — zu GitHub, Vercel oder wohin er will. Das hält uns aus Ausfällen, Domains und Haftung für fremde Seiten heraus.
 
 ---
 
@@ -126,7 +137,7 @@ Hinter jeder Erstwahl stehen drei weitere Stufen. Fällt eine aus — Störung, 
 - **Eigene KI-Verbindungen** — 5,99 €/Monat: eigener Anbieter, eigenes Modell, eigene Version. Eigene Aufrufe zählen nur halb aufs Kontingent.
 - **Monatsvorrat auffüllen** — 7,99 € für 750.000 Einheiten (≈ 16 Projektläufe). Einmalig, ohne Abo, in jedem Tarif, beliebig oft.
 
-Die Preise sollen **live aus Stripe** kommen — Änderung dort, Änderung in der App, ohne Deployment. **Der Mechanismus steht, greift aber noch nicht:** in Stripe fehlen die Kennungen, und mehrere aktive Preise pro Produkt machen die Zuordnung mehrdeutig. Solange das so ist, zeigt die App die fest hinterlegten Beträge. Was genau zu tun ist, steht in Abschnitt 10.
+Die Preise kommen **live aus Stripe** — Änderung dort, Änderung in der App, ohne Deployment. Pro, die eigenen KI-Verbindungen und der Monatsvorrat funktionieren so. Bei **Ultimate** hakt es an einem Tippfehler in der Kennung; Einzelheiten in Abschnitt 10. Die Verwaltung zeigt im Überblick, welcher Preis wirklich live kommt und welcher auf den fest hinterlegten Betrag zurückfällt.
 
 ---
 
@@ -159,13 +170,13 @@ Grobe Kostenwerte je Aktion: Projektlauf ~45.000 · freier Prompt ~4.000 · Bild
 
 **Quellcode-Vorschau (ab Pro)** — ZIP mit `package.json` wird in einer isolierten Maschine gebaut und live angezeigt (Next.js, React, Vite, Astro).
 
-**Gedächtnis (im Profil)** — ein kurzer Zettel je Kunde, der bei jedem Projekt mitgeht: „Baue Next.js, nie Vite", „keine Verläufe", „Kunden sind meist Handwerksbetriebe". Damit sinkt der Rückfrageaufwand mit jedem Projekt. Der Kunde sieht, ändert und löscht ihn selbst; er wird nie im Hintergrund befüllt. Serverseitig gilt er ausdrücklich als Geschmacksangabe und kann keine Auftragsvorgabe, Pflichtprüfung oder Sicherheitsregel aushebeln — bei Widerspruch gilt die Projektbeschreibung.
+**Gedächtnis (im Profil)** — ein kurzer Zettel je Kunde, der bei jedem Projekt mitgeht: „Baue Next.js, nie Vite", „keine Verläufe", „meine Kunden sind meist lokale Betriebe". Damit sinkt der Rückfrageaufwand mit jedem Projekt. Der Kunde sieht, ändert und löscht ihn selbst; er wird nie im Hintergrund befüllt. Serverseitig gilt er ausdrücklich als Geschmacksangabe und kann keine Auftragsvorgabe, Pflichtprüfung oder Sicherheitsregel aushebeln — bei Widerspruch gilt die Projektbeschreibung.
 
 **Konto & Einstellungen** — Registrierung mit Name, Firma, Kundentyp und Sprache; Design, Startmodus, bevorzugte Ziel-KI, Ausgabesprache; eigene KI-Verbindungen; GitHub-Verbindung; Rückfragen-Regeln; Projektprüfung.
 
 **Support** — Formular in der App, Eingangsbestätigung, eigener Verlauf mit Antwort. In der Verwaltung: Antwortfeld je Anfrage, Stand springt auf „beantwortet", Hinweispunkt bei Ungelesenem.
 
-**Verwaltung (nur Betreiber)** — Nutzer und Abos, Nutzung und Tokens, Kontingente je Tarif, System-KI-Ketten je Aufgabe und Tarif, alle Prompt-Texte editierbar mit Versionsverlauf und Hinweis bei geändertem Standardtext, Aktionen und Mitteilungen, Wartungsmodus, **Tarif-Ansicht** zum Testen als Free/Pro/Ultimate.
+**Verwaltung (nur Betreiber)** — Nutzer und Abos, Nutzung und Tokens, Kontingente je Tarif, System-KI-Ketten je Aufgabe und Tarif (inklusive Sparwahl je Profil), alle Prompt-Texte editierbar mit Versionsverlauf und Hinweis bei geändertem Standardtext, Aktionen und Mitteilungen, Wartungsmodus. Im Überblick zusätzlich: **Preisherkunft** — kommt jeder Preis live aus Stripe oder aus dem Notnagel — und die **Tarif-Ansicht**, mit der sich die App als Free, Pro oder Ultimate ansehen lässt. Sie schaltet nur die Oberfläche um; abgerechnet wird weiter über den echten Tarif.
 
 ---
 
@@ -195,24 +206,30 @@ Grobe Kostenwerte je Aktion: Projektlauf ~45.000 · freier Prompt ~4.000 · Bild
 - **Zahlung:** Stripe (Abos, Einmalkäufe, Kundenportal)
 - **KI:** Vercel AI Gateway, OpenAI, Gemini, Cloudflare Workers AI — Reihenfolge je Aufgabe und Tarif in der Verwaltung einstellbar
 - **Bauen:** Vercel Sandbox (isolierte MicroVM)
-- **Tests:** 294 Quelltext-Prüfungen (`npm test`) und 9 echte Browser-Durchläufe (`npm run e2e`)
+- **Tests:** 297 Quelltext-Prüfungen (`npm test`) und 9 echte Browser-Durchläufe (`npm run e2e`)
 
 ---
 
 ## 10. Was vor dem Start noch zu tun ist
 
-**In Stripe — hier klemmt es tatsächlich.** Geprüft wurde die Sandbox (das Live-Konto war nicht einsehbar), dort gilt:
+**In Stripe.** Geprüft wurde die Sandbox — das Live-Konto war aus der Entwicklungsumgebung nicht einsehbar, dort muss dasselbe noch einmal getan werden.
 
-| Produkt | Stand | Was fehlt |
+| Produkt | Kennung | Stand |
 |---|---|---|
-| Pro 20,99 € | aktiv | **kein `lookup_key`** — und daneben liegt ein 0-€-Testpreis über 7 Tage |
-| Ultimate 54,99 € | aktiv | **kein `lookup_key`** — und daneben liegt ein zweiter Ultimate-Preis über 0 € |
-| Eigene KI-Verbindungen 5,99 € | aktiv | kein `lookup_key`, wird aber über den Produktnamen gefunden |
-| Monatsvorrat | **3,99 € unter `single_review`** | muss **7,99 €** unter `prompt_ai_top_up` sein |
+| Pro · 20,99 € / Monat | `prompt_ai_pro` | ✅ live |
+| Eigene KI-Verbindungen · 5,99 € / Monat | `prompt_ai_own_api_keys` | ✅ live |
+| Monatsvorrat · 7,99 € einmalig | `prompt_ai_top_up` | ✅ live |
+| Ultimate · 54,99 € / Monat | `prompt_ai_ultimate**w**` | ❌ Tippfehler — das `w` muss weg |
 
-**Die Folge, und sie kostet Geld:** Ohne `lookup_key` sucht die App den Preis über Kennzeichen und Namen. Weil zu Pro und zu Ultimate jeweils **zwei aktive Preise** existieren (der echte und ein 0-€-Preis), ist die Suche nicht eindeutig — die App fällt jedes Mal auf die fest hinterlegten Beträge zurück. „Preise aktualisieren sich, wenn ich in Stripe etwas ändere" **funktioniert damit heute nicht.** Und der Monatsvorrat würde für 3,99 € statt 7,99 € verkauft.
+Der Tippfehler ist der einzige Blocker. Solange er dasteht, findet die App den Ultimate-Preis nicht über die Kennung, fällt auf die Suche über Kennzeichen und Namen zurück, findet dort **zwei** aktive Ultimate-Preise (54,99 € und einen alten 0-€-Preis) und nimmt am Ende den fest hinterlegten Betrag. Angezeigt wird zufällig das Richtige — mitwandern tut es nicht.
 
-Zu tun: die vier `lookup_key` setzen (`prompt_ai_pro`, `prompt_ai_ultimate`, `prompt_ai_own_api_keys`, `prompt_ai_top_up`), die 0-€-Preise deaktivieren oder archivieren, den Vorratspreis auf 7,99 € anlegen. Die Produkte heißen außerdem noch „SiteBrief".
+Danach aufräumen, damit der Katalog eindeutig bleibt:
+
+- **Ultimate, 0,00 € / Monat** — archivieren
+- **Pro, „Testangebot für 7 Tage", 0,00 €** — archivieren (den Test besser als `trial_period_days` am Pro-Preis führen)
+- **3,99-€-Einzelkauf** (`single_review`) — archivieren, sonst stehen zwei Einmalkäufe nebeneinander
+
+Zuletzt die Produktnamen: sie heißen teilweise noch „SiteBrief" und stehen so auf Rechnung und Kundenportal.
 
 Dazu: Webhook auf `https://www.prompt-ai.app/api/stripe-webhook` mit `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Kleinunternehmer-Einstellung (keine Umsatzsteuer, §19-Hinweis). Verkaufsländer zunächst auf Deutschland begrenzen.
 
@@ -230,27 +247,75 @@ Für die Support-Benachrichtigung zusätzlich: `SUPPORT_NOTIFY_TO` (deine Adress
 
 ---
 
-## 11. Offene Punkte in der Entwicklung
+## 11. Was ein Lauf kostet und was bleibt
+
+Die Zahlen sind Schätzungen aus den Listenpreisen der Anbieter, kein gemessener Monat — dafür fehlt noch echter Betrieb. Ein Projektlauf heißt: analysieren, Rückfragen stellen, Master-Prompt schreiben.
+
+| | Kostenlos | Pro | Ultimate |
+|---|---|---|---|
+| Einnahme im Monat | 0 € | 20,99 € | 54,99 € |
+| Kosten je Projektlauf | ~0,5 Cent | ~5 Cent | ~13 Cent |
+| Läufe im Monatsvorrat | ~3 | ~55 | ~133 |
+| KI-Kosten bei vollem Vorrat | ~0,15 € | ~2,90 € | ~17 € |
+| Bilder bei vollem Kontingent | – | ~1,50 € | ~10 € |
+| Stripe-Gebühr | – | ~0,90 € | ~1,20 € |
+| **Bleibt ungefähr** | **–** | **~16 €** | **~27 €** |
+
+Dazu kommen die Festkosten: Vercel Pro und Supabase Pro, zusammen rund 45 € im Monat. Die sind ab etwa **drei zahlenden Pro-Kunden** gedeckt.
+
+**Die Bremsen, die das absichern:**
+
+- Der **Monatsvorrat** in Tokens ist die Hauptbremse. Ist er leer, wird nicht gesperrt, sondern auf die Sparwahl umgeschaltet.
+- **Bilder, Probeläufe und Sandbox-Läufe** sind zusätzlich pro Konto gedeckelt — sie kosten pro Stück und wären über Tokens allein schlecht zu fassen.
+- **Der Zwischenspeicher** senkt den wiederholten Regeltext auf einen Bruchteil. Wie viel wirklich ankommt, wird gemessen und steht in der Verwaltung.
+
+**Der ungedeckte Fall:** Ein kostenloses Konto bekommt einen echten KI-Durchlauf im Monat. Das kostet uns rund einen halben Cent und ist bewusst so — ohne ihn sieht ein kostenloses Konto nie, was das Produkt kann.
+
+---
+
+## 12. Offene Punkte in der Entwicklung
 
 - **Team-Zugänge für Ultimate** — mehrere Personen an einem Projekt. Braucht Projekte teilen, Rechte, Einladungen, neue Zugriffsregeln.
 - **Wochenpass** — 7 Tage Pro als Einmalkauf. Braucht einen befristeten Tarif; ein halber bis ganzer Tag.
 - **Hilfeseite** — die fünf häufigsten Fragen, sobald bekannt ist, welche das sind.
-- **Ansprache auf Entwickler umstellen** — aus dem externen Gutachten, und der stärkste Punkt darin: Startseite und Tarifkarten versprechen Handwerksbetriebe, die Ausgabe ist ein ZIP mit `AGENTS.md`, XML und Cursor-Rules. Wer das nutzen kann, ist Entwickler oder Agentur. Ein halber Tag Textarbeit.
 - **KI-Werkbank** — der Auftrag wird gleich in der App gebaut, mit wenigen Korrekturrunden und Vorschau über die vorhandene Sandbox. Schließt die Lücke zwischen Lastenheft und Ergebnis, ohne dass wir hosten. Ein bis zwei Wochen.
 - **Nach dem 16. Oktober 2026** — Google schaltet Gemini 2.5 Flash und Pro ab. Die App ist umgestellt, die alten Modelle stehen nur noch als Netz dahinter. Danach lassen sie sich ersatzlos entfernen.
 
 ---
 
-## 12. Vermarktung
+## 13. Vermarktung
 
-**Der stärkste Kanal ist der eigene Hintergrund.** Wer aus dem Handwerk kommt, erreicht eine Zielgruppe, die kein Marketing-Mensch erreicht: Betriebe, die eine Website brauchen und nicht wissen, wie sie das einer KI erklären.
+**Mit der Zielgruppe hat sich der Kanal geändert.** Entwickler und Agenturen sind woanders unterwegs als Handwerksbetriebe, und sie reagieren auf anderes: nicht auf Werbung, sondern auf gezeigte Arbeit.
 
-1. **Communities** — Facebook-Gruppen für Selbstständige und Handwerker, r/selbststaendig, Meister-Foren. Nicht werben, sondern Ergebnisse zeigen: „So habe ich meine eigene Website mit KI gemacht, hier der Auftrag, den ich ihr gegeben habe."
-2. **Vorher-Nachher** — schlechte KI-Anfrage, schlechtes Ergebnis; dann der Prompt.ai-Auftrag und das gute Ergebnis. Der überzeugendste Inhalt, den dieses Produkt hat.
-3. **Kurzvideos** (TikTok, Reels, 30–60 s) — Bildschirmaufnahme: tippen, Rückfragen, drei Richtungen, fertiger Prompt.
-4. **Ein gutes YouTube-Video** — „Website mit KI bauen: der Fehler, den alle machen." Zwölf Minuten, echtes Projekt. Arbeitet jahrelang weiter.
+1. **Vorher-Nachher** — dieselbe Aufgabe zweimal an Claude Code gegeben: einmal mit einem normalen Prompt, einmal mit dem Prompt.ai-Auftrag. Zwei Ergebnisse nebeneinander. Das ist der überzeugendste Inhalt, den dieses Produkt hat, und er braucht keinen Werbetext.
+2. **Wo Entwickler lesen** — r/ClaudeAI, r/cursor, Hacker News, X. Kein Anpreisen, sondern der Befund: „Der Engpass ist nicht das Modell, es ist der Auftrag. Hier ist, was ich stattdessen mache."
+3. **Agenturen direkt** — das ist die Zielgruppe mit dem klarsten Rechenweg: drei bis fünf Stunden Kundeninterview gespart, Ultimate rechnet sich beim ersten Auftrag. Eine Handvoll Agenturen persönlich ansprechen bringt hier mehr als Reichweite.
+4. **Ein gutes YouTube-Video** — „Warum deine KI das Falsche baut." Zwölf Minuten, echtes Projekt, ganzer Durchlauf. Arbeitet jahrelang weiter.
 5. **Keine bezahlte Werbung am Anfang.** Erst wenn die Signale zeigen, dass Master-Prompts tatsächlich mitgenommen werden, lässt sich sagen, was ein Klick kosten darf.
 
 **Nicht empfehlenswert:** monatelang alles kostenlos anbieten. Wer drei Monate umsonst bekommt, empfindet den Preis danach als Verschlechterung — und die KI-Rechnung läuft die ganze Zeit mit. Besser: Tarife von Tag eins sichtbar, dazu sieben Testtage für Pro über die Aktion in der Verwaltung.
 
+**Das Abo-Problem, offen benannt:** Wer einmal eine Website baut, braucht kein Monatsabo. Für Agenturen und Entwickler mit laufenden Projekten stimmt das Modell; für den Gelegenheitsfall nicht. Der Wochenpass in Abschnitt 12 ist die Antwort darauf und steht noch aus.
+
 **Woran sich Erfolg ablesen lässt:** Die App zählt drei Momente ohne jeden Inhalt — Master-Prompt kopiert, Übergabe geladen, Ziel-KI geöffnet. Bleiben diese Zahlen über Wochen bei null, ist das die Antwort. Steigen sie, ebenso.
+
+---
+
+## 14. Für eine Prüfung: was wir selbst als schwach ansehen
+
+Damit ein Gutachten nicht damit aufhört, was hier schon bekannt ist:
+
+**Die letzte Meile fehlt.** Prompt.ai liefert einen Auftrag, kein fertiges Ergebnis. Der Kunde muss ihn selbst in Claude Code, Cursor oder v0 weiterreichen. Für Entwickler ist das genau richtig — für jeden anderen hört das Produkt einen Schritt zu früh auf. Die KI-Werkbank soll das schließen, ist aber nicht gebaut.
+
+**Das Abo passt nicht zu jedem Bedarf.** Wer einmal eine Website baut, kündigt nach einem Monat. Für Agenturen mit laufenden Projekten stimmt es, für den Gelegenheitsfall nicht.
+
+**Kein echter Betrieb, keine gemessenen Zahlen.** Alle Kostenangaben sind aus Listenpreisen gerechnet. Wie ein realer Monat aussieht — wie viele Läufe, wie viele Bilder, wie oft der Sparmodus greift — weiß niemand. Deshalb misst die App den Zwischenspeicher und die Tokens, statt sie zu schätzen.
+
+**Ein Frontend ohne Framework, gewachsen in Schichten.** Rund 60 JavaScript-Dateien, die in fester Reihenfolge laufen müssen, weil spätere frühere überschreiben. Die Gestaltung ist zusammengeführt, der Programmteil nicht. Ein externes Gutachten empfahl eine Modularisierung über ein Bündelwerkzeug; die Begründung dort (State-Bugs bei Sandbox-Läufen) trägt nicht, ein Bundler behebt das nicht. Der Umbau bleibt trotzdem eine offene Frage, nur ohne den behaupteten Anlass.
+
+**Die Modellnamen der neuen Generation sind ungeprüft.** `google/gemini-3.1-flash-lite`, `google/gemini-3.6-flash` und `anthropic/claude-sonnet-5` wurden eingetragen, ohne sie gegen die Modellliste des Gateways abgleichen zu können. Falls einer nicht stimmt, arbeitet die App auf der Stufe dahinter weiter — die bewährten Modelle stehen bewusst als Netz darunter. Es fällt also nicht aus, es wäre nur nicht die gewünschte Qualität.
+
+**Die Rechtstexte enthalten noch Platzhalter.** Impressum, Datenschutz, Nutzungsbedingungen und Widerrufsbelehrung sind vollständig aufgebaut, aber die eckigen Klammern sind ungefüllt und anwaltlich nicht geprüft.
+
+**Was ausdrücklich nicht als Schwäche gilt:** dass wir nicht hosten. Das ist eine Entscheidung, keine Lücke — Hosting hieße Ausfälle nachts, Domain-Support und Haftung für fremde Seiten.
+
