@@ -22,6 +22,9 @@
   <link rel="icon" href="./sitebrief-logo.svg?v=6" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=6" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
+  <script src="./global-init.js?v=1"></script>
+  <script src="./form-accessibility.js?v=1" defer></script>
+  <script src="./dialog-accessibility.js?v=1" defer></script>
   <script src="./theme-init.js?v=6"></script>
   <script type="application/ld+json">
   {
@@ -40,6 +43,7 @@
   }
   </script>
   <link rel="stylesheet" href="./styles.css?v=20260816-4" />
+  <link rel="stylesheet" href="./touch-targets.css?v=1" />
   <style id="promptBootShieldStyle">
     html.prompt-app-booting,html.prompt-app-booting body{overflow:hidden!important}
     html.prompt-app-booting body>*:not(#promptAppBoot){visibility:hidden!important}
@@ -65,8 +69,58 @@
        und wurden erst nach dem ersten Bild nachgereicht. Die Reihenfolge hier ist bindend:
        styles.css, der Startschutz oben, diese Datei, zuletzt promptai-full-app-design.css. -->
   <link rel="stylesheet" href="./promptai-ui-layers.css?v=20260817-1" />
+  <!-- Focus indicators for accessibility -->
+  <style>
+    /* Global focus styles for keyboard navigation */
+    :focus-visible {
+      outline: 3px solid #0066cc;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    /* Buttons */
+    button:focus-visible {
+      box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.25);
+    }
+
+    /* Form inputs */
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+      border-color: #0066cc;
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+    }
+
+    /* Links */
+    a:focus-visible {
+      outline: 2px solid #0066cc;
+      text-decoration: underline;
+    }
+
+    /* Menu items and options */
+    [role="menuitem"]:focus-visible,
+    [role="option"]:focus-visible {
+      background-color: rgba(0, 102, 204, 0.1);
+      outline: 2px solid #0066cc;
+    }
+
+    /* Dialogs */
+    [role="dialog"]:focus-visible {
+      outline: 2px solid #0066cc;
+    }
+
+    /* Respect prefers-reduced-motion */
+    @media (prefers-reduced-motion: reduce) {
+      :focus-visible {
+        outline-offset: 0;
+      }
+    }
+  </style>
 </head>
 <body>
+  <!-- Global error boundary toast container -->
+  <div id="error-boundary-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 999999; max-width: 400px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;" aria-live="polite" aria-atomic="true"></div>
+
   <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo-trace.svg?v=7" alt="Prompt.ai"><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><p class="prompt-fill-progress" style="--prompt-fill:6%">Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div></section>
   <aside id="offerBanner" class="offer-banner" hidden>
     <div><span id="offerEyebrow">AKTION</span><strong id="offerTitle"></strong><p id="offerDescription"></p></div>

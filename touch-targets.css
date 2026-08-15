@@ -1,0 +1,211 @@
+/**
+ * Touch Target Sizing
+ *
+ * Ensures all interactive elements are at least 44×44px
+ * as required by WCAG 2.1 AA guidelines.
+ *
+ * Loaded after styles.css to override with !important if needed.
+ */
+
+/* Buttons - ensure minimum height and width */
+button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Links that act as buttons */
+a[role="button"],
+[role="button"] {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Form inputs */
+input[type="checkbox"],
+input[type="radio"] {
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"],
+select,
+textarea {
+  min-height: 44px;
+}
+
+/* Ensure padding creates sufficient touch target */
+button,
+a[role="button"],
+[role="button"] {
+  padding: 12px 16px;
+}
+
+/* Icon-only buttons */
+button.icon-button,
+[role="button"].icon-button,
+button.icon-only,
+[role="button"].icon-only {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+
+/* Ensure spacing between touch targets */
+button + button,
+button + a,
+a + button,
+a + a {
+  margin-left: 8px;
+}
+
+button + [role="button"],
+[role="button"] + button,
+[role="button"] + [role="button"] {
+  margin-left: 8px;
+}
+
+/* Menu items */
+[role="menuitem"] {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+/* Tab buttons */
+[role="tab"] {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+}
+
+/* Close buttons */
+button[aria-label*="close"],
+button[aria-label*="dismiss"],
+button.close-btn,
+[role="button"][aria-label*="close"] {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+/* Switches and toggles */
+[role="switch"],
+input[type="checkbox"][role="switch"] {
+  min-width: 50px;
+  min-height: 24px;
+}
+
+/* Skip links and other accessibility buttons */
+a.skip-link {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Larger touch targets on mobile */
+  button,
+  a[role="button"],
+  [role="button"] {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 14px 18px;
+  }
+
+  button.icon-button,
+  [role="button"].icon-button {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  [role="menuitem"] {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 14px;
+  }
+
+  /* Increase spacing on mobile */
+  button + button,
+  button + a,
+  a + button {
+    margin-left: 12px;
+  }
+}
+
+/* Ensure focus indicators don't reduce touch target */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Responsive design - very small screens */
+@media (max-width: 480px) {
+  button,
+  a[role="button"],
+  [role="button"] {
+    min-height: 50px;
+    min-width: 50px;
+    padding: 16px 20px;
+  }
+
+  button.icon-button,
+  [role="button"].icon-button {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+  }
+}
+
+/* Prevent layout shifts caused by focus outlines */
+:focus-visible {
+  outline-offset: 2px;
+}
+
+/* Ensure interactive elements in lists are touch-safe */
+li > button,
+li > a[role="button"],
+li > [role="button"] {
+  min-height: 44px;
+  margin: 4px 0;
+}
+
+/* Nested buttons should still be touchable */
+button button,
+div[role="button"] button {
+  min-height: 36px;
+  min-width: 36px;
+}
