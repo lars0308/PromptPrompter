@@ -22,7 +22,7 @@ function taskForAction(action){
 async function listProfiles(task,{enabledOnly=true,providers=[],plan=''}={}){
   const cleanTask=validTask(task);if(!cleanTask)return [];
   try{
-    let path='/rest/v1/sitebrief_system_ai_profiles?select=id,label,provider,model,tasks,plans,priority,enabled,updated_at,last_test_at,last_test_ok,last_test_ms,last_error';
+    let path='/rest/v1/sitebrief_system_ai_profiles?select=id,label,provider,model,tasks,plans,priority,enabled,saver,updated_at,last_test_at,last_test_ok,last_test_ms,last_error';
     if(enabledOnly)path+='&enabled=eq.true';
     path+=`&tasks=cs.{${encodeURIComponent(cleanTask)}}&order=priority.asc,created_at.asc`;
     const response=await serviceFetch(path),allowed=new Set((providers||[]).filter(x=>PROVIDERS.includes(x)));

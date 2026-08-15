@@ -134,7 +134,7 @@ test('the admin console reports what the tokens were spent on',async()=>{
 });
 
 test('a spent token budget downgrades the AI instead of blocking the request',async()=>{
-  const quota=await text('server/quota.js'),router=await text('api/generate.js'),free=await text('server/free-prompt-v2.js'),image=await text('server/preview-image.js'),migration=await text('supabase/migrations/20260815_add_token_budget.sql');
+  const quota=await text('server/quota.js'),router=await text('api/generate.js'),free=await text('server/free-prompt-v2.js'),image=await text('server/preview-image.js'),migration=await text('supabase/migrations/20260815_add_token_budget.sql'),profiles=await text('server/system-ai-profiles.js');
   assert.match(migration,/add column if not exists monthly_tokens integer not null default 0/,'0 = no limit until real numbers exist');
   // Das Budget ist jetzt gesetzt: es misst, was uns eine Nutzung kostet, statt Knopfdruecke.
   assert.match(quota,/free:\{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:150000\}/);
@@ -142,8 +142,12 @@ test('a spent token budget downgrades the AI instead of blocking the request',as
   assert.match(quota,/if\(entitlement\.isAdmin\)return off;/,'an administrator is never downgraded');
   assert.match(quota,/if\(!planLimit\)return off;/,'no limit means the budget never triggers');
   assert.match(quota,/exhausted:used>=limit/);
-  // The whole point: reaching the budget must not refuse work, it reorders the chain.
-  assert.match(router,/const planChain=saver\?\[\.\.\.profiles\]\.reverse\(\):profiles;/);
+  // The whole point: reaching the budget must not refuse work, it reorders the chain. Welche KI
+  // dann antwortet, steht am Profil - das blosse Umdrehen griff nach dem Notausgang, und der ist
+  // absichtlich das robusteste und damit teuerste Modell.
+  assert.match(router,/const marked=profiles\.filter\(x=>x\.saver===true\);/);
+  assert.match(router,/\[\.\.\.marked,\.\.\.profiles\.filter\(x=>x\.saver!==true\)\]:\[\.\.\.profiles\]\.reverse\(\)/,'ohne Markierung bleibt das alte Verhalten');
+  assert.match(profiles,/select=id,label,provider,model,tasks,plans,priority,enabled,saver,/,'sonst kommt die Sparwahl nie beim Ablauf an');
   assert.match(router,/if\(saver\)res\.setHeader\('X-Prompt-AI-Saver','1'\)/);
   assert.match(free,/if\(saver&&profiles\.length>1\)profiles=\[\.\.\.profiles\]\.reverse\(\);/);
   assert.match(image,/if\(budget\.exhausted&&candidates\.length>1\)\{candidates=\[\.\.\.candidates\]\.reverse\(\);res\.setHeader\('X-Prompt-AI-Saver','1'\)\}/);
@@ -543,4 +547,44 @@ test('a prompt template can be chosen in every mode, not only on the skipped ste
   assert.match(app,/state\.templateId=on\?id:'';/,'exactly one template at a time');
   assert.match(ui,/group\('Prompt-Vorlage'/);
   assert.match(ui,/in der Bibliothek eine Prompt-Vorlage an/);
+});
+
+// Ein Modell verschwindet irgendwann: der Anbieter stellt es ab oder benennt es um. Google hat
+// Gemini 2.5 Flash und Pro fuer den 16. Oktober 2026 angekuendigt. Bricht die Kette dann ab,
+// statt auf den naechsten Eintrag auszuweichen, steht der Tarif still - obwohl Ersatz danebenliegt.
+test('ein abgeschaltetes Modell laesst die Kette weiterlaufen, eine echte Beanstandung nicht',async()=>{
+  const router=await text('api/generate.js');
+  assert.match(router,/const MODEL_GONE=/);
+  assert.match(router,/if\(status===404\|\|\(status===400&&MODEL_GONE\.test\(error\)\)\)return true;/);
+  const source=router.match(/const MODEL_GONE=(\/.+?\/i);/)?.[1];
+  assert.ok(source,'das Muster muss lesbar im Quelltext stehen');
+  const gone=new RegExp(source.slice(1,-2),'i');
+  for(const message of [
+    'The model `google/gemini-2.5-flash` does not exist',
+    'model not found',
+    'Unknown model: anthropic/claude-sonnet-5',
+    'No endpoints found for google/gemini-3.6-flash',
+    'This model is no longer available'
+  ])assert.ok(gone.test(message),message);
+  // Und genau das darf nicht mitgerissen werden: eine Beanstandung an der Eingabe gehoert sofort
+  // zum Kunden, nicht drei Modelle weiter.
+  for(const message of [
+    'Die Beschreibung ist zu kurz.',
+    'Die Anfrage ist zu gross. Bitte kuerze die Beschreibung.',
+    'Zu viele Anfragen'
+  ])assert.ok(!gone.test(message),message);
+});
+
+// Die Sparwahl darf keine reine Datenbank-Einstellung sein: was den Tarif im Ernstfall antworten
+// laesst, gehoert dorthin, wo die uebrigen Eigenschaften der System-KI stehen.
+test('die Sparwahl laesst sich im Verwaltungsfenster setzen und kommt beim Ablauf an',async()=>{
+  const studio=await text('system-ai-studio.js'),config=await text('api/config.js'),migration=await text('supabase/migrations/20260817_add_profile_saver_flag.sql');
+  assert.match(migration,/add column if not exists saver boolean not null default false/);
+  assert.match(studio,/id="systemAiSaver"/);
+  assert.match(studio,/saver:\$\('#systemAiSaver'\)\.checked/,'sonst wird die Wahl nie gespeichert');
+  assert.match(studio,/\$\('#systemAiSaver'\)\.checked=p\.saver===true/,'und beim Bearbeiten wieder angezeigt');
+  assert.match(studio,/enabled:next,saver:p\.saver===true/,'Aktivieren/Deaktivieren darf sie nicht loeschen');
+  assert.match(config,/saver:body\.saver===true/);
+  assert.match(config,/saver:x\.saver===true/,'sonst sieht der Browser die Markierung nicht');
+  assert.match(config,/plans,priority,enabled,saver,updated_at/);
 });

@@ -12,11 +12,21 @@ async function planOf(req){try{const ent=await getEntitlements(req);return ent?.
 
 function captureResponse(){const state={status:200,body:null,headers:{}};return{state,setHeader(name,value){state.headers[String(name).toLowerCase()]=value;return this},getHeader(name){return state.headers[String(name).toLowerCase()]},status(code){state.status=Number(code)||500;return this},json(value){state.body=value;return this},end(value){state.body=value;return this}}}
 function flush(res,captured){for(const [name,value] of Object.entries(captured.headers||{}))try{res.setHeader(name,value)}catch{}return res.status(captured.status||200).json(captured.body??{})}
+// Ein Modell verschwindet irgendwann - der Anbieter stellt es ab, benennt es um, nimmt es aus dem
+// Gateway. Der Anbieter meldet das als 404 oder als 400 mit "model not found", und beides galt hier
+// bisher als endgueltig: die Kette brach ab, statt auf das naechste Profil auszuweichen. Damit
+// haette die Abschaltung eines einzigen Modells den Tarif lahmgelegt, obwohl zwei Ersatzwege
+// danebenstehen. Erkannt wird das eng an der Wortwahl zum Modell, damit eine echte Eingabe-
+// beanstandung (auch 400) weiterhin sofort beim Kunden landet.
+// Der Modellname steht zwischen "model" und der Begruendung und enthaelt selbst Punkte
+// (gemini-2.5-flash), deshalb darf die Luecke nicht am Punkt enden - nur an der Zeile.
+const MODEL_GONE=/\bmodel\b[^\n]{0,80}?\b(not found|does not exist|no longer|unavailable|unsupported|decommissioned|retired|deprecated)|unknown model|no endpoints found|model_not_found/i;
 function retryable(captured){
   const status=Number(captured.status)||500,error=String(captured.body?.error||'');
   if(/Zu viele Anfragen/i.test(error))return false;
   if([401,402,403].includes(status))return true;
   if(/valid credit card|add-credit-card|payment required|billing|authentication|unauthorized|forbidden|invalid api key|provider (?:is )?unavailable|insufficient quota/i.test(error))return true;
+  if(status===404||(status===400&&MODEL_GONE.test(error)))return true;
   return [408,429,500,502,503,504].includes(status);
 }
 // A bought connection slot is the visitor's own AI: their key, their provider, their model name and
@@ -30,9 +40,13 @@ function ownConnection(body={}){
   if(!OWN_PROVIDERS.includes(provider)||!model||model.length>190||!/^[a-zA-Z0-9@._:/-]+$/.test(model))return null;
   return {id:'own-connection',provider,model,label:String(body.ownLabel||'Eigene Verbindung').slice(0,80),enabled:true,own:true};
 }
-async function runSystemProfiles(req,res){const task=taskForAction(req.body?.action),plan=await planOf(req),profiles=(await listProfiles(task,{providers:['gateway','openai','gemini'],plan})).filter(x=>x.enabled!==false);const own=ownConnection(req.body);if(!profiles.length&&!own)return core(req,res);const budget=await getTokenBudget(req),saver=Boolean(budget.exhausted&&profiles.length>1&&!own);// Budget spent: run the plan's chain from the back, so the cheapest AI answers first instead of
-// the request being refused. The stronger ones stay as fallbacks.
-const planChain=saver?[...profiles].reverse():profiles;const chain=own?[own,...planChain]:planChain;const requested=String(req.body?.systemAiProfileId||''),ordered=requested?[...chain.filter(x=>x.id===requested),...chain.filter(x=>x.id!==requested)]:chain,original=req.body;let last=null;for(const profile of ordered){req.body={...original,engine:profile.provider,model:profile.model,systemAiProfileId:profile.own?'':profile.id,systemAiProfileLabel:profile.label,useOwnApi:profile.own===true};const captured=captureResponse();await core(req,captured);last=captured.state;if(last.status<400){res.setHeader('X-Prompt-AI-System-Profile',profile.label||profile.id);if(saver)res.setHeader('X-Prompt-AI-Saver','1');req.body=original;return flush(res,last)}if(!retryable(last)){req.body=original;return flush(res,last)}}req.body=original;return flush(res,last||{status:503,body:{error:`Keine System-KI für ${task} war verfügbar.`},headers:{}})}
+async function runSystemProfiles(req,res){const task=taskForAction(req.body?.action),plan=await planOf(req),profiles=(await listProfiles(task,{providers:['gateway','openai','gemini'],plan})).filter(x=>x.enabled!==false);const own=ownConnection(req.body);if(!profiles.length&&!own)return core(req,res);const budget=await getTokenBudget(req),saver=Boolean(budget.exhausted&&profiles.length>1&&!own);// Budget aufgebraucht: die Anfrage wird nicht abgelehnt, sondern von der Sparwahl beantwortet.
+// Welche das ist, steht am Profil (Spalte saver) - frueher wurde die Kette einfach umgedreht und
+// der letzte Eintrag genommen. Der letzte Eintrag ist aber der Notausgang, also bewusst das
+// robusteste und damit teuerste Modell: die Kostenbremse machte den Lauf teurer statt guenstiger.
+// Ist nichts markiert, bleibt es beim alten Verhalten, damit kein Tarif ohne Sparweg dasteht.
+const marked=profiles.filter(x=>x.saver===true);
+const planChain=!saver?profiles:marked.length?[...marked,...profiles.filter(x=>x.saver!==true)]:[...profiles].reverse();const chain=own?[own,...planChain]:planChain;const requested=String(req.body?.systemAiProfileId||''),ordered=requested?[...chain.filter(x=>x.id===requested),...chain.filter(x=>x.id!==requested)]:chain,original=req.body;let last=null;for(const profile of ordered){req.body={...original,engine:profile.provider,model:profile.model,systemAiProfileId:profile.own?'':profile.id,systemAiProfileLabel:profile.label,useOwnApi:profile.own===true};const captured=captureResponse();await core(req,captured);last=captured.state;if(last.status<400){res.setHeader('X-Prompt-AI-System-Profile',profile.label||profile.id);if(saver)res.setHeader('X-Prompt-AI-Saver','1');req.body=original;return flush(res,last)}if(!retryable(last)){req.body=original;return flush(res,last)}}req.body=original;return flush(res,last||{status:503,body:{error:`Keine System-KI für ${task} war verfügbar.`},headers:{}})}
 async function quotaRoute(req,res,action){
   try{
     if(action==='quota-summary')return res.status(200).json(await getQuotaSummary(req));
