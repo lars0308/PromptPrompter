@@ -202,6 +202,7 @@
 
   const AGENT_LAUNCH={claude:{web:'https://claude.ai/new',desktop:prompt=>`claude://code/new?q=${encodeURIComponent(prompt.slice(0,14000))}`},codex:{web:'https://chatgpt.com/codex'},chatgpt:{web:'https://chatgpt.com/'},gemini:{web:'https://gemini.google.com/app'},cursor:{web:'https://cursor.com/agents'},v0:{web:'https://v0.dev/chat'},universal:{web:'https://chatgpt.com/'}};
   async function showAgentLaunch(){
+    productSignal('open-agent',state.targetAgent);
     const config=AGENT_LAUNCH[state.targetAgent]||AGENT_LAUNCH.universal,name=AGENT_NAMES[state.targetAgent]||'Agent',prompt=el.masterPrompt.value;try{await navigator.clipboard.writeText(prompt)}catch{}
     el.agentLaunchTitle.textContent=`${name} öffnen`;el.agentLaunchText.textContent=`Der fertige Prompt wurde kopiert. Öffne ${name} und füge ihn dort ein.`;el.openAgentWebBtn.textContent=`${name} im Browser öffnen`;el.openAgentDesktopBtn.hidden=!config.desktop;el.openAgentDesktopBtn.textContent=`${name} Desktop öffnen`;el.agentLaunchHint.textContent=config.desktop?'Wenn die Desktop-App nicht installiert ist, nutze einfach den Browser.':'Für diesen Agenten wird die Web-Version geöffnet.';
     el.openAgentWebBtn.onclick=()=>{window.open(config.web,'_blank','noopener');el.agentLaunchDialog.close()};el.openAgentDesktopBtn.onclick=()=>{location.href=config.desktop(prompt);el.agentLaunchDialog.close()};el.agentLaunchDialog.showModal();
@@ -330,6 +331,16 @@
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&rail.classList.contains('menu-open')){rail.classList.remove('menu-open');button.setAttribute('aria-expanded','false');button.querySelector('small').textContent='öffnen';button.focus()}});
   }
 
+  // Ob ein Master-Prompt tatsaechlich mitgenommen wird, war bisher nicht messbar - dabei ist
+  // genau das der Moment, in dem das Produkt seinen Zweck erfuellt. Die Signale tragen keinen
+  // Inhalt, nur die Tatsache und den Ziel-Agenten.
+  function productSignal(name,detail=''){
+    try{
+      const payload=JSON.stringify({action:'signal',signal:name,detail:String(detail||'').slice(0,120)});
+      if(navigator.sendBeacon){const blob=new Blob([payload],{type:'application/json'});if(navigator.sendBeacon('/api/models',blob))return}
+      fetch('/api/models',{method:'POST',headers:{'Content-Type':'application/json'},body:payload,keepalive:true}).catch(()=>{});
+    }catch{}
+  }
   function cloudReady(){ return Boolean(state.cloud.configured && state.cloud.user && window.SiteBriefCloud?.client); }
   // Wie viel vom Monatsguthaben noch da ist. Das Guthaben ist keine Nutzungsgrenze, sondern die
   // Kostenbremse: ist es leer, laeuft alles weiter - in bezahlten Tarifen auf der guenstigeren
@@ -2922,7 +2933,7 @@ alwaysApply: true
 
 ${agentMemoryDocument()}`;
   }
-  function downloadHandoffPackage(){updateMasterPrompt();const files={'MASTER-PROMPT.md':el.masterPrompt.value,'SEITENSTRUKTUR.md':structureDocument(),'PROJEKT-QUELLEN.md':attachmentPromptBlock(),'BLUEPRINT.json':JSON.stringify(buildBlueprint(),null,2),'PROJEKTBERICHT.md':buildProjectReport()};
+  function downloadHandoffPackage(){updateMasterPrompt();productSignal("download-zip",state.targetAgent);const files={'MASTER-PROMPT.md':el.masterPrompt.value,'SEITENSTRUKTUR.md':structureDocument(),'PROJEKT-QUELLEN.md':attachmentPromptBlock(),'BLUEPRINT.json':JSON.stringify(buildBlueprint(),null,2),'PROJEKTBERICHT.md':buildProjectReport()};
     files[AGENT_MEMORY_FILE[state.targetAgent]||'AGENTS.md']=agentMemoryDocument();
     if(state.targetAgent==='cursor')files['.cursor/rules/prompt-ai.mdc']=cursorRuleDocument();
     // Die drei Unterlagen lagen bisher nur einzeln hinter eigenen Knöpfen und fehlten im Paket -
@@ -2957,7 +2968,17 @@ ${agentMemoryDocument()}`;
     }catch(err){el.websiteBuildProgress.hidden=false;el.websiteBuildProgress.classList.add('failed');el.websiteBuildStage.textContent='Erstellung wurde abgebrochen';el.websiteBuildTruthNote.textContent='Der letzte bestätigte Arbeitsschritt bleibt sichtbar. Du kannst den Vorgang erneut starten.';el.websiteBuildStatus.textContent=err.message||'Website konnte nicht erstellt werden.'}
     finally{el.buildWebsiteBtn.disabled=false}
   }
-  async function beginCheckout(plan,extra={}){if(!cloudReady()){showAccountGate();return}try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan,...extra})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');saveState();window.PromptAiForceCheckpoint?.();location.href=data.url}catch(err){await customAlert(err.message,{title:'Zahlung nicht möglich'})}}
+  // Digitale Leistung, die sofort bereitsteht: ohne die ausdrueckliche Zustimmung zum sofortigen
+  // Beginn erlischt das Widerrufsrecht nicht, und die Frist laeuft ein Jahr statt vierzehn Tage.
+  // Deshalb wird sie hier eingeholt und als Zeitpunkt mit an Stripe gegeben.
+  async function confirmImmediateStart(){
+    const ask=window.PromptAiDialog?.confirm;
+    if(!ask)return true;
+    return await ask('Prompt.ai steht dir sofort nach dem Kauf zur Verfügung. Mit „Zustimmen und kaufen“ verlangst du ausdrücklich, dass wir sofort damit beginnen, und bestätigst, dass dein Widerrufsrecht mit der vollständigen Erbringung erlischt. Die vollständige Belehrung steht unter „Widerruf“ im Seitenfuß.',{title:'Sofort starten',confirmLabel:'Zustimmen und kaufen',cancelLabel:'Abbrechen'});
+  }
+  async function beginCheckout(plan,extra={}){if(!cloudReady()){showAccountGate();return}
+    if(!await confirmImmediateStart())return;
+    extra={...extra,consentAt:new Date().toISOString()};try{const response=await sitebriefApiFetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan,...extra})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Checkout nicht verfügbar');saveState();window.PromptAiForceCheckpoint?.();location.href=data.url}catch(err){await customAlert(err.message,{title:'Zahlung nicht möglich'})}}
   async function openBillingPortal(){try{const response=await sitebriefApiFetch('/api/portal',{method:'POST'}),data=await response.json();if(!response.ok)throw new Error(data.error||'Aboverwaltung nicht verfügbar');location.href=data.url}catch(err){await customAlert(err.message,{title:'Aboverwaltung nicht erreichbar'})}}
   async function fetchGithubRepos(){try{const response=await sitebriefApiFetch('/api/github-publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list-repos'})}),data=await response.json();if(!response.ok)return null;return Array.isArray(data.repos)?data.repos:[]}catch{return null}}
   async function publishToGithub(){
@@ -3102,7 +3123,7 @@ ${agentMemoryDocument()}`;
     }));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     el.skipReferencesBtn?.addEventListener("click",()=>goStep(3));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
-    el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Master-Prompt kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1600)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
+    el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);productSignal("copy-master-prompt",state.targetAgent);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Master-Prompt kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1600)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
     el.downloadProjectReportBtn?.addEventListener('click',()=>downloadText('sitebrief-projektbericht.md',buildProjectReport(),'text/markdown'));
     el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));[el.buySingleReviewBtn,el.buyReviewInlineBtn].forEach(button=>button?.addEventListener('click',()=>beginCheckout('single_review')));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
@@ -3121,6 +3142,7 @@ ${agentMemoryDocument()}`;
     el.setActiveProfile.addEventListener("change",renderProfileImpact);el.applyProfileBtn.addEventListener("click",()=>{const id=el.setActiveProfile.value;state.activeProfileId=id;applyProfileById(id,{persist:true,forNewProject:true});});
     el.saveProfileBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.manageProfilesBtn.addEventListener("click",()=>{el.profileDialog.showModal();renderProfileList()});el.createProfileBtn.addEventListener("click",createProfileFromDialog);
     el.accountBtn.addEventListener("click",()=>{updateAccountUi();renderGuestLimit();el.accountDialog.showModal()});el.signInBtn.addEventListener("click",()=>{if(authRegisterMode)setAuthMode(false);else signIn()});el.signUpBtn.addEventListener("click",()=>{if(authRegisterMode)signUp();else setAuthMode(true)});el.forgotPasswordBtn?.addEventListener('click',resetPassword);el.saveNewPasswordBtn?.addEventListener('click',saveNewPassword);el.guestContinueBtn.addEventListener("click",closeAccountGate);$$('.auth-plan-pick').forEach(button=>button.addEventListener('click',()=>pickAuthPlan(button.dataset.authPlanPick)));el.authViewAllPlansBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});el.footerImpressumLink?.addEventListener('click',e=>{e.preventDefault();window.PromptAiLegalPages?.openLegal('imprint')});el.footerPrivacyLink?.addEventListener('click',e=>{e.preventDefault();window.PromptAiLegalPages?.openLegal('privacy')});el.footerCookieLink?.addEventListener('click',e=>{e.preventDefault();el.cookieBanner?.showModal()});
+    document.getElementById('footerTermsLink')?.addEventListener('click',e=>{e.preventDefault();window.PromptAiLegalPages?.openLegal('terms')});document.getElementById('footerWithdrawalLink')?.addEventListener('click',e=>{e.preventDefault();window.PromptAiLegalPages?.openLegal('withdrawal')});
     // The plans dialog must always be dismissable (X, Escape, backdrop). It is opened from many
     // locked features during the normal workflow, so a non-dismissable variant reads as a freeze.
     if(el.plansDialog){const nativePlansShowModal=el.plansDialog.showModal.bind(el.plansDialog);el.plansDialog.showModal=()=>{if(el.plansDialog.open)return;el.plansDialog.classList.toggle("plans-gate-mode",!cloudReady());nativePlansShowModal()};el.plansDialog.addEventListener("click",e=>{if(e.target===el.plansDialog)el.plansDialog.close()});}

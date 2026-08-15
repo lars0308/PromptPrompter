@@ -73,6 +73,30 @@
     <p>[Anwendbares Recht, Gerichtsstand und Regelung zu Änderungen dieser Bedingungen ergänzen.]</p>
   `;
 
+  // Bei Verbrauchern laeuft ohne Belehrung keine 14-Tage-Frist, sondern eine von einem Jahr.
+  // Und wer sofort loslegen will, muss dem ausdruecklich zustimmen - genau das passiert im
+  // Kauf-Fenster, hier steht der Text dazu.
+  const WITHDRAWAL_HTML=`
+    <h3>Widerrufsrecht für Verbraucher</h3>
+    <p>Du hast das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.</p>
+    <p>Um dein Widerrufsrecht auszuüben, musst du uns ([Firmenname / Inhaber], [Anschrift], [E-Mail]) mittels einer eindeutigen Erklärung (z. B. ein mit der Post versandter Brief oder eine E-Mail) über deinen Entschluss, diesen Vertrag zu widerrufen, informieren. Du kannst dafür das unten stehende Muster-Formular verwenden, das aber nicht vorgeschrieben ist.</p>
+    <p>Zur Wahrung der Widerrufsfrist reicht es aus, dass du die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Widerrufsfrist absendest.</p>
+    <h3>Folgen des Widerrufs</h3>
+    <p>Wenn du diesen Vertrag widerrufst, haben wir dir alle Zahlungen, die wir von dir erhalten haben, unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag zurückzuzahlen, an dem die Mitteilung über deinen Widerruf bei uns eingegangen ist. Für diese Rückzahlung verwenden wir dasselbe Zahlungsmittel, das du bei der ursprünglichen Transaktion eingesetzt hast; in keinem Fall werden dir wegen dieser Rückzahlung Entgelte berechnet.</p>
+    <h3>Vorzeitiges Erlöschen des Widerrufsrechts</h3>
+    <p>Prompt.ai ist ein digitaler Dienst, der sofort nach dem Kauf zur Verfügung steht. Dein Widerrufsrecht erlischt vorzeitig, wenn du vor dem Kauf ausdrücklich zustimmst, dass wir mit der Leistung sofort beginnen, und du gleichzeitig bestätigst, dass du damit dein Widerrufsrecht verlierst. Diese Zustimmung holen wir im Kauf-Fenster ein; ohne sie startet der Tarif erst nach Ablauf der Widerrufsfrist.</p>
+    <h3>Muster-Widerrufsformular</h3>
+    <p>An [Firmenname / Inhaber], [Anschrift], [E-Mail]:</p>
+    <p>Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren (*)/die Erbringung der folgenden Dienstleistung (*)<br>
+    — Bestellt am (*)/erhalten am (*)<br>
+    — Name des/der Verbraucher(s)<br>
+    — Anschrift des/der Verbraucher(s)<br>
+    — Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier)<br>
+    — Datum<br>
+    (*) Unzutreffendes streichen.</p>
+    <p>[Vor dem Live-Betrieb anwaltlich prüfen lassen und alle eckig geklammerten Angaben ersetzen.]</p>
+  `;
+
   function ensureStyle(){
     if($('#legalPagesStyles'))return;
     const s=document.createElement('style');
@@ -130,6 +154,7 @@
     const title=$('#legalTitle'),content=$('#legalContent');
     if(kind==='privacy'){title.textContent='Datenschutzerklärung';content.innerHTML=PRIVACY_HTML}
     else if(kind==='terms'){title.textContent='Nutzungsbedingungen';content.innerHTML=TERMS_HTML}
+    else if(kind==='withdrawal'){title.textContent='Widerrufsbelehrung';content.innerHTML=WITHDRAWAL_HTML}
     else{title.textContent='Impressum';content.innerHTML=IMPRINT_HTML}
     if(!dialog.open)dialog.showModal();
   }
@@ -148,7 +173,10 @@
     const terms=document.createElement('button');
     terms.type='button';terms.className='text-btn';terms.id='menuTermsBtn';terms.textContent='Nutzungsbedingungen';
     terms.addEventListener('click',()=>openLegal('terms'));
-    row.appendChild(imprint);row.appendChild(privacy);row.appendChild(terms);
+    const withdrawal=document.createElement('button');
+    withdrawal.type='button';withdrawal.className='text-btn';withdrawal.id='menuWithdrawalBtn';withdrawal.textContent='Widerruf';
+    withdrawal.addEventListener('click',()=>openLegal('withdrawal'));
+    row.appendChild(imprint);row.appendChild(privacy);row.appendChild(terms);row.appendChild(withdrawal);
     menu.appendChild(row);
   }
 

@@ -1,4 +1,7 @@
 const {authenticatedUser,ownSubscription,ownApiAddon}=require('../server/supabase-user');
+// Die Zustimmung zum sofortigen Leistungsbeginn wird mitgeschrieben: ohne sie erlischt das
+// Widerrufsrecht nicht, und im Streitfall muss nachweisbar sein, wann sie erteilt wurde.
+const consentStamp=req=>{const value=String(req?.body?.consentAt||'').slice(0,40);return /^\d{4}-\d{2}-\d{2}T/.test(value)?value:''};
 const {stripeRequest,stripeGet,resolveRecurringPrice,resolveRecurringPriceObject,resolveOneTimePrice}=require('../server/stripe-rest');
 const {currentPublicOffer:currentOffer}=require('../server/public-offer');
 
@@ -193,7 +196,7 @@ module.exports=async function(req,res){
     if(!['pro','ultimate','own_api_keys','single_review'].includes(product))return res.status(400).json({error:'Unbekannter Tarif.'});
     if(isSingleReview){
       const price=await resolveOneTimePrice('single_review');
-      const session=await stripeRequest('checkout/sessions',{mode:'payment','line_items[0][price]':price,'line_items[0][quantity]':1,customer_email:user.email,client_reference_id:user.id,'metadata[user_id]':user.id,'metadata[product]':'single_review',success_url:`${origin}/?checkout=success&product=single_review`,cancel_url:`${origin}/?checkout=cancel`});
+      const session=await stripeRequest('checkout/sessions',{'metadata[consent_immediate_start]':consentStamp(req),mode:'payment','line_items[0][price]':price,'line_items[0][quantity]':1,customer_email:user.email,client_reference_id:user.id,'metadata[user_id]':user.id,'metadata[product]':'single_review',success_url:`${origin}/?checkout=success&product=single_review`,cancel_url:`${origin}/?checkout=cancel`});
       return res.status(200).json({url:session.url});
     }
     if(isAddon){
@@ -201,7 +204,7 @@ module.exports=async function(req,res){
       if(plan==='ultimate')return res.status(409).json({error:'Eigene KI-Verbindungen sind in Ultimate bereits enthalten.'});
       if(plan!=='pro')return res.status(403).json({error:'Das Add-on für eigene KI-Verbindungen kann nur zu einem aktiven Pro-Tarif gebucht werden.'});
     }
-    const price=await resolveRecurringPrice(product),offer=!isAddon&&['pro','ultimate'].includes(product)?await currentOffer():null,trialDays=Math.max(0,Math.min(365,Number(offer?.trial_days)||0)),coupon=String(offer?.stripe_coupon_id||''),metadata=isAddon?{'metadata[addon]':'own_api_keys','metadata[slots]':String(slots),'subscription_data[metadata][addon]':'own_api_keys','subscription_data[metadata][slots]':String(slots)}:{'metadata[plan]':product,'subscription_data[metadata][plan]':product,'metadata[trial_days]':String(trialDays),'subscription_data[metadata][trial_days]':String(trialDays)},promotion=coupon?{'discounts[0][coupon]':coupon}:{allow_promotion_codes:'true'},trial=trialDays?{'subscription_data[trial_period_days]':String(trialDays)}:{},session=await stripeRequest('checkout/sessions',{mode:'subscription','line_items[0][price]':price,'line_items[0][quantity]':String(slots),...(isAddon?{'line_items[0][adjustable_quantity][enabled]':'true','line_items[0][adjustable_quantity][minimum]':'1','line_items[0][adjustable_quantity][maximum]':'4'}:{}),customer_email:user.email,client_reference_id:user.id,'metadata[user_id]':user.id,'subscription_data[metadata][user_id]':user.id,...metadata,...promotion,...trial,success_url:`${origin}/?checkout=success&product=${encodeURIComponent(product)}`,cancel_url:`${origin}/?checkout=cancel`});
+    const price=await resolveRecurringPrice(product),offer=!isAddon&&['pro','ultimate'].includes(product)?await currentOffer():null,trialDays=Math.max(0,Math.min(365,Number(offer?.trial_days)||0)),coupon=String(offer?.stripe_coupon_id||''),metadata=isAddon?{'metadata[addon]':'own_api_keys','metadata[slots]':String(slots),'subscription_data[metadata][addon]':'own_api_keys','subscription_data[metadata][slots]':String(slots)}:{'metadata[plan]':product,'subscription_data[metadata][plan]':product,'metadata[trial_days]':String(trialDays),'subscription_data[metadata][trial_days]':String(trialDays)},promotion=coupon?{'discounts[0][coupon]':coupon}:{allow_promotion_codes:'true'},trial=trialDays?{'subscription_data[trial_period_days]':String(trialDays)}:{},session=await stripeRequest('checkout/sessions',{'metadata[consent_immediate_start]':consentStamp(req),mode:'subscription','line_items[0][price]':price,'line_items[0][quantity]':String(slots),...(isAddon?{'line_items[0][adjustable_quantity][enabled]':'true','line_items[0][adjustable_quantity][minimum]':'1','line_items[0][adjustable_quantity][maximum]':'4'}:{}),customer_email:user.email,client_reference_id:user.id,'metadata[user_id]':user.id,'subscription_data[metadata][user_id]':user.id,...metadata,...promotion,...trial,success_url:`${origin}/?checkout=success&product=${encodeURIComponent(product)}`,cancel_url:`${origin}/?checkout=cancel`});
     return res.status(200).json({url:session.url});
   }catch(error){return res.status(error.status||500).json({error:error.message||(String(req.body?.action||req.query?.action||'')==='portal'?'Aboverwaltung fehlgeschlagen':'Checkout fehlgeschlagen')})}
 };

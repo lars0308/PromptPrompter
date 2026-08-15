@@ -626,3 +626,36 @@ test('the monthly budget is a cost brake with a visible share, not a wall',async
   assert.match(html,/Vorrang bei der Verarbeitung/);
   assert.doesNotMatch(html,/Alle Ziel-Agenten und der Modus/,'die Zeile ist wertlos, seit jede Ziel-KI frei ist');
 });
+
+test('a paid plan cannot be bought without the consumer withdrawal step',async()=>{
+  const legal=await read('legal-pages.js'),app=await read('app.js'),html=await read('index.html'),checkout=await read('api/checkout.js');
+  // Ohne Belehrung laeuft keine 14-Tage-Frist, sondern eine von einem Jahr.
+  assert.match(legal,/const WITHDRAWAL_HTML=`/);
+  assert.match(legal,/Widerrufsrecht für Verbraucher/);
+  assert.match(legal,/Muster-Widerrufsformular/);
+  assert.match(legal,/kind==='withdrawal'/);
+  assert.match(html,/id="footerWithdrawalLink"/);
+  assert.match(html,/id="footerTermsLink"/);
+  // Und die Zustimmung zum sofortigen Beginn wird vor dem Kauf eingeholt und mitgeschrieben.
+  assert.match(app,/if\(!await confirmImmediateStart\(\)\)return;/);
+  assert.match(app,/extra=\{\.\.\.extra,consentAt:new Date\(\)\.toISOString\(\)\}/);
+  assert.match(checkout,/'metadata\[consent_immediate_start\]':consentStamp\(req\)/);
+});
+
+test('runtime errors and the moments that matter finally arrive somewhere',async()=>{
+  const beacon=await read('error-beacon.js'),models=await read('api/models.js'),app=await read('app.js'),boot=await read('admin-console.js');
+  // Fehler: nur Meldung, Datei und Zeile - keine Eingaben, keine Projektinhalte.
+  assert.match(beacon,/const MAX_PER_SESSION=5/);
+  assert.match(beacon,/if\(!event\?\.message\)return;/,'fehlende Bilder sind keine Fehlermeldung');
+  assert.match(beacon,/navigator\.sendBeacon\('\/api\/models',blob\)/);
+  assert.ok(boot.includes('./error-beacon.js'),'der Melder muss auch geladen werden');
+  assert.match(models,/action==='client-error'\)return clientError\(req,res\)/);
+  assert.match(models,/action==='signal'\)return signal\(req,res\)/);
+  // Keine eigene Tabelle: dieselben Nutzungsereignisse wie alles andere.
+  assert.match(models,/serviceFetch\('\/rest\/v1\/sitebrief_usage_events'/);
+  assert.match(models,/const SIGNALS=new Set\(\['copy-master-prompt','download-zip','open-agent'/);
+  // Und die drei Momente, an denen das Produkt seinen Zweck erfüllt.
+  assert.match(app,/productSignal\("copy-master-prompt",state\.targetAgent\)/);
+  assert.match(app,/productSignal\("download-zip",state\.targetAgent\)/);
+  assert.match(app,/productSignal\('open-agent',state\.targetAgent\)/);
+});
