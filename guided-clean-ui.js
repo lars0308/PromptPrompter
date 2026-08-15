@@ -41,7 +41,7 @@
     const kicker=panel.querySelector(':scope > .section-kicker');if(kicker)kicker.textContent=c[0];
     const title=panel.querySelector(':scope > h1')||panel.querySelector('.preview-step-head h1');if(title)title.textContent=c[1];
     lead(panel,c[2]);
-    if(n===1){const desc=$('#projectDescription');if(desc)desc.placeholder='z. B. Moderne Internetseite für einen Dachdecker in Lindhorst. Regional, hochwertig und mit Grün als Hauptfarbe.';const next=$('#stepProject .next-btn');if(next)next.innerHTML='Weiter <i>→</i>'}
+    if(n===1){const desc=$('#projectDescription');if(desc)desc.placeholder='z. B. Kundenprojekt: moderne Internetseite für einen Dachdecker in Lindhorst. Regional, hochwertig, Grün als Hauptfarbe. Next.js, statisch ausliefern.';const next=$('#stepProject .next-btn');if(next)next.innerHTML='Weiter <i>→</i>'}
     if(n===2){
       const back=$('#stepReferences .back-btn');if(back)back.textContent='← Beschreibung';
       const next=$('#stepReferences .next-btn');if(next)next.innerHTML='Weiter zur Vorschau <i>→</i>';

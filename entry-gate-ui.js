@@ -6,17 +6,21 @@
   // wechselnde Reihe zeigt die Spannbreite - und dient auf der Startseite zugleich als Anregung,
   // was man hier überhaupt hineinschreiben kann. Global, damit Einstiegsseite und Konsole
   // dieselben Sätze verwenden und nicht zwei Listen auseinanderlaufen.
+  //
+  // Wer hier tippt, baut das Projekt - er ist nicht der Betrieb, um den es geht. Deshalb steht
+  // vor jedem Beispiel, für wen gebaut wird: dieselbe Branchenvielfalt, aber aus der Sicht
+  // dessen, der den Auftrag danach in Claude Code oder Cursor weiterreicht.
   const EXAMPLES=window.PromptAiExamples=window.PromptAiExamples||[
-    {head:'Dönerladen in Hannover.',rest:' Mittagskarte, Öffnungszeiten und der Weg zum Laden sollen sofort zu finden sein.'},
-    {head:'Pizzeria in Hamburg.',rest:' Speisekarte, Tischreservierung und Lieferzeiten gehören nach vorn.'},
-    {head:'Dachdecker in Lindhorst.',rest:' Leistungen, Einsatzgebiet und eine Nummer, die man direkt anrufen kann.'},
-    {head:'Kosmetikstudio in Bremen.',rest:' Behandlungen mit Preisen, Termine online und ein ruhiger, hochwertiger Auftritt.'},
-    {head:'Physiotherapie in Köln.',rest:' Kassenleistungen, Team und Terminanfrage ohne Umwege.'},
-    {head:'Tischlerei in Osnabrück.',rest:' Referenzen aus echten Projekten statt Katalogbildern, dazu ein Kontaktweg.'},
-    {head:'Steuerbüro in Leipzig.',rest:' Seriös, ruhig, mit klarer Erstberatung und Mandantenportal.'},
-    {head:'Hofladen bei Rostock.',rest:' Was gerade geerntet wird, Öffnungszeiten und der Weg zum Hof.'},
-    {head:'Fotografin in München.',rest:' Die Bilder tragen die Seite, Preise und Anfrage bleiben schlicht.'},
-    {head:'Autowerkstatt in Dortmund.',rest:' Termin, Leistungen und Preise ohne Werbefloskeln.'}
+    {head:'Kundenprojekt: Dachdecker in Lindhorst.',rest:' Leistungen, Einsatzgebiet und eine Nummer, die man direkt anrufen kann. Next.js, statisch ausliefern.'},
+    {head:'Internes Werkzeug für unser Team.',rest:' Tabellenansicht, Filter, Rollen. React, bestehendes Design-System weiterverwenden.'},
+    {head:'Relaunch für einen Bestandskunden.',rest:' Alte Seite auslesen, Inhalte übernehmen, Struktur und Auftritt neu.'},
+    {head:'Landingpage für einen SaaS-Start.',rest:' Preistabelle, Anmeldung, Belege von echten Kunden. Schnell und messbar.'},
+    {head:'Kundenprojekt: Kosmetikstudio in Bremen.',rest:' Behandlungen mit Preisen, Termine online, ruhiger hochwertiger Auftritt.'},
+    {head:'Portfolio für eine Fotografin.',rest:' Die Bilder tragen die Seite, Preise und Anfrage bleiben schlicht.'},
+    {head:'Shop-Frontend für einen Hofladen.',rest:' Was gerade geerntet wird, Öffnungszeiten, Weg zum Hof. Astro.'},
+    {head:'Mandantenportal für ein Steuerbüro.',rest:' Anmeldung, Dokumente, Erstberatung. Seriös und ruhig.'},
+    {head:'Terminbuchung für eine Physiotherapie.',rest:' Kassenleistungen, Team und Anfrage ohne Umwege.'},
+    {head:'Dokumentationsseite für ein eigenes Werkzeug.',rest:' Einstieg, Referenz, Beispiele. Durchsuchbar, dunkles Schema.'}
   ];
 
 
@@ -47,9 +51,9 @@
 
     // Drei Belege statt drei Werbezeilen - dieselben Schritte, die die App danach wirklich geht.
     const proof=document.createElement('ul');proof.className='gate-proof';
-    proof.innerHTML='<li><strong>Beschreiben</strong><small>Ein paar Sätze reichen. Hast du schon eine Website, lesen wir sie aus und übernehmen Kontakt, Leistungen und Öffnungszeiten.</small></li>'
-      +'<li><strong>Richtung wählen</strong><small>Du siehst drei fertig gestaltete Vorschläge und entscheidest, welcher passt.</small></li>'
-      +'<li><strong>Auftrag mitnehmen</strong><small>Fertig ist ein Master-Prompt mit allen Fakten – für ChatGPT, Claude, Codex oder was du sonst nutzt.</small></li>';
+    proof.innerHTML='<li><strong>Beschreiben</strong><small>Ein paar Sätze reichen. Gibt es schon eine Seite, lesen wir sie aus und übernehmen die belegten Fakten. Prompt.ai fragt nach, wo die Antwort das Ergebnis wirklich ändert.</small></li>'
+      +'<li><strong>Richtung wählen</strong><small>Drei fertig gestaltete Vorschläge mit Farbwerten und Aufbau – die Entscheidung, die du sonst im Kundengespräch triffst.</small></li>'
+      +'<li><strong>In deiner KI weiterbauen</strong><small>Master-Prompt, Seitenstruktur, gesicherte Fakten und die passende Anweisungsdatei – <code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>GEMINI.md</code> oder Cursor-Rules. Direkt ins Projekt legen und loslegen.</small></li>';
     shot.insertAdjacentElement('afterend',proof);
     rotateShot(shot);
     const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};

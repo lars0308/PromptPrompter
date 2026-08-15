@@ -10,8 +10,9 @@
    bleiben bewusst in ihrer JavaScript-Datei: sie haengen sich hinter das volle Design und wuerden
    hier vorne ihre Wirkung verlieren.
 
-   Diese Datei wird nicht von Hand erzeugt - siehe tests/ui-layers.test.mjs, der prueft, dass jeder
-   Abschnitt vorhanden ist und keine Datei die Bloecke wieder selbst einhaengt. */
+   Neue Regeln gehoeren in den Abschnitt der Datei, aus der sie stammen - nicht ans Ende. Was die
+   Datei zusammenhaelt, prueft tests/ui-layers.test.mjs: jeder Abschnitt ist da, in der richtigen
+   Reihenfolge, und keine Datei haengt ihren Block wieder selbst ein. */
 
 /* ===== entry-gate-ui.js · #entryGateStyles ===== */
 .account-dialog.guest-gate .dialog-head{display:none!important}
@@ -126,6 +127,9 @@
         .account-dialog.guest-gate:not(.gate-expanded) .auth-brand{grid-column:1;justify-content:flex-start;margin:0}
         .account-dialog.guest-gate:not(.gate-expanded) .gate-top{grid-column:2;grid-row:1;justify-self:end;margin:0}
         .account-dialog.guest-gate:not(.gate-expanded) .auth-kicker{grid-column:1/-1;margin-top:clamp(26px,5vh,58px)}
+        /* Der Satz unter der Ueberschrift sagt, fuer wen die App gemacht ist. Er teilt die Spalte
+           mit der Ueberschrift, damit er nicht in eine 15-Zeichen-Kolonne neben dem Bild rutscht. */
+        .auth-lede{grid-column:1/-1;max-width:82ch;margin:16px 0 0;color:var(--muted);font-size:clamp(13px,1.55vw,16px);line-height:1.6}
         .account-dialog.guest-gate:not(.gate-expanded) .auth-hero h1{grid-column:1/-1;max-width:none;text-wrap:balance}
         .account-dialog.guest-gate:not(.gate-expanded) #gateActions{
           grid-area:actions;justify-items:stretch;max-width:560px;width:100%;

@@ -76,3 +76,29 @@ test('der Startschutz fuer noch unbekannte Tarife steht in den Ebenen',async()=>
   for(const rule of ['html.prompt-access-pending #upgradeBtn','html.prompt-route-pending #promptModeHandoff'])
     assert.ok(css.includes(rule),rule);
 });
+
+// Wer hier tippt, baut das Projekt - er ist nicht der Betrieb, um den es geht. Die Verkaufstexte
+// versprachen lange Handwerksbetriebe, waehrend die Ausgabe ein ZIP mit CLAUDE.md und Cursor-Rules
+// ist. Wer das verwerten kann, ist Entwickler oder Agentur; die Texte sagen das jetzt.
+test('die Verkaufstexte sprechen die an, die die Ausgabe auch benutzen koennen',async()=>{
+  const html=await read('index.html'),gate=await read('entry-gate-ui.js');
+  assert.match(html,/FÜR ALLE, DIE MIT KI BAUEN/);
+  assert.match(html,/class="auth-lede"/);
+  assert.match(html,/Für Entwickler, Web-Agenturen/);
+  assert.match(await read('promptai-ui-layers.css'),/\.auth-lede\{/,'sonst steht der Satz ohne Gestaltung da');
+  // Die Branchenvielfalt bleibt - sie fuettert die Branchenerkennung. Nur die Sicht wechselt.
+  assert.match(gate,/Kundenprojekt: Dachdecker in Lindhorst/);
+  assert.match(gate,/Internes Werkzeug für unser Team/);
+  assert.match(gate,/In deiner KI weiterbauen/,'der letzte Beleg nennt das Werkzeug, nicht die Website');
+  assert.doesNotMatch(gate,/\{head:'Dönerladen/,'kein Beispiel mehr aus der Sicht des Betriebs');
+});
+
+// Die Tarif-Ansicht ist ein Pruefwerkzeug des Betreibers. Im Hauptmenue stand sie zwischen
+// Bibliothek und Abonnement - dort, wo jeder andere Eintrag zu einer Funktion des Produkts fuehrt.
+test('die Tarif-Ansicht steht in der Verwaltung, nicht im Hauptmenue',async()=>{
+  const preview=await read('plan-preview-ui.js');
+  assert.match(preview,/\$\('\[data-admin-pane="overview"\]'\)/);
+  assert.doesNotMatch(preview,/const menu=\$\('#topbarMenu'\);if\(!menu/,'nicht mehr ans Menue gehaengt');
+  assert.match(preview,/function dropOldMenuRow\(\)/,'eine zwischengespeicherte Fassung darf keinen zweiten Eintrag stehen lassen');
+  assert.match(preview,/if\(!isOwner\(\)\)return;/,'weiterhin nur fuer das Betreiberkonto');
+});

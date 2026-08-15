@@ -18,7 +18,7 @@
   const BEISPIEL=`Beispiele:
 Baue Next.js, nie Vite
 Keine Verläufe, keine Schlagschatten
-Kunden sind meist Handwerksbetriebe
+Meine Kunden sind meist lokale Betriebe
 Kurze Sätze, keine Marketing-Sprache`;
   let card=null,saved='',busy=false;
 

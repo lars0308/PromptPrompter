@@ -46,9 +46,12 @@
     if($('#planPreviewStyles'))return;
     const style=document.createElement('style');style.id='planPreviewStyles';
     style.textContent=`
-      .plan-preview-row{display:grid;gap:5px;width:100%;padding:10px;margin-top:6px;border:1px dashed var(--line,#3a4a5a);border-radius:12px}
-      .plan-preview-row>span{color:var(--muted,#8b9dc3);font:800 8.5px/1 ui-monospace,monospace;letter-spacing:.13em;text-transform:uppercase}
-      .plan-preview-row select{width:100%;min-height:36px;padding:0 9px;border:1px solid var(--line,#3a4a5a);border-radius:9px;background:var(--surface,transparent);color:inherit;font:600 12px/1 inherit}
+      .plan-preview-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,260px);gap:12px;align-items:center;width:100%;margin:0 0 18px;padding:15px 16px;border:1px dashed color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:14px;background:color-mix(in srgb,var(--accent) 4%,var(--surface))}
+      .plan-preview-row span{display:block;color:var(--accent);font:850 8.5px/1 ui-monospace,monospace;letter-spacing:.13em;text-transform:uppercase}
+      .plan-preview-row strong{display:block;margin-top:5px;font-size:14px}
+      .plan-preview-row small{display:block;margin-top:4px;color:var(--muted);font-size:9px;line-height:1.5}
+      .plan-preview-row select{width:100%;min-height:42px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--input,var(--surface));color:var(--ink);font:600 12px/1 inherit}
+      @media(max-width:720px){.plan-preview-row{grid-template-columns:1fr}}
       html[data-plan-preview]:not([data-plan-preview=""]) body:after{
         content:"SIMULIERTE TARIF-ANSICHT";
         position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:2147482000;
@@ -58,26 +61,36 @@
     `;document.head.appendChild(style);
   }
 
+  // Die Ansicht gehoert in die Verwaltung, nicht ins Hauptmenue: sie ist ein Werkzeug zum Pruefen
+  // und kein Weg, den ein Kunde je gehen soll. Im Menue stand sie mitten zwischen Bibliothek und
+  // Abonnement - dort, wo jeder andere Eintrag zu einer Funktion des Produkts fuehrt.
   function mount(){
     if(!isOwner())return;
-    const menu=$('#topbarMenu');if(!menu||$('#planPreviewRow'))return;
+    const pane=$('[data-admin-pane="overview"]');if(!pane||$('#planPreviewRow'))return;
     styles();
     const row=document.createElement('div');
     row.className='plan-preview-row';row.id='planPreviewRow';
-    row.innerHTML='<span>Tarif-Ansicht</span><select id="planPreviewSelect"></select>';
+    row.innerHTML='<div><span>Tarif-Ansicht</span><strong>Die App mit fremden Augen ansehen</strong><small>Schaltet nur die Oberfläche um. Abgerechnet wird weiter über deinen echten Tarif, freigeschaltet wird nichts. Am unteren Rand steht ein Hinweis, solange eine fremde Ansicht aktiv ist.</small></div><select id="planPreviewSelect" aria-label="Tarif-Ansicht"></select>';
     const field=row.querySelector('select');
     for(const [value,label] of PLANS){
       const option=document.createElement('option');option.value=value;option.textContent=label;field.appendChild(option);
     }
     field.addEventListener('change',()=>select(field.value));
-    menu.appendChild(row);
+    pane.insertBefore(row,pane.firstElementChild?.nextElementSibling||null);
     mark();
   }
 
+  // Ein alter Eintrag im Menue wuerde sonst neben dem neuen stehen bleiben, wenn eine
+  // zwischengespeicherte Fassung der Oberflaeche ihn noch einmal aufbaut.
+  function dropOldMenuRow(){
+    const menu=$('#topbarMenu');
+    if(menu)menu.querySelector(':scope > .plan-preview-row')?.remove();
+  }
+
   function init(){
-    mount();mark();
+    dropOldMenuRow();mount();mark();
     // Der Zugang kommt spaeter als das Menue, und das Menue wird mehrfach neu aufgebaut.
-    new MutationObserver(()=>mount()).observe(document.body,{childList:true,subtree:true});
+    new MutationObserver(()=>{dropOldMenuRow();mount()}).observe(document.body,{childList:true,subtree:true});
     window.addEventListener('promptai:access',()=>{mount();mark()});
     if(view)setTimeout(announce,600);
   }
