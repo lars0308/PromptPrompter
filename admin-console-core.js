@@ -100,6 +100,7 @@
         const cta=$('#offerCta'),ctaText=String(offer.cta_label||'').trim();
         if(cta){cta.textContent=ctaText||'Tarife ansehen';cta.hidden=false}
         banner.hidden=!(String(offer.eyebrow||'').trim()||String(offer.title||'').trim()||String(offer.description||'').trim());
+        if(!banner.hidden)setTimeout(()=>window.PromptAiOfferAutoHide?.(false),9000);
       }
       const label=String(offer.cta_label||'').trim();
       if(label){if($('#startProCheckoutBtn'))$('#startProCheckoutBtn').textContent=label;if($('#startUltimateCheckoutBtn'))$('#startUltimateCheckoutBtn').textContent=label}
@@ -108,7 +109,16 @@
     // come back.
     window.PromptAiAnnouncements=Array.isArray(announcements)?announcements:[];window.dispatchEvent(new CustomEvent('promptai:announcements',{detail:{announcements:window.PromptAiAnnouncements}}))}catch{}
   }
-  document.addEventListener('DOMContentLoaded',()=>{init();publicContent();$('#offerCta').addEventListener('click',()=>$('#plansDialog')?.showModal());$('#offerClose').addEventListener('click',()=>{$('#offerBanner').hidden=true;sessionStorage.setItem('sitebrief-offer-hidden','1')})});
+  // Die Aktion ist eine Meldung, kein Moebelstueck: sie zeigt sich kurz oben und geht dann von
+  // selbst. Wer sie wegklickt, sieht sie in dieser Sitzung gar nicht mehr.
+  function fadeOffer(remember){
+    const banner=$('#offerBanner');if(!banner||banner.hidden)return;
+    banner.dataset.leaving='1';
+    setTimeout(()=>{banner.hidden=true;delete banner.dataset.leaving},260);
+    if(remember)sessionStorage.setItem('sitebrief-offer-hidden','1');
+  }
+  window.PromptAiOfferAutoHide=fadeOffer;
+  document.addEventListener('DOMContentLoaded',()=>{init();publicContent();$('#offerCta').addEventListener('click',()=>{$('#plansDialog')?.showModal();fadeOffer(true)});$('#offerClose').addEventListener('click',()=>fadeOffer(true))});
 })();
 
 (()=>{const load=()=>{if(document.querySelector('script[data-admin-ai-ui]'))return;const s=document.createElement('script');s.src='./admin-ai-ui.js?v=20260814-1';s.defer=true;s.dataset.adminAiUi='1';document.head.appendChild(s)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load()})();

@@ -1,8 +1,9 @@
 (()=>{
   'use strict';
   // Pressing a save button and seeing nothing happen is the most common reason people press it
-  // twice. One short confirmation at the bottom, for every save in the app - the button itself
-  // never has to grow its own status line for that.
+  // twice. One short confirmation at the top edge, for every save in the app - the button itself
+  // never has to grow its own status line for that. Oben, weil dort auch jede andere Meldung
+  // erscheint: eine Stelle im Bild, an der man Rueckmeldungen sucht, nicht zwei.
   const $=(s,r=document)=>r.querySelector(s);
   const SAVE_TEXT=/^(speichern|sichern|übernehmen|anwenden|aktivieren|verbinden|hinzufügen|anlegen|buchen|senden|veröffentlichen)\b|speichern|verbinden$/i;
   // Buttons that start something long or destructive get their own feedback, so they are left out.
@@ -12,9 +13,9 @@
   function styles(){
     if($('#saveToastStyles'))return;
     const el=document.createElement('style');el.id='saveToastStyles';el.textContent=`
-      .save-toast{position:fixed;left:50%;bottom:max(22px,env(safe-area-inset-bottom));z-index:2147483000;display:flex;align-items:center;gap:9px;
+      .save-toast{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:2147483000;display:flex;align-items:center;gap:9px;
         padding:12px 17px;border-radius:12px;background:var(--ink,#14181d);color:#fff;font:600 13px/1.3 inherit;
-        box-shadow:0 12px 34px rgba(10,15,20,.28);transform:translate(-50%,14px);opacity:0;pointer-events:none;
+        box-shadow:0 12px 34px rgba(10,15,20,.28);transform:translate(-50%,-14px);opacity:0;pointer-events:none;
         transition:opacity .18s ease,transform .18s ease;max-width:min(420px,calc(100vw - 32px))}
       .save-toast.is-on{opacity:1;transform:translate(-50%,0)}
       .save-toast i{flex:0 0 auto;display:grid;place-items:center;width:19px;height:19px;border-radius:50%;background:var(--good,#2e9e6b);color:#fff;font-style:normal;font-size:11px;font-weight:900}

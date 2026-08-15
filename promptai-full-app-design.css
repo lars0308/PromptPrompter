@@ -699,10 +699,31 @@ html.prompt-full-redesign .prompt-completion-flash{animation:promptSystemFlash .
 @keyframes promptSystemFlash{0%{opacity:0}20%,72%{opacity:1}100%{opacity:0}}
 
 /* Offers, cookies, legal and maintenance */
+/* Die Aktion stand als Balken ueber der Seite und schob alles nach unten - eine Dauermeldung,
+   die man beim zehnten Besuch nur noch wegklickt. Sie erscheint jetzt wie jede andere
+   Rueckmeldung kurz am oberen Bildschirmrand, schwebend, ohne das Layout anzufassen. */
 html.prompt-full-redesign .offer-banner{
-  border-color:color-mix(in srgb,var(--orange) 46%,var(--line))!important;
-  background:color-mix(in srgb,var(--orange) 7%,var(--surface))!important;
+  position:fixed!important;z-index:2147482900!important;
+  left:50%!important;top:max(12px,env(safe-area-inset-top))!important;transform:translateX(-50%)!important;
+  width:min(560px,calc(100vw - 24px))!important;
+  grid-template-columns:minmax(0,1fr) auto auto!important;gap:12px!important;
+  padding:11px 13px!important;
+  border:1px solid color-mix(in srgb,var(--orange) 46%,var(--line))!important;
+  border-radius:14px!important;
+  background:color-mix(in srgb,var(--orange) 10%,var(--surface))!important;
   color:var(--ink)!important;
+  box-shadow:0 16px 40px rgba(10,15,20,.32)!important;
+  transition:opacity .2s ease,transform .2s ease!important;
+}
+html.prompt-full-redesign .offer-banner[data-leaving="1"]{opacity:0!important;transform:translate(-50%,-12px)!important;pointer-events:none!important}
+html.prompt-full-redesign .offer-banner #offerTitle{font-size:13.5px!important;line-height:1.3!important}
+html.prompt-full-redesign .offer-banner #offerEyebrow{font-size:8.5px!important}
+html.prompt-full-redesign .offer-banner #offerDescription{margin:2px 0 0!important;font-size:11.5px!important;line-height:1.4!important}
+html.prompt-full-redesign .offer-banner .solid-btn{min-height:34px!important;padding:0 13px!important;font-size:12px!important;white-space:nowrap!important}
+html.prompt-full-redesign .offer-banner .offer-close{width:30px!important;height:30px!important;font-size:16px!important}
+@media(max-width:520px){
+  html.prompt-full-redesign .offer-banner{grid-template-columns:minmax(0,1fr) auto!important}
+  html.prompt-full-redesign .offer-banner .solid-btn{grid-column:1/-1!important;width:100%!important}
 }
 html.prompt-full-redesign .offer-close{border-color:var(--line)!important;background:var(--surface)!important;color:var(--ink)!important}
 html.prompt-full-redesign .cookie-banner-settings{border-color:var(--line)!important}
@@ -1778,7 +1799,37 @@ html.prompt-full-redesign :is(.library-item,.admin-fold,.settings-upgrade-note,.
   padding:var(--sp-5)!important;
 }
 html.prompt-full-redesign :is(.admin-fold,.quick-accordion)>summary{margin:calc(var(--sp-5)*-1)!important;padding:var(--sp-5)!important}
-html.prompt-full-redesign .settings-section.is-collapsible>.settings-heading{padding:var(--sp-5) var(--sp-5)!important}
+/* Die Einstellungs-Abschnitte waren hohe, leere Kacheln mit einem Pluszeichen am Rand und
+   sahen aus wie ein anderes Produkt. Sie tragen jetzt dasselbe Muster wie jede andere Karte der
+   App: Titel, eine Zeile, worum es geht, und ein Winkel, der sich beim Öffnen dreht. */
+html.prompt-full-redesign .settings-section.is-collapsible>.settings-heading{
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;gap:2px var(--sp-4)!important;
+  padding:var(--sp-4) var(--sp-5)!important;cursor:pointer!important;
+}
+html.prompt-full-redesign .settings-section.is-collapsible>.settings-heading>strong{
+  grid-column:1!important;font-size:15px!important;font-weight:700!important;letter-spacing:-.01em!important;
+}
+html.prompt-full-redesign .settings-section.is-collapsible>.settings-heading>small{
+  grid-column:1!important;color:var(--mist)!important;font-size:12px!important;line-height:1.45!important;font-weight:500!important;
+}
+html.prompt-full-redesign .settings-section.is-collapsible>.settings-heading>.settings-chevron{
+  grid-column:2!important;grid-row:1/-1!important;
+  width:8px!important;height:8px!important;margin:0 2px 0 0!important;
+  border:0!important;border-right:2px solid var(--mist)!important;border-bottom:2px solid var(--mist)!important;
+  border-radius:1px!important;background:none!important;font-size:0!important;
+  transform:rotate(45deg) translateY(-2px)!important;transition:transform .18s var(--ease)!important;
+}
+html.prompt-full-redesign .settings-section.is-collapsible.is-open>.settings-heading>.settings-chevron{
+  transform:rotate(-135deg) translateY(-2px)!important;
+}
+html.prompt-full-redesign .settings-section.is-collapsible{
+  margin-bottom:var(--sp-3)!important;border:1px solid var(--line)!important;border-radius:var(--r-md)!important;
+  background:var(--surface)!important;overflow:hidden!important;
+}
+html.prompt-full-redesign .settings-section.is-collapsible.is-open>.settings-heading{border-bottom:1px solid var(--line)!important}
+html.prompt-full-redesign .settings-section.is-collapsible.is-open>:not(.settings-heading){padding-left:var(--sp-5)!important;padding-right:var(--sp-5)!important}
+html.prompt-full-redesign .settings-section.is-collapsible.is-open>:last-child{padding-bottom:var(--sp-5)!important}
 
 /* 2. Kante in Kante: der Kasten im Kasten auf der Anmeldeseite. Die innere
       Fläche trägt jetzt nichts mehr - eine Linie reicht, um eine Gruppe zu

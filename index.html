@@ -512,7 +512,7 @@
       </header>
       <div class="settings-body">
         <div class="settings-upgrade-note" id="settingsUpgradeNote"></div>
-        <section class="settings-section" id="apiKeySection" hidden><div class="settings-heading"><strong>Eigene KI-Verbindungen</strong></div><p class="settings-note" id="apiKeySlotsNote"></p><div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein Prompt.ai-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
+        <section class="settings-section" id="apiKeySection" hidden><div class="settings-heading"><strong>Eigene KI-Verbindungen</strong><small>Eigene Schlüssel für OpenAI, Gemini oder das Gateway verbinden.</small></div><p class="settings-note" id="apiKeySlotsNote"></p><div class="connection-login-row" id="connectionLoginRow"><span>Zum sicheren Speichern eigener Keys brauchst du ein Prompt.ai-Konto.</span><button type="button" class="outline-btn mini" id="settingsLoginBtn">Zum Speichern anmelden</button></div>
           <div class="connection-login-row" id="connectionUpgradeRow" hidden><span>Eigene KI-Verbindungen sind ab Ultimate enthalten oder als Zusatz für 5,99 € / Monat buchbar.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
           <div class="ai-connection-grid" id="aiConnectionGrid">
             <article class="ai-connection-card recommended">
@@ -572,7 +572,7 @@
           </div>
           </section>
         <section class="settings-section" id="userPreferenceSection">
-          <div class="settings-heading"><strong>Darstellung &amp; Voreinstellungen</strong></div>
+          <div class="settings-heading"><strong>Darstellung &amp; Voreinstellungen</strong><small>Design, Startmodus, bevorzugte Ziel-KI und Sprache.</small></div>
           <p class="settings-note">Gilt auf diesem Gerät und für neue Projekte. Laufende Projekte bleiben unverändert.</p>
           <div class="field-grid two">
             <label class="field"><span>Farbschema</span><select id="setColorScheme"><option value="system">Automatisch (Gerät)</option><option value="light">Immer hell</option><option value="dark">Immer dunkel</option></select></label>
@@ -588,7 +588,7 @@
           <div class="settings-danger-row"><div><strong>Lokale Projektdaten löschen</strong><small>Entfernt Entwurf, Bibliothek und Einstellungen von diesem Gerät. In der Cloud gespeicherte Projekte bleiben erhalten.</small></div><button type="button" class="text-btn danger" id="clearLocalDataBtn">Auf diesem Gerät löschen</button></div>
         </section>
         <section class="settings-section">
-          <div class="settings-heading"><strong>GitHub-Verbindung</strong></div>
+          <div class="settings-heading"><strong>GitHub-Verbindung</strong><small>Repository verbinden, um Projekte direkt dorthin zu geben.</small></div>
           <div class="connection-login-row" id="githubLoginRow" hidden><span>Zum Verbinden von GitHub zuerst anmelden.</span><button type="button" class="outline-btn mini" id="githubSettingsLoginBtn">Zum Speichern anmelden</button></div>
           <div class="connection-login-row" id="githubUpgradeRow" hidden><span>Für die eigene GitHub-Verbindung ist ein Ultimate-Abo erforderlich.</span><button type="button" class="outline-btn mini" data-upgrade-plans>Tarife ansehen</button></div>
           <div class="ai-connection-grid" id="githubConnectionGrid" hidden>
@@ -602,7 +602,7 @@
         </section>
 
         <section class="settings-section">
-          <div class="settings-heading"><strong>Rückfragen</strong></div>
+          <div class="settings-heading"><strong>Rückfragen</strong><small>Wie viele Fragen die Prüfung stellen darf und wann sie blockiert.</small></div>
           <label class="toggle-row"><input id="setAiClarifications" type="checkbox"><span><strong>Gegenfragen erlauben</strong><small>Vor Konzepten offene Punkte erkennen und nachfragen.</small></span></label>
           <div class="field-grid two">
             <label class="field"><span>Max. Fragen pro Prüfung</span><select id="setMaxQuestions"><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></label>
@@ -615,7 +615,7 @@
         </section>
 
         <section class="settings-section">
-          <div class="settings-heading"><strong>Projektprüfung</strong></div>
+          <div class="settings-heading"><strong>Projektprüfung</strong><small>Welche Pflichtbereiche vor dem Master-Prompt geprüft werden.</small></div>
           <label class="field"><span>Rechtsraum / Markt</span><input id="setLegalRegion" type="text" placeholder="z. B. Deutschland / EU" /></label>
           <div class="settings-check-grid">
             <label class="toggle-row compact"><input id="setCheckPrivacy" type="checkbox"><span><strong>Datenschutz</strong><small>Tracking, Formulare, externe Dienste, Cookies.</small></span></label>
@@ -732,15 +732,15 @@
       <div class="plans-grid">
         <article class="plan-card" data-plan-card="free">
           <div class="plan-card-summary"><span><b>Kostenlos</b><small>Für eigene Ideen und erste Projekte</small></span><strong>0 €</strong></div>
-          <div class="plan-card-detail"><p class="plan-card-includes">Zum Ausprobieren:</p><ul><li>Ablauf mit Rückfragen, Ziel-KI Codex, Claude Code oder Universal</li><li>Drei Richtungen als HTML-Vorschau <em>(ohne KI-Bilder)</em></li><li>Master-Prompt, Seitenstruktur und gesicherte Fakten</li><li>10 freie Prompts und 3 Website-Projekte im Monat</li><li>Grundprüfung zu Datenschutz und Impressum</li></ul><aside class="single-check-note"><strong>Erweiterte Prüfung für ein Projekt – 3,99 €</strong><small>Einmalig, ohne Abo. Prüft dein Briefing auf Lücken und Widersprüche und ergänzt Hinweise zu Datenschutz, Impressum, Barrierefreiheit, Sicherheit, Performance und SEO. Verbraucht wird das Guthaben erst beim Start.</small><button type="button" class="solid-btn mini" id="buySingleReviewBtn">Einmalig für 3,99 € prüfen</button></aside><button type="button" class="outline-btn plan-card-buy" id="startFreeBtn">Kostenlos starten</button></div>
+          <div class="plan-card-detail"><p class="plan-card-includes">Zum Ausprobieren:</p><ul><li>Ablauf mit Rückfragen, jede Ziel-KI frei wählbar</li><li>Drei Richtungen als HTML-Vorschau <em>(ohne KI-Bilder)</em></li><li>Master-Prompt, Seitenstruktur und gesicherte Fakten</li><li>10 freie Prompts und 3 Website-Projekte im Monat</li><li>Grundprüfung zu Datenschutz und Impressum</li></ul><aside class="single-check-note"><strong>Erweiterte Prüfung für ein Projekt – 3,99 €</strong><small>Einmalig, ohne Abo. Prüft dein Briefing auf Lücken und Widersprüche und ergänzt Hinweise zu Datenschutz, Impressum, Barrierefreiheit, Sicherheit, Performance und SEO. Verbraucht wird das Guthaben erst beim Start.</small><button type="button" class="solid-btn mini" id="buySingleReviewBtn">Einmalig für 3,99 € prüfen</button></aside><button type="button" class="outline-btn plan-card-buy" id="startFreeBtn">Kostenlos starten</button></div>
         </article>
         <article class="plan-card recommended" data-plan-card="pro">
           <b class="plan-card-badge">EMPFOHLEN</b>
-          <div class="plan-card-summary"><span><b>Pro</b><small>Für alle, die regelmäßig Projekte abgeben</small></span><strong id="proPriceLabel">15,99 € / Monat</strong></div>
+          <div class="plan-card-summary"><span><b>Pro</b><small>Für alle, die regelmäßig Projekte abgeben</small></span><strong id="proPriceLabel">20,99 € / Monat</strong></div>
           <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Kostenlos</b>, plus:</p><ul><li><b>KI-Bilder</b> statt HTML-Vorschauen – 50 Durchläufe im Monat</li><li>100 freie Prompts, 25 Website-Projekte</li><li>Claude Code zusätzlich zu Codex, mit und ohne Rückfragen</li><li>Erweiterte Projektprüfung mit gezielten Rückfragen</li><li>Website überarbeiten, Kundenbriefing, Übergabe-Dokument</li><li><b>Bibliothek:</b> je 10 Vorlagen, Bausteine und Agent-Skills</li><li>Eigene KI-Verbindung für 5,99 € dazubuchbar</li></ul><button type="button" class="solid-btn plan-card-buy" id="startProCheckoutBtn">Jetzt kaufen</button></div>
         </article>
         <article class="plan-card" data-plan-card="ultimate">
-          <div class="plan-card-summary"><span><b>Ultimate</b><small>Für Vielnutzer, Agenturen und eigene KI</small></span><strong id="ultimatePriceLabel">25,99 € / Monat</strong></div>
+          <div class="plan-card-summary"><span><b>Ultimate</b><small>Für Vielnutzer, Agenturen und eigene KI</small></span><strong id="ultimatePriceLabel">54,99 € / Monat</strong></div>
           <div class="plan-card-detail"><p class="plan-card-includes">Alles aus <b>Pro</b>, plus:</p><ul><li><b>Bibliothek ohne Grenze</b> – so viele Vorlagen, Bausteine und Skills wie du willst</li><li><b>2 eigene KI-Verbindungen inklusive</b> – dein Anbieter, dein Modell, deine Version</li><li>Eigene Aufrufe zählen nur <b>halb</b> aufs Kontingent</li><li>500 freie Prompts, 100 Website-Projekte, 250 Bild-Durchläufe</li><li><b>Website-Probelauf:</b> dein Briefing wird zur Probe gebaut und angezeigt</li><li><b>GitHub:</b> Repositories ansehen, neue anlegen, Dateien samt Briefing hochladen und die Seite über Pages öffnen</li><li>Alle Ziel-Agenten und der Modus „Selbst einstellen“</li></ul><button type="button" class="outline-btn plan-card-buy" id="startUltimateCheckoutBtn">Jetzt kaufen</button></div>
         </article>
       </div>

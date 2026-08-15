@@ -131,6 +131,49 @@ async function consumeWebsiteGeneration(req,keySource='system'){
   return getQuotaSummary(req);
 }
 
+// Der Probelauf ist der teuerste Aufruf im Produkt: kompletter Master-Prompt hinein, ganzes
+// Dateipaket heraus. Er gehoert zu Ultimate, war aber unbegrenzt - ein einziges Konto konnte
+// damit mehr kosten als es zahlt. Die Grenze steht hier und nicht in der Datenbank, weil sie
+// keine Tarifzusage ist, sondern ein Schutz gegen Ausreisser.
+const BUILD_ACTION='website-build';
+const BUILD_LIMIT=Object.freeze({free:0,pro:0,ultimate:15});
+async function buildRunsUsed(userId,start,end){
+  const path=`/rest/v1/sitebrief_usage_events?select=id&user_id=eq.${encodeURIComponent(userId)}&success=eq.true&action=eq.${BUILD_ACTION}&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=200`;
+  return ((await serviceFetch(path)).data||[]).length;
+}
+async function assertBuildBudget(req){
+  const entitlement=await getEntitlements(req);
+  if(entitlement.isAdmin)return {allowed:true,used:0,limit:0};
+  const limit=Number(BUILD_LIMIT[entitlement.plan||'free']||0);
+  if(!limit)return {allowed:true,used:0,limit:0};
+  let user=null;try{user=await authenticatedUser(req)}catch{}
+  if(!user?.id)return {allowed:true,used:0,limit};
+  const {start,end}=monthWindow();
+  let used=0;try{used=await buildRunsUsed(user.id,start,end)}catch{return {allowed:true,used:0,limit}}
+  if(used>=limit)throw Object.assign(new Error(`Der Probelauf ist in diesem Monat ${limit}-mal gelaufen. Am ${nextResetText(end.toISOString())} steht er wieder bereit; der Master-Prompt und die Übergabe bleiben unbegrenzt nutzbar.`),{status:429,code:'BUILD_QUOTA_EXHAUSTED'});
+  return {allowed:true,used,limit};
+}
+// Ein Sandbox-Build startet eine echte Maschine mit Rechenzeit. Bisher galt nur eine Sperre pro
+// Adresse und Zehnminutenfenster - ein Konto konnte damit den ganzen Tag bauen lassen. Gezaehlt
+// wird ueber dieselben Nutzungsereignisse wie alles andere.
+const SANDBOX_ACTION='sandbox-build';
+const SANDBOX_LIMIT=Object.freeze({free:0,pro:20,ultimate:60});
+async function assertSandboxBudget(req){
+  const entitlement=await getEntitlements(req);
+  if(entitlement.isAdmin)return {allowed:true};
+  const limit=Number(SANDBOX_LIMIT[entitlement.plan||'free']||0);
+  if(!limit)return {allowed:true};
+  let user=null;try{user=await authenticatedUser(req)}catch{}
+  if(!user?.id)return {allowed:true};
+  const {start,end}=monthWindow();
+  let used=0;
+  try{
+    const path=`/rest/v1/sitebrief_usage_events?select=id&user_id=eq.${encodeURIComponent(user.id)}&success=eq.true&action=eq.${SANDBOX_ACTION}&created_at=gte.${encodeURIComponent(start.toISOString())}&created_at=lt.${encodeURIComponent(end.toISOString())}&limit=200`;
+    used=((await serviceFetch(path)).data||[]).length;
+  }catch{return {allowed:true}}
+  if(used>=limit)throw Object.assign(new Error(`Die isolierte Quellcode-Vorschau ist in diesem Monat ${limit}-mal gelaufen. Am ${nextResetText(end.toISOString())} steht sie wieder bereit.`),{status:429,code:'SANDBOX_QUOTA_EXHAUSTED'});
+  return {allowed:true,used,limit};
+}
 function quotaErrorPayload(error){return {error:error?.message||'Monatskontingent nicht verfügbar.',code:error?.code||'QUOTA_ERROR',metric:error?.metric||null,quota:error?.quota||null}}
 
-module.exports={PLAN_LIMITS,METRIC_ACTIONS,getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,consumePreviewRun,quotaErrorPayload};
+module.exports={PLAN_LIMITS,METRIC_ACTIONS,BUILD_LIMIT,SANDBOX_LIMIT,assertBuildBudget,assertSandboxBudget,getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,consumePreviewRun,quotaErrorPayload};

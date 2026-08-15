@@ -755,7 +755,11 @@ test('building a website is its own tool on the home page, not a card at the end
   assert.match(home,/'workspaceRevisionBtn','workspaceBuildSiteBtn','workspacePreviewBtn'/,'locked for free accounts like the other paid tools');
   // Without a finished master prompt the AI would get an empty briefing.
   assert.match(ui,/const ready=String\(\$\('#masterPrompt'\)\?\.value\|\|''\)\.trim\(\)\.length>200;/);
-  assert.match(ui,/Dafür wird ein fertiges Projekt gebraucht/);
+  // Statt einer Sackgasse fragt der Probelauf, was gebaut werden soll - und bietet die
+  // gespeicherten Projekte an, nicht nur das zuletzt geöffnete.
+  assert.match(ui,/<strong>Was soll gebaut werden\?<\/strong>/);
+  assert.match(ui,/data-build-open="pick">Projekt auswählen/);
+  assert.match(ui,/pick:'#projectHistoryBtn',last:'#workspaceLastProjectBtn',new:'#workspaceNewProjectBtn'/);
   assert.match(loader,/\.\/website-build-ui\.js\?v=\d{8}-\d+/);
   assert.ok(sw.includes('/website-build-ui.js'));
 });

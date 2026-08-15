@@ -481,10 +481,10 @@ test('the console settings pick exactly one target AI and the skills follow it',
   assert.match(home,/setTimeout\(\(\)=>\{syncAgentMenu\(\);syncSkillsMenu\(\);syncSetupSummary\(\)\},90\)/);
   // Was der Tarif nicht hergibt, führt zur Tarifseite statt zu einer stillen Auswahl.
   assert.match(home,/if\(!button\|\|button\.hidden\)\{document\.querySelector\('#plansDialog'\)\?\.showModal\(\);return\}/);
-  // Die drei verbreiteten Ziele sind frei - der Prompt entsteht hier, gebaut wird beim Nutzer.
-  assert.match(home,/const AGENT_TIER=\{gemini:'ab Pro',cursor:'ab Pro',chatgpt:'ab Ultimate',v0:'ab Ultimate'\}/);
-  assert.match(app,/free:\{label:"Free"[^}]*agents:\["codex","claude","universal"\]/);
-  assert.match(app,/pro:\{label:"Pro"[^}]*agents:\["codex","claude","universal","gemini","cursor"\]/);
+  // Jede Ziel-KI ist in jedem Tarif waehlbar - der Prompt entsteht hier, gebaut wird beim Nutzer.
+  assert.match(home,/const AGENT_TIER=\{\}/);
+  assert.match(app,/free:\{label:"Free"[^}]*agents:Object\.keys\(AGENT_NAMES\)/);
+  assert.match(app,/pro:\{label:"Pro"[^}]*agents:Object\.keys\(AGENT_NAMES\)/);
 });
 
 test('long setting lists stay short: ten entries plus a window with all of them',async()=>{
@@ -571,4 +571,35 @@ test('a stored prompt text wins, but the console says when the built-in one move
   assert.match(ui,/Der eingebaute Standardtext wurde inzwischen geändert/);
   // Der Weg zurück existiert bereits - der Hinweis verweist genau darauf.
   assert.match(ui,/data-prompt-action="load-default">Standardtext einsetzen/);
+});
+
+test('the two runs that start real machines are capped per account and month',async()=>{
+  const quota=await read('server/quota.js'),core=await read('server/generate-core.js'),sandbox=await read('server/sandbox-build.js');
+  // Probelauf: teuerster Aufruf im Produkt, vorher unbegrenzt.
+  assert.match(quota,/const BUILD_LIMIT=Object\.freeze\(\{free:0,pro:0,ultimate:15\}\)/);
+  assert.match(core,/await assertBuildBudget\(req\);/);
+  assert.match(core,/usageEvent=\{\.\.\.usageEvent,action:'website-build',project\}/,'ohne eigenes Ereignis zählt nichts mit');
+  // Sandbox: echte Maschine, vorher nur pro Adresse und Zehnminutenfenster gedeckelt.
+  assert.match(quota,/const SANDBOX_LIMIT=Object\.freeze\(\{free:0,pro:20,ultimate:60\}\)/);
+  assert.match(sandbox,/await assertSandboxBudget\(req\)/);
+  assert.match(sandbox,/logUsage\(req,\{action:'sandbox-build'/);
+});
+
+test('messages appear briefly at the top edge instead of standing in the page',async()=>{
+  const toast=await read('save-toast-ui.js'),css=await read('promptai-full-app-design.css'),core=await read('admin-console-core.js');
+  assert.match(toast,/\.save-toast\{position:fixed;left:50%;top:max\(14px,env\(safe-area-inset-top\)\)/);
+  assert.doesNotMatch(toast,/bottom:max\(22px/,'die Rückmeldung darf nicht an zwei Rändern erscheinen');
+  // Die Aktion war ein Balken über der Seite, der alles nach unten schob.
+  assert.match(css,/\.offer-banner\{\s*position:fixed!important/);
+  assert.match(core,/function fadeOffer\(remember\)\{/);
+  assert.match(core,/setTimeout\(\(\)=>window\.PromptAiOfferAutoHide\?\.\(false\),9000\)/);
+});
+
+test('picking a flow in the settings never opens the workflow behind the start page',async()=>{
+  const home=await read('promptai-home-final.js');
+  assert.match(home,/const wasHome=homeVisible\(\);\s*\n\s*applyFlow\(mode\);/);
+  assert.match(home,/if\(flow&&!flow\.hidden\)\{flow\.hidden=true;if\(page\)page\.hidden=false\}/);
+  // Und falls doch je beides sichtbar wird, stellt der Zustand sich selbst richtig.
+  assert.match(home,/function enforceSurface\(\)\{/);
+  assert.match(home,/function syncHome\(\)\{enforceSurface\(\);/);
 });

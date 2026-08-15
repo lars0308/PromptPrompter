@@ -520,6 +520,7 @@ The result must read instantly as a bespoke real website design, not as an AI-ge
 }
 
 const {logUsage,tokenSink,addTokens}=require('../server/usage');
+const {assertBuildBudget}=require('../server/quota');
 
 module.exports = async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
@@ -552,6 +553,9 @@ module.exports = async function handler(req,res){
       // The build is the most expensive call in the product and it is a proof, not a deliverable -
       // it belongs to the plan that pays for it.
       if(entitlement.plan!=='ultimate'&&!entitlement.isAdmin)return res.status(403).json({error:'Der Website-Probelauf ist in Ultimate enthalten.'});
+      // Teuerster Aufruf im Produkt, deshalb mit Monatsgrenze - siehe server/quota.js.
+      await assertBuildBudget(req);
+      usageEvent={...usageEvent,action:'website-build',project};
       if(!body.masterPrompt||String(body.masterPrompt).length<500)return res.status(400).json({error:'Der vollständige Master-Prompt fehlt.'});
       prompt=makeWebsitePrompt({masterPrompt:body.masterPrompt,sourceDocument:body.sourceDocument,project,concept:body.concept||{},outputTarget:body.outputTarget});schema=websiteSchema();name="sitebrief_website_package";
     }else if(action==="review"){

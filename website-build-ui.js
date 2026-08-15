@@ -29,6 +29,9 @@
       #websiteBuildMount .export-result-card>div:first-child>span,#websiteBuildMount .export-result-card>div:first-child>h2{display:none!important}
       #websiteBuildMount #exportResultHint{font-size:12px!important;line-height:1.55!important}
       #websiteBuildMount .client-result-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+      .website-build-blocked-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px;margin-top:14px}
+      .website-build-blocked-note{margin:16px 0 0;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.55}
+      .website-build-blocked-note code{font-size:11px}
       @media(max-width:820px){.website-build-body{padding:8px 16px 24px}#websiteBuildMount .client-result-actions{grid-template-columns:1fr}}
     `;document.head.appendChild(s);
   }
@@ -45,7 +48,10 @@
     const ready=String($('#masterPrompt')?.value||'').trim().length>200;
     blocked.hidden=ready;mountHost.hidden=!ready;
     if(ready)return;
-    blocked.innerHTML=`<strong>Dafür wird ein fertiges Projekt gebraucht</strong><p>Der Probelauf baut genau das Projekt, das gerade offen ist – aus seinem Master-Prompt, der gewählten Richtung und den Quellen. Führe ein Projekt bis zum Master-Prompt und komm dann hierher zurück.</p><div class="website-build-blocked-actions"><button type="button" class="solid-btn" data-build-open="last">Letztes Projekt öffnen</button><button type="button" class="outline-btn" data-build-open="new">Neues Projekt starten</button></div>`;
+    // Eine Sackgasse mit zwei Knoepfen war die alte Antwort. Gefragt ist: was soll gebaut werden -
+    // also ein Weg zu den gespeicherten Projekten, einer zum letzten, einer zu einem neuen und
+    // einer fuer fertigen Quellcode als ZIP.
+    blocked.innerHTML=`<strong>Was soll gebaut werden?</strong><p>Der Probelauf baut ein Projekt aus seinem Master-Prompt, der gewählten Richtung und den Quellen. Wähle ein gespeichertes Projekt aus oder führe eins bis zum Master-Prompt.</p><div class="website-build-blocked-actions"><button type="button" class="solid-btn" data-build-open="pick">Projekt auswählen</button><button type="button" class="outline-btn" data-build-open="last">Letztes Projekt öffnen</button><button type="button" class="outline-btn" data-build-open="new">Neues Projekt starten</button></div><p class="website-build-blocked-note">Du hast schon fertigen Quellcode? Ein ZIP mit <code>package.json</code> wird am Ende eines Projekts unter „Ergebnis“ gebaut – dort liegt die isolierte Quellcode-Vorschau.</p>`;
   }
   // Which project this is about has to be visible: the build is always the project that is open,
   // never a project you pick here.
@@ -71,7 +77,10 @@
       const jump=event.target.closest?.('[data-build-open]');
       if(!jump)return;
       $('#websiteBuildDialog')?.close();
-      setTimeout(()=>$(jump.dataset.buildOpen==='last'?'#workspaceLastProjectBtn':'#workspaceNewProjectBtn')?.click(),80);
+      // Auswaehlen heisst: die Liste der gespeicherten Projektstaende - dort steht jedes Projekt
+      // mit Namen und Stand, und von dort fuehrt der Weg zurueck in den Ablauf.
+      const target={pick:'#projectHistoryBtn',last:'#workspaceLastProjectBtn',new:'#workspaceNewProjectBtn'}[jump.dataset.buildOpen]||'#workspaceNewProjectBtn';
+      setTimeout(()=>$(target)?.click(),80);
     },true);
   }
   function init(){styles();mount();bind();window.addEventListener('promptai:access',()=>{mount();readiness()});
