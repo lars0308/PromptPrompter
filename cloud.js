@@ -159,7 +159,7 @@ const Cloud = {
   async loadUserBundle() {
     const userId = this.assertUser();
     const [settingsRes, profilesRes, templatesRes, modulesRes, skillsRes, projectsRes, connectionsRes, subscriptionRes, adminRes, addonRes, userProfileRes, reviewCreditsRes] = await Promise.all([
-      this.client.from('sitebrief_user_settings').select('data,active_profile_id').eq('user_id', userId).maybeSingle(),
+      this.client.from('sitebrief_user_settings').select('data,active_profile_id,memory').eq('user_id', userId).maybeSingle(),
       this.client.from('sitebrief_profiles').select('id,name,description,config,is_default,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
       this.client.from('sitebrief_templates').select('id,name,tag,summary,prompt,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
       this.client.from('sitebrief_modules').select('id,name,tag,summary,prompt,activation,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }),
@@ -178,6 +178,7 @@ const Cloud = {
     return {
       settings: settingsRes.data?.data || null,
       activeProfileId: settingsRes.data?.active_profile_id || '',
+      memory: settingsRes.data?.memory || '',
       profiles: profilesRes.data || [],
       templates: templatesRes.data || [],
       modules: modulesRes.data || [],
@@ -221,6 +222,18 @@ const Cloud = {
 
   async saveUserProfile(profile){
     const userId=this.assertUser();const {error}=await this.client.from('sitebrief_user_profiles').upsert({user_id:userId,display_name:profile.displayName||'',company_name:profile.companyName||'',website:profile.website||'',default_client_type:profile.defaultClientType||'',updated_at:new Date().toISOString()});if(error)throw error;
+  },
+
+  // Der Zettel steht in derselben Zeile wie die Einstellungen, wird aber getrennt gespeichert:
+  // saveUserSettings schreibt nur seine eigenen Spalten, der Zettel bleibt dabei unberuehrt.
+  async saveUserMemory(memory) {
+    const userId = this.assertUser();
+    const { error } = await this.client.from('sitebrief_user_settings').upsert({
+      user_id: userId,
+      memory: String(memory || '').slice(0, 2000),
+      updated_at: new Date().toISOString()
+    });
+    if (error) throw error;
   },
 
   async saveUserSettings(data, activeProfileId = null) {

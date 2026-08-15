@@ -5,6 +5,7 @@ const { rateLimit } = require('../server/rate-limit');
 const { primePromptTemplates, promptText } = require('../server/prompt-templates');
 const { learningBlock } = require('../server/learning-hints');
 const { authenticatedUser } = require('../server/supabase-user');
+const { readMemory, memoryPrompt } = require('../server/user-memory');
 const VARIANTS = ["split","poster","ledger","stacked","editorial","minimal"];
 const PROVIDER_TIMEOUT_MS = 35000;
 async function fetchWithTimeout(url,options={},timeoutMs=PROVIDER_TIMEOUT_MS){
@@ -142,7 +143,7 @@ function variantsFor(project,count){
   for(let i=list.length-1;i>0;i--){const j=next()%(i+1);[list[i],list[j]]=[list[j],list[i]]}
   return list.slice(0,Math.min(count,list.length));
 }
-function makeConceptPrompt({count,project,references,documents,controls,template,modules,settings,clarifications,projectReview,tier='free',baseConcept=null}){
+function makeConceptPrompt({count,project,references,documents,controls,template,modules,settings,clarifications,projectReview,memory='',tier='free',baseConcept=null}){
   const variants=variantsFor(project,count);
   // Dieselbe Einordnung, die auch das Vorschaubild und der freie Prompt verwenden. Ohne sie
   // bekamen eine Zahnarztpraxis und ein Dönerladen dieselben Standardabschnitte vorgeschlagen.
@@ -161,6 +162,8 @@ ${tier==='ultimate'?'ULTIMATE: apply every supplied expert control and project-s
 
 ACTIVE USER MODULES
 ${moduleText(modules)}
+
+${memoryPrompt(memory)}
 
 GLOBAL QUALITY / COMPLIANCE SETTINGS
 ${settingsText(settings)}
@@ -197,7 +200,7 @@ Schreibe alle sichtbaren Textwerte auf Deutsch (Fragen, Begründungen, Antwortvo
 Gib ausschließlich das verlangte JSON zurück.`;
 }
 
-function makeRefinePrompt({project,concept,refinement,references,documents,controls,template,modules,settings,clarifications,projectReview}){
+function makeRefinePrompt({project,concept,refinement,references,documents,controls,template,modules,settings,clarifications,projectReview,memory=''}){
   return `${promptText('refine-role')}
 
 PROJECT
@@ -215,6 +218,8 @@ ${templateText(template)}
 
 ACTIVE USER MODULES
 ${moduleText(modules)}
+
+${memoryPrompt(memory)}
 
 GLOBAL QUALITY / COMPLIANCE SETTINGS
 ${settingsText(settings)}
@@ -239,7 +244,7 @@ Schreibe alle sichtbaren Textwerte auf Deutsch (Fragen, Begründungen, Antwortvo
 Gib ausschließlich das verlangte JSON zurück.`;
 }
 
-function makeReviewPrompt({project,references,documents,settings,template,modules,clarifications,learning}){
+function makeReviewPrompt({project,references,documents,settings,template,modules,clarifications,learning,memory=''}){
   const max=Math.min(6,Math.max(2,Number(settings?.maxQuestions)||4));
   return `${promptText('review-role',{max})}
 
@@ -259,6 +264,8 @@ ${documentText(documents)}
 
 CUSTOM TEMPLATE
 ${templateText(template)}
+
+${memoryPrompt(memory)}
 
 ACTIVE MODULES
 ${moduleText(modules)}
@@ -388,6 +395,14 @@ async function callOpenAI({key,model,prompt,images,schema,name,tokens}){
   return cleanJsonText(extractOpenAIText(data));
 }
 
+// Jede Anfrage schickt denselben Regeltext mit - Rolle, Qualitaetsvorgaben, Layoutregeln stehen
+// vorn und aendern sich nicht. Anbieter rechnen einen wiederholten Anfang nur zu einem Bruchteil ab,
+// aber nicht von allein: Anthropic braucht eine ausdrueckliche Marke, OpenAI und Google machen es
+// selbst. 'auto' laesst das Gateway entscheiden, welcher Weg fuer das gewaehlte Modell stimmt.
+// Was davon wirklich ankommt, steht danach in der Abrechnung des Anbieters und wird mitgezaehlt
+// (cached in server/usage.js) - geschaetzt wird hier nichts.
+const GATEWAY_CACHING=Object.freeze({providerOptions:{gateway:{caching:'auto'}}});
+
 async function gatewayRequest(body,key){
   const response=await fetchWithTimeout("https://ai-gateway.vercel.sh/v1/chat/completions",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
   const data=await response.json();
@@ -402,7 +417,7 @@ async function callGateway({key,model,prompt,images,schema,name,tokens}){
   // exceeds the context window of smaller models, and the request is rejected before it runs
   // ("max_tokens cannot be greater than max_model_len"). A concept response never needs that much.
   const maxTokens=Math.max(1000,Math.min(16000,Number(process.env.AI_GATEWAY_MAX_TOKENS)||8000));
-  const base={model:safeModel(model,process.env.AI_GATEWAY_MODEL||"openai/gpt-5.4"),messages:[{role:"system",content:"You are a senior web art director. Return only valid JSON and avoid generic AI website patterns."},{role:"user",content}],max_tokens:maxTokens,stream:false};
+  const base={model:safeModel(model,process.env.AI_GATEWAY_MODEL||"openai/gpt-5.4"),messages:[{role:"system",content:"You are a senior web art director. Return only valid JSON and avoid generic AI website patterns."},{role:"user",content}],max_tokens:maxTokens,stream:false,...GATEWAY_CACHING};
   let data;
   try{
     data=await gatewayRequest({...base,response_format:{type:"json_schema",json_schema:{name,strict:true,schema}}},key);
@@ -534,6 +549,10 @@ module.exports = async function handler(req,res){
     await primePromptTemplates();
     const entitlement=await getEntitlements(req);
     const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},clarifications=[],projectReview={},revisionInput={},siteContext={}}=body,modules=entitlement.plan==='free'?[]:(Array.isArray(body.modules)?body.modules:[]),settings=entitlement.plan==='free'?{legalRegion:'Deutschland / EU',checks:{privacy:true,imprint:true,accessibility:true,security:true,performance:true},noInventLegal:true,finalChecklist:true}:body.settings||{};usageEvent={action,provider:engine,model:model||'',project};
+    // Der Zettel des Kunden: einmal je Anfrage gelesen, damit er nicht bei jedem Projekt dieselben
+    // Vorlieben neu erklaeren muss. Er steht bewusst spaet im Prompt - vorne muss der
+    // unveraenderliche Regeltext stehen, sonst greift der Zwischenspeicher des Anbieters nicht.
+    const memory=await readMemory(req);
     // Free darf die KI benutzen, solange das Monatsbudget reicht - ein echter Durchlauf im Monat.
     // Genau dort versteht jemand zum ersten Mal, was das Produkt kann; ohne ihn sieht ein
     // kostenloses Konto nie eine KI-Pruefung. Zwei Bedingungen bleiben: angemeldet sein (sonst
@@ -576,15 +595,15 @@ module.exports = async function handler(req,res){
       // The questions are the one place where a lesson from an earlier project can still change
       // the outcome, so they get the matching experience before they are written.
       const learning=await learningBlock(project);
-      prompt=makeReviewPrompt({project,references:Array.isArray(references)?references.slice(0,12):[],settings,template,modules:Array.isArray(modules)?modules.slice(0,24):[],clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],learning});
+      prompt=makeReviewPrompt({project,references:Array.isArray(references)?references.slice(0,12):[],settings,template,modules:Array.isArray(modules)?modules.slice(0,24):[],clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],learning,memory});
       schema=reviewSchema(maxQuestions);name="sitebrief_project_review";
     }else if(action==="refine"){
       if(!body.concept || !body.refinement) return res.status(400).json({error:"concept and refinement are required"});
-      prompt=makeRefinePrompt({project,concept:body.concept,refinement:String(body.refinement).slice(0,4000),references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview});
+      prompt=makeRefinePrompt({project,concept:body.concept,refinement:String(body.refinement).slice(0,4000),references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview,memory});
       schema=refineSchema();name="sitebrief_refined_concept";
     }else{
       const count=Math.min(entitlement.maxConcepts,Math.max(3,Number(body.count)||entitlement.maxConcepts));
-      prompt=makeConceptPrompt({count,project,references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview,tier:entitlement.plan,baseConcept:body.regenerate&&body.baseConcept?body.baseConcept:null});
+      prompt=makeConceptPrompt({count,project,references:Array.isArray(references)?references.slice(0,12):[],controls,template,modules:Array.isArray(modules)?modules.slice(0,24):[],settings,clarifications:Array.isArray(clarifications)?clarifications.slice(0,12):[],projectReview,memory,tier:entitlement.plan,baseConcept:body.regenerate&&body.baseConcept?body.baseConcept:null});
       schema=conceptsSchema(count);name="sitebrief_concepts";
     }
     const resolved = await resolveProviderKey(req,engine);

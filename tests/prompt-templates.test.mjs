@@ -109,12 +109,16 @@ test('token counts are read from every provider shape and stored with the usage 
   usage.addTokens(sink,{prompt_tokens:120,completion_tokens:40,total_tokens:160});      // gateway
   usage.addTokens(sink,{input_tokens:10,output_tokens:5});                              // OpenAI responses
   usage.addTokens(sink,{promptTokenCount:7,candidatesTokenCount:3,totalTokenCount:10}); // Gemini
-  assert.deepEqual(sink,{prompt:137,completion:48,total:185});
-  assert.deepEqual(usage.addTokens(usage.tokenSink(),null),{prompt:0,completion:0,total:0},'a run without token data stays at zero');
-  assert.deepEqual(usage.addTokens(usage.tokenSink(),{input_tokens:4,output_tokens:6}),{prompt:4,completion:6,total:10},'a missing total is derived');
+  assert.deepEqual(sink,{prompt:137,completion:48,total:185,cached:0});
+  assert.deepEqual(usage.addTokens(usage.tokenSink(),null),{prompt:0,completion:0,total:0,cached:0},'a run without token data stays at zero');
+  assert.deepEqual(usage.addTokens(usage.tokenSink(),{input_tokens:4,output_tokens:6}),{prompt:4,completion:6,total:10,cached:0},'a missing total is derived');
+  // Jeder Anbieter nennt den Treffer im Zwischenspeicher anders - alle drei Formen werden gelesen.
+  assert.equal(usage.addTokens(usage.tokenSink(),{prompt_tokens:900,cache_read_input_tokens:700}).cached,700,'Anthropic');
+  assert.equal(usage.addTokens(usage.tokenSink(),{prompt_tokens:900,prompt_tokens_details:{cached_tokens:640}}).cached,640,'OpenAI');
+  assert.equal(usage.addTokens(usage.tokenSink(),{promptTokenCount:900,cachedContentTokenCount:512}).cached,512,'Google');
 
   const src=await text('server/usage.js'),core=await text('server/generate-core.js'),free=await text('server/free-prompt-v2.js'),migration=await text('supabase/migrations/20260815_add_usage_tokens.sql');
-  assert.match(src,/prompt_tokens:int\(tokens\.prompt\),completion_tokens:int\(tokens\.completion\),total_tokens:int\(tokens\.total\)/);
+  assert.match(src,/prompt_tokens:int\(tokens\.prompt\),completion_tokens:int\(tokens\.completion\),total_tokens:int\(tokens\.total\),cached_tokens:int\(tokens\.cached\)/);
   assert.match(core,/const tokens=tokenSink\(\);/);
   assert.match(core,/await logUsage\(req,\{\.\.\.usageEvent,tokens,durationMs:Date\.now\(\)-startedAt\}\)/);
   assert.match(core,/addTokens\(tokens,data\.usage\);/);
@@ -343,8 +347,8 @@ test('lessons from earlier projects reach the questions, where they can still ch
   assert.match(hints,/never ask about a point that the briefing already settles/);
   assert.match(hints,/if\(type&&row\.type===type\)score\+=4;/,'same scoring as the master-prompt side');
   assert.match(core,/const learning=await learningBlock\(project\);/);
-  assert.match(core,/makeReviewPrompt\(\{project,references:[^}]*learning\}\)/);
-  assert.match(core,/function makeReviewPrompt\(\{project,references,documents,settings,template,modules,clarifications,learning\}\)/);
+  assert.match(core,/makeReviewPrompt\(\{project,references:[^}]*learning,memory\}\)/);
+  assert.match(core,/function makeReviewPrompt\(\{project,references,documents,settings,template,modules,clarifications,learning,memory/);
 });
 
 // The fact sheet is sliced out of app.js and executed against real crawled data, so this test
@@ -587,4 +591,41 @@ test('die Sparwahl laesst sich im Verwaltungsfenster setzen und kommt beim Ablau
   assert.match(config,/saver:body\.saver===true/);
   assert.match(config,/saver:x\.saver===true/,'sonst sieht der Browser die Markierung nicht');
   assert.match(config,/plans,priority,enabled,saver,updated_at/);
+});
+
+// Eine KI merkt sich nichts: alles, was sie ueber einen Kunden wissen soll, geht bei jeder Anfrage
+// mit. Der ganze Gespraechsverlaufs waere die teuerste Antwort darauf - ein kurzer Zettel ist die
+// guenstige. Er gehoert dem Kunden, steht in seinem Profil und darf keine Vorgaben aushebeln.
+test('das Gedaechtnis je Kunde geht mit, gehoert dem Kunden und hebelt keine Vorgabe aus',async()=>{
+  const memory=await text('server/user-memory.js'),core=await text('server/generate-core.js'),
+        ui=await text('user-memory-ui.js'),cloud=await text('cloud.js'),
+        boot=await text('admin-console.js'),migration=await text('supabase/migrations/20260817_add_cached_tokens_and_user_memory.sql');
+  assert.match(migration,/add column if not exists memory text not null default ''/);
+  assert.match(memory,/const MEMORY_MAX=2000;/,'begrenzt, sonst waechst ein zweites Briefing hinein');
+  assert.match(memory,/niemals als Anweisung/,'der Zettel ist Geschmack, keine Regel');
+  assert.match(memory,/gilt die Projektbeschreibung/,'das konkrete Projekt schlaegt die Vorliebe');
+  // Ohne Einbau in alle drei Bauer waere er in der Haelfte der Laeufe wirkungslos.
+  assert.equal((core.match(/\$\{memoryPrompt\(memory\)\}/g)||[]).length,3,'Richtungen, Feinschliff und Rueckfragen');
+  assert.match(core,/const memory=await readMemory\(req\);/);
+  // Er gehoert dem Kunden: sichtbar, aenderbar, loeschbar - und zwar im Profil.
+  assert.match(ui,/\$\('#accountLoggedIn'\)/,'die Karte steht im Profil');
+  assert.match(ui,/id="userMemoryClear"/);
+  assert.match(cloud,/async saveUserMemory\(memory\)/);
+  assert.match(cloud,/select\('memory'\)|select\('data,active_profile_id,memory'\)/);
+  assert.match(boot,/accountExtras\(\)\{await load\('\.\/user-memory-ui\.js/,'wird mit dem Konto geladen');
+});
+
+// Derselbe Regeltext geht bei jeder Anfrage mit. Anbieter rechnen einen wiederholten Anfang nur
+// zu einem Bruchteil ab - aber nicht von allein, und nicht bei jedem Anbieter gleich.
+test('der Zwischenspeicher wird angefordert und sein Treffer wirklich gemessen',async()=>{
+  const core=await text('server/generate-core.js'),free=await text('server/free-prompt-v2.js'),
+        usage=await text('server/usage.js'),migration=await text('supabase/migrations/20260817_add_cached_tokens_and_user_memory.sql');
+  assert.match(core,/providerOptions:\{gateway:\{caching:'auto'\}\}/);
+  assert.match(free,/providerOptions:\{gateway:\{caching:'auto'\}\}/);
+  // Ohne Messung waere es Glaube: jeder Anbieter nennt die Zahl anders, alle drei werden gelesen.
+  assert.match(usage,/cache_read_input_tokens/,'Anthropic');
+  assert.match(usage,/details\.cached_tokens/,'OpenAI');
+  assert.match(usage,/cachedContentTokenCount/,'Google');
+  assert.match(usage,/cached_tokens:int\(tokens\.cached\)/,'und landet in der Abrechnung');
+  assert.match(migration,/add column if not exists cached_tokens integer not null default 0/);
 });
