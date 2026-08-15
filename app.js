@@ -2670,12 +2670,98 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     el.importLibraryInput.value="";
   }
 
+  // Ein Kundenbriefing, das aus Stichpunkten besteht, liest sich wie ein Formular und nicht wie
+  // eine Unterlage, die man einem Auftraggeber vorlegt. Beide Dokumente sind darum ausformuliert:
+  // ganze Sätze, in denen die Angaben aus dem Projekt stehen. Abhaken lässt sich nur, was auch
+  // wirklich abgehakt gehört - Freigabe und Abnahme.
+  function joinList(items,fallback=""){
+    const clean=items.map(x=>String(x||"").trim()).filter(Boolean);
+    if(!clean.length)return fallback;
+    if(clean.length===1)return clean[0];
+    return `${clean.slice(0,-1).join(", ")} und ${clean[clean.length-1]}`;
+  }
+  function endSentence(text){const value=String(text||"").trim();if(!value)return "";return /[.!?:]$/.test(value)?value:`${value}.`}
   function buildClientDocument(kind="brief"){
     const b=buildBlueprint(),concept=b.selectedConcept,p=b.project,client=p.client||{},answers=b.clarifications?.filter(x=>x.answer)||[],sources=client.sources||[],open=[...(b.projectReview?.warnings||[]).map(x=>x.message),...(b.projectReview?.blockers||[]).map(x=>x.message)];
-    const title=kind==="handover"?"Technische Projektübergabe":"Kundenbriefing";
-    const rows=[`# ${title}: ${p.name||client.name||"Website-Projekt"}`,"",`**Auftraggeber:** ${client.name||"Noch einzutragen"}`,`**Ansprechpartner:** ${client.contact||"Noch einzutragen"}`,`**Projektart:** ${p.type}`,`**Hauptziel:** ${p.goal}`,`**Zielgruppe:** ${p.audience||"Im Briefinggespräch festzulegen"}`,`**Geplante Ausgabe:** ${b.output.label}`,"","## 1. Ausgangslage und Auftrag",b.understanding.summary||p.description,"","## 2. Was das Projekt erreichen muss",...b.understanding.priorities.map((x,i)=>`${i+1}. ${x}`),"","## 3. Nutzer und wichtigste Handlung",`Die Website richtet sich an ${p.audience||"die noch festzulegende Hauptzielgruppe"}. Die wichtigste Handlung ist: **${p.goal}**. Navigation, Einstiegsbereich und Inhaltsreihenfolge müssen dieses Ziel ohne Umwege unterstützen.`,"","## 4. Inhaltlicher Umfang",`- Auftraggeber und reale Kontaktdaten: ${client.name?"vorhanden":"noch offen"}`,`- Bestehende Website oder Hauptquelle: ${client.website||"keine angegeben"}`,`- Übernommene Quellen: ${sources.length?sources.map(x=>x.title||x.url).join(", "):"keine"}`,`- Referenzbilder und Unterlagen: ${referenceCount()}`,"- Rechtliche Texte und Unternehmensdaten werden nicht erfunden.","","## 5. Gestaltungsentscheidung",concept?`**Richtung:** ${concept.name}\n\n**Charakter:** ${concept.mood}\n\n**Layoutprinzip:** ${concept.layout}\n\n**Hero:** ${concept.hero}\n\n**Typografie:** ${concept.type}\n\n**Farbpalette:** ${concept.palette.join(" · ")}`:"Es wurde noch keine verbindliche Richtung ausgewählt.","","## 6. Bestätigte Entscheidungen",...(answers.length?answers.map(x=>`- **${x.question}** ${x.answer}`):["- Es wurden noch keine Antworten auf Gegenfragen gespeichert."]),"","## 7. Offene Inhalte und Freigaben",...(open.length?open.map(x=>`- ${x}`):["- Firmen-, Kontakt- und Rechtstexte vor Veröffentlichung bestätigen.","- Bilder, Leistungsangaben und externe Dienste final freigeben."])];
-    if(kind==="handover")rows.push("","## 8. Technischer Lieferumfang",`- Zielsystem: ${b.output.label}`,`- Ziel-Agent: ${b.targetAgent.name}`,`- Module: ${b.modules.map(x=>x.name).join(", ")||"keine zusätzlichen Module"}`,`- Skills: ${b.skills.map(x=>x.name).join(", ")||"keine zusätzlichen Skills"}`,`- Aktive Prüfbereiche: ${activeCheckNames().join(", ")||"keine zusätzlichen Prüfbereiche"}`,"","## 9. Einrichtung vor dem Start","1. Abhängigkeiten installieren und die dokumentierte Startanweisung ausführen.","2. Umgebungsvariablen ausschließlich serverseitig eintragen.","3. Reale Inhalte, Medien und rechtliche Angaben ergänzen.","4. Formulare, Links, Fehlerzustände und externe Dienste mit echten Testdaten prüfen.","","## 10. Abnahme","- [ ] Darstellung auf kleinem Smartphone, Tablet und Desktop geprüft","- [ ] Navigation und Hauptaktion vollständig bedienbar","- [ ] Keine abgeschnittenen, überlappenden oder horizontal scrollenden Inhalte","- [ ] Formulare, Links und Fehlerzustände getestet","- [ ] Performance, Barrierefreiheit und Metadaten geprüft","- [ ] Impressum, Datenschutz und Einwilligungen fachlich freigegeben","- [ ] Zugangsdaten und Eigentumsrechte vollständig übergeben");
-    else rows.push("","## 8. Gewünschtes Ergebnis","Das Ergebnis soll nicht wie ein allgemeines Template wirken. Die bestätigte Richtung muss in Typografie, Bildbehandlung, Seitenrhythmus und mobiler Anordnung erkennbar bleiben.","","## 9. Freigabe durch den Kunden","- [ ] Ziel und Zielgruppe bestätigt","- [ ] Seiten- und Inhaltsumfang bestätigt","- [ ] Gestaltungsrichtung bestätigt","- [ ] Echte Texte, Bilder und Kontaktdaten geliefert","- [ ] Offene Funktionen und externe Dienste entschieden","","## 10. Nächster Schritt","Nach Freigabe dieses Briefings beginnt die Umsetzung. Änderungen an Ziel, Seitenumfang oder Kernfunktionen werden anschließend als neue Entscheidung dokumentiert.");
+    const handover=kind==="handover";
+    const title=handover?"Technische Projektübergabe":"Kundenbriefing";
+    const subject=p.name||client.name||"Website-Projekt";
+    const audience=p.audience||"eine im Briefinggespräch noch festzulegende Hauptzielgruppe";
+    const contractor=client.name||"dem noch einzutragenden Auftraggeber";
+    const contact=client.contact?`Ansprechpartner ist ${client.contact}.`:"Ein fester Ansprechpartner ist noch zu benennen.";
+    const rows=[`# ${title}: ${subject}`,""];
+
+    rows.push("## 1. Ausgangslage und Auftrag");
+    rows.push(`Dieses Dokument fasst den abgestimmten Stand des Projekts „${subject}“ für ${contractor} zusammen. ${contact} Die Projektart ist ${endSentence(p.type||"eine Website")} Als Hauptziel wurde festgehalten: ${endSentence(p.goal||"noch nichts")} Geliefert wird das Ergebnis als ${endSentence(b.output.label)}`);
+    rows.push("");
+    rows.push(endSentence(b.understanding.summary||p.description||"Eine ausführliche Beschreibung des Vorhabens liegt bisher nicht vor und wird im nächsten Gespräch ergänzt"));
+    rows.push("");
+
+    rows.push("## 2. Was das Projekt erreichen muss");
+    rows.push(b.understanding.priorities.length
+      ? `Im Vordergrund ${b.understanding.priorities.length>1?"stehen":"steht"} ${endSentence(joinList(b.understanding.priorities))} ${b.understanding.priorities.length>1?"Diese Punkte sind":"Dieser Punkt ist"} die Messlatte für jede spätere Entscheidung: Was ihnen widerspricht, wird nicht umgesetzt, sondern vorher besprochen.`
+      : "Verbindliche Prioritäten wurden bisher nicht festgehalten. Sie werden vor Beginn der Umsetzung gemeinsam bestimmt, weil sich daran der gesamte Seitenaufbau ausrichtet.");
+    rows.push("");
+
+    rows.push("## 3. Nutzer und wichtigste Handlung");
+    rows.push(`Die Website richtet sich an ${audience}. Die wichtigste Handlung, die dort möglich sein muss, ist: ${endSentence(p.goal||"noch nicht abschließend festgelegt")} Navigation, Einstiegsbereich und Reihenfolge der Inhalte werden konsequent darauf ausgerichtet; Nebeninhalte dürfen diesen Weg nicht verstellen.`);
+    rows.push("");
+
+    rows.push("## 4. Inhaltlicher Umfang und Quellen");
+    rows.push(`${client.name?`Die realen Firmen- und Kontaktdaten liegen mit ${client.name} vor`:"Die realen Firmen- und Kontaktdaten stehen noch aus"}. ${client.website?`Als Bestandsquelle dient ${client.website}; die dort vorhandenen Angaben zu Leistungen, Kontakt und Öffnungszeiten werden übernommen und geprüft`:"Eine bestehende Website als Quelle wurde nicht angegeben"}. ${sources.length?`Zusätzlich ausgewertet ${sources.length===1?"wurde":"wurden"} ${joinList(sources.map(x=>x.title||x.url))}`:"Weitere Quellen wurden bislang nicht übernommen"}. Insgesamt liegen ${referenceCount()} Referenzbilder und Unterlagen vor. Rechtliche Texte und Unternehmensangaben werden grundsätzlich nicht erfunden, sondern bleiben offen, bis sie freigegeben sind.`);
+    rows.push("");
+
+    rows.push("## 5. Gestaltungsentscheidung");
+    rows.push(concept
+      ? `Ausgewählt wurde die Richtung „${concept.name}“. Sie wirkt ${endSentence(concept.mood)} Das Layout folgt dem Prinzip: ${endSentence(concept.layout)} Der Einstiegsbereich ist ${endSentence(concept.hero)} Typografisch trägt die Seite ${endSentence(concept.type)} Die Farbpalette umfasst ${endSentence(concept.palette.join(", "))}`
+      : "Eine verbindliche Gestaltungsrichtung ist noch nicht ausgewählt. Bis dahin bleibt der visuelle Teil dieses Dokuments offen.");
+    rows.push("");
+
+    rows.push("## 6. Bestätigte Entscheidungen");
+    rows.push(answers.length
+      ? answers.map(x=>`Auf die Frage „${x.question}“ wurde festgelegt: ${endSentence(x.answer)}`).join(" ")
+      : "Zu den gestellten Rückfragen liegen bisher keine gespeicherten Antworten vor. Offene Punkte werden daher weiter unten als solche geführt.");
+    rows.push("");
+
+    rows.push("## 7. Offene Inhalte und Freigaben");
+    rows.push(open.length
+      ? `Vor der Veröffentlichung sind folgende Punkte zu klären: ${endSentence(joinList(open))} Bis dahin bleiben sie im Ergebnis sichtbar als offen gekennzeichnet, statt mit erfundenen Angaben gefüllt zu werden.`
+      : "Aus der Prüfung sind keine zusätzlichen Warnungen hervorgegangen. Vor der Veröffentlichung sind dennoch die Firmen-, Kontakt- und Rechtstexte zu bestätigen sowie Bilder, Leistungsangaben und externe Dienste freizugeben.");
+    rows.push("");
+
+    if(handover){
+      rows.push("## 8. Technischer Lieferumfang");
+      rows.push(`Das Ergebnis entsteht für ${endSentence(b.output.label)} Der Auftrag ist auf ${b.targetAgent.name} zugeschnitten. ${b.modules.length?`Verbindlich ${b.modules.length>1?"sind die Module":"ist das Modul"} ${joinList(b.modules.map(x=>x.name))}.`:"Zusätzliche Module sind nicht Teil des Lieferumfangs."} ${b.skills.length?`Ergänzend ${b.skills.length>1?"gelten die Skills":"gilt der Skill"} ${joinList(b.skills.map(x=>x.name))}.`:"Zusätzliche Skills sind nicht hinterlegt."} ${activeCheckNames().length?`Geprüft wird gegen ${joinList(activeCheckNames())}.`:"Über die Grundprüfung hinaus sind keine weiteren Prüfbereiche aktiviert."}`);
+      rows.push("");
+      rows.push("## 9. Einrichtung vor dem Start");
+      rows.push("Vor dem ersten Start werden die Abhängigkeiten installiert und die dokumentierte Startanweisung ausgeführt. Umgebungsvariablen gehören ausschließlich auf die Serverseite und niemals in den ausgelieferten Code. Anschließend werden die realen Inhalte, Medien und rechtlichen Angaben ergänzt. Zum Schluss werden Formulare, Links, Fehlerzustände und angebundene externe Dienste mit echten Testdaten durchgespielt.");
+      rows.push("");
+      rows.push("## 10. Abnahme");
+      rows.push("Die Übergabe gilt als abgeschlossen, wenn die folgenden Punkte geprüft und bestätigt sind:");
+      rows.push("");
+      rows.push("- [ ] Darstellung auf kleinem Smartphone, Tablet und Desktop geprüft");
+      rows.push("- [ ] Navigation und Hauptaktion vollständig bedienbar");
+      rows.push("- [ ] Keine abgeschnittenen, überlappenden oder horizontal scrollenden Inhalte");
+      rows.push("- [ ] Formulare, Links und Fehlerzustände getestet");
+      rows.push("- [ ] Performance, Barrierefreiheit und Metadaten geprüft");
+      rows.push("- [ ] Impressum, Datenschutz und Einwilligungen fachlich freigegeben");
+      rows.push("- [ ] Zugangsdaten und Eigentumsrechte vollständig übergeben");
+    }else{
+      rows.push("## 8. Gewünschtes Ergebnis");
+      rows.push("Das Ergebnis soll nicht wie eine allgemeine Vorlage wirken, sondern wie eine Seite, die für genau dieses Unternehmen entworfen wurde. Die bestätigte Richtung muss in Typografie, Bildbehandlung, Seitenrhythmus und mobiler Anordnung wiederzuerkennen sein. Die mobile Ansicht ist dabei eine eigene Komposition und nicht die untereinander gestapelte Desktop-Fassung.");
+      rows.push("");
+      rows.push("## 9. Freigabe durch den Kunden");
+      rows.push("Mit der Freigabe dieses Briefings werden die folgenden Punkte verbindlich:");
+      rows.push("");
+      rows.push("- [ ] Ziel und Zielgruppe bestätigt");
+      rows.push("- [ ] Seiten- und Inhaltsumfang bestätigt");
+      rows.push("- [ ] Gestaltungsrichtung bestätigt");
+      rows.push("- [ ] Echte Texte, Bilder und Kontaktdaten geliefert");
+      rows.push("- [ ] Offene Funktionen und externe Dienste entschieden");
+      rows.push("");
+      rows.push("## 10. Nächster Schritt");
+      rows.push("Nach der Freigabe beginnt die Umsetzung auf Basis dieses Standes. Änderungen an Ziel, Seitenumfang oder Kernfunktionen werden danach als neue Entscheidung dokumentiert und in ihrem Aufwand getrennt betrachtet.");
+    }
     return rows.join("\n");
   }
 
@@ -2702,7 +2788,10 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
   function dataUrlBytes(dataUrl){const match=String(dataUrl||'').match(/^data:([^;,]+);base64,(.+)$/);if(!match)return null;const raw=atob(match[2]),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);return {mime:match[1],bytes}}
   function safeAttachmentName(name,fallback){return String(name||fallback).replace(/[^a-zA-Z0-9äöüÄÖÜß._-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,120)||fallback}
   function renderPromptHandoff(){if(!el.promptHandoffPreview)return;el.promptHandoffPreview.innerHTML='';const c=selectedConcept();if(c?.previewImage){const img=new Image();img.src=c.previewImage;img.alt=`Ausgewählte Vorschau ${c.name||''}`;el.promptHandoffPreview.appendChild(img)}else if(c)el.promptHandoffPreview.appendChild(createConceptScreen(c));else el.promptHandoffPreview.innerHTML='<span>Noch keine Vorschau ausgewählt.</span>';const count=(c?.previewImage?1:0)+state.images.length+state.documents.length;el.promptHandoffText.textContent=`${count} Datei${count===1?'':'en'} und ${state.sourceUrls.length+state.urls.length} Link${state.sourceUrls.length+state.urls.length===1?'':'s'} werden für die Übergabe gekennzeichnet.`}
-  function downloadHandoffPackage(){updateMasterPrompt();const files={'MASTER-PROMPT.md':el.masterPrompt.value,'SEITENSTRUKTUR.md':structureDocument(),'PROJEKT-QUELLEN.md':attachmentPromptBlock(),'BLUEPRINT.json':JSON.stringify(buildBlueprint(),null,2)};const c=selectedConcept(),preview=dataUrlBytes(c?.previewImage);if(preview)files[`AUSGEWAEHLTE-VORSCHAU.${preview.mime.includes('png')?'png':'jpg'}`]=preview.bytes;state.images.forEach((item,index)=>{const parsed=dataUrlBytes(item.dataUrl);if(parsed)files[`bilder/${String(index+1).padStart(2,'0')}-${safeAttachmentName(item.name,`referenz-${index+1}.jpg`)}`]=parsed.bytes});state.documents.forEach((item,index)=>{files[`unterlagen/${String(index+1).padStart(2,'0')}-${safeAttachmentName(item.name,'unterlage')}.txt`]=item.text||'Für diese Unterlage wurde kein maschinenlesbarer Text erkannt. Bitte die Originaldatei zusätzlich hochladen.';(item.pageImages||[]).forEach((page,pageIndex)=>{const parsed=dataUrlBytes(page);if(parsed)files[`unterlagen/${String(index+1).padStart(2,'0')}-${safeAttachmentName(item.name,'unterlage')}-seite-${pageIndex+1}.jpg`]=parsed.bytes})});const blob=websiteZipBlob(files),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${(project().name||'prompt-ai-projekt').toLowerCase().replace(/[^a-z0-9]+/g,'-')}-ki-uebergabe.zip`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+  function downloadHandoffPackage(){updateMasterPrompt();const files={'MASTER-PROMPT.md':el.masterPrompt.value,'SEITENSTRUKTUR.md':structureDocument(),'PROJEKT-QUELLEN.md':attachmentPromptBlock(),'BLUEPRINT.json':JSON.stringify(buildBlueprint(),null,2),'PROJEKTBERICHT.md':buildProjectReport()};
+    // Die drei Unterlagen lagen bisher nur einzeln hinter eigenen Knöpfen und fehlten im Paket -
+    // wer die ZIP weitergab, gab das Projekt ohne Briefing und ohne Übergabeprotokoll weiter.
+    if(planRules().clientDocs){files['KUNDENBRIEFING.md']=buildClientDocument('brief');files['UEBERGABE.md']=buildClientDocument('handover')}const c=selectedConcept(),preview=dataUrlBytes(c?.previewImage);if(preview)files[`AUSGEWAEHLTE-VORSCHAU.${preview.mime.includes('png')?'png':'jpg'}`]=preview.bytes;state.images.forEach((item,index)=>{const parsed=dataUrlBytes(item.dataUrl);if(parsed)files[`bilder/${String(index+1).padStart(2,'0')}-${safeAttachmentName(item.name,`referenz-${index+1}.jpg`)}`]=parsed.bytes});state.documents.forEach((item,index)=>{files[`unterlagen/${String(index+1).padStart(2,'0')}-${safeAttachmentName(item.name,'unterlage')}.txt`]=item.text||'Für diese Unterlage wurde kein maschinenlesbarer Text erkannt. Bitte die Originaldatei zusätzlich hochladen.';(item.pageImages||[]).forEach((page,pageIndex)=>{const parsed=dataUrlBytes(page);if(parsed)files[`unterlagen/${String(index+1).padStart(2,'0')}-${safeAttachmentName(item.name,'unterlage')}-seite-${pageIndex+1}.jpg`]=parsed.bytes})});const blob=websiteZipBlob(files),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${(project().name||'prompt-ai-projekt').toLowerCase().replace(/[^a-z0-9]+/g,'-')}-ki-uebergabe.zip`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
   function downloadWebsiteZip(){if(!planRules().zip){el.plansDialog?.showModal();return}const blob=websiteZipBlob(exportedWebsiteFiles()),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${(project().name||'prompt-ai-website').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.zip`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
   function safeGeneratedFiles(rows){const files={};for(const row of (Array.isArray(rows)?rows:[]).slice(0,20)){const path=String(row?.path||'').replace(/\\/g,'/').replace(/^\/+/, '').split('/').filter(part=>part&&part!=='.'&&part!=='..').join('/').slice(0,180);if(!path||typeof row?.content!=='string'||row.content.length>500000)continue;files[path]=row.content}return files}
   function validateGeneratedPackage(files){const names=Object.keys(files),total=Object.values(files).reduce((sum,value)=>sum+value.length,0);if(names.length<2||total<1500)throw new Error('Das Modell hat kein vollständiges Website-Paket geliefert.');if(state.outputTarget==='html'&&!names.some(name=>/(^|\/)index\.html$/i.test(name)))throw new Error('Im Paket fehlt die startbare index.html. Bitte erneut erstellen.');if(['next-vercel','next-only','react','astro'].includes(state.outputTarget)&&!names.includes('package.json'))throw new Error('Im Projektpaket fehlt die package.json. Bitte erneut erstellen.');if(Object.values(files).some(value=>/(?:sk_live_|sk_test_|ghp_|github_pat_|AIza[0-9A-Za-z_-]{20,})/.test(value)))throw new Error('Das Paket enthält ein mögliches Secret und wurde aus Sicherheitsgründen verworfen.');}

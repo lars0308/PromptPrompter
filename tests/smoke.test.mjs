@@ -1026,3 +1026,26 @@ test('the first-run intro explains the console before the three steps',async()=>
   assert.match(intro,/Das Plus darunter<\/b> hängt Bilder, PDFs oder den Link/);
   assert.match(intro,/overflow-y:auto;overscroll-behavior:contain/,'the longer content scrolls instead of being cut off');
 });
+
+test('restoring a saved project state never lands on the old description form',async()=>{
+  const src=await text('project-history.js');
+  assert.match(src,/function restoreTarget\(row\)/);
+  assert.match(src,/step:described\?Math\.max\(2,Math\.min\(8,reached\)\):1/,'a described project resumes past step 1');
+  assert.match(src,/surface:described\?'workflow':'welcome'/,'without a description there is nothing to resume');
+  assert.match(src,/write\(STATE_KEY,\{\.\.\.row\.state,currentStep:target\.step/,'the state carries the step, because it outranks the checkpoint');
+});
+test('the gap between start screen and briefing screen is covered',async()=>{
+  const src=await text('promptai-loading-v2.js');
+  assert.match(src,/html\.prompt-handoff-pending body>\*:not\(#promptBriefHandoff\):not\(#promptAppBoot\)\{visibility:hidden!important\}/);
+  assert.match(src,/document\.documentElement\.classList\.remove\('prompt-handoff-pending'\)/,'lifted as soon as the briefing screen stands');
+  assert.match(src,/setTimeout\(\(\)=>document\.documentElement\.classList\.remove\('prompt-handoff-pending'\),4000\)/,'and never left standing if it does not');
+});
+test('client documents read as prose and travel with the handoff package',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/function joinList\(items,fallback=""\)/);
+  assert.match(app,/Dieses Dokument fasst den abgestimmten Stand des Projekts/,'the brief opens with a sentence, not a field list');
+  assert.match(app,/Im Vordergrund \$\{b\.understanding\.priorities\.length>1\?"stehen":"steht"\}/,'singular and plural are handled');
+  assert.doesNotMatch(app,/\*\*Auftraggeber:\*\* \$\{client\.name\|\|"Noch einzutragen"\}/,'the old bold field rows are gone');
+  assert.match(app,/'PROJEKTBERICHT\.md':buildProjectReport\(\)\};/,'the report is in the handoff zip');
+  assert.match(app,/if\(planRules\(\)\.clientDocs\)\{files\['KUNDENBRIEFING\.md'\]=buildClientDocument\('brief'\);files\['UEBERGABE\.md'\]=buildClientDocument\('handover'\)\}/);
+});
