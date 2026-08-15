@@ -10,6 +10,8 @@ Gib der KI **dieses Dokument** und, wenn du hast, das Briefing dazu. Dann arbeit
 
 Nicht alles lässt sich von einer KI allein prüfen. Was Klicken oder ein Konto braucht, ist mit **[du]** markiert; was am Quelltext hängt, mit **[code]**.
 
+**Hat deine KI einen eigenen Browser** (ChatGPT Agent, Gemini mit Browser-Zugriff)? Dann schick ihr zuerst `TESTAUFTRAG-AGENT.md` — das ist der Teil, den sie ohne dich schafft: alles, was ohne Konto, ohne Kauf und ohne Verwaltungsrechte geht. Danach bleibt für euch beide gemeinsam noch Block C, E, F, H und J aus diesem Dokument.
+
 ---
 
 ## Teil 1 — Der Auftrag an die KI
