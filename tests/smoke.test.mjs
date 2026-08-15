@@ -1097,3 +1097,21 @@ test('the result rating says what it still needs instead of doing nothing',async
   assert.match(src,/\.outcome-learning\{display:block;/,'the block was invisible until a build was loaded');
   assert.match(src,/Zum Bewerten fehlt noch das gebaute Projekt/,'pressing the button used to return silently');
 });
+
+test('the attachment allowance sits at the right edge of its menu row',async()=>{
+  const home=await text('promptai-home-final.js');
+  assert.match(home,/\.prompt-attach-menu button\{display:flex;align-items:center;gap:10px;justify-content:space-between;width:100%/,'display:block had overridden the flex row, so margin-left:auto did nothing');
+});
+test('the account entry starts on the same line as every other menu row',async()=>{
+  const drawer=await text('promptai-nav-drawer.js');
+  assert.match(drawer,/function wrapAccountLabel\(\)/,'a bare text node cannot be aligned like the others');
+  assert.match(drawer,/span\.className='prompt-drawer-account-label'/);
+  assert.match(drawer,/\.prompt-drawer-account-label\{\s*flex:0 0 100%!important;width:100%!important;text-align:left!important/);
+});
+test('the trial build picks its system AI from the plan instead of asking',async()=>{
+  const src=await text('generator-selection.js'),app=await text('app.js');
+  assert.match(src,/chooser\.hidden=!owner\(\)/,'only the admin sees the picker');
+  assert.match(src,/window\.PromptAiSystemAI\?\.routeFor\?\.\('website'\)/,'the stored route applies on build');
+  assert.doesNotMatch(app,/keine fertige Website und hier auch nicht als Datei zum Mitnehmen/,'that contradicted the ZIP button right below it');
+  assert.match(app,/Das Ergebnis kannst du als ZIP mitnehmen oder zusammen mit Master-Prompt/);
+});

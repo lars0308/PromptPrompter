@@ -68,7 +68,18 @@
          Eintrag ein Flex-Element ist, stand sie als zweites Element in derselben Zeile und wurde
          auf null Breite gequetscht - also war nirgends mehr zu sehen, wer angemeldet ist. Sie
          bekommt eine eigene Zeile zurück. */
-      html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){flex-wrap:wrap!important;align-content:center!important;padding-top:8px!important;padding-bottom:8px!important}
+      /* justify-content:center kam aus der Knopf-Grundregel und blieb hier stehen: "Profil" stand
+         als einziger Eintrag mittig, während alle anderen links auf einer Linie beginnen. */
+      html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){
+        flex-wrap:wrap!important;align-content:center!important;align-items:center!important;
+        justify-content:flex-start!important;text-align:left!important;
+        padding-top:8px!important;padding-bottom:8px!important;
+      }
+      /* flex:1 hat die freie Breite nicht aufgenommen - die Zeile blieb mittig. Volle Breite
+         beendet die Diskussion: der Text beginnt links wie in jeder anderen Zeile. */
+      html.prompt-full-redesign .topbar-menu #accountBtn .prompt-drawer-account-label{
+        flex:0 0 100%!important;width:100%!important;text-align:left!important;
+      }
       html.prompt-full-redesign .topbar-menu #accountBtn .account-btn-meta{
         display:block!important;flex:0 0 100%!important;width:100%!important;margin-top:2px!important;
         color:var(--muted)!important;font-size:10px!important;font-weight:600!important;
@@ -165,8 +176,24 @@
     else delete button.dataset.drawerTier;
     return locked;
   }
+  // Alle anderen Einträge tragen ihren Text in einem <span>. Der Kontoeintrag trägt ihn als
+  // nackten Textknoten, und der wird im Flex-Container zu einem anonymen Element, das sich der
+  // Ausrichtung der übrigen Zeilen entzieht - deshalb stand "Profil" als einziges mittig.
+  // Ein echtes <span> reiht sich ein wie der Rest.
+  function wrapAccountLabel(){
+    const button=$('#accountBtn');if(!button)return;
+    for(const node of [...button.childNodes]){
+      if(node.nodeType!==3)continue;
+      const text=node.textContent.trim();
+      if(!text){node.remove();continue}
+      const span=document.createElement('span');
+      span.className='prompt-drawer-account-label';span.textContent=text;
+      button.replaceChild(span,node);
+    }
+  }
   function shell(){
     const menu=$('#topbarMenu');if(!menu)return false;
+    wrapAccountLabel();
     // Die zwei fehlenden Arbeitswege: sie klicken den echten Knopf der Startseite, damit
     // Tarifsperre und Ablauf dort bleiben, wo sie schon geprüft werden.
     for(const [label,targetId] of WORK){

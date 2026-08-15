@@ -345,6 +345,11 @@ html.prompt-home-surface body>#promptFooter{
 }
 html.prompt-home-surface #promptFooter[hidden]{display:none!important}
 
+html.prompt-full-redesign .prompt-actions-note{
+  margin:var(--sp-3) 0 0!important;max-width:78ch!important;
+  color:var(--mist)!important;font-size:11.5px!important;line-height:1.55!important;
+}
+
 /* Der blaue Punkt am Menü sagt für sich genommen nicht, warum er da ist. In der Verwaltung
    trägt ihn deshalb der Reiter, aus dem er stammt - und mit dem Öffnen ist er weg. */
 html.prompt-full-redesign .admin-tabs button[data-admin-dot="1"]{

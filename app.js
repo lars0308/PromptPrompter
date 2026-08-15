@@ -554,7 +554,7 @@
     // und gibt es nicht als Datei heraus. Der Weg nach draußen führt über das Repository - dorthin
     // gehen Build, Master-Prompt, Seitenstruktur und Quellen gemeinsam.
     if(el.exportResultHint)el.exportResultHint.textContent=rules.github
-      ?"Prompt.ai baut aus genau diesem Projekt eine Seite und zeigt sie hier an – keine fertige Website und hier auch nicht als Datei zum Mitnehmen. Du kannst das Ergebnis stattdessen in ein GitHub-Repository legen, zusammen mit Master-Prompt, Seitenstruktur und Quellen, und die Seite dort über GitHub Pages ansehen."
+      ?"Prompt.ai baut aus genau diesem Projekt eine Seite und zeigt sie hier an. Das Ergebnis kannst du als ZIP mitnehmen oder zusammen mit Master-Prompt, Seitenstruktur und Quellen in ein GitHub-Repository legen und die Seite dort über GitHub Pages ansehen. Es ist ein Probelauf, keine fertige Website: Inhalte, Bilder und Rechtstexte gehören vor dem Livegang geprüft."
       :"Der Website-Probelauf ist in Ultimate enthalten – dort wird dein Briefing zur Probe gebaut und kann samt Unterlagen in ein GitHub-Repository wandern.";
     // Eine Ultimate-Funktion, an drei Stellen gleich beschrieben: PLAN_RULES.github ist nur dort
     // gesetzt, die Einstellungen verlangen Ultimate und die Tarifkarte nennt sie unter Ultimate.
@@ -2088,7 +2088,7 @@
   };
 
   function referencePromptBlock(){
-    return `Die vollständige Quellenübersicht mit Kundenwebsite, ausgelesenen Unterseiten, Impressum/Datenschutz, Links und Bildern steht in \`PROJEKT-QUELLEN.md\` (siehe Anweisungssicherheit oben). Beim Kopieren aus Prompt.ai hängt diese Datei direkt unter diesem Auftrag als zweite Datei an. Referenzen sind keine Erlaubnis zum 1:1-Kopieren; übernimm nur ausdrücklich freigegebene Aspekte.`;
+    return `Die vollständige Quellenübersicht mit Kundenwebsite, ausgelesenen Unterseiten, Impressum/Datenschutz, Links und Bildern steht in \`PROJEKT-QUELLEN.md\` (siehe Anweisungssicherheit oben). Sie liegt im Übergabe-ZIP aus Prompt.ai; wurde nur dieser Auftrag eingefügt, frage sie an, statt ihren Inhalt zu erraten. Referenzen sind keine Erlaubnis zum 1:1-Kopieren; übernimm nur ausdrücklich freigegebene Aspekte.`;
   }
 
   function attachmentPromptBlock(){
@@ -2474,12 +2474,11 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
   // a file the recipient never got. Both documents now travel together, clearly separated, so a
   // plain paste is complete. Only the image files cannot travel as text; they are listed by name
   // and origin.
-  function copyPayload(){
-    // Whoever copies gets exactly what the ZIP contains. A shorter copy would quietly be the weaker
-    // handover, and nobody would notice until the result is wrong.
-    const files=[['MASTER-PROMPT.md',el.masterPrompt.value],['SEITENSTRUKTUR.md',structureDocument()],['PROJEKT-QUELLEN.md',attachmentPromptBlock()]];
-    return files.map(([name,body],index)=>`===== DATEI ${index+1} VON ${files.length}: ${name} =====\n\n${body}\n`).join('\n');
-  }
+  // Kopiert wurden bisher alle drei Unterlagen in einem einzigen Block, getrennt durch
+  // "===== DATEI 1 VON 3 =====". Das war kein Paket, sondern ein sehr langer Text, den man in
+  // einem Chatfenster kaum noch übersieht. Die Zwischenablage kann keine drei Dateien tragen -
+  // dafür gibt es das ZIP. Der Knopf kopiert deshalb genau das, was man in ein Chatfenster
+  // einfügt: den Master-Prompt.
   // Before the briefing is written: do name, customer, website and analysis actually describe the
   // same project? A doner shop with a handyman's name and website used to run through silently.
   const INDUSTRY_WORDS=[['gastronomie',/döner|doener|pizza|imbiss|restaurant|café|cafe|bistro|grill|küche|kitchen|food|bäcker|catering|lieferdienst/i],
@@ -2988,7 +2987,7 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     }));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     el.skipReferencesBtn?.addEventListener("click",()=>goStep(3));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
-    el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(copyPayload());const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="2 Dateien kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1600)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
+    el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Master-Prompt kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1600)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
     el.downloadProjectReportBtn?.addEventListener('click',()=>downloadText('sitebrief-projektbericht.md',buildProjectReport(),'text/markdown'));
     el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));[el.buySingleReviewBtn,el.buyReviewInlineBtn].forEach(button=>button?.addEventListener('click',()=>beginCheckout('single_review')));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);

@@ -264,14 +264,19 @@ test('the instructions to the AI are in German, except the image prompt',()=>{
   }
 });
 
-test('copying hands over every document, so a plain paste is not missing the sources',async()=>{
+test('copying hands over the master prompt, and says where the other two files are',async()=>{
+  // Three documents in one clipboard blob, separated by "===== DATEI 1 VON 3 =====", was not a
+  // package - it was a very long text nobody can survey in a chat window. The clipboard cannot
+  // carry files; the ZIP can.
   const app=await text('app.js'),html=await text('index.html');
-  assert.match(app,/function copyPayload\(\)\{/);
-  assert.match(app,/===== DATEI \$\{index\+1\} VON \$\{files\.length\}: \$\{name\} =====/);
-  assert.match(app,/navigator\.clipboard\.writeText\(copyPayload\(\)\)/,'the button copies all of them, not the briefing alone');
-  assert.match(html,/id="copyPromptBtn">Prompt &amp; Quellen kopieren</,'the label says what travels');
-  // The briefing points at the sources file - and says where it is when copied.
-  assert.match(app,/Beim Kopieren aus Prompt\.ai hängt diese Datei direkt unter diesem Auftrag als zweite Datei an\./);
+  assert.doesNotMatch(app,/function copyPayload\(\)\{/,'the merged blob is gone');
+  assert.doesNotMatch(app,/===== DATEI \$\{index\+1\} VON/);
+  assert.match(app,/navigator\.clipboard\.writeText\(el\.masterPrompt\.value\)/,'the button copies what you paste into a chat');
+  assert.match(html,/id="copyPromptBtn">Master-Prompt kopieren</,'the label says what travels');
+  assert.match(html,/class="prompt-actions-note">Kopieren gibt dir den Master-Prompt/,'and the note says where the rest is');
+  // The briefing must not claim the sources file rides along with a paste any more.
+  assert.doesNotMatch(app,/hängt diese Datei direkt unter diesem Auftrag als zweite Datei an/);
+  assert.match(app,/Sie liegt im Übergabe-ZIP aus Prompt\.ai; wurde nur dieser Auftrag eingefügt, frage sie an/);
 });
 
 test('a new project starts empty even though browsers restore form values across the reload',async()=>{
@@ -415,11 +420,9 @@ test('the page list is derived from the existing site, not decided again on ever
   assert.match(doc,/Baue keine Seite, die hier nicht steht, und lasse keine hier genannte Seite weg\./);
 });
 
-test('copying hands over the same files the package contains',async()=>{
+test('the package still carries all three documents',async()=>{
   const app=await text('app.js');
-  assert.match(app,/const files=\[\['MASTER-PROMPT\.md',el\.masterPrompt\.value\],\['SEITENSTRUKTUR\.md',structureDocument\(\)\],\['PROJEKT-QUELLEN\.md',attachmentPromptBlock\(\)\]\];/);
-  assert.match(app,/DATEI \$\{index\+1\} VON \$\{files\.length\}/,'the count follows the list instead of a hard-coded 2');
-  assert.match(app,/'MASTER-PROMPT\.md':el\.masterPrompt\.value,'SEITENSTRUKTUR\.md':structureDocument\(\)/,'the ZIP carries it too');
+  assert.match(app,/'MASTER-PROMPT\.md':el\.masterPrompt\.value,'SEITENSTRUKTUR\.md':structureDocument\(\)/,'the ZIP carries all three');
   assert.match(app,/Es gilt die Liste in \\`SEITENSTRUKTUR\.md\\`/,'the master prompt stops deciding the site map itself');
 });
 

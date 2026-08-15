@@ -87,7 +87,9 @@
       .prompt-attach-button:hover{border-color:#4d637a;color:#e7f1f9}
       .prompt-attach-menu{position:absolute;z-index:9;left:14px;bottom:52px;width:min(240px,calc(100vw - 60px));padding:7px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:#141e28;box-shadow:0 24px 60px rgba(0,0,0,.5)}
       .prompt-attach-menu[hidden]{display:none!important}
-      .prompt-attach-menu button{display:block;width:100%;padding:9px 11px;border:0;border-radius:9px;background:transparent;color:#dfe9f2;text-align:left;font:700 12px/1.3 Arial,Helvetica,sans-serif;cursor:pointer}
+      /* display:block hier hat das flex von weiter oben ueberschrieben - damit lief das
+         margin-left:auto des Zaehlers ins Leere und die Zahl klebte am Text. */
+      .prompt-attach-menu button{display:flex;align-items:center;gap:10px;justify-content:space-between;width:100%;padding:9px 11px;border:0;border-radius:9px;background:transparent;color:#dfe9f2;text-align:left;font:700 12px/1.3 Arial,Helvetica,sans-serif;cursor:pointer}
       .prompt-attach-menu button:hover{background:rgba(45,147,201,.18);color:#f4f9fd}
       .prompt-setup-line{display:inline-flex;align-items:center;gap:7px;max-width:calc(100% - 46px);min-height:30px;padding:0 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--home-muted);font:650 11px/1 Arial,Helvetica,sans-serif;text-align:left;cursor:pointer}
       .prompt-setup-line:hover,.prompt-setup-line[aria-expanded="true"]{border-color:#33465a;color:#e7f1f9}
