@@ -1,7 +1,15 @@
 const { resolveProviderKey } = require('../server/provider-key');
+const { rateLimit } = require('../server/rate-limit');
+const { authenticatedUser } = require('../server/supabase-user');
 
+// Der Test loest den zentralen Schluessel auf und spricht damit den Anbieter an. Ohne
+// Anmeldung war das ein offener Weg, fremde Anbieterkonten zu belasten und nebenbei
+// abzufragen, welche Verbindungen ueberhaupt stehen. Beides gehoert hinter ein Konto.
 module.exports = async function handler(req,res){
   if(req.method !== 'GET') return res.status(405).json({error:'Method not allowed'});
+  if(!rateLimit(req,res,{key:'ai-test',limit:10,windowMs:60000})) return;
+  let user=null;try{user=await authenticatedUser(req)}catch{}
+  if(!user) return res.status(401).json({error:'Bitte zuerst anmelden.',source:'none'});
   const provider = String(req.query?.provider || '').toLowerCase();
   if(!['gateway','openai','gemini','cloudflare','github'].includes(provider)) return res.status(400).json({error:'Unbekannter Anbieter'});
   try{

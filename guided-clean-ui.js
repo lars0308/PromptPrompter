@@ -106,7 +106,15 @@
     const workspace=$('.workspace');if(!workspace||$('#guidedCleanHead'))return;
     const h=document.createElement('div');h.id='guidedCleanHead';h.className='guided-clean-head';h.innerHTML='<div class="guided-clean-brand"><img src="./sitebrief-logo.svg?v=6" alt=""><strong>Prompt.ai</strong></div><button type="button" class="guided-clean-exit" aria-label="Projekt schließen">×</button>';
     workspace.prepend(h);
-    $('.guided-clean-exit',h).onclick=()=>{const home=$('#brandHome');if(home){home.click();return}const flow=$('#workflowApp'),welcome=$('#welcomePage');if(flow)flow.hidden=true;if(welcome)welcome.hidden=false};
+    // Das x hat den halbfertigen Auftrag bisher wortlos zugeklappt. Wer mitten im Beschreiben
+    // ist, verliert damit seine Eingaben, ohne gefragt worden zu sein.
+    const leave=()=>{const home=$('#brandHome');if(home){home.click();return}const flow=$('#workflowApp'),welcome=$('#welcomePage');if(flow)flow.hidden=true;if(welcome)welcome.hidden=false};
+    $('.guided-clean-exit',h).onclick=async()=>{
+      const ask=window.PromptAiDialog?.confirm;
+      if(!ask){leave();return}
+      const ok=await ask('Diesen Auftrag jetzt abbrechen und zur Startseite zurück? Der Stand bleibt unter Projektstände gespeichert.',{title:'Auftrag abbrechen',confirmLabel:'Abbrechen und zurück',cancelLabel:'Weiterarbeiten',danger:true});
+      if(ok)leave();
+    };
   }
 
   const copy={

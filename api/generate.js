@@ -5,6 +5,7 @@ const freePrompt=require('../server/free-prompt-v2');
 const {taskForAction,listProfiles}=require('../server/system-ai-profiles');
 const {getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,consumePreviewRun,quotaErrorPayload}=require('../server/quota');
 const {getEntitlements}=require('../server/entitlements');
+const {rateLimit}=require('../server/rate-limit');
 
 // Which AIs a request may use follows the plan, never a choice in the browser.
 async function planOf(req){try{const ent=await getEntitlements(req);return ent?.isAdmin?'ultimate':String(ent?.plan||'free')}catch{return 'free'}}
@@ -62,4 +63,21 @@ async function websiteConceptRoute(req,res){
 }
 // preview-image only checks that the plan may render images at all - the run itself is booked
 // once by the concepts route, so three images cost one preview.
-module.exports=async function generateRouter(req,res){if(req.method==='POST'){const action=String(req.body?.action||'');if(['quota-summary','quota-check','quota-consume'].includes(action))return quotaRoute(req,res,action);if(action==='free-prompt'){if(!await enforce(req,res,'free_prompts'))return;return freePrompt(req,res)}if(action==='preview-image'){if(!await enforce(req,res,'ai_previews'))return;return previewImage(req,res)}if(action==='concepts')return websiteConceptRoute(req,res);if(action==='master-prompt')return runSystemProfiles(req,res);if(action==='sandbox-build')return sandboxBuild(req,res);if(req.body?.systemAiProfileId&&req.body?.useOwnApi!==true)return runSystemProfiles(req,res)}return core(req,res)};
+// Die drei Gastlaeufe zaehlt bisher nur der Browser (guestRunsRemaining in app.js), und
+// assertQuota laesst unangemeldete Aufrufe ausdruecklich durch. Wer die Seite umgeht und
+// direkt hierher spricht, hatte damit unbegrenzten Zugriff auf das KI-Budget. Serverseitig
+// deckelt deshalb die Adresse, was ohne Konto moeglich ist - grosszuegig genug fuer echte
+// Gastlaeufe, eng genug, dass sich damit kein Budget abraeumen laesst.
+const MAX_REQUEST_CHARS=600000;
+function signedIn(req){return /^Bearer\s+\S+/i.test(String(req?.headers?.authorization||req?.headers?.Authorization||''))}
+function tooLarge(req,res){
+  let size=0;try{size=JSON.stringify(req.body||{}).length}catch{size=MAX_REQUEST_CHARS+1}
+  if(size<=MAX_REQUEST_CHARS)return false;
+  res.status(413).json({error:'Die Anfrage ist zu gross. Bitte kuerze die Beschreibung oder haenge weniger Material an.'});
+  return true;
+}
+module.exports=async function generateRouter(req,res){if(req.method==='POST'){
+  if(tooLarge(req,res))return;
+  const authed=signedIn(req);
+  if(!rateLimit(req,res,authed?{key:'generate',limit:40,windowMs:60000}:{key:'generate-guest',limit:24,windowMs:900000}))return;
+  const action=String(req.body?.action||'');if(['quota-summary','quota-check','quota-consume'].includes(action))return quotaRoute(req,res,action);if(action==='free-prompt'){if(!await enforce(req,res,'free_prompts'))return;return freePrompt(req,res)}if(action==='preview-image'){if(!await enforce(req,res,'ai_previews'))return;return previewImage(req,res)}if(action==='concepts')return websiteConceptRoute(req,res);if(action==='master-prompt')return runSystemProfiles(req,res);if(action==='sandbox-build')return sandboxBuild(req,res);if(req.body?.systemAiProfileId&&req.body?.useOwnApi!==true)return runSystemProfiles(req,res)}return core(req,res)};

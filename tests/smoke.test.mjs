@@ -1115,3 +1115,39 @@ test('the trial build picks its system AI from the plan instead of asking',async
   assert.doesNotMatch(app,/keine fertige Website und hier auch nicht als Datei zum Mitnehmen/,'that contradicted the ZIP button right below it');
   assert.match(app,/Das Ergebnis kannst du als ZIP mitnehmen oder zusammen mit Master-Prompt/);
 });
+
+test('generate is rate limited and size capped, guests included',async()=>{
+  // assertQuota lets unauthenticated callers through by design, and the three guest runs are
+  // counted in the browser only - so the endpoint was open to anyone with curl.
+  const api=await text('api/generate.js');
+  assert.match(api,/const \{rateLimit\}=require\('\.\.\/server\/rate-limit'\)/);
+  assert.match(api,/key:'generate-guest',limit:24,windowMs:900000/,'a hard ceiling without an account');
+  assert.match(api,/key:'generate',limit:40,windowMs:60000/);
+  assert.match(api,/const MAX_REQUEST_CHARS=600000/);
+  assert.match(api,/res\.status\(413\)/,'a million characters get a clear answer, not a bill');
+});
+test('the connection test needs an account and cannot be hammered',async()=>{
+  const api=await text('api/ai-test.js');
+  assert.match(api,/if\(!rateLimit\(req,res,\{key:'ai-test',limit:10,windowMs:60000\}\)\) return;/);
+  assert.match(api,/if\(!user\) return res\.status\(401\)/,'it resolves the central key, so it belongs behind a login');
+});
+test('the public config does not hand out raw provider errors',async()=>{
+  const api=await text('api/config.js');
+  assert.match(api,/function redactError\(value\)\{/);
+  assert.match(api,/lastError:redactError\(x\.last_error\)/);
+  assert.doesNotMatch(api,/lastError:String\(x\.last_error\|\|''\)/);
+});
+test('the start page and the workflow are never on screen together',async()=>{
+  const css=await text('promptai-full-app-design.css');
+  assert.match(css,/html\.prompt-home-surface #workflowApp\{display:none!important\}/);
+});
+test('closing a running project asks first',async()=>{
+  const src=await text('guided-clean-ui.js');
+  assert.match(src,/Diesen Auftrag jetzt abbrechen und zur Startseite zurück\?/);
+  assert.match(src,/cancelLabel:'Weiterarbeiten'/);
+});
+test('the plan chip stays on the right when the console meta row wraps',async()=>{
+  const home=await text('promptai-home-final.js');
+  assert.match(home,/<span class="prompt-plan-chip">/);
+  assert.match(home,/\.prompt-command-meta>\.prompt-plan-chip\{order:10;margin-left:auto/);
+});

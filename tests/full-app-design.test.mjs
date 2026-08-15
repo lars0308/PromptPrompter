@@ -419,8 +419,13 @@ test('the plus in the console feeds the real reference inputs instead of a secon
   const home=await read('promptai-home-final.js');
   // Datei: der echte Dateidialog der Referenzen, mit dessen Formaten, Grenzen und Sperren.
   assert.match(home,/function attachFile\(\)\{const input=\$\('#imageInput'\);if\(input\)input\.click\(\)/);
-  // Link: durch das echte Feld und den echten Knopf - keine zweite Prüfung, kein zweiter Zähler.
-  assert.match(home,/const field=\$\('#referenceUrl'\);if\(field\)\{field\.value=value;\$\('#addUrlBtn'\)\?\.click\(\)\}/);
+  // Link: durch das echte Feld und den echten Knopf - kein zweiter Zähler, kein zweiter Speicher.
+  // Geprüft wird die Eingabe aber hier, denn die Prüfung in app.js meldet sich an einem Feld,
+  // das auf der Startseite gar nicht sichtbar ist.
+  assert.match(home,/const field=\$\('#referenceUrl'\);if\(field\)\{field\.value=url\.href;\$\('#addUrlBtn'\)\?\.click\(\)\}/);
+  assert.match(home,/Das ist keine Adresse\. Beispiel: https:\/\/beispiel\.de/);
+  assert.match(home,/Nur Adressen mit http oder https sind moeglich\./);
+  assert.match(home,/note\.textContent='Link wird geprueft/);
   // Die Kacheln spiegeln die echte Liste; ihr × drückt den echten Entfernen-Knopf.
   assert.match(home,/\['#urlReferences','link'\],\['#imageReferences','bild'\],\['#documentReferences','datei'\]/);
   assert.match(home,/item\.node\.querySelector\('\.remove-btn/);
