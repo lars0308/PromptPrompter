@@ -47,7 +47,7 @@
   // Three previews, for every plan. More was a choice nobody could judge; fewer is not a real set.
   // Ein Rueckfall fuer die ganze Oberflaeche - derselbe Satz Werte wie in server/prices.js.
   // Was der Server liefert, gewinnt; das hier greift nur, wenn die Konfiguration nicht laedt.
-  const PRICE_FALLBACK={pro:'20,99 € / Monat',ultimate:'54,99 € / Monat',apiKeys:'5,99 € / Monat',topUp:'4,99 €'};
+  const PRICE_FALLBACK={pro:'20,99 € / Monat',ultimate:'54,99 € / Monat',apiKeys:'5,99 € / Monat',topUp:'7,99 €'};
   const PREVIEW_COUNT=3;
   const PLAN_RULES = {
     free:{label:"Free",modes:["guided"],libraryItems:0,concepts:3,previewRetries:1,agents:Object.keys(AGENT_NAMES),clientDocs:false,modules:false,customProfiles:false,profileLimit:0,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,aiPreviews:false,maxRefUrls:1,maxRefImages:0},
@@ -624,7 +624,7 @@
       el.buySingleReviewBtn.textContent=`Monatsvorrat auffüllen · ${window.PromptAiPrices?.topUp||PRICE_FALLBACK.topUp}`;
       const topUpTitle=document.getElementById('topUpNoteTitle');
       if(topUpTitle)topUpTitle.textContent=`Monatsvorrat auffüllen – ${window.PromptAiPrices?.topUp||PRICE_FALLBACK.topUp}`;
-      el.buySingleReviewBtn.title='Einmalig eine halbe Million Einheiten zusätzlich für diesen Monat.';
+      el.buySingleReviewBtn.title='Einmalig 750.000 Einheiten zusätzlich für diesen Monat.';
     }
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());

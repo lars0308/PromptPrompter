@@ -11,8 +11,8 @@ async function upsertAddon(userId,payload){const {headers}=service(),r=await fet
 // 4,99 EUR fuer eine Million haette Ultimate untergraben: Pro plus vier Aufladungen waere bei
 // gleichem Volumen ~41 EUR statt 55 EUR gewesen. Ultimate kostet 34 EUR mehr als Pro fuer 3,5
 // Mio zusaetzliche Einheiten, also rund 10 EUR je Million - die Aufladung liegt jetzt auf
-// derselben Rate: eine halbe Million fuer 4,99 EUR.
-const TOP_UP_UNITS=500000;
+// derselben Rate: 750.000 fuer 7,99 EUR (rund 10,65 EUR je Million).
+const TOP_UP_UNITS=750000;
 async function addBudgetTopUp(userId,purchaseId,product){
   const {headers}=service();
   const read=await fetch(`${SUPABASE_URL}/rest/v1/sitebrief_user_admin_state?select=monthly_token_bonus&user_id=eq.${encodeURIComponent(userId)}&limit=1`,{headers});

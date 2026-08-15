@@ -1075,7 +1075,7 @@ test('the one-off purchase tops up the monthly budget instead of selling a singl
   assert.match(app,/Monatsvorrat auffüllen · \$\{window\.PromptAiPrices\?\.topUp\|\|PRICE_FALLBACK\.topUp\}/);
   assert.match(app,/beginCheckout\('top_up'\)/);
   const hook=await text('api/stripe-webhook.js');
-  assert.match(hook,/const TOP_UP_UNITS=500000/,'sonst untergraebt die Aufladung Ultimate');
+  assert.match(hook,/const TOP_UP_UNITS=750000/,'sonst untergraebt die Aufladung Ultimate');
   assert.match(hook,/product==='single_review'\|\|product==='top_up'\)await addBudgetTopUp/,'alte Käufe landen an derselben Stelle');
   assert.match(hook,/monthly_token_bonus:current\+TOP_UP_UNITS/);
 });

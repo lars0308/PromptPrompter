@@ -6,7 +6,7 @@ const FALLBACK=Object.freeze({
   pro:'20,99 € / Monat',
   ultimate:'54,99 € / Monat',
   apiKeys:'5,99 € / Monat',
-  topUp:'4,99 €'
+  topUp:'7,99 €'
 });
 function prices(env=process.env){
   return {
