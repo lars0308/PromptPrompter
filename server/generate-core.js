@@ -544,7 +544,10 @@ module.exports = async function handler(req,res){
       let freeUser=null;try{freeUser=await authenticatedUser(req)}catch{}
       if(!freeUser?.id)return res.status(403).json({error:"Für die KI-Prüfung im kostenlosen Tarif bitte anmelden."});
       const freeBudget=await getTokenBudget(req);
-      if(freeBudget.exhausted)return res.status(403).json({error:"Dein kostenloses KI-Guthaben für diesen Monat ist aufgebraucht. Die Prüfung läuft weiter lokal; ab Pro steht sie durchgehend zur Verfügung."});
+      // Ohne eingestelltes Guthaben gibt es keinen freien Lauf: getTokenBudget meldet fuer ein
+      // Limit von 0 "kein Limit", und das hiesse hier nicht "grosszuegig", sondern "unbegrenzt
+      // auf unsere Rechnung". Fehlt der Wert, bleibt es beim lokalen Weg.
+      if(!freeBudget.limit||freeBudget.exhausted)return res.status(403).json({error:"Dein kostenloses KI-Guthaben für diesen Monat ist aufgebraucht. Die Prüfung läuft weiter lokal; ab Pro steht sie durchgehend zur Verfügung."});
     }
     if(entitlement.plan==="pro" && !entitlement.ownApiKeys && !["openai","gateway"].includes(engine) && action!=="preview-image") return res.status(403).json({error:"Dieser KI-Anbieter ist in Ultimate oder mit dem API-Key-Add-on verfügbar."});
     if(action==="preview-image"){

@@ -558,7 +558,7 @@ test('what costs us money is either gated or counted',async()=>{
   assert.doesNotMatch(core,/action!=="revision-brief"\) return res\.status\(403\)/);
   // Free darf die KI benutzen, solange das Guthaben reicht - aber nur angemeldet.
   assert.match(core,/if\(!freeUser\?\.id\)return res\.status\(403\)/);
-  assert.match(core,/if\(freeBudget\.exhausted\)return res\.status\(403\)/);
+  assert.match(core,/if\(!freeBudget\.limit\|\|freeBudget\.exhausted\)return res\.status\(403\)/,'ohne eingestelltes Guthaben kein freier Lauf - sonst hiesse 0 unbegrenzt');
   // Die Lern-Auswertung ist der längste Aufruf im Produkt: kürzerer Ausschnitt, Sperre pro Stunde.
   assert.match(models,/key:'learning-feedback',limit:4,windowMs:60\*60\*1000/);
   assert.match(models,/html:String\(out\.html\|\|''\)\.slice\(0,12000\)/);
