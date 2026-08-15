@@ -202,7 +202,9 @@
   function creditNote(){
     const credits=Math.max(0,Number(window.PromptAiAccess?.reviewCredits)||0);
     if(!credits)return '';
-    return credits===1?'1 gekaufte Prüfung bereit':`${credits} gekaufte Prüfungen bereit`;
+    // "Bereit" allein liest sich wie ein Knopf, den man suchen muesste - eingeloest wird sie aber
+    // von selbst, sobald das naechste Projekt geprueft wird.
+    return credits===1?'1 gekaufte Prüfung – wird beim nächsten Projekt eingelöst':`${credits} gekaufte Prüfungen – die nächste wird beim nächsten Projekt eingelöst`;
   }
   function withCredit(line){const note=creditNote();return note?(line?`${line} · ${note}`:note):line}
   // Was eine Nutzung kostet, misst der Monatsvorrat - Tokens im Hintergrund, Prozent im Bild.

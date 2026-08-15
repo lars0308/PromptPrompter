@@ -161,6 +161,20 @@
         .gate-shot{max-width:100%;margin:0 auto}
         .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{max-width:620px;margin:0 auto}
       }
+      /* Auf dem Telefon standen Anmelden und Kostenlos testen mitten im Bild und klebten an der
+         Ueberschrift, der Rest lag als eine dichte Kolonne darunter. Die zwei Knoepfe teilen sich
+         jetzt eine eigene Zeile ueber dem Spruch, und jeder Block bekommt Luft. */
+      @media(max-width:700px){
+        .gate-top{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;margin:18px 0 26px!important}
+        .gate-top>button{width:100%!important;justify-content:center!important;min-height:46px!important}
+        .account-dialog.guest-gate .auth-hero h1{margin-top:0!important;font-size:clamp(34px,9.2vw,46px)!important;line-height:1.02!important}
+        .account-dialog.guest-gate .account-intro{margin-top:14px!important;font-size:13.5px!important;line-height:1.6!important}
+        #gateActions{gap:14px!important;margin-top:22px!important}
+        .gate-theme-pick{margin-top:10px!important;padding:8px 12px!important;border:1px solid var(--line)!important;border-radius:999px!important;font-size:11px!important}
+        .gate-proof{gap:20px!important;margin-top:26px!important}
+        .gate-proof li{padding-top:16px!important}
+        .gate-shot{margin-top:18px!important}
+      }
     `;document.head.appendChild(s);
   }
 

@@ -1069,7 +1069,7 @@ test('the one-off purchase tops up the monthly budget instead of selling a singl
   assert.match(app,/function publishReviewCredits\(\)/);
   assert.match(app,/window\.dispatchEvent\(new CustomEvent\('promptai:credits'/);
   assert.match(home,/function creditNote\(\)/);
-  assert.match(home,/'1 gekaufte Prüfung bereit'/);
+  assert.match(home,/1 gekaufte Prüfung – wird beim nächsten Projekt eingelöst/,'sonst sucht man einen Knopf, den es nicht gibt');
   // Aus dem Einzelcheck ist Monatsvorrat geworden - er passt zu jedem Tarif, alte Gutschriften
   // bleiben nutzbar, und der Kauf landet als Bonus im selben Budget.
   assert.match(app,/Monatsvorrat auffüllen · \$\{window\.PromptAiPrices\?\.topUp\|\|PRICE_FALLBACK\.topUp\}/);
