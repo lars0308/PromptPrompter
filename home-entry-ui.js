@@ -32,13 +32,11 @@
   // "Letztes Projekt öffnen" said nothing about which project that is. The name is in the saved
   // state, so the tile can simply show it.
   function lastProjectName(){
-    try{
-      const raw=localStorage.getItem('sitebrief-v6-state');if(!raw)return '';
-      const saved=JSON.parse(raw),name=String(saved?.project?.name||'').trim();
-      const client=String(saved?.project?.client?.name||'').trim();
-      const label=name||client;
-      return label?`Weiter mit „${label.length>38?`${label.slice(0,37)}…`:label}“`:'';
-    }catch{return ''}
+    // Der Name kam frueher aus einem eigenen Blick in den Speicher, der nur zwei der drei
+    // moeglichen Stellen kannte - bei einem Projekt aus der Konsole blieb die Kachel deshalb
+    // stumm. Jetzt fragt sie dieselbe Auskunft wie alle anderen.
+    const label=(window.PromptAiProjectState?.title?.()||'').trim();
+    return label?`Weiter mit „${label.length>38?`${label.slice(0,37)}…`:label}“`:'';
   }
   function decorate(b,title,subtitle,primary=false,tier=''){if(!b)return;b.classList.toggle('home-primary',primary);b.classList.toggle('home-secondary',!primary);const sig=`${title}|${subtitle}`;if(b.dataset.homeCopy!==sig){b.dataset.homeCopy=sig;b.innerHTML=`<strong>${title}</strong><small>${subtitle}</small>`}if(tier)b.dataset.planLabel=tier}
   function reorder(){const actions=$('.welcome-quick-actions'),n=$('#workspaceNewProjectBtn'),f=$('#workspaceFreePromptBtn');if(!actions||!n||!f)return;decorate(n,'Internetseite erstellen','Website-Projekt beschreiben und daraus einen klaren KI-Auftrag entwickeln.',true);decorate(f,'Freier Prompt','Alles andere: Text, Bild, Video, Musik, PowerPoint, Code und mehr.',true);decorate($('#workspaceRevisionBtn'),'Website überarbeiten','Eine bestehende Internetseite gezielt weiterentwickeln.',false,'PRO');decorate($('#workspaceBuildSiteBtn'),'Probelauf','Dein offenes Projekt einmal bauen lassen – ansehen, als ZIP mitnehmen oder ins Repository legen.',false,'ULTIMATE');decorate($('#workspacePreviewBtn'),'Gebautes Projekt prüfen','ZIP, Ordner oder GitHub-Repo als Live-Vorschau prüfen.',false,'PRO');decorate($('#workspaceLastProjectBtn'),'Letztes Projekt öffnen',lastProjectName()||'Einen gespeicherten Arbeitsstand fortsetzen.',false,'PRO');decorate($('#workspaceLibraryBtn'),'Bibliothek öffnen','Eigene Vorlagen, Module, Skills und Projekte.',false,'PRO');decorate($('#showPlansBtn'),'Abonnieren','Pro oder Ultimate freischalten und alle Werkzeuge nutzen.',false);const ordered=[n,f,$('#workspaceRevisionBtn'),$('#workspaceBuildSiteBtn'),$('#workspacePreviewBtn'),$('#workspaceLastProjectBtn'),$('#workspaceLibraryBtn'),$('#showPlansBtn')].filter(Boolean);for(const [i,b] of ordered.entries()){const current=actions.children[i];if(current!==b)actions.insertBefore(b,current||null)}let note=$('#homeTierNote');if(!note){note=document.createElement('p');note.id='homeTierNote';note.className='home-tier-note';actions.appendChild(note)}note.textContent=isFree()?'Free enthält Internetseite erstellen und Freier Prompt. Weitere Werkzeuge werden mit Pro freigeschaltet.':'Alle freigeschalteten Werkzeuge stehen bereit.';$('#homeVersion')?.remove();const rail=$('.rail-foot span');if(rail)rail.textContent='v1.0'}

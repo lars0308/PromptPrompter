@@ -494,7 +494,7 @@ test('the ".ai" suffix on the Prompt.ai wordmark is statically blue everywhere i
 });
 test('a broad prompt-unified-ui dialog reset does not strip the cookie banner\'s padding with !important',async()=>{
   const src=await text('unified-ui-v1.js');
-  assert.match(src,/dialog:not\(#previewLightbox\):not\(#welcomeIntroDialog\):not\(#cookieBanner\)\{border:0!important;background:transparent!important;color:var\(--ink\)!important;padding:0!important\}/);
+  assert.match(src,/dialog:not\(\.prompt-own-style\):not\(#previewLightbox\):not\(#welcomeIntroDialog\):not\(#cookieBanner\)\{border:0!important;background:transparent!important;color:var\(--ink\)!important;padding:0!important\}/);
 });
 test('a stuck review/preview loader recovers in place instead of firing a native alert() and forcibly navigating the user home',async()=>{
   const src=await text('transition-polish.js');

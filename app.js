@@ -602,7 +602,7 @@
     if(checksSection)checksSection.hidden=state.plan==="free"&&!state.isAdmin;
     // The note used to advertise the own-API-key add-on, which no longer exists. Only the plan
     // hint for free accounts is left.
-    if(el.settingsUpgradeNote){el.settingsUpgradeNote.hidden=state.plan!=='free';el.settingsUpgradeNote.innerHTML='<strong>Mehr Kontrolle mit Pro</strong><p>Claude, Module, Skills, Kundenunterlagen, ZIP-Export und erweiterte Prüfregeln.</p><button type="button" class="outline-btn mini" data-upgrade-plans>Pro ansehen</button>'}
+    if(el.settingsUpgradeNote){el.settingsUpgradeNote.hidden=state.plan!=='free';el.settingsUpgradeNote.innerHTML='<strong>Mehr Kontrolle mit Pro</strong><p>Module, Skills, Kundenunterlagen, KI-Bildvorschauen und die Prüfung ohne Monatsgrenze.</p><button type="button" class="outline-btn mini" data-upgrade-plans>Pro ansehen</button>'}
     const moduleStep=document.getElementById('stepModules');if(moduleStep)moduleStep.classList.toggle('tier-unavailable',!rules.modules);
     if(el.openLibraryBtn)el.openLibraryBtn.hidden=!rules.modules;
     document.querySelectorAll('[data-open-library],[data-mobile-library]').forEach(button=>button.hidden=!rules.modules);
@@ -1399,6 +1399,18 @@
       `Zurückhaltend – fast neutral, ${name.toLowerCase()} nur an Aktionen · #2B2E31 #F3F4F5 ${base[2]} #16181B`
     ];
   }
+  // Der eine echte Durchlauf im kostenlosen Tarif ist der einzige Moment, in dem jemand den
+  // Unterschied wirklich gespuert hat - direkt danach gehoert der Hinweis hin, einmal im Monat
+  // und nicht als Dauerbanner.
+  async function offerAfterFreeRun(){
+    if(state.plan!=='free'||state.isAdmin)return;
+    const month=new Date().toISOString().slice(0,7),key='prompt-ai-free-run-offer-v1';
+    try{if(localStorage.getItem(key)===month)return;localStorage.setItem(key,month)}catch{}
+    const ask=window.PromptAiDialog?.confirm;
+    if(!ask)return;
+    const open=await ask('Das waren echte Rückfragen aus deinem Briefing – dein KI-Durchlauf für diesen Monat. Mit Pro fragt die KI bei jedem Projekt nach, und die Vorschauen kommen als Bilder statt als HTML.',{title:'Dein Monatslauf ist verbraucht',confirmLabel:'Tarife ansehen',cancelLabel:'Später'});
+    if(open)el.plansDialog?.showModal();
+  }
   function questionSuggestions(q){
     const text=`${q.question||""} ${q.reason||""}`.toLowerCase();let suggestions=[...(Array.isArray(q.suggestions)?q.suggestions:[]),q.suggestedAnswer].filter(Boolean);
     if(/cms|content.management|inhalte|beiträge|tagebuch/.test(text))suggestions.push("Sanity – flexibel und strukturiert","WordPress – vertraut und leicht selbst pflegbar","Kein CMS – Inhalte werden im Code gepflegt");
@@ -1431,7 +1443,7 @@
   function saveClarificationAnswers(){
     const questions=state.projectReview?.questions||[]; const rows=$$(".clarification-question",el.clarificationQuestions); const answers=[];
     for(const row of rows){const idx=rows.indexOf(row);const q=questions[idx];const ta=row.querySelector("textarea");if(q?.required && !ta.value.trim()){ta.reportValidity();return false}answers.push({id:q?.id||uid("answer"),question:q?.question||"",answer:ta.value.trim(),reason:q?.reason||""});}
-    state.clarifications=answers;state.reviewDeferred=false;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide();return true;
+    state.clarifications=answers;state.reviewDeferred=false;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide();offerAfterFreeRun();return true;
   }
 
   async function runProjectReview(force=false){

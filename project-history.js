@@ -14,7 +14,9 @@
     return clone;
   }
   function currentState(){try{return JSON.parse(localStorage.getItem(STATE_KEY)||'null')}catch{return null}}
-  function projectTitle(s){return String(s?.project?.name||s?.projectName||s?.client?.name||s?.project?.description||s?.projectDescription||'Unbenanntes Projekt').trim().slice(0,70)||'Unbenanntes Projekt'}
+  // Der Name kommt aus derselben Auskunft wie überall sonst (project-state.js); hier bleibt nur
+  // der Ersatztext, wenn ein gespeicherter Stand gar keinen Namen trägt.
+  function projectTitle(s){return (window.PromptAiProjectState?.title?.(s)||'').trim()||'Unbenanntes Projekt'}
   function snapshot(force=false){
     const s=currentState();if(!s)return;const clean=stripHeavy(s),sig=hash(clean),now=Date.now();if(!force&&(sig===stateHash||now-lastSnapshotAt<45000))return;stateHash=sig;lastSnapshotAt=now;
     const rows=read(HISTORY_KEY,[]),projectId=String(clean.projectId||clean.currentProjectId||'local');rows.unshift({id:`${now}-${sig}`,projectId,title:projectTitle(clean),step:Number(clean.currentStep)||1,maxStep:Number(clean.maxVisited)||Number(clean.currentStep)||1,mode:clean.mode||'guided',at:now,state:clean});
@@ -53,7 +55,7 @@
   // erst in den Ablauf, sondern auf die Startseite.
   function restoreTarget(row){
     const state=row.state||{};
-    const described=Boolean(String(state.project?.description||'').trim());
+    const described=window.PromptAiProjectState?.described?.(state)??Boolean(String(state.project?.description||'').trim());
     const reached=Math.max(Number(row.step)||1,Number(row.maxStep)||1,Number(state.currentStep)||1,Number(state.maxVisited)||1);
     return {
       mode:row.mode||state.mode||'guided',

@@ -460,7 +460,7 @@ test('templates and skills are pickable in the console, mirrored from the real c
   // Drei Knöpfe nebeneinander sahen voll und verrutscht aus. Es gibt jetzt eine Zeile mit
   // dem Stand und dahinter ein Blatt mit allen Einstellungen - links tun, rechts einstellen.
   assert.match(home,/id="promptSetupButton"/);
-  assert.match(home,/<dialog class="prompt-setup-sheet prompt-picker-dialog" id="promptSetupSheet"/);
+  assert.match(home,/<dialog class="prompt-setup-sheet prompt-picker-dialog prompt-own-style" id="promptSetupSheet"/);
   assert.doesNotMatch(home,/id="promptSkillsButton"/,'kein eigener Knopf mehr je Einstellung');
   assert.doesNotMatch(home,/id="promptTemplateButton"/);
   // Der Stand steht als Satz in der Zeile: Ablauf, Vorlage, Anzahl der Skills.
@@ -494,7 +494,7 @@ test('long setting lists stay short: ten entries plus a window with all of them'
   // Was aktiv ist, bleibt sichtbar - auch wenn es selten benutzt wird.
   assert.match(home,/const head=ranked\.slice\(0,PICKER_LIMIT\),missing=ranked\.slice\(PICKER_LIMIT\)\.filter\(entry=>entry\.checked\)/);
   // Das Fenster nimmt die ganze Seite ein, wie jeder andere Dialog.
-  assert.match(home,/dialog\.prompt-picker-dialog:not\(#welcomePage\)[^{]*\{width:100vw!important/);
+  assert.match(home,/\n      \.prompt-picker-dialog\{width:100vw!important/);
   assert.match(home,/if\(!dialog\.open\)dialog\.showModal\(\)/);
 });
 
@@ -658,4 +658,31 @@ test('runtime errors and the moments that matter finally arrive somewhere',async
   assert.match(app,/productSignal\("copy-master-prompt",state\.targetAgent\)/);
   assert.match(app,/productSignal\("download-zip",state\.targetAgent\)/);
   assert.match(app,/productSignal\('open-agent',state\.targetAgent\)/);
+});
+
+test('one place owns the saved project state, and the free run has its moment',async()=>{
+  const state=await read('project-state.js'),home=await read('promptai-home-final.js'),history=await read('project-history.js'),entry=await read('home-entry-ui.js'),app=await read('app.js'),boot=await read('admin-console.js');
+  // Acht Dateien lasen denselben Speicher mit je eigener Vorstellung - daher die Fehler, bei
+  // denen ein Projekt namenlos blieb oder auf der falschen Seite landete.
+  assert.match(state,/window\.PromptAiProjectState=\{key:KEY,read:raw,title,step,described,exists,masterPrompt\}/);
+  assert.ok(boot.includes('./project-state.js'));
+  assert.match(home,/function projectTitle\(\)\{return window\.PromptAiProjectState\?\.title\?\.\(\)\|\|''\}/);
+  assert.match(history,/window\.PromptAiProjectState\?\.title\?\.\(s\)/);
+  assert.match(entry,/const label=\(window\.PromptAiProjectState\?\.title\?\.\(\)\|\|''\)\.trim\(\)/);
+  // Und der eine echte Durchlauf im kostenlosen Tarif endet nicht im Nichts.
+  assert.match(app,/async function offerAfterFreeRun\(\)\{/);
+  assert.match(app,/Dein Monatslauf ist verbraucht/);
+  assert.match(app,/localStorage\.setItem\(key,month\)/,'einmal im Monat, kein Dauerbanner');
+});
+
+test('a new dialog can style itself without a chain of four IDs',async()=>{
+  const unified=await read('unified-ui-v1.js'),home=await read('promptai-home-final.js');
+  // Die Pauschale nahm jedem Dialog Rand, Grund und Innenabstand - gedacht war sie für die
+  // Fenster mit .dialog-frame. Wer sein Aussehen mitbringt, bleibt jetzt aussen vor.
+  assert.match(unified,/dialog:not\(\.prompt-own-style\):not\(#previewLightbox\)/);
+  assert.match(home,/class="prompt-setup-sheet prompt-picker-dialog prompt-own-style"/);
+  assert.match(home,/dialog\.className='prompt-picker-dialog prompt-own-style'/);
+  // Und der Sonderfall ist wieder eine gewoehnliche Klasse.
+  assert.match(home,/\n      \.prompt-picker-dialog\{width:100vw!important/);
+  assert.doesNotMatch(home,/:not\(#welcomePage\):not\(#workflowApp\):not\(#promptFooter\)/,'die Gewichts-Kette darf weg sein');
 });
