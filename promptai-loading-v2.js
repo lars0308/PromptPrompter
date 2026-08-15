@@ -7,12 +7,23 @@
   let settleTimer=0,lastClarificationOpen=false;
 
   try{if(sessionStorage.getItem(SIMPLE_START_KEY)==='1')document.documentElement.classList.add('prompt-skip-intake-brief')}catch{}
+  // Die Papierfläche über der Arbeitsfläche deckt nur die Lücke bis zum Briefing-Schirm. Kommt der
+  // aus irgendeinem Grund nicht, darf sie nicht stehen bleiben - vier Sekunden sind großzügig
+  // gerechnet und deutlich kürzer als der Notausstieg in theme-init.js.
+  setTimeout(()=>document.documentElement.classList.remove('prompt-handoff-pending'),4000);
 
   function installStyles(){
     if($('#promptLoadingV2Styles'))return;
     const s=document.createElement('style');s.id='promptLoadingV2Styles';s.textContent=`
       :root{--prompt-load-blue:${BLUE}}
       html.prompt-skip-intake-brief #workflowApp #stepProject.active{visibility:hidden!important;pointer-events:none!important}
+      /* Zwischen Startschirm und Briefing-Schirm lag ungefähr eine Sekunde nackte Arbeitsfläche,
+         inklusive der Zeile "Projekt wird vorbereitet" aus mode-flow-ui.js. Das las sich wie ein
+         zweiter Ladebildschirm, der sofort wieder verschwindet. Solange der Briefing-Schirm noch
+         nicht steht, bleibt darunter nur die Papierfläche stehen - theme-init.js setzt die Klasse
+         schon im ersten Skript und nimmt sie spätestens nach neun Sekunden wieder weg. */
+      html.prompt-handoff-pending body{background:var(--paper)!important}
+      html.prompt-handoff-pending body>*:not(#promptBriefHandoff):not(#promptAppBoot){visibility:hidden!important}
       .prompt-handoff-loader{position:fixed;z-index:2147483600;inset:0;display:grid;place-items:center;padding:28px 20px;background:var(--paper);color:var(--ink);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       .prompt-handoff-loader>div{width:min(590px,100%);text-align:center}.prompt-handoff-loader .prompt-process-lines{margin-top:24px;text-align:left}
       .prompt-process-kicker{display:block;color:var(--prompt-load-blue);font-size:9px;font-weight:850;letter-spacing:.12em}.prompt-process-title{display:block;margin-top:8px;font-size:clamp(30px,7vw,48px);line-height:1;letter-spacing:-.05em}
@@ -92,6 +103,9 @@
       // ist längst gewechselt - der Schirm zeigt nur noch, dass etwas übernommen wurde.
       const runFor=2800;
       overlay.dataset.startedAt=String(Date.now());overlay.dataset.runFor=String(runFor);
+      // Der Schirm steht - ab hier darf die Fläche darunter wieder sichtbar werden, sie liegt
+      // ohnehin dahinter. Ohne diese Zeile bliebe sie bis zum Notausstieg nach neun Sekunden weg.
+      document.documentElement.classList.remove('prompt-handoff-pending');
       renderLines(overlay,lineSet('briefing'),runFor);
     }
     const text=String($('#projectDescription')?.value||'').trim();
@@ -127,10 +141,18 @@
     ]);stage.classList.remove('prompt-v2-complete')},180)}
   }
 
+  // Das × führte auf Schritt 2 zurück - die Referenzen-Seite, die es im geführten Ablauf gar
+  // nicht mehr gibt. Der Klick löste damit die automatische Weiterleitung aus, was aussah, als
+  // lade die Seite neu. Wer die Rückfragen wegklickt, will heraus: zurück auf die Startseite.
+  function goHomeFromClarification(){
+    const exit=document.querySelector('.guided-clean-exit')||document.querySelector('#brandHome');
+    if(exit){exit.click();return}
+    const nav=$('.step-nav[data-step="2"]');if(nav)nav.click();else $('#stepAgent .back-btn')?.click();
+  }
   function clarificationExit(event){
     const close=event.target.closest?.('#clarificationDialog .close-dialog');if(!close)return;
     event.preventDefault();event.stopImmediatePropagation();const dialog=$('#clarificationDialog');document.documentElement.classList.add('prompt-clarification-exit');try{sessionStorage.setItem(DISMISS_KEY,'1')}catch{}try{dialog?.close('cancel')}catch{dialog?.removeAttribute('open')}
-    setTimeout(()=>{const nav=$('.step-nav[data-step="2"]');if(nav)nav.click();else $('#stepAgent .back-btn')?.click();document.documentElement.classList.remove('prompt-review-transition');setTimeout(()=>{document.documentElement.classList.remove('prompt-clarification-exit');try{sessionStorage.removeItem(DISMISS_KEY)}catch{}},500)},20)
+    setTimeout(()=>{goHomeFromClarification();document.documentElement.classList.remove('prompt-review-transition');setTimeout(()=>{document.documentElement.classList.remove('prompt-clarification-exit');try{sessionStorage.removeItem(DISMISS_KEY)}catch{}},500)},20)
   }
   function clarificationCancel(event){if(event.target?.id!=='clarificationDialog')return;event.preventDefault();const close=$('#clarificationDialog .close-dialog');if(close)clarificationExit({target:close,preventDefault(){},stopImmediatePropagation(){}})}
 

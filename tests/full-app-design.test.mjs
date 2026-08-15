@@ -131,8 +131,12 @@ test('the drawer reshapes the existing menu instead of building a second one',as
   // A rebuilt menu means maintaining every plan gate twice, and the copy is the one that goes wrong.
   assert.match(nav,/const menu=\$\('#topbarMenu'\)/);
   assert.doesNotMatch(nav,/\.insertBefore\(/,'no existing entry may be re-parented');
-  // The only append is the drawer's own new button; nothing that was already there is touched.
-  assert.deepEqual([...nav.matchAll(/menu\.appendChild\((\w+)\)/g)].map(m=>m[1]),['button']);
+  // The only appends are the drawer's own new buttons (the work path and the Support entry);
+  // nothing that was already in the menu is re-parented.
+  assert.deepEqual([...nav.matchAll(/menu\.appendChild\((\w+)\)/g)].map(m=>m[1]),['button','button']);
+  assert.match(nav,/button\.id='menuSupportBtn'/,'Support ist ein eigener Menüpunkt');
+  // Er baut kein zweites Formular, sondern öffnet den vorhandenen Block im Profil.
+  assert.match(nav,/\.account-support-card/);
   // Moving nodes threw: other layers insertBefore relative to them. Ordering is CSS now.
   assert.match(nav,/const rank=sortEntry\(node\);/);
   assert.match(nav,/node\.style\.order=String\(rank\);/);
@@ -141,7 +145,13 @@ test('the drawer reshapes the existing menu instead of building a second one',as
   assert.match(nav,/new MutationObserver\(\(\)=>\{clearTimeout\(pending\);pending=setTimeout\(shell,60\)\}\)\.observe\(menu,\{childList:true\}\)/);
   // The four work paths click the real home buttons, so the plan gate stays in one place.
   assert.match(nav,/\['Probelauf','workspaceBuildSiteBtn'/);
-  assert.match(nav,/setTimeout\(\(\)=>\$\('#'\+targetId\)\?\.click\(\),60\)/);
+  assert.match(nav,/const target=\$\('#'\+targetId\);/);
+  assert.match(nav,/setTimeout\(\(\)=>target\?\.click\(\),60\)/);
+  // Ein gesperrter Eintrag verschwindet nicht, er nennt den Tarif und öffnet die Tarifseite -
+  // der nötige Tarif wird dabei aus data-plan-label der echten Kachel gespiegelt, nicht doppelt
+  // gepflegt.
+  assert.match(nav,/target\?\.dataset\.planLabel/);
+  assert.match(nav,/if\(lockFromTarget\(button,target\)\)\{close\(\);setTimeout\(\(\)=>document\.querySelector\('#plansDialog'\)\?\.showModal\(\)/);
   assert.match(nav,/#accountBtn:not\(\[hidden\]\)\{[\s\S]{0,60}margin-top:auto/,'profile is the one entry pinned to the bottom');
   // Eine Liste aus Wörtern: zwei Zeilen mit Zeichen unter acht ohne sahen aus wie Reste.
   assert.match(nav,/\.topbar-menu button svg\{display:none!important\}/);
@@ -210,7 +220,10 @@ test('the old start page never shows through, and the handoff loader gets to fin
   assert.match(loader,/const rest=Math\.max\(0,Number\(overlay\.dataset\.startedAt/);
   // Last project only appears once there is one; the meta line carries live numbers.
   assert.match(home,/if\(latest\)latest\.hidden=!title/);
-  assert.match(home,/text\?`\$\{text\.length\} Zeichen · ≈\$\{tokenGuess\(text\)\} Token`:quotaLine/);
+  assert.match(home,/\$\{text\.length\} Zeichen · ≈\$\{total\} Token/);
+  // Anhänge wiegen im Auftrag oft mehr als der getippte Satz und zählen deshalb mit.
+  assert.match(home,/function attachmentTokens\(\)/);
+  assert.match(home,/const total=tokenGuess\(text\)\+attached;/);
   assert.doesNotMatch(home,/Modell automatisch/,'the label said nothing that changes');
 });
 
@@ -295,15 +308,22 @@ test('the boot mark traces the blue once around the inside of the letter',async(
   assert.match(css,/\.prompt-home-surface \.topbar \.brand-mark\{[\s\S]{0,140}background:transparent!important/);
 });
 
-test('light mode is a calm grey, and the watermark stays off it',async()=>{
+test('light mode is a calm grey and carries the mark faintly',async()=>{
   const css=await read('promptai-full-app-design.css');
   assert.match(css,/--paper:#e7eaee;/,'the ground is grey, not near-white');
   assert.match(css,/--surface:#f5f7f9;/,'and the cards sit one step above it, still not white');
   assert.doesNotMatch(css,/--surface:#ffffff;/);
   // The start page carries its own colour names and sets them with !important.
   assert.match(css,/\.prompt-home-surface:not\(\[data-theme="dark"\]\)\{[\s\S]{0,200}--home-bg:var\(--paper\)/);
-  // A large flat shape at 2% reads as a stain on grey; on near-white it did not.
-  assert.match(css,/:not\(\[data-theme="dark"\]\) body::after,[\s\S]{0,400}display:none!important/);
+  // Das Zeichen ist im Hellmodus wieder da - aber schwächer als im Dunkelmodus, sonst
+  // trägt die große flache Form auf dem Grau als Fleck auf.
+  assert.match(css,/:not\(\[data-theme="dark"\]\) body::after\{opacity:\.019!important;display:block!important\}/);
+  assert.match(css,/\[data-theme="dark"\] body::after\{opacity:\.038/,'im Dunkelmodus darf es kräftiger sein');
+  // In Dialogen bleibt es aus: kleine Fläche, Text darüber.
+  assert.match(css,/:not\(\[data-theme="dark"\]\) \.dialog-frame::after,[\s\S]{0,300}display:none!important/);
+  // Zwei flache Diagonalen über den Grund, hinter allem und ohne Klickfläche.
+  assert.match(css,/body::before\{[\s\S]{0,160}pointer-events:none/);
+  assert.match(css,/linear-gradient\(104deg,transparent calc\(38% - 1px\)/);
 });
 
 test('the handoff screen is a transition, not a progress bar for the whole brief',async()=>{
@@ -386,7 +406,13 @@ test('the flow selector drives the real mode switch and never claims a mode the 
   assert.match(home,/if\(flowLocked\(mode\)\)\{mode='guided';/);
   // Gesperrte Einträge sind im Menü als solche zu sehen, nicht erst nach dem Klick.
   assert.match(home,/button\.dataset\.locked=flowLocked\(key\)\?'1':'0'/);
-  assert.match(home,/\[data-locked="1"\]:after\{content:"ab Pro"/);
+  // Und sie nennen den Tarif, der sie wirklich freischaltet: "Selbst einstellen" gibt es laut
+  // PLAN_RULES erst ab Ultimate, stand aber pauschal mit "ab Pro" im Menü.
+  assert.match(home,/\[data-locked="1"\]:after\{content:attr\(data-tier\)/);
+  assert.match(home,/const FLOW_TIER=\{guided:'ab Pro',auto:'ab Pro',expert:'ab Ultimate'\}/);
+  assert.match(home,/button\.dataset\.tier=FLOW_TIER\[key\]/);
+  assert.match(app,/ultimate:\{label:"Ultimate",modes:\["guided","auto","expert"\]/,'expert gehört zu Ultimate');
+  assert.match(app,/pro:\{label:"Pro",modes:\["guided","auto"\]/,'…und eben nicht zu Pro');
 });
 
 test('the plus in the console feeds the real reference inputs instead of a second store',async()=>{

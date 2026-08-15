@@ -51,6 +51,9 @@
         justify-content:flex-start!important;
       }
       html.prompt-full-redesign .topbar-menu button:hover:not(:disabled){background:var(--surface-soft)!important}
+      /* "Projekte" und "Bibliothek" öffneten dasselbe Fenster - der doppelte Eintrag verschwindet
+         hier, weil die Regel darüber jeden sichtbaren Knopf mit !important auf display:flex setzt. */
+      html.prompt-full-redesign .topbar-menu button[data-drawer-hidden="1"]{display:none!important}
       /* Keine Symbole in der Schublade: zwei Zeichen unter zehn Wörtern sahen aus wie
          Reste, nicht wie System. Jetzt beginnt jede Zeile auf derselben Linie. */
       html.prompt-full-redesign .topbar-menu button svg{display:none!important}
@@ -61,7 +64,34 @@
         margin-top:auto!important;min-height:56px!important;
         border:1px solid var(--line)!important;background:var(--surface-soft)!important;
       }
+      /* app.js hängt unter "Profil" eine zweite Zeile mit dem angemeldeten Konto. Seit der
+         Eintrag ein Flex-Element ist, stand sie als zweites Element in derselben Zeile und wurde
+         auf null Breite gequetscht - also war nirgends mehr zu sehen, wer angemeldet ist. Sie
+         bekommt eine eigene Zeile zurück. */
+      html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){flex-wrap:wrap!important;align-content:center!important;padding-top:8px!important;padding-bottom:8px!important}
+      html.prompt-full-redesign .topbar-menu #accountBtn .account-btn-meta{
+        display:block!important;flex:0 0 100%!important;width:100%!important;margin-top:2px!important;
+        color:var(--muted)!important;font-size:10px!important;font-weight:600!important;
+        overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;
+      }
       html.prompt-full-redesign .topbar-menu>button.prompt-drawer-out{color:var(--danger)!important}
+      /* Gesperrte Einträge verschwinden nicht mehr - man sieht, dass es sie gibt, und woran es
+         liegt. Der Tarif steht rechts, wie im Ablauf-Menü der Konsole. */
+      html.prompt-full-redesign .topbar-menu button[data-drawer-tier]:after{
+        content:attr(data-drawer-tier);margin-left:auto;
+        color:var(--upgrade,#e9781f)!important;font-size:9px;font-weight:900;letter-spacing:.1em;
+      }
+      html.prompt-full-redesign .topbar-menu button[data-drawer-tier]{color:var(--muted)!important}
+      /* Ein neuer Support-Eingang bekommt einen Punkt - im Menü und am Eintrag selbst. */
+      html.prompt-full-redesign .topbar-menu button[data-drawer-dot="1"]:after{
+        content:'';margin-left:auto;width:9px;height:9px;border-radius:50%;
+        background:var(--logo-blue,var(--accent))!important;
+      }
+      html.prompt-full-redesign #topbarMenuToggle.prompt-drawer-has-dot:after{
+        content:'';position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;
+        background:var(--logo-blue,var(--accent));
+      }
+      html.prompt-full-redesign #topbarMenuToggle.prompt-drawer-has-dot{position:relative!important}
       html.prompt-full-redesign .topbar-menu .prompt-drawer-legal,
       html.prompt-full-redesign .topbar-menu>div:has(>button.prompt-drawer-legal){
         display:flex!important;flex-wrap:wrap!important;gap:0 14px!important;
@@ -88,7 +118,7 @@
   // umgehängt - und prompt eine Ausnahme ausgelöst: andere Skripte fügen ihre Einträge relativ zu
   // diesen Knoten ein (insertBefore), und deren Bezugspunkt war plötzlich kein direktes Kind des
   // Menüs mehr. Die Reihenfolge macht jetzt CSS über `order`, die Knöpfe bleiben, wo sie sind.
-  const ORDER={accountBtn:90,openSettingsBtn:60,themeToggleBtn:61,adminBtn:65,subscriptionMenuBtn:55,installAppBtn:70,upgradeMenuBtn:50,resetBtn:75};
+  const ORDER={accountBtn:90,openSettingsBtn:60,themeToggleBtn:61,adminBtn:65,menuSupportBtn:66,subscriptionMenuBtn:55,installAppBtn:70,upgradeMenuBtn:50,resetBtn:75};
   function sortEntry(node){
     const text=(node.textContent||'').trim();
     if(node.dataset.drawerTarget)return 10;          // die vier Arbeitswege zuerst
@@ -97,6 +127,40 @@
     if(/^abmelden$/i.test(text))return 99;
     if(/bibliothek|projekt/i.test(text))return 20;   // Projekte, Projektstände
     return 50;
+  }
+  // Support lag als vierter Block unten im Profil, wo ihn niemand sucht. Er wird ein eigener
+  // Menüpunkt - und zwar derselbe Abschnitt, nicht eine zweite Kopie des Formulars: der Eintrag
+  // öffnet das Profil und klappt den vorhandenen Support-Block auf.
+  function supportEntry(menu){
+    if($('#menuSupportBtn',menu))return;
+    const account=$('#accountBtn');if(!account)return;
+    const button=document.createElement('button');
+    button.type='button';button.className='text-btn';button.id='menuSupportBtn';button.textContent='Support';
+    button.addEventListener('click',()=>{
+      close();
+      setTimeout(()=>{
+        $('#accountBtn')?.click();
+        setTimeout(()=>{
+          const card=document.querySelector('.account-support-card');if(!card)return;
+          // Der Block ist eingeklappt (collapseSections) - erst öffnen, dann hinscrollen.
+          const head=card.querySelector('.account-section-head, :scope > div:first-child');
+          if(card.dataset.collapsed==='1'||card.classList.contains('is-collapsed'))head?.click();
+          card.scrollIntoView({behavior:'smooth',block:'center'});
+          document.querySelector('#supportSubject')?.focus({preventScroll:true});
+        },260);
+      },80);
+    });
+    menu.appendChild(button);
+  }
+
+  // Gesperrt heißt sichtbar-mit-Grund: die Startseiten-Kacheln führen den nötigen Tarif bereits
+  // in data-plan-label, also wird genau der gespiegelt statt hier ein zweites Mal gepflegt.
+  function lockFromTarget(button,target){
+    const locked=Boolean(target&&(target.disabled||target.getAttribute('aria-disabled')==='true'||target.classList.contains('home-plan-locked')));
+    const tier=String(target?.dataset.planLabel||'PRO');
+    if(locked)button.dataset.drawerTier=`ab ${tier.charAt(0)+tier.slice(1).toLowerCase()}`;
+    else delete button.dataset.drawerTier;
+    return locked;
   }
   function shell(){
     const menu=$('#topbarMenu');if(!menu)return false;
@@ -109,9 +173,21 @@
       const button=document.createElement('button');
       button.type='button';button.className='text-btn';button.dataset.drawerTarget=targetId;
       button.innerHTML=`<span>${label}</span>`;
-      button.addEventListener('click',()=>{close();setTimeout(()=>$('#'+targetId)?.click(),60)});
+      button.addEventListener('click',()=>{
+        const target=$('#'+targetId);
+        // Gesperrt: der Tarif-Dialog ist die ehrliche Antwort, nicht ein Knopf, der nichts tut.
+        if(lockFromTarget(button,target)){close();setTimeout(()=>document.querySelector('#plansDialog')?.showModal(),80);return}
+        close();setTimeout(()=>target?.click(),60);
+      });
       menu.appendChild(button);
     }
+    // Den Tarifhinweis nach jedem Durchlauf frisch stellen - der Tarif kann sich zur Laufzeit
+    // ändern (Login, Upgrade), und dann stimmt das Schild sonst nicht mehr.
+    for(const [,targetId] of WORK){
+      const entry=$(`[data-drawer-target="${targetId}"]`,menu);
+      if(entry)lockFromTarget(entry,$('#'+targetId));
+    }
+    supportEntry(menu);
     for(const node of $$(':scope > *',menu)){
       const rank=sortEntry(node);
       node.style.order=String(rank);
@@ -148,7 +224,15 @@
     let pending=0;
     new MutationObserver(()=>{clearTimeout(pending);pending=setTimeout(shell,60)}).observe(menu,{childList:true});
   }
-  function init(){styles();shell();watch();bind();let n=0;const t=setInterval(()=>{shell();if(++n>12)clearInterval(t)},400)}
+  // Der Punkt am Verwaltungs-Eintrag ist im geschlossenen Menü nicht zu sehen - deshalb trägt
+  // ihn der Menüknopf in der Kopfzeile mit, solange eine Anfrage offen ist.
+  function supportDot(open){
+    const toggle=$('#topbarMenuToggle');
+    if(toggle)toggle.classList.toggle('prompt-drawer-has-dot',Boolean(open));
+  }
+  function init(){styles();shell();watch();bind();
+    window.addEventListener('promptai:support-open',event=>supportDot(Number(event.detail?.open)>0));
+    let n=0;const t=setInterval(()=>{shell();if(++n>12)clearInterval(t)},400)}
   window.PromptAiNavDrawer={close};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

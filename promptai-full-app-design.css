@@ -325,6 +325,32 @@ html.prompt-full-redesign .account-dialog .dialog-frame::before{display:none!imp
 html.prompt-full-redesign .account-dialog .account-body{padding:clamp(20px,4vw,52px)!important}
 html.prompt-full-redesign .auth-hero h1{font-size:clamp(43px,7vw,78px)!important;font-weight:740!important;letter-spacing:-.065em!important}
 html.prompt-full-redesign .auth-brand img{border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:none!important}
+/* Registrierung: dieselbe Karte, nur mit den Feldern, die beim Anmelden niemand braucht. */
+html.prompt-full-redesign .auth-signup-fields{display:grid!important;gap:var(--sp-3)!important;margin:var(--sp-2) 0 var(--sp-1)!important;padding-top:var(--sp-4)!important;border-top:1px solid var(--line)!important}
+html.prompt-full-redesign .auth-signup-fields[hidden]{display:none!important}
+html.prompt-full-redesign .auth-signup-fields .field span small{margin-left:6px;color:var(--muted);font-size:9px;font-weight:600;text-transform:none;letter-spacing:0}
+html.prompt-full-redesign .auth-signup-note{margin:0!important;color:var(--mist)!important;font-size:11px!important;line-height:1.5!important}
+/* styles.css gibt den Einstellungsabschnitten overflow:hidden mit. Aufgeklappt reichte der
+   Inhalt darüber hinaus und der letzte Block - "Lokale Projektdaten löschen" - wurde
+   abgeschnitten. Ein aufklappbarer Abschnitt darf seinen eigenen Inhalt nicht beschneiden. */
+html.prompt-full-redesign #settingsDialog .settings-section,
+html.prompt-full-redesign #accountDialog .account-profile-settings,
+html.prompt-full-redesign #accountDialog .account-support-card{
+  height:auto!important;max-height:none!important;overflow:visible!important;
+}
+/* Die Zeile zum Löschen lokaler Daten hatte nie eine eigene Regel: Titel, Beschreibung und
+   Knopf liefen als Fließtext ineinander. */
+html.prompt-full-redesign .settings-danger-row{
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  gap:6px 22px!important;align-items:center!important;
+  margin-top:var(--sp-5)!important;padding-top:var(--sp-5)!important;border-top:1px solid var(--line)!important;
+}
+html.prompt-full-redesign .settings-danger-row>div{display:grid!important;gap:4px!important;min-width:0!important}
+html.prompt-full-redesign .settings-danger-row strong{font-size:13px!important}
+html.prompt-full-redesign .settings-danger-row small{color:var(--mist)!important;font-size:11px!important;line-height:1.5!important}
+@media(max-width:600px){
+  html.prompt-full-redesign .settings-danger-row{grid-template-columns:1fr!important;justify-items:start!important}
+}
 html.prompt-full-redesign .auth-form-card,
 html.prompt-full-redesign .auth-access-card,
 html.prompt-full-redesign .guest-limit-box,
@@ -416,8 +442,18 @@ html.prompt-full-redesign .prompt-completion-flash .prompt-process-fill{animatio
 html.prompt-full-redesign .legal-body{width:100%!important;max-width:none!important;padding:26px 30px 44px!important;overflow-x:hidden!important;color:var(--ink)!important}
 html.prompt-full-redesign .legal-body h3{padding-top:18px;border-top:1px solid var(--line);color:var(--accent-strong)!important;font-family:ui-monospace,SFMono-Regular,monospace!important}
 html.prompt-full-redesign .legal-placeholder-note{border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line))!important;border-radius:12px!important;background:color-mix(in srgb,var(--warn) 8%,var(--surface))!important}
-html.prompt-full-redesign .cookie-banner{background:var(--paper)!important;color:var(--ink)!important}
-html.prompt-full-redesign .cookie-banner-box{max-width:620px!important;padding:28px!important;border:1px solid var(--line)!important;border-radius:18px!important;background:var(--surface)!important;box-shadow:var(--shadow-soft)!important}
+html.prompt-full-redesign .cookie-banner{background:transparent!important;color:var(--ink)!important}
+/* Ein schmaler Streifen ganz unten über die volle Breite - keine Karte, die
+   mitten auf der Seite schwebt und den Blick vom Inhalt wegzieht. */
+html.prompt-full-redesign .cookie-banner-box{
+  width:100%!important;max-width:none!important;
+  margin:0!important;padding:12px clamp(16px,3vw,44px)!important;
+  align-items:center!important;gap:6px 22px!important;
+  border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;
+  background:var(--surface)!important;box-shadow:0 -10px 30px rgba(12,20,26,.14)!important;
+}
+html.prompt-full-redesign .cookie-banner-box>div:first-child{gap:8px 12px!important}
+html.prompt-full-redesign .cookie-banner p{max-width:none!important;font-size:12px!important;line-height:1.45!important}
 html.prompt-full-redesign #promptMaintenanceOverlay{background:var(--paper)!important;color:var(--ink)!important}
 html.prompt-full-redesign #promptMaintenanceOverlay>div{position:relative;padding:34px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-soft)}
 
@@ -1561,18 +1597,37 @@ html.prompt-full-redesign.prompt-home-surface:not([data-theme="dark"]){
 /* Das Zeichen im Hintergrund war auf einen fast weißen Grund abgestimmt. Auf dem
    Grau tritt es zu deutlich hervor - auf einer ruhigen Fläche fällt jede Kante
    mehr auf als auf einer hellen. Es bleibt eine Ahnung, kein Bild. */
-/* Auf dem Grau wird aus dem Zeichen im Hintergrund ein Fleck: eine große, flache
-   Form mit vier Helligkeitsstufen Unterschied fällt auf einer ruhigen Fläche auf,
-   auf fast weißem Grund tat sie das nicht. Im Hellmodus bleibt der Grund leer -
-   im Dunkelmodus, wo es als feine Aufhellung sitzt, bleibt es. */
-html.prompt-full-redesign:not([data-theme="dark"]) body::after,
+/* Das Zeichen war im Hellmodus ganz abgeschaltet, weil es auf dem Grau als Fleck
+   auftrug. Es soll wieder da sein - also nicht heller, sondern schwächer: bei
+   dieser Deckkraft liest es sich als Struktur des Grundes, nicht als Bild darauf. */
+html.prompt-full-redesign:not([data-theme="dark"]) body::after{opacity:.019!important;display:block!important}
 html.prompt-full-redesign:not([data-theme="dark"]) .workspace::before,
-html.prompt-full-redesign:not([data-theme="dark"]) .prompt-command-home::before,
+html.prompt-full-redesign:not([data-theme="dark"]) .prompt-command-home::before{opacity:.022!important;display:block!important}
+/* In Dialogen bleibt es aus: dort steht es hinter Text auf kleiner Fläche. */
 html.prompt-full-redesign:not([data-theme="dark"]) .dialog-frame::after,
 html.prompt-full-redesign:not([data-theme="dark"]) .project-mode-frame::after,
 html.prompt-full-redesign:not([data-theme="dark"]) .history-frame::after{
   display:none!important;
 }
+
+/* Zwei ruhige Linien über den Grund - keine Deko-Formen, sondern zwei sehr flache
+   Diagonalen, die dieselbe Richtung nehmen wie der Balken im Zeichen. Sie liegen
+   hinter allem (z-index:0 beim Wasserzeichen, hier darunter) und fangen keine
+   Klicks ab. */
+html.prompt-full-redesign body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(104deg,transparent calc(38% - 1px),color-mix(in srgb,var(--accent) 34%,transparent) 38%,transparent calc(38% + 1px)),
+    linear-gradient(104deg,transparent calc(63% - 1px),color-mix(in srgb,var(--accent) 20%,transparent) 63%,transparent calc(63% + 1px)),
+    radial-gradient(120% 80% at 88% -10%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 62%);
+  /* Beides ausdrücklich: die Startseite setzt am selben Element ein gekacheltes
+     background-size, und die Kaskade entscheidet je Eigenschaft - ohne diese zwei
+     Zeilen wiederholen sich die zwei Linien alle 120px zu einem Streifenmuster. */
+  background-size:100% 100%!important;background-repeat:no-repeat!important;
+  opacity:.5;
+}
+html.prompt-full-redesign[data-theme="dark"] body::before{opacity:.62}
+@media(max-width:700px){html.prompt-full-redesign body::before{opacity:.34}}
 
 /* ═══ Referenzen: ein Weg pro Block, kein Absatz, wo eine Zeile reicht ══════
 
@@ -1700,6 +1755,14 @@ html.prompt-full-redesign .auth-access-card .auth-subscribe-compact{
   border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;
   background:transparent!important;margin-top:var(--sp-5)!important;padding:var(--sp-5) 0 0!important;
 }
+/* Same fix, second offender: .guest-limit-box still carried its own full card border/background/
+   shadow (from the flat-card rule above) while sitting inside .auth-access-card, which already has
+   the exact same treatment - the same box-in-a-box this section was meant to remove. */
+html.prompt-full-redesign .auth-access-card .guest-limit-box{
+  border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;
+  margin-top:var(--sp-5)!important;padding:var(--sp-5) 0 0!important;
+}
 
 /* 3. Knöpfe nebeneinander standen 7px auseinander - zu wenig, um zwei Ziele zu
       sein. Ein Abstand für alle Knopfreihen. */
@@ -1727,3 +1790,180 @@ html.prompt-full-redesign[data-theme="dark"] .plan-card-badge{background:var(--a
 html.prompt-full-redesign .prompt-flow-menu button{font-size:13px!important;font-weight:700!important}
 html.prompt-full-redesign .prompt-flow-menu button small{font-size:11px!important;font-weight:550!important;color:var(--mist)!important;letter-spacing:0!important}
 html.prompt-full-redesign .prompt-flow-button{color:var(--mist)!important}
+
+/* ==========================================================================
+   Desktop: Dialoge dürfen den Platz nutzen, den der Bildschirm hergibt
+   ========================================================================== */
+
+/* Zwei Scrollflächen übereinander: der <dialog> selbst UND der .dialog-frame
+   darin. Beim Scrollen rutschte deshalb erst der Inhalt und danach der ganze
+   Dialog um ein paar Dutzend Pixel - das las sich wie eine Seite, die unter
+   dem Dialog wegscrollt. Nur der Inhalt scrollt. */
+html.prompt-full-redesign dialog.library-dialog{overflow:hidden!important;display:flex!important;flex-direction:column!important}
+html.prompt-full-redesign dialog.library-dialog[open]{display:flex!important}
+html.prompt-full-redesign dialog.library-dialog:not([open]){display:none!important}
+/* min-height:0 ist der Teil, ohne den ein Flex-Kind nicht unter seine
+   Inhaltshöhe schrumpft - und genau daran scheiterte die Begrenzung. */
+html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
+  flex:1 1 auto!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;
+}
+
+@media(min-width:900px){
+  /* Die Karten standen in einer 760-1000px-Spalte, egal wie breit der Monitor
+     war - drei Tarife nebeneinander quetschten sich dort auf je 240px. Auf dem
+     Telefon bleibt alles wie es war, das regeln die vorhandenen Media-Queries
+     weiter unten in styles.css. */
+  /* Die kurzen Nachrichtenfenster (Bestätigen, Agent öffnen) sind keine Arbeitsflächen
+     und dürfen nicht auf Monitorbreite gezogen werden - sie tragen vier Zeilen Text. */
+  /* Alles andere ist eine Seite, kein Kasten. Die vorherige Deckelung auf 1480px
+     traf auf ein margin:0!important aus styles.css - dadurch klebten Einstellungen,
+     Profil, Verwaltung und die Rückfragen linksbündig am Rand und rechts blieb
+     tote Fläche. Das Fenster nimmt den Bildschirm ein, der Rahmen darin sitzt
+     über die vorhandene Inhaltsbreite mittig. */
+  html.prompt-full-redesign dialog.library-dialog:not(.app-action-dialog):not(.agent-launch-dialog):not(.guest-gate):not(.plans-dialog){
+    width:100vw!important;max-width:none!important;
+    height:100dvh!important;max-height:none!important;
+    margin:0!important;padding:0!important;
+    border:0!important;border-radius:0!important;background:transparent!important;
+  }
+  /* Der Rahmen bekommt seine Breite aus unified-ui-v1.js (--prompt-content) und
+     zentriert sich per margin:auto - hier muss nur sichergestellt sein, dass er
+     im vollflächigen Fenster auch wirklich mittig landen darf. */
+  html.prompt-full-redesign dialog.library-dialog:not(.app-action-dialog):not(.agent-launch-dialog):not(.guest-gate):not(.plans-dialog)>.dialog-frame{
+    margin-left:auto!important;margin-right:auto!important;
+  }
+  /* Rechtstexte werden in unified-ui-v1.js über die ID gedeckelt - ohne dieselbe
+     ID bliebe das Fenster links kleben. */
+  html.prompt-full-redesign body dialog#legalDialog{
+    width:100vw!important;max-width:none!important;margin:0!important;
+    border:0!important;border-radius:0!important;background:transparent!important;
+  }
+  /* Die Einstiegsseite ist technisch ein Dialog, gemeint ist aber eine Seite. Die Deckelung
+     oben machte daraus einen 1480px-Kasten, hinter dem rechts die App hervorsah. */
+  html.prompt-full-redesign dialog#accountDialog.guest-gate{
+    width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;
+    margin:0!important;border-radius:0!important;
+  }
+  html.prompt-full-redesign dialog#accountDialog.guest-gate>.dialog-frame{
+    width:100%!important;max-width:none!important;height:100%!important;margin:0!important;border-radius:0!important;
+  }
+  html.prompt-full-redesign dialog.plans-dialog{width:min(1320px,calc(100vw - 72px))!important}
+  html.prompt-full-redesign dialog.plans-dialog .plans-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:var(--sp-5)!important;align-items:start!important;
+  }
+  /* Zwei Spalten statt einer langen Kolonne, sobald wirklich Platz da ist. */
+  html.prompt-full-redesign #accountDialog .account-profile-settings .field-grid.two,
+  html.prompt-full-redesign #settingsDialog .field-grid.two{grid-template-columns:1fr 1fr!important}
+  html.prompt-full-redesign #libraryDialog .library-pane.active:not([data-library-pane="projects"]){grid-template-columns:minmax(320px,34%) minmax(0,1fr)!important}
+}
+
+/* ==========================================================================
+   Marke: größer, wo Platz ist
+   ========================================================================== */
+@media(min-width:821px){
+  /* Das Zeichen stand mit 30px kleiner da als der Schriftzug daneben verlangt. Die
+     Startseite setzt es über zwei Klassen am <html> - der Wert hier muss dieselbe
+     Spezifität erreichen, sonst gewinnt die Regel weiter oben. */
+  html.prompt-full-redesign .topbar .brand-mark,
+  html.prompt-full-redesign.prompt-home-surface .topbar .brand-mark{width:50px!important;height:50px!important}
+  html.prompt-full-redesign .topbar .brand-copy strong{font-size:21px!important}
+  /* Auf dem Ladeschirm ist die Marke das einzige Bild - 52px war eine Briefmarke
+     auf einer 1500px breiten Fläche. */
+  html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner)::before{
+    width:104px!important;height:104px!important;margin-bottom:28px!important;
+  }
+  html.prompt-full-redesign #promptAppBoot img,
+  html.prompt-full-redesign #promptAppBoot .prompt-boot-mark{width:104px!important;height:104px!important}
+}
+
+/* ==========================================================================
+   Bestätigungsfenster und Gegenfragen an das übrige Haus angleichen
+   ========================================================================== */
+
+/* Das Fenster nach dem Kauf ("Pro ist aktiv") ist eine kurze Nachricht, stand aber
+   in derselben 680px-Fläche wie ein Formular und bekam dadurch einen eigenen
+   Scrollbalken für vier Zeilen Text. */
+/* ui-polish-final.js setzt die Breite über eine ID mit !important (900px) - dieselbe
+   ID ist nötig, sonst gewinnt sie. */
+html.prompt-full-redesign body #appActionDialog{width:min(520px,calc(100vw - 32px))!important;max-width:none!important}
+html.prompt-full-redesign body #appActionDialog .dialog-frame{width:100%!important;max-width:none!important}
+html.prompt-full-redesign .app-action-dialog .dialog-frame{
+  border:1px solid var(--line)!important;border-radius:var(--r-lg)!important;
+  background:var(--surface)!important;box-shadow:var(--shadow-lift)!important;
+}
+html.prompt-full-redesign .app-action-body{padding:var(--sp-6) var(--sp-6) var(--sp-5)!important}
+html.prompt-full-redesign .app-action-body>span{
+  display:block!important;color:var(--accent-strong)!important;
+  font-size:9px!important;font-weight:900!important;letter-spacing:.14em!important;
+}
+html.prompt-full-redesign .app-action-body h2{
+  margin:var(--sp-2) 0 var(--sp-3)!important;font-size:clamp(23px,3vw,29px)!important;
+  line-height:1.1!important;letter-spacing:-.035em!important;
+}
+html.prompt-full-redesign .app-action-body p{
+  margin:0!important;color:var(--mist)!important;font-size:14px!important;line-height:1.6!important;
+}
+html.prompt-full-redesign .app-action-buttons{
+  display:flex!important;justify-content:flex-end!important;gap:var(--sp-3)!important;
+  margin-top:var(--sp-6)!important;
+}
+
+/* Die Gegenfragen waren eine Kolonne aus Serifen-Überschriften, grauen Absätzen und
+   unterstrichenen Textlinks - näher an einem Fragebogen als an dieser App. Jede Frage
+   wird eine Karte, die Vorschläge werden anklickbare Chips. */
+html.prompt-full-redesign .clarification-question{
+  padding:var(--sp-5)!important;margin-bottom:var(--sp-4)!important;
+  border:1px solid var(--line)!important;border-top:1px solid var(--line)!important;
+  border-radius:var(--r-md)!important;background:var(--surface)!important;
+}
+html.prompt-full-redesign .clarification-question>span{
+  color:var(--accent-strong)!important;font-size:9px!important;font-weight:900!important;letter-spacing:.12em!important;
+}
+html.prompt-full-redesign .clarification-question h3{
+  margin:var(--sp-2) 0 var(--sp-2)!important;font-family:inherit!important;
+  font-size:17px!important;font-weight:700!important;line-height:1.35!important;letter-spacing:-.02em!important;
+}
+html.prompt-full-redesign .clarification-question p{
+  margin:0 0 var(--sp-4)!important;color:var(--mist)!important;font-size:12.5px!important;line-height:1.55!important;
+}
+html.prompt-full-redesign .clarification-question textarea{
+  border:1px solid var(--line)!important;border-radius:var(--r-sm)!important;
+  background:var(--surface-soft)!important;color:var(--ink)!important;padding:var(--sp-3)!important;
+  font:inherit!important;font-size:14px!important;
+}
+html.prompt-full-redesign .clarification-question textarea:focus{
+  border-color:color-mix(in srgb,var(--accent) 60%,var(--line))!important;outline:none!important;
+}
+/* Aus unterstrichenen Textlinks werden Antworten, die man antippt. */
+html.prompt-full-redesign .suggested-answer{flex-wrap:wrap!important;gap:var(--sp-2)!important;margin-top:var(--sp-3)!important}
+html.prompt-full-redesign .suggested-answer button{
+  padding:8px 13px!important;border:1px solid var(--line)!important;border-radius:999px!important;
+  background:var(--surface-soft)!important;color:var(--ink)!important;
+  font-size:12px!important;font-weight:600!important;text-decoration:none!important;text-align:left!important;
+}
+html.prompt-full-redesign .suggested-answer button:hover{
+  border-color:color-mix(in srgb,var(--accent) 55%,var(--line))!important;
+  background:color-mix(in srgb,var(--accent) 8%,var(--surface))!important;
+}
+html.prompt-full-redesign .clarification-intro{
+  font-family:inherit!important;font-size:15px!important;line-height:1.6!important;color:var(--mist)!important;
+}
+
+/* Die Arbeitsfläche (Schrittseiten, Master-Prompt, Vorschauen) hing an
+   --prompt-content:1240px - auf einem breiten Monitor stand der Master-Prompt
+   damit in einer schmalen Spalte mit viel Leerraum daneben. Die Spalte wächst
+   mit, das Telefon bleibt unberührt. */
+@media(min-width:1500px){html.prompt-full-redesign{--prompt-content:1560px}}
+@media(min-width:1800px){html.prompt-full-redesign{--prompt-content:1720px}}
+
+/* Die Projektliste ist die einzige Fläche in ihrem Bereich - einen Editor daneben gibt es dort
+   nicht. Sie bekam trotzdem nur die schmale erste Spalte des zweispaltigen Bibliotheks-Rasters,
+   also standen die Karten in zwei engen Reihen und rechts blieb die halbe Fläche leer. */
+html.prompt-full-redesign #libraryDialog .library-pane[data-library-pane="projects"]{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+html.prompt-full-redesign #libraryDialog #libraryProjectList{
+  display:grid!important;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))!important;
+  width:100%!important;max-width:none!important;gap:var(--sp-4)!important;
+}

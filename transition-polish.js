@@ -88,10 +88,38 @@
     `;document.head.appendChild(s)
   }
 
+  // Drei Sätze waren nach zwölf Sekunden durch und fingen sichtbar von vorn an. Die Liste ist
+  // länger und bleibt bei dem, was in diesem Schritt wirklich passiert - kein Zufallsspruch,
+  // der etwas behauptet, das gerade nicht läuft.
   const copy={
-    review:{kicker:'RÜCKMELDUNG',title:'Briefing wird geprüft',sentences:['Angaben werden geprüft.','Offene Punkte werden erkannt.','Rückfragen werden vorbereitet.']},
-    preview:{kicker:'VORSCHAU',title:'Vorschau wird erstellt',sentences:['Briefing wird verarbeitet.','Die Richtungen werden gestaltet.','Bilder werden erstellt.']},
-    login:{kicker:'ANMELDUNG',title:'App wird vorbereitet',sentences:['App wird vorbereitet.','KI wird aufgeweckt.','Bibliothek wird geladen.']}
+    review:{kicker:'RÜCKMELDUNG',title:'Briefing wird geprüft',sentences:[
+      'Angaben werden geprüft.',
+      'Beschreibung wird gelesen.',
+      'Angehängte Quellen werden ausgewertet.',
+      'Offene Punkte werden erkannt.',
+      'Widersprüche werden gesucht.',
+      'Pflichtangaben werden abgeglichen.',
+      'Rückfragen werden vorbereitet.',
+      'Antwortvorschläge werden formuliert.'
+    ]},
+    preview:{kicker:'VORSCHAU',title:'Vorschau wird erstellt',sentences:[
+      'Briefing wird verarbeitet.',
+      'Zielgruppe und Ziel werden eingeordnet.',
+      'Seitenstruktur wird abgeleitet.',
+      'Die Richtungen werden gestaltet.',
+      'Farben und Typografie werden gesetzt.',
+      'Bildsprache wird festgelegt.',
+      'Bilder werden erstellt.',
+      'Letzte Feinheiten werden gesetzt.'
+    ]},
+    login:{kicker:'ANMELDUNG',title:'App wird vorbereitet',sentences:[
+      'App wird vorbereitet.',
+      'KI wird aufgeweckt.',
+      'Tarif wird geprüft.',
+      'Bibliothek wird geladen.',
+      'Projekte werden synchronisiert.',
+      'Arbeitsfläche wird aufgebaut.'
+    ]}
   };
   let loginActive=false;
 

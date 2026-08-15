@@ -66,7 +66,7 @@ const DEFAULTS=[
   "label": "Bildvorschau · Bildregeln",
   "hint": "Bildaufbau der KI-Vorschau. Bewusst auf Englisch: Bildmodelle sind auf englische Bildbeschreibungen trainiert. Die Regel gegen Bildschirme und Geräte bleibt fest im Code.",
   "placeholders": [],
-  "body": "FLAT WEB DESIGN ARTBOARD, 16:9, FULL BLEED. The webpage graphic itself fills 100% of the frame and runs off all four edges, like a design file exported at full size. Flat vector-style rendering, straight-on, no depth."
+  "body": "FLAT WEB DESIGN ARTBOARD, 16:9, FULL BLEED. The webpage graphic itself fills 100% of the frame and runs off all four edges, like a design file exported at full size. Straight-on, no depth, no perspective.\nThe page furniture - header, buttons, cards, type, spacing - is flat and crisp like a real design file. Photographic areas inside that layout are REALISTIC PHOTOGRAPHY: natural light, real texture, real depth of field, believable people and rooms. Never clip-art, cartoon, cute vector illustration or 3D render inside the photo areas - flat cartoon imagery is what makes the result look artificial.\nShow only subject matter that belongs to this specific business. Do not add props, tools, objects, equipment, plants or scenes that the brief did not describe."
  },
  {
   "key": "freeprompt-tool-rules",

@@ -26,17 +26,34 @@
   const QUOTA_DEFAULTS={free:{free_prompts:10,website_generations:3,ai_previews:0,monthly_tokens:0},pro:{free_prompts:100,website_generations:25,ai_previews:50,monthly_tokens:0},ultimate:{free_prompts:500,website_generations:100,ai_previews:250,monthly_tokens:0}};
   function quota(){const rows=state.data?.quotaLimits||[],byPlan=Object.fromEntries((Array.isArray(rows)?rows:[]).map(r=>[r.plan,r]));for(const plan of ['free','pro','ultimate']){const row=byPlan[plan]||QUOTA_DEFAULTS[plan];ui[`quota${plan}FreePrompts`].value=row.free_prompts;ui[`quota${plan}WebsiteGenerations`].value=row.website_generations;ui[`quota${plan}AiPreviews`].value=row.ai_previews}}
   function maintenance(){const item=state.data?.maintenance||{};ui.maintenanceEnabled.checked=Boolean(item.enabled);ui.maintenanceReason.value=item.reason||'';ui.maintenanceEta.value=item.eta||''}
-  function render(){stats();usage();runs();userRows();support();announcements();offer();quota();maintenance()}
-  async function load(){message('Admin-Daten werden geladen…');try{state.data=await api('/api/admin-overview');render();
+  // Eine offene Anfrage soll auffallen, ohne dass man die Verwaltung erst aufmacht: der Punkt
+  // hängt am Verwaltungs-Eintrag und - über das Ereignis - am Menüknopf in der Kopfzeile.
+  function supportBadge(){
+    const open=(state.data?.support||[]).filter(item=>String(item.status||'open')==='open').length;
+    if(ui.button){if(open)ui.button.dataset.drawerDot='1';else delete ui.button.dataset.drawerDot}
+    window.dispatchEvent(new CustomEvent('promptai:support-open',{detail:{open}}));
+  }
+  function render(){stats();usage();runs();userRows();support();announcements();offer();quota();maintenance();supportBadge()}
+  async function load({quiet=false}={}){if(!quiet)message('Admin-Daten werden geladen…');try{state.data=await api('/api/admin-overview');render();
     // One request, several consoles: the prompt editor renders from the same payload.
     window.PromptAiAdminData=state.data;window.dispatchEvent(new CustomEvent('promptai:admin-data',{detail:state.data}));
-    message('Aktueller Stand geladen.','good')}catch(error){message(error.message,'error')}}
+    if(!quiet)message('Aktueller Stand geladen.','good')}catch(error){if(!quiet)message(error.message,'error')}}
+  // Einmal im Hintergrund laden, sobald das Konto als Admin feststeht - nur dafür, dass der Punkt
+  // am Menü stimmt, bevor die Verwaltung überhaupt geöffnet wurde.
+  let warmed=false;
+  function warmSupportBadge(){
+    if(warmed)return;const button=$('#adminBtn');
+    if(!button||button.hidden)return;
+    warmed=true;load({quiet:true});
+  }
   async function action(payload,success){message('Änderung wird gespeichert…');try{await api('/api/admin-action',{method:'POST',body:JSON.stringify(payload)});message(success,'good');await load()}catch(error){message(error.message,'error')}}
   function init(){
     Object.assign(ui,{button:$('#adminBtn'),dialog:$('#adminDialog'),message:$('#adminMessage'),stats:$('#adminStats'),usage:$('#adminUsage'),runs:$('#adminRuns'),users:$('#adminUsers'),search:$('#adminUserSearch'),support:$('#adminSupport'),announcements:$('#adminAnnouncements'),offerEnabled:$('#offerEnabled'),offerEyebrow:$('#adminOfferEyebrow'),offerTitle:$('#adminOfferTitle'),offerDescription:$('#adminOfferDescription'),offerCta:$('#adminOfferCta'),offerTrial:$('#adminOfferTrialDays'),offerDiscount:$('#adminOfferDiscount'),offerCoupon:$('#adminOfferCoupon'),offerEnds:$('#adminOfferEndsAt')});
     for(const plan of ['free','pro','ultimate'])for(const field of ['FreePrompts','WebsiteGenerations','AiPreviews'])ui[`quota${plan}${field}`]=$(`#quota${plan.replace(/^./,c=>c.toUpperCase())}${field}`);
     Object.assign(ui,{maintenanceEnabled:$('#maintenanceEnabled'),maintenanceReason:$('#maintenanceReason'),maintenanceEta:$('#maintenanceEta')});
-    ui.button.addEventListener('click',()=>{ui.dialog.showModal();load()});$('#adminReloadBtn').addEventListener('click',load);ui.search.addEventListener('input',userRows);
+    ui.button.addEventListener('click',()=>{ui.dialog.showModal();load()});$('#adminReloadBtn').addEventListener('click',()=>load());ui.search.addEventListener('input',userRows);
+    warmSupportBadge();window.addEventListener('sitebrief:admin',warmSupportBadge);window.addEventListener('promptai:access',warmSupportBadge);
+    try{new MutationObserver(warmSupportBadge).observe(ui.button,{attributes:true,attributeFilter:['hidden']})}catch{}
     $$('.admin-tabs button').forEach(button=>button.addEventListener('click',()=>{$$('.admin-tabs button').forEach(x=>x.classList.toggle('active',x===button));$$('.admin-pane').forEach(pane=>pane.classList.toggle('active',pane.dataset.adminPane===button.dataset.adminTab))}));
     ui.users.addEventListener('click',async event=>{const button=event.target.closest('[data-admin-action]');if(!button)return;const row=button.closest('[data-user-id]'),userId=row.dataset.userId,type=button.dataset.adminAction,ask=(message,options={})=>window.PromptAiDialog.confirm(message,options);if(type==='make-admin'&&await ask('Diesem Konto volle Administratorrechte geben? Es erhält damit Zugriff auf alle Benutzerdaten, Tarife und Systemeinstellungen.',{title:'Admin machen',confirmLabel:'Admin machen',danger:true}))return action({action:'set-admin',userId,admin:true},'Konto ist jetzt Administrator.');
       if(type==='revoke-admin'&&await ask('Diesem Konto die Administratorrechte wieder entziehen?',{title:'Adminrechte entziehen',confirmLabel:'Entziehen',danger:true}))return action({action:'set-admin',userId,admin:false},'Administratorrechte wurden entzogen.');

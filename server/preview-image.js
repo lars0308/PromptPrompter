@@ -1,7 +1,10 @@
 const {resolveProviderKey}=require('./provider-key');const {getEntitlements}=require('./entitlements');const {rateLimit}=require('./rate-limit');const {logUsage}=require('./usage');const {listProfiles}=require('./system-ai-profiles');
 const {primePromptTemplates,promptText}=require('./prompt-templates');
 const {getTokenBudget}=require('./quota');
-function hint(p={}){const t=`${p.description||''} ${p.type||''} ${p.goal||''}`.toLowerCase();if(/handwerk|elektr|hausmeister|garten|reparatur|maler|sanitär|tischler|bau\b|montage/.test(t))return'real hands-on trade or service work, tools, materials, outdoor work or work in progress';if(/restaurant|café|cafe|döner|doener|pizza|bistro|küche|food|imbiss|bar\b|bäck/.test(t))return'real food, ingredients, kitchen or dining atmosphere';if(/friseur|beauty|kosmetik|nagel|nail|barber|salon|spa\b/.test(t))return'a credible beauty, salon or treatment environment';if(/fitness|gym|training|sport|crossfit/.test(t))return'training, gym space or athletic energy';if(/web-?app|software|saas|dashboard|tool\b|plattform|portal/.test(t))return'the digital product interface and its real workflow';return'the exact real subject matter described by the project brief'}
+const {detectIndustry,industryBlock}=require('./industry');
+// Die Branche kommt aus server/industry.js - dieselbe Einordnung, die auch Konzepte und freier
+// Prompt verwenden. Vorher stand hier eine eigene kurze Kette, die nur das Bild kannte.
+function hint(p={}){return detectIndustry(p.description,p.type,p.goal).subject}
 function headerInstruction(p={},c={}){
   if(c.layoutVariant==='minimal')return'This design has NO navigation bar, NO header, NO footer and NO separate sections — it is only the hero image filling the entire frame with one small headline inside it. Do not add a logo, menu, buttons or any other UI chrome on top of the image.';
   const nav=c.navStyle==='logo-hamburger'?'The header/top bar contains ONLY a small logo or brand name on one side and a hamburger/burger menu icon (three short horizontal lines) on the other side — do NOT render a normal navigation bar with multiple visible menu items or text links.':'The header/top bar is a normal, complete navigation bar with the logo and several menu items or text links visible, not just an icon.';
@@ -35,6 +38,7 @@ function imagePrompt(p={},c={},design={}){
   const blocks=[
 promptText('preview-image-rules'),
 `SUBJECT: ${hint(p)}.
+${industryBlock(detectIndustry(p.description,p.type,p.goal))}
 Brand: ${brand}
 Type: ${clip(p.type||'Website',40)}
 Goal: ${clip(p.goal||'',60)}

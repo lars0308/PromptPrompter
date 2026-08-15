@@ -134,8 +134,16 @@ test('the entry gate fills the page and its plans card carries no arrow button',
   const gate=await text('entry-gate-ui.js');
   assert.doesNotMatch(gate,/gate-plans-arrow/,'the blue circle with the arrow is gone');
   assert.match(gate,/\.account-body\{display:flex;flex-direction:column;min-height:100dvh/);
-  assert.match(gate,/#gateActions\{display:grid;gap:18px;max-width:420px;margin-top:auto;margin-bottom:auto/,'leftover height is split above and below the actions');
+  assert.match(gate,/#gateActions\{display:grid;justify-items:stretch;gap:18px;max-width:520px;margin-top:auto;margin-bottom:auto/,'leftover height is split above and below the actions');
   assert.match(gate,/#gateLegalRow\{margin-top:auto/,'the legal row sits on the bottom edge');
+});
+test('the login page carries its two entry points in the header and the headline across the full width',async()=>{
+  const gate=await text('entry-gate-ui.js');
+  assert.match(gate,/top\.className='gate-top'/,'Anmelden and Kostenlos testen share one header row');
+  assert.match(gate,/id="gateSignInPick">Anmelden<\/button>'\s*\+'<button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen/,'both buttons sit next to each other');
+  assert.match(gate,/grid-template-areas:'hero hero' 'actions shot' 'proof proof'/,'the hero spans both columns');
+  assert.match(gate,/\.auth-hero h1\{grid-column:1\/-1;max-width:none/,'no character cap squeezes the headline any more');
+  assert.doesNotMatch(gate,/\.gate-login-pick\{position:absolute/,'the sign-in button is a header item, not an overlay');
 });
 test('admin quota tiers are collapsed accordions and accounts can be promoted to admin',async()=>{
   const html=await text('index.html'),css=await text('styles.css'),core=await text('admin-console-core.js'),api=await text('api/admin-action.js'),overview=await text('api/admin-overview.js');
@@ -434,14 +442,19 @@ test('the GitHub sandbox card offers a picker populated from the user\'s own rep
 test('the entry gate opens immediately and no longer waits on cookie consent to appear',async()=>{
   const src=await text('app.js');
   assert.doesNotMatch(src,/Promise\.race\(\[consent,new Promise\(resolve=>setTimeout\(resolve,4000\)\)\]\)\.then\(showAccountGate\)/,'the account gate must not be delayed behind cookie-banner consent resolution');
-  assert.match(src,/function maybeShowEntryGate\(\)\{[\s\S]{0,700}showAccountGate\(\);\s*\}/);
+  assert.match(src,/function maybeShowEntryGate\(\)\{[\s\S]{0,1200}showAccountGate\(\);\s*\}/);
 });
 test('the login screen comes back after the app was closed or left alone for hours, not once per browser session',async()=>{
   const src=await text('app.js');
   // sessionStorage alone let an installed app that keeps its session skip the gate for days.
   assert.match(src,/const GATE_AFTER_MS = 6\*60\*60\*1000;/);
   assert.match(src,/function awayLongEnough\(\)\{/);
-  assert.match(src,/if\(alreadyShown&&!away\)return;/,'a long absence must beat the once-per-session marker');
+  assert.match(src,/if\(decided&&!away\)return;/,'a long absence must beat the marker');
+  // Der Merker bedeutet "entschieden", nicht "einmal gezeigt": wurde er schon beim Anzeigen
+  // gesetzt, galt ein Neuladen auf der Anmeldeseite als erledigt und führte ohne Anmeldung in
+  // die App. Gesetzt wird er nur dort, wo jemand bewusst ohne Konto weitergeht.
+  assert.doesNotMatch(src,/markSeen\(\);\s*if\(decided&&!away\)return;\s*try\{sessionStorage\.setItem\(ENTRY_GATE_KEY/,'nicht beim blossen Anzeigen setzen');
+  assert.match(src,/function closeAccountGate\(\)\{try\{sessionStorage\.setItem\(ENTRY_GATE_KEY,'1'\)\}catch\{\}/,'erst die Gast-Entscheidung setzt ihn');
   assert.match(src,/document\.addEventListener\('visibilitychange',\(\)=>\{if\(document\.visibilityState==='visible'\)maybeShowEntryGate\(\)\}\);/);
   // Signing out is an exit, so the gate returns immediately - not after six hours.
   assert.match(src,/sessionStorage\.removeItem\(ENTRY_GATE_KEY\)\}catch\{\}showAccountGate\(\);/);
@@ -910,4 +923,135 @@ test('one brand layer owns the palette, and it is the last stylesheet to speak',
   assert.match(console_,/'\.\/brand-werkstatt\.js\?v=[^']+'/,'still registered as a critical script');
   assert.match(brand,/new MutationObserver\(install\)\.observe\(document\.head,\{childList:true\}\)/);
   assert.match(sw,/'\/brand-werkstatt\.js'/,'offline shell ships it too');
+});
+
+test('one industry classifier feeds the preview image, the concepts and the free prompt',async()=>{
+  // Die Einordnung lag als kurze Regex-Kette nur in preview-image.js. Sie kannte fünf Fälle, und
+  // `bau\b` traf "bau mir eine Website für einen Kosmetikladen" - der Bildauftrag verlangte
+  // daraufhin Werkzeug im Kosmetikstudio.
+  const {detectIndustry,industryBlock,INDUSTRIES}=(await import('../server/industry.js')).default
+    ||await import('../server/industry.js');
+  const industry=await import('../server/industry.js');
+  const detect=industry.default?.detectIndustry||industry.detectIndustry;
+  assert.equal(detect('bau mir eine website für einen kosmetikladen in lindhorst').key,'beauty','das Anweisungsverb darf die Branche nicht bestimmen');
+  assert.equal(detect('website für ein bauunternehmen').key,'bau','ein echtes Bauunternehmen bleibt Bau');
+  assert.equal(detect('Internetseite für meinen Handwerksbetrieb, Elektro').key,'handwerk');
+  assert.equal(detect('erstelle mir eine seite für mein restaurant mit döner').key,'gastronomie');
+  assert.equal(detect('Zahnarztpraxis in Köln').key,'gesundheit');
+  assert.equal(detect('Maschinenbau Zulieferer').key,'industrie');
+  assert.equal(detect('').key,'allgemein','ohne Text kein Ratespiel');
+  // Jede Branche bringt Motiv, Pflichtbereiche und Tonalität mit - sonst unterscheiden sich zwei
+  // Aufträge nur in der Überschrift.
+  const list=industry.default?.INDUSTRIES||industry.INDUSTRIES;
+  assert.ok(list.length>=18,'genug Branchen, um die Bandbreite abzudecken');
+  for(const item of list)for(const field of ['key','label','match','subject','sections','tone'])
+    assert.ok(item[field],`${item.key||'?'} ohne ${field}`);
+  const preview=await text('server/preview-image.js'),free=await text('server/free-prompt-v2.js');
+  assert.match(preview,/require\('\.\/industry'\)/,'das Vorschaubild nutzt dieselbe Quelle');
+  assert.doesNotMatch(preview,/\|bau\\b\|/,'die alte, zu lockere Kette ist weg');
+  assert.match(free,/require\('\.\/industry'\)/,'…und der freie Prompt auch');
+  // Bei reinem Text, Code oder Recherche trägt die Branche nichts bei.
+  assert.match(free,/const INDUSTRY_CATEGORIES=new Set\(\[/);
+  assert.doesNotMatch(free,/INDUSTRY_CATEGORIES=new Set\(\[[^\]]*'text'/,'Text braucht keine Branche');
+  assert.doesNotMatch(free,/INDUSTRY_CATEGORIES=new Set\(\[[^\]]*'code'/,'Code auch nicht');
+});
+
+test('the master prompt turns the chosen direction into a buildable component spec',async()=>{
+  // Die Richtung nannte nur Wirkung (Stimmung, Layoutprinzip, Hero, Typografie, Palette). Was
+  // daraus gebaut wird - Kopfzeile, Karten, Felder, Buttons, Fußzeile - blieb offen, und genau
+  // darin gingen Vorschaubild und Ergebnis auseinander.
+  const src=await text('app.js');
+  assert.match(src,/function componentSpecBlock\(c,ctrl\)\{/);
+  assert.match(src,/\$\{componentSpecBlock\(c,ctrl\)\}/,'der Abschnitt hängt an der ausgewählten Richtung');
+  // Die Vorgabe leitet sich aus der Auswahl ab, statt fest verdrahtet zu sein.
+  assert.match(src,/c\.navStyle==="logo-hamburger"/,'Kopfzeile folgt der Richtung');
+  assert.match(src,/gefüllt in \$\{c\.palette\?\.\[2\]/,'der Primärbutton nimmt die Akzentfarbe der Palette');
+  assert.match(src,/const density=Number\(ctrl\?\.density\)/,'der Rhythmus folgt dem Regler');
+  assert.match(src,/const corners=/,'die Ecken folgen dem Charakter der Richtung');
+  // Was der Nutzer wörtlich verlangt, schlägt die Vorgabe - sonst widerspricht sich der Prompt.
+  assert.match(src,/deckungsgleich mit der Bildvorschau/);
+  for(const part of ['Kopfzeile','Hero:','Karten und Flächen','Primärbutton','Formularfelder','Typografie:','Fußzeile:','Zustände','Mobil'])
+    assert.ok(src.includes(part),part);
+});
+
+test('work dialogs use the page instead of clinging to the left edge',async()=>{
+  // styles.css sets margin:0!important on these dialogs. A width cap on top of that produced a
+  // left-aligned box with dead space on the right - the dialog has to fill the page instead.
+  const css=await text('promptai-full-app-design.css');
+  assert.match(css,/dialog\.library-dialog:not\(\.app-action-dialog\):not\(\.agent-launch-dialog\):not\(\.guest-gate\):not\(\.plans-dialog\)\{\s*width:100vw!important/,'the work dialogs fill the viewport');
+  assert.match(css,/:not\(\.plans-dialog\)>\.dialog-frame\{\s*margin-left:auto!important;margin-right:auto!important/,'the frame inside stays centred');
+  assert.match(css,/body dialog#legalDialog\{\s*width:100vw!important/,'the legal pages are pinned by their id elsewhere');
+  assert.doesNotMatch(css,/width:min\(1480px,calc\(100vw - 72px\)\)!important/,'the old cap is gone');
+});
+test('the cookie notice is a full-width strip at the very bottom',async()=>{
+  const css=await text('promptai-full-app-design.css');
+  assert.match(css,/\.cookie-banner-box\{\s*width:100%!important;max-width:none!important/,'no floating card any more');
+  assert.match(css,/border:0!important;border-top:1px solid var\(--line\)!important;border-radius:0!important/,'only the top edge is drawn');
+});
+test('the console starts in the arbeitsart the settings ask for',async()=>{
+  const home=await text('promptai-home-final.js'),prefs=await text('user-preferences-ui.js'),html=await text('index.html');
+  assert.match(html,/id="setDefaultCommandMode"/);
+  assert.match(html,/id="setOutputLanguage"/);
+  assert.match(prefs,/defaultCommandMode:'website',outputLanguage:'Deutsch'/);
+  assert.match(home,/function preferredMode\(\)/);
+  assert.match(home,/return commandModeLocked\(wish\)\?'website':wish/,'a locked mode never becomes the start mode');
+  assert.match(home,/if\(!home\|\|home\.dataset\.modeTouched==='1'\)return/,'a manual pick wins over the preference');
+});
+test('the chosen result language reaches both the master prompt and the free prompt',async()=>{
+  const app=await text('app.js'),free=await text('free-prompt-ui.js');
+  assert.match(app,/function languageRequirement\(\)/);
+  assert.match(app,/## 11\. UMSETZUNGSANFORDERUNGEN\\n\$\{languageRequirement\(\)\}/);
+  assert.match(free,/language:window\.PromptAiPreferences\?\.outputLanguage\|\|'Deutsch'/);
+});
+test('the preferred target agent survives the profile that used to overwrite it',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/const preferredAgent=window\.PromptAiPreferences\?\.defaultAgent;/);
+  assert.match(app,/if\(preferredAgent&&AGENT_NAMES\[preferredAgent\]\)state\.targetAgent=preferredAgent/);
+});
+test('registering asks for the name that ends up in the client documents',async()=>{
+  const html=await text('index.html'),app=await text('app.js'),cloud=await text('cloud.js');
+  assert.match(html,/id="authSignUpFields" hidden/,'the extra fields stay out of the sign-in view');
+  for(const id of ['authName','authCompany','authClientType','authLanguage'])assert.match(html,new RegExp(`id="${id}"`),id);
+  assert.match(app,/function setAuthMode\(register\)/);
+  assert.match(app,/el\.signUpBtn\.addEventListener\("click",\(\)=>\{if\(authRegisterMode\)signUp\(\);else setAuthMode\(true\)\}\)/,'the first click opens the form, the second creates the account');
+  assert.match(app,/if\(!profile\.displayName\)\{el\.authMessage\.textContent="Bitte trag noch deinen Namen ein\."/);
+  assert.match(cloud,/async signUp\(email, password, profile\)/);
+  assert.match(cloud,/meta\.display_name = profile\.displayName/,'the name survives an unconfirmed email in the user metadata');
+});
+test('the first-run intro explains the console before the three steps',async()=>{
+  const intro=await text('welcome-intro-ui.js');
+  assert.match(intro,/class="intro-console"/);
+  assert.match(intro,/Das Menü oben<\/b> legt die Arbeitsart fest/);
+  assert.match(intro,/Das große Feld<\/b> ist alles, was du ausfüllen musst/);
+  assert.match(intro,/Das Plus darunter<\/b> hängt Bilder, PDFs oder den Link/);
+  assert.match(intro,/overflow-y:auto;overscroll-behavior:contain/,'the longer content scrolls instead of being cut off');
+});
+
+test('restoring a saved project state never lands on the old description form',async()=>{
+  const src=await text('project-history.js');
+  assert.match(src,/function restoreTarget\(row\)/);
+  assert.match(src,/step:described\?Math\.max\(2,Math\.min\(8,reached\)\):1/,'a described project resumes past step 1');
+  assert.match(src,/surface:described\?'workflow':'welcome'/,'without a description there is nothing to resume');
+  assert.match(src,/write\(STATE_KEY,\{\.\.\.row\.state,currentStep:target\.step/,'the state carries the step, because it outranks the checkpoint');
+});
+test('the gap between start screen and briefing screen is covered',async()=>{
+  const src=await text('promptai-loading-v2.js');
+  assert.match(src,/html\.prompt-handoff-pending body>\*:not\(#promptBriefHandoff\):not\(#promptAppBoot\)\{visibility:hidden!important\}/);
+  assert.match(src,/document\.documentElement\.classList\.remove\('prompt-handoff-pending'\)/,'lifted as soon as the briefing screen stands');
+  assert.match(src,/setTimeout\(\(\)=>document\.documentElement\.classList\.remove\('prompt-handoff-pending'\),4000\)/,'and never left standing if it does not');
+});
+test('client documents read as prose and travel with the handoff package',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/function joinList\(items,fallback=""\)/);
+  assert.match(app,/Dieses Dokument fasst den abgestimmten Stand des Projekts/,'the brief opens with a sentence, not a field list');
+  assert.match(app,/Im Vordergrund \$\{b\.understanding\.priorities\.length>1\?"stehen":"steht"\}/,'singular and plural are handled');
+  assert.doesNotMatch(app,/\*\*Auftraggeber:\*\* \$\{client\.name\|\|"Noch einzutragen"\}/,'the old bold field rows are gone');
+  assert.match(app,/'PROJEKTBERICHT\.md':buildProjectReport\(\)\};/,'the report is in the handoff zip');
+  assert.match(app,/if\(planRules\(\)\.clientDocs\)\{files\['KUNDENBRIEFING\.md'\]=buildClientDocument\('brief'\);files\['UEBERGABE\.md'\]=buildClientDocument\('handover'\)\}/);
+});
+
+test('an opened settings section shows its last block instead of clipping it',async()=>{
+  const css=await text('promptai-full-app-design.css');
+  assert.match(css,/#settingsDialog \.settings-section,[\s\S]{0,200}?height:auto!important;max-height:none!important;overflow:visible!important/,'styles.css clipped the section with overflow:hidden');
+  assert.match(css,/\.settings-danger-row\{\s*display:grid!important;grid-template-columns:minmax\(0,1fr\) auto!important/,'title, description and button are laid out, not run together');
 });

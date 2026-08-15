@@ -66,12 +66,22 @@ const Cloud = {
     return data;
   },
 
-  async signUp(email, password) {
+  async signUp(email, password, profile) {
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    // Die Angaben aus der Registrierung wandern in die Nutzer-Metadaten. Ohne bestätigte
+    // E-Mail gibt es noch keine Sitzung und damit keinen Schreibzugriff auf die Profiltabelle -
+    // so gehen Name und Firma bis zur ersten Anmeldung nicht verloren.
+    const meta = {};
+    if (profile?.displayName) meta.display_name = profile.displayName;
+    if (profile?.companyName) meta.company_name = profile.companyName;
+    if (profile?.defaultClientType) meta.default_client_type = profile.defaultClientType;
+    const options = {};
+    if (redirectTo) options.emailRedirectTo = redirectTo;
+    if (Object.keys(meta).length) options.data = meta;
     const { data, error } = await this.client.auth.signUp({
       email,
       password,
-      options: redirectTo ? { emailRedirectTo: redirectTo } : undefined
+      options: Object.keys(options).length ? options : undefined
     });
     if (error) throw error;
     return data;
@@ -175,7 +185,13 @@ const Cloud = {
       projects: projectsRes.data || [],
       aiConnections: connectionsRes.data || [],
       subscription: {...(subscriptionRes.data || {plan:'free',status:'active'}),isAdmin:Boolean(adminRes.data),apiKeySlots:Boolean(adminRes.data)?4:(['active','trialing'].includes(addonRes.data?.status)?Math.max(1,Math.min(4,Number(addonRes.data?.quantity)||1)):0),ownApiKeys:Boolean(adminRes.data)||(['active','trialing'].includes(addonRes.data?.status))},
-      userProfile:userProfileRes.data?{displayName:userProfileRes.data.display_name||'',companyName:userProfileRes.data.company_name||'',website:userProfileRes.data.website||'',defaultClientType:userProfileRes.data.default_client_type||''}:null,
+      // Ohne Profilzeile greifen die Angaben aus der Registrierung: sie liegen in den
+      // Nutzer-Metadaten, weil vor der bestätigten E-Mail niemand in die Tabelle schreiben darf.
+      userProfile:userProfileRes.data
+        ?{displayName:userProfileRes.data.display_name||'',companyName:userProfileRes.data.company_name||'',website:userProfileRes.data.website||'',defaultClientType:userProfileRes.data.default_client_type||''}
+        :(this.user?.user_metadata&&(this.user.user_metadata.display_name||this.user.user_metadata.company_name)
+          ?{displayName:this.user.user_metadata.display_name||'',companyName:this.user.user_metadata.company_name||'',website:'',defaultClientType:this.user.user_metadata.default_client_type||''}
+          :null),
       reviewCredits:Number(reviewCreditsRes.data?.credits)||0
     };
   },
