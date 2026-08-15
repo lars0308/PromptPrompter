@@ -330,6 +330,27 @@ html.prompt-full-redesign .auth-signup-fields{display:grid!important;gap:var(--s
 html.prompt-full-redesign .auth-signup-fields[hidden]{display:none!important}
 html.prompt-full-redesign .auth-signup-fields .field span small{margin-left:6px;color:var(--muted);font-size:9px;font-weight:600;text-transform:none;letter-spacing:0}
 html.prompt-full-redesign .auth-signup-note{margin:0!important;color:var(--mist)!important;font-size:11px!important;line-height:1.5!important}
+/* styles.css gibt den Einstellungsabschnitten overflow:hidden mit. Aufgeklappt reichte der
+   Inhalt darüber hinaus und der letzte Block - "Lokale Projektdaten löschen" - wurde
+   abgeschnitten. Ein aufklappbarer Abschnitt darf seinen eigenen Inhalt nicht beschneiden. */
+html.prompt-full-redesign #settingsDialog .settings-section,
+html.prompt-full-redesign #accountDialog .account-profile-settings,
+html.prompt-full-redesign #accountDialog .account-support-card{
+  height:auto!important;max-height:none!important;overflow:visible!important;
+}
+/* Die Zeile zum Löschen lokaler Daten hatte nie eine eigene Regel: Titel, Beschreibung und
+   Knopf liefen als Fließtext ineinander. */
+html.prompt-full-redesign .settings-danger-row{
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  gap:6px 22px!important;align-items:center!important;
+  margin-top:var(--sp-5)!important;padding-top:var(--sp-5)!important;border-top:1px solid var(--line)!important;
+}
+html.prompt-full-redesign .settings-danger-row>div{display:grid!important;gap:4px!important;min-width:0!important}
+html.prompt-full-redesign .settings-danger-row strong{font-size:13px!important}
+html.prompt-full-redesign .settings-danger-row small{color:var(--mist)!important;font-size:11px!important;line-height:1.5!important}
+@media(max-width:600px){
+  html.prompt-full-redesign .settings-danger-row{grid-template-columns:1fr!important;justify-items:start!important}
+}
 html.prompt-full-redesign .auth-form-card,
 html.prompt-full-redesign .auth-access-card,
 html.prompt-full-redesign .guest-limit-box,

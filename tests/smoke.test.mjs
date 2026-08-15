@@ -1049,3 +1049,9 @@ test('client documents read as prose and travel with the handoff package',async(
   assert.match(app,/'PROJEKTBERICHT\.md':buildProjectReport\(\)\};/,'the report is in the handoff zip');
   assert.match(app,/if\(planRules\(\)\.clientDocs\)\{files\['KUNDENBRIEFING\.md'\]=buildClientDocument\('brief'\);files\['UEBERGABE\.md'\]=buildClientDocument\('handover'\)\}/);
 });
+
+test('an opened settings section shows its last block instead of clipping it',async()=>{
+  const css=await text('promptai-full-app-design.css');
+  assert.match(css,/#settingsDialog \.settings-section,[\s\S]{0,200}?height:auto!important;max-height:none!important;overflow:visible!important/,'styles.css clipped the section with overflow:hidden');
+  assert.match(css,/\.settings-danger-row\{\s*display:grid!important;grid-template-columns:minmax\(0,1fr\) auto!important/,'title, description and button are laid out, not run together');
+});
