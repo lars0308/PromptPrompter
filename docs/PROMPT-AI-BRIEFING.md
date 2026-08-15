@@ -9,6 +9,8 @@
 - **Die Kostenbremse bremst jetzt wirklich.** Bei aufgebrauchtem Budget griff der Ablauf nach dem letzten Eintrag der Kette — dem Notausgang, also dem teuersten Modell. Die Sparwahl steht jetzt am Profil.
 - **Die Gestaltung liegt in einer Datei statt in vierunddreißig Skripten.** Dabei kam ein alter Fehler ans Licht: ein nie geschlossener Regelblock hatte einen ganzen Abschnitt unwirksam gemacht — der Browser las 143 Regeln statt 1337.
 - **Support-Antworten und Monatsbudgets sind in der Datenbank scharf geschaltet.** Die Budgets standen auf 0, wodurch Balken, Sparmodus und der freie KI-Durchlauf wirkungslos waren.
+- **Der Zwischenspeicher der Anbieter wird genutzt und gemessen.** Der Regeltext am Anfang jeder Anfrage ist immer derselbe und kostet wiederholt nur einen Bruchteil — aber nicht von allein.
+- **Prompt.ai merkt sich Vorlieben je Kunde.** Ein kurzer Zettel im Profil, den der Kunde selbst sieht, ändert und löscht.
 
 ---
 
@@ -19,7 +21,8 @@ Prompt.ai verwandelt eine formlose Idee in einen vollständigen, widerspruchsfre
 Der Kern ist nicht „noch ein KI-Chat", sondern die Lücke davor: **Die meisten KI-Ergebnisse sind schlecht, weil der Auftrag schlecht war.** Prompt.ai stellt die Rückfragen, die ein guter Dienstleister stellen würde, bevor gebaut wird.
 
 **Positionierung:** Damit die KI beim ersten Mal das Richtige baut.
-**Zielgruppe:** Menschen mit einem konkreten Projekt — Handwerksbetriebe, kleine Dienstleister, Selbstständige, Agenturen — nicht Prompt-Bastler.
+
+**Zielgruppe — hier steht eine Entscheidung offen.** Gedacht war die App für Entwickler, Web-Agenturen und Leute, die ohnehin viel mit KI arbeiten. Die Texte auf der Startseite sprechen aber bis heute Handwerksbetriebe und kleine Dienstleister an, und das passt nicht zur Ausgabe: Wer ein ZIP mit `AGENTS.md`, XML-Abschnitten und Cursor-Rules verwerten kann, ist Entwickler oder Agenturinhaber. Ein Dachdecker bekommt damit ein Lastenheft, keine Website. Die Texte werden auf die tatsächliche Zielgruppe umgeschrieben; siehe Abschnitt 11.
 
 ---
 
@@ -123,7 +126,7 @@ Hinter jeder Erstwahl stehen drei weitere Stufen. Fällt eine aus — Störung, 
 - **Eigene KI-Verbindungen** — 5,99 €/Monat: eigener Anbieter, eigenes Modell, eigene Version. Eigene Aufrufe zählen nur halb aufs Kontingent.
 - **Monatsvorrat auffüllen** — 7,99 € für 750.000 Einheiten (≈ 16 Projektläufe). Einmalig, ohne Abo, in jedem Tarif, beliebig oft.
 
-Alle Preise kommen **live aus Stripe**. Preisänderung dort = Änderung in der App, ohne Deployment.
+Die Preise sollen **live aus Stripe** kommen — Änderung dort, Änderung in der App, ohne Deployment. **Der Mechanismus steht, greift aber noch nicht:** in Stripe fehlen die Kennungen, und mehrere aktive Preise pro Produkt machen die Zuordnung mehrdeutig. Solange das so ist, zeigt die App die fest hinterlegten Beträge. Was genau zu tun ist, steht in Abschnitt 10.
 
 ---
 
@@ -155,6 +158,8 @@ Grobe Kostenwerte je Aktion: Projektlauf ~45.000 · freier Prompt ~4.000 · Bild
 **Probelauf (Ultimate)** — das Briefing wird wirklich gebaut und angezeigt; Projektauswahl aus den gespeicherten Ständen.
 
 **Quellcode-Vorschau (ab Pro)** — ZIP mit `package.json` wird in einer isolierten Maschine gebaut und live angezeigt (Next.js, React, Vite, Astro).
+
+**Gedächtnis (im Profil)** — ein kurzer Zettel je Kunde, der bei jedem Projekt mitgeht: „Baue Next.js, nie Vite", „keine Verläufe", „Kunden sind meist Handwerksbetriebe". Damit sinkt der Rückfrageaufwand mit jedem Projekt. Der Kunde sieht, ändert und löscht ihn selbst; er wird nie im Hintergrund befüllt. Serverseitig gilt er ausdrücklich als Geschmacksangabe und kann keine Auftragsvorgabe, Pflichtprüfung oder Sicherheitsregel aushebeln — bei Widerspruch gilt die Projektbeschreibung.
 
 **Konto & Einstellungen** — Registrierung mit Name, Firma, Kundentyp und Sprache; Design, Startmodus, bevorzugte Ziel-KI, Ausgabesprache; eigene KI-Verbindungen; GitHub-Verbindung; Rückfragen-Regeln; Projektprüfung.
 
@@ -190,20 +195,24 @@ Grobe Kostenwerte je Aktion: Projektlauf ~45.000 · freier Prompt ~4.000 · Bild
 - **Zahlung:** Stripe (Abos, Einmalkäufe, Kundenportal)
 - **KI:** Vercel AI Gateway, OpenAI, Gemini, Cloudflare Workers AI — Reihenfolge je Aufgabe und Tarif in der Verwaltung einstellbar
 - **Bauen:** Vercel Sandbox (isolierte MicroVM)
-- **Tests:** 292 Quelltext-Prüfungen (`npm test`) und 9 echte Browser-Durchläufe (`npm run e2e`)
+- **Tests:** 294 Quelltext-Prüfungen (`npm test`) und 9 echte Browser-Durchläufe (`npm run e2e`)
 
 ---
 
 ## 10. Was vor dem Start noch zu tun ist
 
-**In Stripe** — vier Produkte mit `lookup_key`:
+**In Stripe — hier klemmt es tatsächlich.** Geprüft wurde die Sandbox (das Live-Konto war nicht einsehbar), dort gilt:
 
-| Produkt | Typ | lookup_key | Preis |
-|---|---|---|---|
-| Pro | wiederkehrend, monatlich | `prompt_ai_pro` | 20,99 € |
-| Ultimate | wiederkehrend, monatlich | `prompt_ai_ultimate` | 54,99 € |
-| Eigene KI-Verbindungen | wiederkehrend, monatlich | `prompt_ai_own_api_keys` | 5,99 € |
-| Monatsvorrat auffüllen | einmalig | `prompt_ai_top_up` | 7,99 € |
+| Produkt | Stand | Was fehlt |
+|---|---|---|
+| Pro 20,99 € | aktiv | **kein `lookup_key`** — und daneben liegt ein 0-€-Testpreis über 7 Tage |
+| Ultimate 54,99 € | aktiv | **kein `lookup_key`** — und daneben liegt ein zweiter Ultimate-Preis über 0 € |
+| Eigene KI-Verbindungen 5,99 € | aktiv | kein `lookup_key`, wird aber über den Produktnamen gefunden |
+| Monatsvorrat | **3,99 € unter `single_review`** | muss **7,99 €** unter `prompt_ai_top_up` sein |
+
+**Die Folge, und sie kostet Geld:** Ohne `lookup_key` sucht die App den Preis über Kennzeichen und Namen. Weil zu Pro und zu Ultimate jeweils **zwei aktive Preise** existieren (der echte und ein 0-€-Preis), ist die Suche nicht eindeutig — die App fällt jedes Mal auf die fest hinterlegten Beträge zurück. „Preise aktualisieren sich, wenn ich in Stripe etwas ändere" **funktioniert damit heute nicht.** Und der Monatsvorrat würde für 3,99 € statt 7,99 € verkauft.
+
+Zu tun: die vier `lookup_key` setzen (`prompt_ai_pro`, `prompt_ai_ultimate`, `prompt_ai_own_api_keys`, `prompt_ai_top_up`), die 0-€-Preise deaktivieren oder archivieren, den Vorratspreis auf 7,99 € anlegen. Die Produkte heißen außerdem noch „SiteBrief".
 
 Dazu: Webhook auf `https://www.prompt-ai.app/api/stripe-webhook` mit `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Kleinunternehmer-Einstellung (keine Umsatzsteuer, §19-Hinweis). Verkaufsländer zunächst auf Deutschland begrenzen.
 
@@ -215,7 +224,7 @@ Für die Support-Benachrichtigung zusätzlich: `SUPPORT_NOTIFY_TO` (deine Adress
 
 **Hosting:** Vercel Pro (Hobby ist nicht für kommerzielle Nutzung) und Supabase Pro (Free pausiert nach 7 Tagen ohne Zugriff) — spätestens ab dem ersten zahlenden Kunden.
 
-**Datenbank:** eingespielt — `20260816_add_support_reply.sql` (Support-Antwort) und `20260817_add_profile_saver_flag.sql` (Sparwahl).
+**Datenbank:** alles eingespielt — Support-Antwort, Sparwahl, gemessener Zwischenspeicher und das Gedächtnis je Kunde. Hier steht nichts mehr offen.
 
 **Gewerbe:** Tätigkeit beim Gewerbeamt um Softwarevertrieb erweitern. Umsatzsteuer bei digitalen Leistungen ins EU-Ausland mit dem Steuerberater klären. *(Keine Rechts- oder Steuerberatung — Orientierung.)*
 
@@ -226,6 +235,8 @@ Für die Support-Benachrichtigung zusätzlich: `SUPPORT_NOTIFY_TO` (deine Adress
 - **Team-Zugänge für Ultimate** — mehrere Personen an einem Projekt. Braucht Projekte teilen, Rechte, Einladungen, neue Zugriffsregeln.
 - **Wochenpass** — 7 Tage Pro als Einmalkauf. Braucht einen befristeten Tarif; ein halber bis ganzer Tag.
 - **Hilfeseite** — die fünf häufigsten Fragen, sobald bekannt ist, welche das sind.
+- **Ansprache auf Entwickler umstellen** — aus dem externen Gutachten, und der stärkste Punkt darin: Startseite und Tarifkarten versprechen Handwerksbetriebe, die Ausgabe ist ein ZIP mit `AGENTS.md`, XML und Cursor-Rules. Wer das nutzen kann, ist Entwickler oder Agentur. Ein halber Tag Textarbeit.
+- **KI-Werkbank** — der Auftrag wird gleich in der App gebaut, mit wenigen Korrekturrunden und Vorschau über die vorhandene Sandbox. Schließt die Lücke zwischen Lastenheft und Ergebnis, ohne dass wir hosten. Ein bis zwei Wochen.
 - **Nach dem 16. Oktober 2026** — Google schaltet Gemini 2.5 Flash und Pro ab. Die App ist umgestellt, die alten Modelle stehen nur noch als Netz dahinter. Danach lassen sie sich ersatzlos entfernen.
 
 ---
