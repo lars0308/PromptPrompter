@@ -70,18 +70,23 @@
          bekommt eine eigene Zeile zurück. */
       /* justify-content:center kam aus der Knopf-Grundregel und blieb hier stehen: "Profil" stand
          als einziger Eintrag mittig, während alle anderen links auf einer Linie beginnen. */
+      /* In der Zeile nebeneinander liefen Beschriftung und Kontozeile ueber den Knopf hinaus und
+         standen mittig - justify-content wollte hier partout nicht greifen. Als Spalte ist die
+         Frage erledigt: align-items bestimmt die Ausrichtung, und die beiden Zeilen stehen
+         untereinander links, wie jeder andere Eintrag. */
       html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){
-        flex-wrap:wrap!important;align-content:center!important;align-items:center!important;
-        justify-content:flex-start!important;text-align:left!important;
+        display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;
+        align-items:flex-start!important;justify-content:center!important;
+        gap:2px!important;text-align:left!important;
         padding-top:8px!important;padding-bottom:8px!important;
       }
       /* flex:1 hat die freie Breite nicht aufgenommen - die Zeile blieb mittig. Volle Breite
          beendet die Diskussion: der Text beginnt links wie in jeder anderen Zeile. */
       html.prompt-full-redesign .topbar-menu #accountBtn .prompt-drawer-account-label{
-        flex:0 0 100%!important;width:100%!important;text-align:left!important;
+        width:100%!important;text-align:left!important;
       }
       html.prompt-full-redesign .topbar-menu #accountBtn .account-btn-meta{
-        display:block!important;flex:0 0 100%!important;width:100%!important;margin-top:2px!important;
+        display:block!important;width:100%!important;margin-top:0!important;text-align:left!important;
         color:var(--muted)!important;font-size:10px!important;font-weight:600!important;
         overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;
       }

@@ -90,7 +90,20 @@
   }
 
   async function publicContent(){
-    try{const [{offer},{announcements}]=await Promise.all([fetch('/api/offer').then(r=>r.json()),fetch('/api/announcements').then(r=>r.json())]);const banner=$('#offerBanner');if(offer){if(!sessionStorage.getItem('sitebrief-offer-hidden')){$('#offerEyebrow').textContent=offer.eyebrow||'AKTION';$('#offerTitle').textContent=offer.title||'';$('#offerDescription').textContent=offer.description||'';$('#offerCta').textContent=offer.cta_label||'Tarife ansehen';banner.hidden=false}const label=offer.cta_label||(offer.trial_days?`${offer.trial_days} Tage kostenlos testen`:'Tarif wählen');if($('#startProCheckoutBtn'))$('#startProCheckoutBtn').textContent=label;if($('#startUltimateCheckoutBtn'))$('#startUltimateCheckoutBtn').textContent=label}// Announcements are presented by announcement-popup.js as a large dialog. This side only
+    try{const [{offer},{announcements}]=await Promise.all([fetch('/api/offer').then(r=>r.json()),fetch('/api/announcements').then(r=>r.json())]);const banner=$('#offerBanner');if(offer){
+      // Leer heisst leer. Vorher setzte jede dieser Zeilen bei leerem Wert einen Standardtext
+      // zurueck, und der CTA ueberschrieb zusaetzlich beide Tarif-Knoepfe - derselbe Satz stand
+      // dann dreimal auf der Seite und liess sich in der Verwaltung nicht wegbekommen.
+      const put=(sel,value)=>{const node=$(sel);if(!node)return;const text=String(value||'').trim();node.textContent=text;node.hidden=!text};
+      if(!sessionStorage.getItem('sitebrief-offer-hidden')){
+        put('#offerEyebrow',offer.eyebrow);put('#offerTitle',offer.title);put('#offerDescription',offer.description);
+        const cta=$('#offerCta'),ctaText=String(offer.cta_label||'').trim();
+        if(cta){cta.textContent=ctaText||'Tarife ansehen';cta.hidden=false}
+        banner.hidden=!(String(offer.eyebrow||'').trim()||String(offer.title||'').trim()||String(offer.description||'').trim());
+      }
+      const label=String(offer.cta_label||'').trim();
+      if(label){if($('#startProCheckoutBtn'))$('#startProCheckoutBtn').textContent=label;if($('#startUltimateCheckoutBtn'))$('#startUltimateCheckoutBtn').textContent=label}
+    }// Announcements are presented by announcement-popup.js as a large dialog. This side only
     // publishes what the API returned, so there is a single owner for how they look and when they
     // come back.
     window.PromptAiAnnouncements=Array.isArray(announcements)?announcements:[];window.dispatchEvent(new CustomEvent('promptai:announcements',{detail:{announcements:window.PromptAiAnnouncements}}))}catch{}

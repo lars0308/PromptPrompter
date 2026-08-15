@@ -105,7 +105,18 @@ module.exports=async function(req,res){
       await serviceFetch(`/rest/v1/sitebrief_support_requests?id=eq.${body.id}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:{status:body.status,updated_at:new Date().toISOString()}});await audit(admin.id,action,null,{id:body.id,status:body.status});return res.status(200).json({ok:true});
     }
     if(action==='save-offer'){
-      const trialDays=Math.max(0,Math.min(365,Number(body.trialDays)||0)),discountPercent=Math.max(0,Math.min(100,Number(body.discountPercent)||0)),row={id:'main',enabled:Boolean(body.enabled),eyebrow:String(body.eyebrow||(trialDays?'KOSTENLOS TESTEN':'AKTION')).slice(0,80),title:String(body.title||(trialDays?`Pro ${trialDays} Tage kostenlos testen`:discountPercent?`Aktuell ${discountPercent} % Rabatt`:'' )).slice(0,160),description:String(body.description||(trialDays?'Danach monatlich kündbar.':discountPercent?'Der Rabatt wird im Checkout automatisch abgezogen.':'')).slice(0,500),cta_label:String(body.ctaLabel||(trialDays?'Kostenlos testen':'Rabatt sichern')).slice(0,80),trial_days:trialDays,discount_percent:discountPercent,stripe_coupon_id:String(body.stripeCouponId||'').trim().slice(0,120)||null,ends_at:body.endsAt||null,updated_by:admin.id,updated_at:new Date().toISOString()};
+      const trialDays=Math.max(0,Math.min(365,Number(body.trialDays)||0)),discountPercent=Math.max(0,Math.min(100,Number(body.discountPercent)||0));
+      // Ein geleertes Feld ist eine Entscheidung, kein fehlender Wert. Vorher stand hier
+      // `body.eyebrow||'KOSTENLOS TESTEN'` - ein leerer String ist falsy, also kam der
+      // Standardtext sofort zurueck und liess sich nicht loswerden. Der Rueckfall greift nur
+      // noch, wenn das Feld gar nicht mitgeschickt wurde.
+      const field=(value,fallback,max)=>String(value===undefined||value===null?fallback:value).trim().slice(0,max);
+      const row={id:'main',enabled:Boolean(body.enabled),
+        eyebrow:field(body.eyebrow,trialDays?'KOSTENLOS TESTEN':'AKTION',80),
+        title:field(body.title,trialDays?`Pro ${trialDays} Tage kostenlos testen`:discountPercent?`Aktuell ${discountPercent} % Rabatt`:'',160),
+        description:field(body.description,trialDays?'Danach monatlich kündbar.':discountPercent?'Der Rabatt wird im Checkout automatisch abgezogen.':'',500),
+        cta_label:field(body.ctaLabel,trialDays?'Kostenlos testen':'Rabatt sichern',80),
+        trial_days:trialDays,discount_percent:discountPercent,stripe_coupon_id:String(body.stripeCouponId||'').trim().slice(0,120)||null,ends_at:body.endsAt||null,updated_by:admin.id,updated_at:new Date().toISOString()};
       await serviceFetch('/rest/v1/sitebrief_public_offers?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:row});await audit(admin.id,action,null,{trialDays:row.trial_days,discountPercent:row.discount_percent});return res.status(200).json({ok:true});
     }
     if(action==='save-quota-limits'){

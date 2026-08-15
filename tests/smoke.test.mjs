@@ -1106,7 +1106,11 @@ test('the account entry starts on the same line as every other menu row',async()
   const drawer=await text('promptai-nav-drawer.js');
   assert.match(drawer,/function wrapAccountLabel\(\)/,'a bare text node cannot be aligned like the others');
   assert.match(drawer,/span\.className='prompt-drawer-account-label'/);
-  assert.match(drawer,/\.prompt-drawer-account-label\{\s*flex:0 0 100%!important;width:100%!important;text-align:left!important/);
+  // Als Zeile lief das Paar ueber den Knopf hinaus und stand mittig; als Spalte ist die Frage
+  // erledigt, weil align-items die Ausrichtung bestimmt.
+  assert.match(drawer,/#accountBtn:not\(\[hidden\]\)\{\s*display:flex!important;flex-direction:column!important/);
+  assert.match(drawer,/align-items:flex-start!important;justify-content:center!important/);
+  assert.match(drawer,/\.prompt-drawer-account-label\{\s*width:100%!important;text-align:left!important/);
 });
 test('the trial build picks its system AI from the plan instead of asking',async()=>{
   const src=await text('generator-selection.js'),app=await text('app.js');
@@ -1138,8 +1142,13 @@ test('the public config does not hand out raw provider errors',async()=>{
   assert.doesNotMatch(api,/lastError:String\(x\.last_error\|\|''\)/);
 });
 test('the start page and the workflow are never on screen together',async()=>{
-  const css=await text('promptai-full-app-design.css');
-  assert.match(css,/html\.prompt-home-surface #workflowApp\{display:none!important\}/);
+  // Die Trennung selbst macht die :has()-Regel. Der eigentliche Fehler war, dass syncHome bei
+  // unruhiger Seite gar nicht mehr lief: jede style-Aenderung startete die Entprellung neu, und
+  // damit blieb prompt-home-surface auf dem Stand von vor Minuten stehen.
+  const css=await text('promptai-full-app-design.css'),home=await text('promptai-home-final.js');
+  assert.match(css,/body:has\(#workflowApp:not\(\[hidden\]\)\) #welcomePage\{display:none!important\}/);
+  assert.match(home,/function homeVisible\(\)\{const page=\$\('#welcomePage'\);return Boolean\(page&&!page\.hidden/,'no circular dependency on the workflow any more');
+  assert.match(home,/if\(!settleTimer\)settleDeadline=now\+400;/,'the debounce has a ceiling');
 });
 test('closing a running project asks first',async()=>{
   const src=await text('guided-clean-ui.js');

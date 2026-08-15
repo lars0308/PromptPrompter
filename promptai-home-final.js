@@ -138,6 +138,23 @@
          der Tarif in die naechste Zeile und stand dort ganz links wie ein Versehen. Er haengt
          sich jetzt rechts an, egal in welcher Zeile er landet. */
       .prompt-command-meta>.prompt-plan-chip{order:10;margin-left:auto;padding-left:0!important;border-left:0!important}
+      /* Die Leiste sprang um, sobald das Ablauf-Wort laenger wurde ("Ohne Rueckfragen" statt
+         "Mit Rueckfragen"): mal eine Zeile, mal zwei, und der Tarif wanderte mit. Auf dem
+         Telefon stehen die vier Teile deshalb in einem festen Raster - zwei Zeilen, immer
+         dieselben Plaetze, egal wie lang die Beschriftung ist. */
+      @media(max-width:700px){
+        .prompt-command-meta{
+          display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;
+          grid-template-areas:'plus flow flow' 'info info plan'!important;
+          row-gap:9px!important;column-gap:12px!important;align-items:center!important;
+        }
+        .prompt-command-meta>.prompt-attach-button{grid-area:plus}
+        .prompt-command-meta>#promptSetupButton{grid-area:flow;justify-self:start}
+        .prompt-command-meta>#promptHomeMeta{grid-area:info;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .prompt-command-meta>.prompt-plan-chip{grid-area:plan;justify-self:end;margin-left:0!important}
+        .prompt-command-meta>.prompt-command-error{grid-column:1/-1}
+        .prompt-command-meta span+span{padding-left:0!important;border-left:0!important}
+      }
       .prompt-command-meta>#promptHomeMeta:after{content:'';display:block}
       .prompt-command-meta>span:not(#promptHomeMeta){order:10;padding-left:0!important;border-left:0!important}
       .prompt-command-submit{bottom:auto!important;top:auto!important}}
@@ -420,7 +437,11 @@
   function titleCase(value){return String(value||'').trim().replace(/[._-]+/g,' ').replace(/\b\p{L}/gu,char=>char.toUpperCase())}
   function firstName(value){return titleCase(value).split(/\s+/)[0]||''}
   function resolvedName(){const cloud=window.SiteBriefCloud||{},user=cloud.user||{},meta=user.user_metadata||{};const values=[$('#userDisplayName')?.value,window.PromptAiUserProfile?.displayName,cloud.userProfile?.displayName,cloud.profile?.displayName,meta.display_name,meta.full_name,meta.name];for(const value of values){const name=firstName(value);if(name)return name}const email=String(user.email||'').trim();return email?firstName(email.split('@')[0]):''}
-  function homeVisible(){const page=$('#welcomePage'),workflow=$('#workflowApp');return Boolean(page&&!page.hidden&&getComputedStyle(page).display!=='none'&&(!workflow||workflow.hidden||getComputedStyle(workflow).display==='none'))}
+  // Frueher hing das zusaetzlich davon ab, dass der Ablauf versteckt ist - ein Zirkel: der
+  // CSS-Riegel, der den Ablauf unter der Startseite wegnimmt, haengt an dieser Klasse, und die
+  // fiel genau dann weg, wenn der Ablauf sichtbar wurde. Beides zugleich war damit moeglich.
+  // Die Startseite ist der Zustand, sobald ihre Seite steht; alles andere folgt daraus.
+  function homeVisible(){const page=$('#welcomePage');return Boolean(page&&!page.hidden&&getComputedStyle(page).display!=='none')}
   // Same fallback order the project list already uses (app.js): a project name, then a client
   // name, then the description itself. Most projects start from the console's free-text
   // description alone, with neither name field ever filled in - without this fallback the
@@ -594,7 +615,17 @@
     // Ohne gespeichertes Projekt bot die Zeile etwas an, das es nicht gibt.
     if(latest)latest.hidden=!title;
     $('#promptLatestTitle',home).textContent=title||'Gespeicherten Arbeitsstand fortsetzen';$('#promptLatestAction',home).disabled=Boolean(original?.disabled);syncMeta();syncFlowUi();applyFlow(flowMode());syncAttachments();syncSetupSummary();syncModeMenuLocks(home);applyPreferredMode(home);ensureThemeToggle();const topbar=$('body>.topbar')||$('.topbar');if(topbar){topbar.hidden=false;topbar.removeAttribute('aria-hidden')}}
-  function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(syncHome,25)}
+  // Entprellt, aber mit Deckel: die Seite schreibt waehrend Ladeanimationen jeden Frame an
+  // style-Attributen, und jede dieser Aenderungen hat den Timer neu gestartet. syncHome lief
+  // dann minutenlang nicht - und genau daran haengt die Klasse, die Startseite und Ablauf
+  // auseinanderhaelt. Nach spaetestens 400ms laeuft er, egal wie unruhig es zugeht.
+  let settleDeadline=0;
+  function schedule(){
+    const now=Date.now();
+    if(!settleTimer)settleDeadline=now+400;
+    clearTimeout(settleTimer);
+    settleTimer=setTimeout(()=>{settleTimer=0;syncHome()},Math.max(0,Math.min(25,settleDeadline-now)));
+  }
   function init(){installStyles();syncHome();const observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','style']});new MutationObserver(schedule).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});document.addEventListener('click',event=>{if(event.target.closest?.('#brandHome,.guided-clean-exit,#promptWorkflowLoaderClose'))setTimeout(syncHome,80)},true);window.addEventListener('promptai:access',schedule);window.addEventListener('promptai:quota',syncMeta);window.addEventListener('promptai:credits',syncMeta);window.addEventListener('promptai:references',()=>{syncAttachCounts();syncMeta()});window.addEventListener('promptai:preferences',()=>{const home=$('.prompt-command-home');if(home){delete home.dataset.modeTouched;applyPreferredMode(home)}});window.addEventListener('pageshow',schedule);window.addEventListener('promptai:home',syncHome);window.SiteBriefCloud?.subscribe?.(schedule);let count=0;const warm=setInterval(()=>{syncHome();if(++count>24)clearInterval(warm)},180)}
   window.PromptAiHomeSurface={sync:syncHome};
   installStyles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();

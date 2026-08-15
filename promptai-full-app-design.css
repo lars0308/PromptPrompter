@@ -333,12 +333,9 @@ html.prompt-full-redesign .auth-signup-note{margin:0!important;color:var(--mist)
 /* Impressum und Datenschutz gehören an die Unterkante der Seite, nicht mitten in den freien
    Raum unter dem letzten Kasten. Die Seite ist dafür eine Spalte über die volle Fensterhöhe,
    und die Fußzeile schiebt sich mit ihrem eigenen margin-top ganz nach unten. */
-/* Startseite und Projektablauf sind zwei Zustände desselben Fensters, nie beide zugleich.
-   Beim Umschalten der Arbeitsart aus der Konsole blieb #workflowApp sichtbar und hing unter
-   der Startseite - man scrollte von der Konsole direkt in "Dein Master-Prompt ist fertig",
-   und der Auto-Router schaltete darin weiter, was als Flackern und als Sprung auf die
-   Referenzseite ankam. Solange die Startseite der Zustand ist, ist der Ablauf weg. */
-html.prompt-home-surface #workflowApp{display:none!important}
+/* Die Trennung von Startseite und Ablauf macht die :has()-Regel weiter unten: sobald
+   #workflowApp sichtbar ist, verschwindet #welcomePage. Ein zweiter Riegel in die andere
+   Richtung waere hier falsch - im Moment des Wechsels waeren beide gleichzeitig weg. */
 html.prompt-home-surface body{
   display:flex!important;flex-direction:column!important;min-height:100dvh!important;
 }
