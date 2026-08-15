@@ -629,3 +629,17 @@ test('der Zwischenspeicher wird angefordert und sein Treffer wirklich gemessen',
   assert.match(usage,/cached_tokens:int\(tokens\.cached\)/,'und landet in der Abrechnung');
   assert.match(migration,/add column if not exists cached_tokens integer not null default 0/);
 });
+
+// Ein Preis, der nicht aus Stripe kommt, faellt still auf den fest hinterlegten Betrag zurueck.
+// Der Kunde sieht dann einen Preis, der stimmen kann - aber nicht mehr mitwandert. Genau so blieb
+// ein Tippfehler in einer Kennung ("prompt_ai_ultimatew") unbemerkt.
+test('die Verwaltung zeigt, welcher Preis wirklich aus Stripe kommt',async()=>{
+  const config=await text('api/config.js'),core=await text('admin-console-core.js'),css=await text('promptai-ui-layers.css');
+  assert.match(config,/return \{text:fallback,live:false\}/,'kein Treffer heisst nicht live');
+  assert.match(config,/if\(!price\|\|!Number\.isFinite\(amount\)\)return \{text:fallback,live:false\};/);
+  assert.match(config,/live:\{pro:pro\.live,ultimate:ultimate\.live,apiKeys:apiKeys\.live,topUp:singleReview\.live\}/);
+  assert.match(core,/function priceOrigin\(\)/);
+  assert.match(core,/prompt_ai_ultimate'\]/,'die erwartete Kennung steht daneben, damit der Tippfehler auffaellt');
+  assert.match(core,/nicht aus Stripe/);
+  assert.match(css,/\.admin-price-origin\.is-stale\{/,'ein Fehlschlag muss auch aussehen wie einer');
+});

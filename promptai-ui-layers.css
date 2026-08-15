@@ -221,6 +221,18 @@
 html.prompt-route-pending body>*:not(#promptModeHandoff){visibility:hidden!important}html.prompt-route-pending #promptModeHandoff{visibility:visible!important}
 
 /* ===== admin-console.js · #promptAccessBootStyle ===== */
+/* Woher die Preise kommen - die Karte steht im Ueberblick der Verwaltung, gleich unter den Zahlen.
+   Sie faellt nur auf, wenn etwas nicht stimmt; sonst ist sie eine ruhige Bestaetigung. */
+.admin-price-origin{margin:14px 0 0;padding:14px 15px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.admin-price-origin strong{display:block;font-size:13px}
+.admin-price-origin small{display:block;margin-top:4px;color:var(--muted);font-size:9px;line-height:1.5}
+.admin-price-origin ul{display:grid;gap:7px;margin:11px 0 0;padding:0;list-style:none}
+.admin-price-origin li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:10px}
+.admin-price-origin li span{color:var(--muted)}
+.admin-price-origin li code{font:600 9px/1 ui-monospace,monospace;color:var(--accent)}
+.admin-price-origin.is-stale{border-color:color-mix(in srgb,var(--danger,#b84435) 45%,var(--line));background:color-mix(in srgb,var(--danger,#b84435) 5%,var(--surface))}
+@media(max-width:650px){.admin-price-origin li{grid-template-columns:1fr}}
+
 html.prompt-access-pending #upgradeBtn,html.prompt-access-pending #upgradeMenuBtn,html.prompt-access-pending #modeSwitch,html.prompt-access-pending .workflow-upgrade,html.prompt-access-pending .quick-upgrade-note,html.prompt-access-pending .quick-tier-block,html.prompt-access-pending #settingsUpgradeNote,html.prompt-access-pending #apiAddonCard,html.prompt-access-pending #currentPlanBadge,html.prompt-access-pending .plan-current{visibility:hidden!important;opacity:0!important;pointer-events:none!important}html.prompt-access-pending #workflowApp:not([hidden]){opacity:0!important}html:not(.prompt-home-ready) .welcome-workspace{visibility:hidden!important;opacity:0!important}
 
 /* ===== mode-handoff-fix.js · #promptModeHandoffStyles ===== */
