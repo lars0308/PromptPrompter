@@ -19,26 +19,6 @@
   function step(){return Number($('.step-panel.active')?.dataset.stepPanel||0)}
   function uiReady(){return document.documentElement.classList.contains('prompt-home-ready')&&!document.documentElement.classList.contains('prompt-access-pending')}
 
-  function styles(){
-    if($('#promptModeHandoffStyles'))return;
-    const s=document.createElement('style');s.id='promptModeHandoffStyles';s.textContent=`
-      html.prompt-mode-handoff-active,html.prompt-mode-handoff-active body{overflow:hidden!important}
-      .prompt-mode-handoff{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-      .prompt-mode-handoff.is-leaving{opacity:0;pointer-events:none}
-      /* Closing blink, shared with the boot and workflow screens. */
-      .prompt-mode-handoff.is-complete strong{animation:promptFillFlash .42s ease-out var(--prompt-flash-count,1)}
-      .prompt-mode-handoff>div{width:min(560px,100%);text-align:center}.prompt-mode-handoff .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}.prompt-mode-handoff strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,48px);line-height:1.14;letter-spacing:-.05em}
-      .prompt-mode-handoff-status{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}.prompt-mode-handoff-status.is-changing{opacity:0;transform:translateY(4px)}
-      .prompt-mode-handoff-bar{display:none}
-      /* The progress runs through the headline itself: a two-stop gradient clipped to the glyphs,
-         so the fill follows the real letter shapes. An earlier attempt clipped the element with
-         clip-path, which cut ascenders and descenders (g, t, f) in half. */
-      .prompt-mode-handoff strong{background-image:linear-gradient(90deg,var(--ui-blue,var(--accent,#1689c7)) 0 var(--prompt-fill,0%),color-mix(in srgb,var(--ink) 26%,transparent) var(--prompt-fill,0%) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;transition:none}
-      @supports not (background-clip:text){.prompt-mode-handoff strong{color:var(--ink);background-image:none}.prompt-mode-handoff-bar{display:block;width:min(240px,70%);height:4px;margin:22px auto 0;border-radius:99px;background:var(--ui-line,var(--line));overflow:hidden}.prompt-mode-handoff-bar i{display:block;height:100%;width:var(--prompt-fill,0%);
-      .prompt-mode-handoff-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-mode-handoff-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptModeDot 1.05s ease-in-out infinite}.prompt-mode-handoff-pulse i:nth-child(2){animation-delay:.13s}.prompt-mode-handoff-pulse i:nth-child(3){animation-delay:.26s}@keyframes promptModeDot{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
-      @media(prefers-reduced-motion:reduce){.prompt-mode-handoff,.prompt-mode-handoff-status{transition:none}.prompt-mode-handoff-bar i{transition:none!important}.prompt-mode-handoff-pulse i{animation:none;opacity:.7}}
-    `;document.head.appendChild(s)
-  }
 
   function rememberSelection(event){const card=event.target.closest?.('[data-project-mode]');if(!card||card.disabled)return;const brief=String($('#simpleIntakeText')?.value||'').trim();if(brief.length<8)return;write({mode:card.dataset.projectMode||'guided',brief,createdAt:Date.now()})}
   function setSentence(text,immediate=false){
@@ -74,7 +54,7 @@
     const wait=window.PromptAiFill?.tail?.(startedAt)??flash;
     if(flash&&box){box.style.setProperty('--prompt-flash-count',String(Math.max(1,Math.round(wait/flash))));box.classList.add('is-complete')}
     setTimeout(()=>leave(box),flash?wait:0)}
-  function leave(box){box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
+  function leave(box){box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
   function finish(data){
     if(finishing)return;const elapsed=Date.now()-startedAt,box=$('#promptModeHandoff');if(elapsed<MIN_VISIBLE_MS||!uiReady()){timer=setTimeout(()=>tick(data),70);return}
     finishing=true;clearInterval(sentenceTimer);
@@ -91,7 +71,7 @@
     if(advanceStarted&&n===1&&Date.now()-startedAt>5000&&retryCount<1){const next=$('#stepProject .next-btn');if(next&&!next.disabled){retryCount++;allowAdvance=true;next.click();allowAdvance=false}}
     timer=setTimeout(()=>tick(data),80)
   }
-  function boot(){styles();const data=read();if(!data?.brief||!data?.mode){document.documentElement.classList.remove('prompt-route-pending');document.getElementById('promptRoutePendingStyle')?.remove();return}claimInitialAdvance();active=true;startedAt=Date.now();document.documentElement.classList.add('prompt-mode-handoff-active');overlay(data);tick(data)}
+  function boot(){const data=read();if(!data?.brief||!data?.mode){document.documentElement.classList.remove('prompt-route-pending');return}claimInitialAdvance();active=true;startedAt=Date.now();document.documentElement.classList.add('prompt-mode-handoff-active');overlay(data);tick(data)}
 
   document.addEventListener('click',rememberSelection,true);document.addEventListener('click',guardClicks,true);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();

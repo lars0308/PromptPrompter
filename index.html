@@ -34,6 +34,10 @@
     @keyframes promptAppBootTrack{0%{transform:translateX(-115%)}60%{transform:translateX(175%)}100%{transform:translateX(300%)}}
     @media(prefers-reduced-motion:reduce){#promptAppBoot .boot-track i{animation-duration:1.8s}}
   </style>
+  <!-- Die Oberflaechen-Ebenen. Standen frueher als Textbloecke in vierunddreissig JavaScript-Dateien
+       und wurden erst nach dem ersten Bild nachgereicht. Die Reihenfolge hier ist bindend:
+       styles.css, der Startschutz oben, diese Datei, zuletzt promptai-full-app-design.css. -->
+  <link rel="stylesheet" href="./promptai-ui-layers.css?v=20260817-1" />
 </head>
 <body>
   <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo-trace.svg?v=7" alt="Prompt.ai"><strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">.ai</span></strong><p class="prompt-fill-progress" style="--prompt-fill:6%">Dein Arbeitsbereich wird vorbereitet.</p><div class="boot-track" aria-hidden="true"><i></i></div><small>Projekte, Konto und Werkzeuge laden im Hintergrund.</small></div></section>
@@ -834,12 +838,12 @@
     </div>
   </footer>
 
-  <script type="module" src="./cloud.js?v=20260816-1"></script>
-  <script src="./maintenance-mode.js?v=20260816-2" defer></script>
-  <script src="./entry-gate-ui.js?v=20260816-3" defer></script>
-  <script src="./legal-pages.js?v=20260816-1" defer></script>
-  <script src="./app.js?v=20260816-22" defer></script>
-  <script src="./admin-console.js?v=20260816-18" defer></script>
+  <script type="module" src="./cloud.js?v=20260817-20"></script>
+  <script src="./maintenance-mode.js?v=20260817-20" defer></script>
+  <script src="./entry-gate-ui.js?v=20260817-20" defer></script>
+  <script src="./legal-pages.js?v=20260817-20" defer></script>
+  <script src="./app.js?v=20260817-20" defer></script>
+  <script src="./admin-console.js?v=20260817-20" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>

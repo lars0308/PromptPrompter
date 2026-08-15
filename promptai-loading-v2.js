@@ -3,7 +3,6 @@
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   const SIMPLE_START_KEY='prompt-ai-v1-simple-start';
   const DISMISS_KEY='prompt-ai-clarification-dismissed-v2';
-  const BLUE='var(--ui-blue,var(--accent,#1689c7))';
   let settleTimer=0,lastClarificationOpen=false;
 
   try{if(sessionStorage.getItem(SIMPLE_START_KEY)==='1')document.documentElement.classList.add('prompt-skip-intake-brief')}catch{}
@@ -12,35 +11,6 @@
   // gerechnet und deutlich kürzer als der Notausstieg in theme-init.js.
   setTimeout(()=>document.documentElement.classList.remove('prompt-handoff-pending'),4000);
 
-  function installStyles(){
-    if($('#promptLoadingV2Styles'))return;
-    const s=document.createElement('style');s.id='promptLoadingV2Styles';s.textContent=`
-      :root{--prompt-load-blue:${BLUE}}
-      html.prompt-skip-intake-brief #workflowApp #stepProject.active{visibility:hidden!important;pointer-events:none!important}
-      /* Zwischen Startschirm und Briefing-Schirm lag ungefähr eine Sekunde nackte Arbeitsfläche,
-         inklusive der Zeile "Projekt wird vorbereitet" aus mode-flow-ui.js. Das las sich wie ein
-         zweiter Ladebildschirm, der sofort wieder verschwindet. Solange der Briefing-Schirm noch
-         nicht steht, bleibt darunter nur die Papierfläche stehen - theme-init.js setzt die Klasse
-         schon im ersten Skript und nimmt sie spätestens nach neun Sekunden wieder weg. */
-      html.prompt-handoff-pending body{background:var(--paper)!important}
-      html.prompt-handoff-pending body>*:not(#promptBriefHandoff):not(#promptAppBoot){visibility:hidden!important}
-      .prompt-handoff-loader{position:fixed;z-index:2147483600;inset:0;display:grid;place-items:center;padding:28px 20px;background:var(--paper);color:var(--ink);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-      .prompt-handoff-loader>div{width:min(590px,100%);text-align:center}.prompt-handoff-loader .prompt-process-lines{margin-top:24px;text-align:left}
-      .prompt-process-kicker{display:block;color:var(--prompt-load-blue);font-size:9px;font-weight:850;letter-spacing:.12em}.prompt-process-title{display:block;margin-top:8px;font-size:clamp(30px,7vw,48px);line-height:1;letter-spacing:-.05em}
-      .prompt-process-lines{display:grid;gap:13px;width:min(540px,100%);margin:18px auto 0}.prompt-process-line{position:relative;color:var(--ink);font-size:clamp(14px,2.7vw,17px);font-weight:650;line-height:1.45}.prompt-process-line>.prompt-process-fill{position:absolute;inset:0;color:var(--prompt-load-blue);clip-path:inset(0 100% 0 0);pointer-events:none}
-      .prompt-process-lines.running .prompt-process-fill{animation:promptLoadFill var(--prompt-line-duration,900ms) linear var(--prompt-line-delay,0ms) forwards}.prompt-process-lines.complete .prompt-process-fill{clip-path:inset(0)!important;animation:promptLoadFinish .48s ease both!important}
-      @keyframes promptLoadFill{to{clip-path:inset(0)}}@keyframes promptLoadFinish{0%,100%{filter:none;text-shadow:none}45%{filter:brightness(1.18);text-shadow:0 0 18px color-mix(in srgb,var(--prompt-load-blue) 38%,transparent)}}
-      .flow-transition-compact i{display:none!important}.flow-transition-compact .prompt-process-lines{margin-top:22px!important;text-align:left!important}.flow-transition-compact .prompt-process-line{font-size:clamp(14px,2.6vw,17px)!important}
-      #reviewProgress.prompt-process-enhanced,#previewProgress.prompt-process-enhanced,#websiteBuildProgress.prompt-process-enhanced{height:auto!important;max-height:none!important;overflow:visible!important}
-      #reviewProgress .prompt-process-lines,#previewProgress .prompt-process-lines,#websiteBuildProgress .prompt-process-lines{margin-top:14px;text-align:left}
-      .prompt-completion-flash{position:fixed;z-index:2147483646;inset:0;display:grid;place-items:center;padding:28px 20px;background:color-mix(in srgb,var(--paper) 97%,transparent);backdrop-filter:blur(10px);animation:promptFlashIn .14s ease both;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.prompt-completion-flash>div{width:min(580px,100%);text-align:center}.prompt-completion-flash .prompt-process-lines{margin-top:22px;text-align:left}.prompt-completion-flash .prompt-process-fill{clip-path:inset(0)!important;color:var(--prompt-load-blue);animation:promptLoadFinish .48s ease both!important}
-      @keyframes promptFlashIn{from{opacity:0}to{opacity:1}}
-      html.prompt-clarification-exit.prompt-review-transition #flowTransitionCompact{display:none!important}html.prompt-clarification-exit.prompt-review-transition #workflowApp .step-panel.active{display:block!important}
-      #promptAiThinkingStage .prompt-thinking-line .fill{transition:filter .18s ease,text-shadow .18s ease}#promptAiThinkingStage.prompt-v2-complete .prompt-thinking-line .fill{clip-path:inset(0)!important;color:var(--prompt-load-blue)!important;filter:brightness(1.18);text-shadow:0 0 18px color-mix(in srgb,var(--prompt-load-blue) 38%,transparent)}
-      @media(max-width:820px){.prompt-process-lines{gap:12px}.prompt-handoff-loader{padding:24px 18px}.prompt-completion-flash{padding:24px 18px}}
-      @media(prefers-reduced-motion:reduce){.prompt-process-fill{animation:none!important;clip-path:inset(0)!important}.prompt-completion-flash{animation:none!important}}
-    `;document.head.appendChild(s)
-  }
 
   function durationFor(length=0){const n=Math.max(0,Number(length)||0);if(n<=120)return 3200+Math.round(n*8);if(n<=500)return 4160+Math.round((n-120)*9);return Math.min(11000,7580+Math.round((n-500)*4))}
   function lineSet(kind){
@@ -161,7 +131,7 @@
   }
 
   function settle(){
-    installStyles();ensureHandoff();decorateFlowTransition();enhanceProgress('#reviewProgress','review');enhanceProgress('#previewProgress','preview');enhanceProgress('#websiteBuildProgress','build');freePromptCompletion();clarificationState()
+    ensureHandoff();decorateFlowTransition();enhanceProgress('#reviewProgress','review');enhanceProgress('#previewProgress','preview');enhanceProgress('#websiteBuildProgress','build');freePromptCompletion();clarificationState()
   }
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
   function bind(){
@@ -170,6 +140,6 @@
     window.addEventListener('pageshow',schedule);window.addEventListener('promptai:access',schedule)
   }
   window.PromptAiLoading={render(host,options={}){return renderLines(host,options.lines||lineSet(options.kind||'generic'),options.duration||durationFor(options.inputLength||0))},complete:finishLines,flash:flashCompletion,durationFor,lineSet};
-  function init(){installStyles();bind();settle();let n=0;const timer=setInterval(()=>{settle();if(++n>30)clearInterval(timer)},160)}
-  installStyles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init()
+  function init(){bind();settle();let n=0;const timer=setInterval(()=>{settle();if(++n>30)clearInterval(timer)},160)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init()
 })();

@@ -97,57 +97,6 @@
     <p>[Vor dem Live-Betrieb anwaltlich prüfen lassen und alle eckig geklammerten Angaben ersetzen.]</p>
   `;
 
-  function ensureStyle(){
-    if($('#legalPagesStyles'))return;
-    const s=document.createElement('style');
-    s.id='legalPagesStyles';
-    s.textContent=`
-      .legal-body{padding:0 26px 26px;max-height:64vh;overflow-y:auto;font-size:12px;line-height:1.65;color:var(--ink)}
-      .legal-body h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:20px 0 6px}
-      .legal-body h3:first-child{margin-top:0}
-      .legal-body p{margin:0 0 4px}
-      .legal-placeholder-note{margin:0 0 18px;padding:11px 14px;border-radius:10px;border:1px solid var(--warn);background:rgba(154,109,31,.12);color:var(--warn);font-size:11px;line-height:1.5;font-weight:600}
-      .menu-legal-row{display:flex;gap:14px;padding-top:10px;margin-top:4px;border-top:1px solid var(--line)}
-      .menu-legal-row .text-btn{font-size:9px}
-      .gate-legal-row{display:flex;justify-content:center;gap:16px;padding:14px 26px 20px;margin-top:2px;border-top:1px solid var(--line)}
-      .gate-legal-row .text-btn{font-size:9px;color:var(--muted)}
-      .link-btn{border:0;background:none;padding:0;margin:0;color:var(--accent);text-decoration:underline;text-underline-offset:2px;font:inherit;cursor:pointer}
-      .auth-consent-note{margin:12px 0 0;color:var(--muted);font-size:11px!important;line-height:1.5}
-      .auth-consent-note .link-btn{font-size:inherit!important}
-      /* A slim bar at the bottom instead of a full-screen dialog: the notice is required, but it
-         is not the reason anybody opened the app. The dialog element keeps its modal behaviour so
-         nothing else can be clicked past it, but it only occupies the bottom edge. */
-      .cookie-banner{position:fixed;inset:auto 0 0 0;z-index:2147483200;width:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:inherit;overflow:visible}
-      .cookie-banner:not([open]){display:none}
-      .cookie-banner::backdrop{background:transparent}
-      .cookie-banner-box{pointer-events:auto;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px 20px;width:min(1100px,calc(100% - 24px));margin:0 auto 12px;padding:14px 18px;border:1px solid var(--line);border-radius:14px;background:var(--paper);box-shadow:0 14px 40px rgba(12,20,26,.16)}
-      .cookie-banner-box>div:first-child{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-      .cookie-banner-box .section-kicker{color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.12em}
-      .cookie-banner-box h2{margin:0;font-size:15px;letter-spacing:-.01em}
-      .cookie-banner p{grid-column:1;margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
-      .cookie-banner-actions{grid-column:2;grid-row:1/3;display:flex;align-items:center;gap:8px}
-      .cookie-banner-actions button{width:auto}
-      .cookie-banner-actions #cookieBannerEssentialBtn,.cookie-banner-actions #cookieBannerAcceptBtn{min-height:40px!important;padding:0 16px!important;border-radius:10px!important;font-size:12px!important;font-weight:750!important;white-space:nowrap}
-      .cookie-banner-actions #cookieBannerSettingsBtn{min-height:auto;width:auto;white-space:nowrap}
-      .cookie-banner-settings{grid-column:1/-1}
-      @media(max-width:760px){
-        .cookie-banner-box{grid-template-columns:1fr;gap:10px;width:calc(100% - 16px);margin-bottom:8px;padding:13px 14px}
-        .cookie-banner-box h2{font-size:14px}
-        .cookie-banner p{font-size:11.5px}
-        .cookie-banner-actions{grid-column:1;grid-row:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-        .cookie-banner-actions #cookieBannerSettingsBtn{grid-column:1/-1;order:3}
-      }
-      .cookie-banner-settings{display:grid;gap:12px;margin-top:2px;padding-top:16px;border-top:1px solid var(--line)}
-      .cookie-banner-settings[hidden]{display:none}
-      .cookie-category{display:grid;grid-template-columns:16px 1fr;gap:9px;align-items:start}
-      .cookie-category input{margin-top:2px;accent-color:var(--accent)}
-      .cookie-category span{display:block}
-      .cookie-category strong{display:block;font-size:12px}
-      .cookie-category small{display:block;margin-top:2px;font-size:10px;line-height:1.45;color:var(--muted)}
-      .cookie-category.disabled{opacity:.6}
-    `;
-    document.head.appendChild(s);
-  }
 
   function openLegal(kind){
     const dialog=$('#legalDialog');if(!dialog)return;
@@ -227,7 +176,7 @@
   }
 
   function init(){
-    ensureStyle();
+    
     ensureMenuLinks();
     ensureAuthConsent();
     ensureGateFooter();

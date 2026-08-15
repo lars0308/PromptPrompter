@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {layer} from './helpers/ui-layer.mjs';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const text=p=>readFile(path.join(root,p),'utf8');
+// Die Oberflaechen-Stile stehen seit dem Zusammenzug in promptai-ui-layers.css; layer()
+// liefert eine Datei wieder mit genau ihrem Stil-Abschnitt zurueck.
+const text=p=>layer(p);
 
 test('monthly quotas match the public Free Pro and Ultimate allowances',async()=>{
   const server=await text('server/quota.js'),ui=await text('usage-quota-ui.js');

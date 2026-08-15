@@ -14,30 +14,6 @@
   const simpleMode=()=>['guided','auto'].includes(currentMode());
   const workflowVisible=()=>Boolean($('#workflowApp')&&!$('#workflowApp').hidden);
 
-  function installStyles(){
-    if($('#uxStabilityFixStyles'))return;
-    const style=document.createElement('style');
-    style.id='uxStabilityFixStyles';
-    style.textContent=`
-      .project-mode-card{position:relative!important;overflow:hidden!important}.project-mode-card:before{right:14px!important;top:13px!important;z-index:1!important}.project-mode-frame{isolation:isolate!important}
-      .project-mode-close,.simple-intake-close,.guided-clean-exit,.close-dialog,.offer-close,.agent-launch-close,[data-sub-close]{display:grid!important;place-items:center!important;width:42px!important;height:42px!important;min-width:42px!important;padding:0!important;border:1px solid var(--ui-line,var(--line))!important;border-radius:50%!important;background:var(--ui-card,var(--surface))!important;color:var(--ink)!important;font:700 21px/1 Arial,sans-serif!important;box-shadow:none!important;transform:none!important}
-      .project-mode-close:hover,.simple-intake-close:hover,.guided-clean-exit:hover,.close-dialog:hover,.offer-close:hover,[data-sub-close]:hover{background:var(--ui-soft,var(--surface-soft))!important;border-color:color-mix(in srgb,var(--ui-blue,var(--accent)) 45%,var(--ui-line,var(--line)))!important}
-      html[data-clean-project-flow="1"] body.prompt-unified-ui>.topbar,html.prompt-intake-open body.prompt-unified-ui>.topbar{display:none!important}
-      #themeToggleBtn{display:none!important}.menu-theme-quick{display:none!important;flex:0 0 auto;width:44px;height:44px;padding:0;border:1px solid var(--ui-line,var(--line));border-radius:12px;background:var(--ui-card,var(--surface));color:var(--ink);font-size:19px;place-items:center}.menu-theme-quick.show{display:grid!important}
-      .topbar-menu:before{content:'PROMPT.AI'!important}.topbar-menu #resetBtn{display:none!important}.topbar-menu #signOutBtn{margin-top:4px!important;border-top:1px solid var(--ui-line,var(--line))!important;border-radius:0!important;padding-top:10px!important}.topbar-menu #upgradeMenuBtn{font-weight:850!important}.upgrade-target{color:var(--ui-blue,var(--accent,#1689c7))!important}#upgradeBtn .upgrade-target{color:#fff!important}
-      .topbar-menu #accountBtn,.topbar-menu #openSettingsBtn{margin-top:4px!important;border-top:1px solid var(--ui-line,var(--line))!important;border-radius:0!important;padding-top:10px!important}
-      .home-welcome{margin:0 0 9px 4px;color:var(--muted);font-size:11px;font-weight:700}.home-intro-copy{max-width:520px!important;margin-top:12px!important;font-size:13px!important;line-height:1.4!important}.welcome-quick-actions>button small{line-height:1.3!important}.home-tier-note{font-size:9px!important}
-      .project-mode-head p{max-width:520px!important;font-size:12px!important;line-height:1.4!important}.project-mode-card small{font-size:11px!important;line-height:1.4!important}.project-mode-foot{font-size:9px!important}
-      .simple-intake-body>p{max-width:600px!important;margin:13px 0 20px!important;font-size:12px!important;line-height:1.45!important}.simple-intake-example{font-size:9px!important}.simple-intake-field textarea{min-height:220px!important}
-      html[data-clean-project-flow="1"] .guided-clean-lead{max-width:620px!important;font-size:11px!important;line-height:1.45!important;margin:8px 0 18px!important}
-      html[data-clean-project-flow="1"] #modeFlowPanel,html[data-clean-project-flow="1"] .guided-auto-loading{display:none!important}
-      #clarificationDialog .dialog-frame{width:min(720px,calc(100vw - 28px))!important}#clarificationWarnings{display:none!important}#clarificationDialog .clarification-intro,.clarification-background-note{display:none!important}.clarification-question{border-color:var(--ui-line,var(--line))!important;border-radius:12px!important;box-shadow:none!important}.clarification-actions{gap:8px!important}
-      .generation-status{font-size:10px!important;line-height:1.45!important}.generation-status.error{color:var(--muted)!important}
-      .sub-proration-note{margin:12px 0 0;padding:12px 14px;border:1px solid color-mix(in srgb,var(--ui-blue,var(--accent)) 30%,var(--ui-line,var(--line)));border-radius:11px;background:color-mix(in srgb,var(--ui-blue,var(--accent)) 6%,var(--ui-card,var(--surface)));color:var(--muted);font-size:9px;line-height:1.5}.sub-proration-note strong{display:block;margin-bottom:3px;color:var(--ink);font-size:10px}
-      @media(max-width:820px){html[data-clean-project-flow="1"] body.prompt-unified-ui #workflowApp{padding-top:0!important}.menu-theme-quick{width:42px;height:42px}.project-mode-head p{margin-right:42px!important}.flow-transition-compact{min-height:58dvh;align-content:center}.flow-transition-compact.show{display:grid!important}.clarification-actions{display:grid!important;grid-template-columns:1fr!important}.clarification-actions button{width:100%!important}}
-    `;
-    document.head.appendChild(style);
-  }
 
   function shortHome(){
     const wrap=$('.welcome-hero')?.firstElementChild;if(!wrap)return;
@@ -128,7 +104,7 @@
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,20)}
   function observe(){new MutationObserver(schedule).observe(document.body,{childList:true})}
   function bind(){document.addEventListener('click',validateSimpleIntake,true);document.addEventListener('click',event=>{if(event.target.closest?.('#workspaceNewProjectBtn')){try{sessionStorage.setItem(FRESH_WEBSITE_KEY,'1');sessionStorage.removeItem(PREVIEW_MANUAL_KEY)}catch{}}schedule()},true);$('#previewFormat')?.addEventListener('change',event=>{if(event.isTrusted)try{sessionStorage.setItem(PREVIEW_MANUAL_KEY,'1')}catch{}},true);window.addEventListener('promptai:access',schedule);window.addEventListener('sitebrief:admin',schedule);window.addEventListener('pageshow',schedule);window.SiteBriefCloud?.subscribe?.(schedule)}
-  function init(){installStyles();bind();observe();settle();let tries=0;const timer=setInterval(()=>{settle();if(++tries>24)clearInterval(timer)},180)}
+  function init(){bind();observe();settle();let tries=0;const timer=setInterval(()=>{settle();if(++tries>24)clearInterval(timer)},180)}
   window.PromptAiUxFlow={order:FLOW_ORDER,settle};
-  installStyles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

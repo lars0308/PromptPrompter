@@ -9,25 +9,6 @@
   // Durchlauf: das × bleibt, fragt aber nach. Erst „Ja, abbrechen" führt zurück zum Startmenü.
   const $=(s,r=document)=>r.querySelector(s);
 
-  function styles(){
-    if($('#flowGuardStyles'))return;
-    const s=document.createElement('style');s.id='flowGuardStyles';s.textContent=`
-      /* unified-ui-v1 setzt .close-dialog global auf display:grid!important und hat damit die
-         Regel aus styles.css überstimmt, die den Knopf auf der Anmeldeseite ausblendet. */
-      html:root body .account-dialog.guest-gate .close-dialog,
-      html:root body .account-dialog.guest-gate .dialog-back{display:none!important}
-      .install-invite{position:fixed;left:12px;right:12px;bottom:max(14px,env(safe-area-inset-bottom));z-index:2147482000;
-        display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 14px;align-items:center;
-        padding:14px 15px;border:1px solid var(--wk-line,var(--line));border-radius:6px;
-        background:var(--wk-sheet,var(--surface));box-shadow:0 18px 40px rgba(28,36,44,.18)}
-      .install-invite[hidden]{display:none}
-      .install-invite strong{display:block;font-size:13px}
-      .install-invite small{display:block;margin-top:3px;color:var(--muted);font-size:11px;line-height:1.4}
-      .install-invite-actions{display:flex;gap:8px}
-      .install-invite-actions button{min-height:40px;padding:0 13px;border-radius:4px;font-size:11px;font-weight:800}
-      @media(max-width:520px){.install-invite{grid-template-columns:1fr}.install-invite-actions button{flex:1}}
-    `;document.head.appendChild(s);
-  }
 
   // --- Durchlauf abbrechen -----------------------------------------------------------------
   // transition-polish.js hört auf denselben Klick in der Capture-Phase. Diese Datei läuft davor,
@@ -107,6 +88,6 @@
     window.addEventListener('appinstalled',()=>{remember();node?.remove();node=null});
   }
 
-  function init(){styles();guardLoaderClose();guardGate();inviteInstall()}
+  function init(){guardLoaderClose();guardGate();inviteInstall()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

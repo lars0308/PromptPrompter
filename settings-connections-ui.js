@@ -19,49 +19,6 @@
   const setName=(provider,value)=>{try{const all=names();all[provider]=value;localStorage.setItem(NAME_KEY,JSON.stringify(all))}catch{}};
   const slots=()=>{const a=access();return a.isAdmin?MAX_SLOTS:Math.max(0,Math.min(MAX_SLOTS,Number(a.apiKeySlots)||0))};
 
-  function styles(){
-    if($('#settingsConnectionStyles'))return;
-    const el=document.createElement('style');el.id='settingsConnectionStyles';el.textContent=`
-      .conn-offer{padding:18px;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
-      .conn-offer span{display:block;color:var(--accent);font-size:9px;font-weight:900;letter-spacing:.12em}
-      .conn-offer strong{display:block;margin-top:7px;font-size:17px}
-      .conn-offer p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.55}
-      .conn-offer-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:end;margin-top:15px}
-      .conn-offer-actions .compact-field{margin:0}
-      .conn-slot{margin-top:12px;padding:15px;border:1px solid var(--line);border-radius:15px;background:var(--surface)}
-      .conn-slot-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,180px);gap:10px;align-items:end}
-      .conn-slot-head .field{margin:0}
-      .conn-slot-index{display:block;margin-bottom:9px;color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.12em}
-      .conn-slot .ai-connection-card{margin-top:12px;border:0!important;background:none!important;box-shadow:none!important;padding:0!important}
-      .conn-slot .ai-connection-head>div>span,.conn-slot .ai-connection-head>div>strong{display:none!important}
-      .conn-slot .ai-connection-head{justify-content:flex-end!important}
-      .conn-empty-note{margin:12px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
-      .conn-model{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;margin-top:11px}
-      .conn-model .field{margin:0}
-      .conn-model small{grid-column:1/-1;margin-top:-2px;color:var(--muted);font-size:11px;line-height:1.45}
-      .conn-active-row{display:flex;gap:10px;align-items:center;margin-top:11px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--paper)}
-      .conn-active-row span{flex:1 1 auto;font-size:12px;line-height:1.45}
-      .conn-active-row b{color:var(--accent);font-weight:800}
-      /* One fold per key: five open forms below each other were impossible to scan. The summary
-         carries the name the visitor gave the connection. */
-      .conn-slot{padding:0!important;overflow:hidden}
-      .conn-slot>summary{display:flex;align-items:center;gap:11px;padding:14px 15px;cursor:pointer;list-style:none}
-      .conn-slot>summary::-webkit-details-marker{display:none}
-      .conn-slot>summary strong{flex:1 1 auto;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-      .conn-slot>summary em{flex:0 0 auto;font-style:normal;font:700 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.09em;color:var(--muted)}
-      .conn-slot>summary i{flex:0 0 auto;font-style:normal;font-size:17px;color:var(--muted);transition:transform .15s ease}
-      .conn-slot[open]>summary i{transform:rotate(45deg)}
-      .conn-slot[open]>summary{border-bottom:1px solid var(--line)}
-      .conn-slot-body{padding:15px}
-      .conn-dot{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--line)}
-      .conn-dot.is-on{background:var(--good,#2e9e6b)}
-      .conn-purpose{margin-top:12px}
-      .conn-purpose>span{display:block;margin-bottom:7px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
-      .conn-purpose label{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;font-size:12.5px}
-      .conn-purpose label+label{margin-top:6px}
-      @media(max-width:700px){.conn-slot-head{grid-template-columns:1fr}.conn-offer-actions>*{flex:1 1 100%}}
-    `;document.head.appendChild(el);
-  }
 
   function cardFor(provider){
     const status=$(`#${CARD_ID[provider]}`);
@@ -77,7 +34,7 @@
   }
 
   function render(){
-    styles();
+    
     const box=host();if(!box)return;
     // Park every card back in the hidden grid BEFORE the container is rewritten: overwriting
     // innerHTML with a card still inside a mount deletes that card from the document for good.
@@ -178,7 +135,7 @@
     if(text)text.textContent='Für die eigene GitHub-Verbindung ist ein Ultimate-Abo erforderlich.';
   }
 
-  function init(){styles();render();github();loginRow();bind();publish();window.addEventListener('promptai:access',()=>{github();loginRow()});
+  function init(){render();github();loginRow();bind();publish();window.addEventListener('promptai:access',()=>{github();loginRow()});
     window.SiteBriefCloud?.subscribe?.(()=>{loginRow();render()});
     let n=0;const timer=setInterval(()=>{render();github();loginRow();if(++n>=10)clearInterval(timer)},400);
   }

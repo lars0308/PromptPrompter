@@ -1,11 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {layer} from './helpers/ui-layer.mjs';
 import {createRequire} from 'node:module';
 import {readFile} from 'node:fs/promises';
 
 const require=createRequire(import.meta.url);
 const templates=require('../server/prompt-templates.js');
-const text=name=>readFile(new URL(`../${name}`,import.meta.url),'utf8');
+// Die Oberflaechen-Stile stehen seit dem Zusammenzug in promptai-ui-layers.css; layer()
+// liefert eine Datei wieder mit genau ihrem Stil-Abschnitt zurueck.
+const text=name=>layer(name);
 
 test('every prompt area ships a built-in default, so an empty database still produces a full prompt',()=>{
   assert.equal(templates.KEYS.length,29,'9 project areas, the universal free-prompt rules, the tool syntax and 18 categories');

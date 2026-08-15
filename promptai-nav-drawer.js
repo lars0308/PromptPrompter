@@ -16,134 +16,6 @@
     ['Probelauf','workspaceBuildSiteBtn']
   ];
 
-  function styles(){
-    if($('#promptNavDrawerStyles'))return;
-    const s=document.createElement('style');s.id='promptNavDrawerStyles';s.textContent=`
-      /* Die Schublade liegt ueber der Kopfzeile - damit lag sie auch ueber ihrem eigenen Knopf,
-         und ein zweiter Klick darauf kam nie an. Zu ging sie dann nur mit Esc oder ueber den
-         Vorhang, obwohl jeder zuerst denselben Knopf noch einmal drueckt. Der Knopf liegt jetzt
-         darueber und schliesst wieder, was er geoeffnet hat. */
-      html.prompt-full-redesign #topbarMenuToggle{z-index:2147483003!important}
-      html.prompt-full-redesign .prompt-drawer-close{
-        position:absolute!important;top:10px!important;right:12px!important;z-index:3!important;
-        width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;
-        border:1px solid var(--line)!important;border-radius:11px!important;
-        background:var(--surface)!important;color:var(--ink)!important;
-        font:700 19px/1 Arial,Helvetica,sans-serif!important;cursor:pointer!important;
-      }
-      html.prompt-full-redesign .topbar-menu{
-        position:fixed!important;inset:0 0 0 auto!important;top:0!important;bottom:0!important;right:0!important;left:auto!important;
-        z-index:2147483001!important;display:flex!important;flex-direction:column!important;gap:0!important;
-        width:min(320px,86vw)!important;max-height:none!important;height:100dvh!important;
-        padding:0!important;border:0!important;border-left:1px solid var(--line)!important;border-radius:0!important;
-        background:var(--surface)!important;box-shadow:none!important;overflow:hidden!important;
-        transform:translateX(101%);transition:transform var(--t-slow,260ms) var(--ease,ease);
-        visibility:hidden;
-      }
-      html.prompt-full-redesign .topbar-menu.open,
-      html.prompt-full-redesign .topbar-menu[data-open="true"]{
-        display:flex!important;transform:none;visibility:visible;animation:none!important;
-      }
-      /* Der Kopf trägt die Marke, damit die Schublade nicht wie ein Kontextmenü wirkt. */
-      html.prompt-full-redesign .topbar-menu:before{
-        content:'PROMPT.AI';flex:0 0 auto;display:block;
-        padding:22px 20px 14px;border-bottom:1px solid var(--line);
-        color:var(--logo-blue,var(--accent));font:850 10px/1 ui-monospace,SFMono-Regular,monospace;letter-spacing:.16em;
-      }
-      /* Ein Fluss statt Container: die Reihenfolge kommt aus order, damit kein Knoten
-         umgehängt werden muss. Alles scrollt, Profil und Abmelden stehen unten fest. */
-      html.prompt-full-redesign .topbar-menu>*{flex:0 0 auto}
-      html.prompt-full-redesign .topbar-menu{padding:0 10px 10px!important;overflow-y:auto!important;overscroll-behavior:contain}
-      html.prompt-full-redesign .topbar-menu button:not([hidden]),
-      html.prompt-full-redesign .topbar-menu a:not([hidden]){
-        display:flex!important;align-items:center!important;gap:11px!important;
-        width:100%!important;min-height:46px!important;padding:0 12px!important;
-        border:0!important;border-radius:8px!important;background:transparent!important;
-        color:var(--ink)!important;font-size:14px!important;font-weight:650!important;text-align:left!important;
-        justify-content:flex-start!important;
-      }
-      html.prompt-full-redesign .topbar-menu button:hover:not(:disabled){background:var(--surface-soft)!important}
-      /* "Projekte" und "Bibliothek" öffneten dasselbe Fenster - der doppelte Eintrag verschwindet
-         hier, weil die Regel darüber jeden sichtbaren Knopf mit !important auf display:flex setzt. */
-      html.prompt-full-redesign .topbar-menu button[data-drawer-hidden="1"]{display:none!important}
-      /* Keine Symbole in der Schublade: zwei Zeichen unter zehn Wörtern sahen aus wie
-         Reste, nicht wie System. Jetzt beginnt jede Zeile auf derselben Linie. */
-      html.prompt-full-redesign .topbar-menu button svg{display:none!important}
-      /* Der Schalter für Hell/Dunkel steht in promptai-full-app-design.css: diese Ebene
-         wird als <link> nach diesem <style> eingehängt und gewinnt jeden Gleichstand. */
-      /* Profil ist der eine Knopf unten - Einstellungen und Abmelden hängen daran. */
-      html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){
-        margin-top:auto!important;min-height:56px!important;
-        border:1px solid var(--line)!important;background:var(--surface-soft)!important;
-      }
-      /* app.js hängt unter "Profil" eine zweite Zeile mit dem angemeldeten Konto. Seit der
-         Eintrag ein Flex-Element ist, stand sie als zweites Element in derselben Zeile und wurde
-         auf null Breite gequetscht - also war nirgends mehr zu sehen, wer angemeldet ist. Sie
-         bekommt eine eigene Zeile zurück. */
-      /* justify-content:center kam aus der Knopf-Grundregel und blieb hier stehen: "Profil" stand
-         als einziger Eintrag mittig, während alle anderen links auf einer Linie beginnen. */
-      /* In der Zeile nebeneinander liefen Beschriftung und Kontozeile ueber den Knopf hinaus und
-         standen mittig - justify-content wollte hier partout nicht greifen. Als Spalte ist die
-         Frage erledigt: align-items bestimmt die Ausrichtung, und die beiden Zeilen stehen
-         untereinander links, wie jeder andere Eintrag. */
-      html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){
-        display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;
-        align-items:flex-start!important;justify-content:center!important;
-        gap:2px!important;text-align:left!important;
-        padding-top:8px!important;padding-bottom:8px!important;
-      }
-      /* flex:1 hat die freie Breite nicht aufgenommen - die Zeile blieb mittig. Volle Breite
-         beendet die Diskussion: der Text beginnt links wie in jeder anderen Zeile. */
-      html.prompt-full-redesign .topbar-menu #accountBtn .prompt-drawer-account-label{
-        width:100%!important;text-align:left!important;
-      }
-      html.prompt-full-redesign .topbar-menu #accountBtn .account-btn-meta{
-        display:block!important;width:100%!important;margin-top:0!important;text-align:left!important;
-        color:var(--muted)!important;font-size:10px!important;font-weight:600!important;
-        overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;
-      }
-      html.prompt-full-redesign .topbar-menu>button.prompt-drawer-out{color:var(--danger)!important}
-      /* Gesperrte Einträge verschwinden nicht mehr - man sieht, dass es sie gibt, und woran es
-         liegt. Der Tarif steht rechts, wie im Ablauf-Menü der Konsole. */
-      html.prompt-full-redesign .topbar-menu button[data-drawer-tier]:after{
-        content:attr(data-drawer-tier);margin-left:auto;
-        color:var(--upgrade,#e9781f)!important;font-size:9px;font-weight:900;letter-spacing:.1em;
-      }
-      html.prompt-full-redesign .topbar-menu button[data-drawer-tier]{color:var(--muted)!important}
-      /* Ein neuer Support-Eingang bekommt einen Punkt - im Menü und am Eintrag selbst. */
-      html.prompt-full-redesign .topbar-menu button[data-drawer-dot="1"]:after{
-        content:'';margin-left:auto;width:9px;height:9px;border-radius:50%;
-        background:var(--logo-blue,var(--accent))!important;
-      }
-      html.prompt-full-redesign #topbarMenuToggle.prompt-drawer-has-dot:after{
-        content:'';position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;
-        background:var(--logo-blue,var(--accent));
-      }
-      /* Kein position:relative hier. Der Knopf ist bereits absolut in der Kopfzeile platziert und
-         damit Bezugsrahmen genug für den Punkt. Ein position:relative mit einer Klasse mehr im
-         Selektor schlug die absolute Platzierung und schob den Knopf aus der Kopfzeile heraus -
-         sichtbar wurde das erst, sobald der Punkt tatsächlich erschien. */
-      html.prompt-full-redesign .topbar-menu .prompt-drawer-legal,
-      html.prompt-full-redesign .topbar-menu>div:has(>button.prompt-drawer-legal){
-        display:flex!important;flex-wrap:wrap!important;gap:0 14px!important;
-        width:auto!important;min-height:0!important;padding:8px 12px 0!important;
-        border-top:1px solid var(--line)!important;background:transparent!important;
-      }
-      html.prompt-full-redesign .topbar-menu .prompt-drawer-legal button,
-      html.prompt-full-redesign .topbar-menu .prompt-drawer-legal a,
-      html.prompt-full-redesign .topbar-menu>button.prompt-drawer-legal{
-        width:auto!important;min-height:32px!important;padding:0!important;
-        font-size:11px!important;font-weight:600!important;color:var(--muted)!important;
-      }
-      /* Der Vorhang schließt die Schublade und dunkelt den Rest ab. */
-      html.prompt-full-redesign .topbar-menu-backdrop:not([hidden]){
-        position:fixed!important;inset:0!important;z-index:2147482800!important;display:block!important;
-        background:var(--scrim)!important;backdrop-filter:blur(2px)!important;
-        animation:promptBackdropIn var(--t-base,180ms) var(--ease,ease) both;
-      }
-      @media(prefers-reduced-motion:reduce){html.prompt-full-redesign .topbar-menu{transition:none}}
-    `;document.head.appendChild(s);
-  }
 
   // Kein Knopf wird verschoben. Der erste Versuch hat die vorhandenen Einträge in neue Container
   // umgehängt - und prompt eine Ausnahme ausgelöst: andere Skripte fügen ihre Einträge relativ zu
@@ -304,7 +176,7 @@
     const toggle=$('#topbarMenuToggle');
     if(toggle)toggle.classList.toggle('prompt-drawer-has-dot',Boolean(open));
   }
-  function init(){styles();shell();watch();bind();
+  function init(){shell();watch();bind();
     window.addEventListener('promptai:support-open',event=>supportDot(Number(event.detail?.open)>0));
     let n=0;const t=setInterval(()=>{shell();if(++n>12)clearInterval(t)},400)}
   window.PromptAiNavDrawer={close};

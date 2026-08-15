@@ -9,19 +9,10 @@
   function currentStep(){return Number($('.step-panel.active')?.dataset.stepPanel||0)}
   function setStatus(title,text='',busy=false){const box=$('#modeFlowPanel');if(!box)return;box.hidden=currentMode()==='expert'||currentStep()===8;box.classList.toggle('busy',busy);box.querySelector('strong').textContent=title;box.querySelector('small').textContent=text}
 
-  function inject(){
-    if($('#modeFlowStyles'))return;
-    const style=document.createElement('style');style.id='modeFlowStyles';style.textContent=`
-      .mode-route-card{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;margin:0 0 18px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--accent) 5%,transparent)}
-      .mode-route-card b{font-size:10px;letter-spacing:.12em;color:var(--accent);text-transform:uppercase}.mode-route-card strong{display:block;font-size:14px;margin-bottom:3px}.mode-route-card small{display:block;color:var(--muted);line-height:1.45}
-      .mode-flow-panel{margin:0 0 18px;padding:16px 18px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--accent) 5%,var(--surface));box-shadow:0 18px 50px rgba(0,0,0,.06)}.mode-flow-panel span{display:block;font-size:9px;font-weight:800;letter-spacing:.13em;color:var(--accent);margin-bottom:7px}.mode-flow-panel strong{display:block;font-size:18px}.mode-flow-panel small{display:block;color:var(--muted);margin-top:5px;line-height:1.5}.mode-flow-panel.busy:before{content:'';float:right;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:promptModeSpin .8s linear infinite}@keyframes promptModeSpin{to{transform:rotate(360deg)}}
-      html[data-prompt-mode="guided"] .step-nav[data-step="3"],html[data-prompt-mode="guided"] .step-nav[data-step="4"],html[data-prompt-mode="auto"] .step-nav[data-step="3"],html[data-prompt-mode="auto"] .step-nav[data-step="4"],html[data-prompt-mode="auto"] .step-nav[data-step="5"],html[data-prompt-mode="auto"] .step-nav[data-step="6"],html[data-prompt-mode="auto"] .step-nav[data-step="7"]{display:none!important}
-      html[data-prompt-mode="guided"] #stepAgent,html[data-prompt-mode="guided"] #stepModules,html[data-prompt-mode="auto"] #stepAgent,html[data-prompt-mode="auto"] #stepModules,html[data-prompt-mode="auto"] #stepBlueprint,html[data-prompt-mode="auto"] #stepPreviews,html[data-prompt-mode="auto"] #stepRefine{min-height:180px!important}
-      html[data-prompt-mode="guided"] #stepAgent>*,html[data-prompt-mode="guided"] #stepModules>*,html[data-prompt-mode="auto"] #stepAgent>*,html[data-prompt-mode="auto"] #stepModules>*,html[data-prompt-mode="auto"] #stepBlueprint>*,html[data-prompt-mode="auto"] #stepPreviews>*,html[data-prompt-mode="auto"] #stepRefine>*{visibility:hidden!important;pointer-events:none!important}
-      html[data-prompt-mode="guided"] #stepBlueprint .controls-strip{display:none!important}
-      html[data-prompt-mode="guided"] #stepPreviews .preview-generation-controls label{display:none!important}
-      @media(max-width:760px){.mode-route-card{grid-template-columns:1fr}.mode-flow-panel{margin:0 4px 16px;padding:14px 15px}}
-    `;document.head.appendChild(style);
+
+  // Der Arbeitsweg-Hinweis und die Statuskarte gehoeren beide dieser Ebene; das Stylesheet dazu
+  // steht seit dem Zusammenzug in promptai-ui-layers.css.
+  function mount(){
     const desc=$('#modeDescription');if(desc&&!$('#modeRouteCard')){const card=document.createElement('div');card.id='modeRouteCard';card.className='mode-route-card';card.innerHTML='<b>ARBEITSWEG</b><div><strong></strong><small></small></div>';desc.insertAdjacentElement('afterend',card)}
     const workspace=$('#workflowApp .workspace');if(workspace&&!$('#modeFlowPanel')){const panel=document.createElement('div');panel.id='modeFlowPanel';panel.className='mode-flow-panel';panel.hidden=true;panel.innerHTML='<span>PROMPT.AI</span><strong>Projekt wird vorbereitet</strong><small></small>';workspace.prepend(panel)}
   }
@@ -130,6 +121,6 @@
     const root=$('#workflowApp');if(!root)return;new MutationObserver(()=>{const step=currentStep();if(step!==lastStep||step===8)scheduleRoute()}).observe(root,{subtree:true,attributes:true,attributeFilter:['class','hidden']});
   }
   function bindModes(){$$('.mode-switch button').forEach(button=>button.addEventListener('click',()=>setTimeout(syncMode,0)));const modeSwitch=$('.mode-switch');if(modeSwitch)new MutationObserver(syncMode).observe(modeSwitch,{subtree:true,attributes:true,attributeFilter:['class']})}
-  function init(){inject();bindModes();clarificationWatch();observeSteps();syncMode();setTimeout(scheduleRoute,250)}
+  function init(){mount();bindModes();clarificationWatch();observeSteps();syncMode();setTimeout(scheduleRoute,250)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

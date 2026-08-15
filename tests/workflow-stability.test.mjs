@@ -1,11 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {layer} from './helpers/ui-layer.mjs';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-const text=p=>readFile(path.join(root,p),'utf8');
+// Die Oberflaechen-Stile stehen seit dem Zusammenzug in promptai-ui-layers.css; layer()
+// liefert eine Datei wieder mit genau ihrem Stil-Abschnitt zurueck.
+const text=p=>layer(p);
 
 test('mode handoff owns the initial description advance exactly once',async()=>{
   const handoff=await text('mode-handoff-fix.js');

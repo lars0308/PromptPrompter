@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {layer} from './helpers/ui-layer.mjs';
 import {readFile} from 'node:fs/promises';
 
-const read=name=>readFile(new URL(`../${name}`,import.meta.url),'utf8');
+// Die Oberflaechen-Stile stehen seit dem Zusammenzug in promptai-ui-layers.css; layer()
+// liefert eine Datei wieder mit genau ihrem Stil-Abschnitt zurueck.
+const read=name=>layer(name);
 
 test('the final design layer loads after the complete d052fcb interface stack',async()=>{
   const boot=await read('admin-console.js');

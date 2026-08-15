@@ -18,14 +18,6 @@
   const resetDate=value=>value?new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(value)):'zum nächsten Monatsanfang';
   const authHeaders=async()=>await window.SiteBriefCloud?.authHeaders?.()||{};
 
-  function styles(){
-    if($('#quotaUiStyles'))return;const s=document.createElement('style');s.id='quotaUiStyles';s.textContent=`
-      .plan-quota-summary{display:block!important;margin-top:4px!important;color:var(--ui-blue,var(--accent))!important;font-size:8px!important;font-weight:800!important;letter-spacing:.01em!important;line-height:1.35!important;text-transform:none!important}.plan-quota-box{margin:14px 0;padding:13px 14px;border:1px solid var(--ui-line,var(--line));border-radius:12px;background:var(--ui-soft,var(--surface-soft))}.plan-quota-box>strong{display:block;margin-bottom:8px;font-size:10px;letter-spacing:.03em}.plan-quota-lines{display:grid;gap:6px}.plan-quota-line{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:9px;line-height:1.35}.plan-quota-line b{color:var(--ink);font-size:9px;text-align:right}.plan-quota-box>small{display:block;margin-top:9px;color:var(--muted);font-size:8px;line-height:1.4}
-      .sub-quota-section{margin-top:22px}.sub-quota-card{border:1px solid var(--ui-line,var(--line));border-radius:14px;overflow:hidden;background:var(--ui-card,var(--surface))}.sub-quota-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:15px 16px;border-bottom:1px solid var(--ui-line,var(--line));align-items:center}.sub-quota-row:last-child{border-bottom:0}.sub-quota-copy strong{display:block;font-size:12px}.sub-quota-copy small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.35}.sub-quota-count{text-align:right}.sub-quota-count b{display:block;font-size:15px}.sub-quota-count small{display:block;margin-top:2px;color:var(--muted);font-size:8px}.sub-quota-track{grid-column:1/-1;height:4px;border-radius:99px;background:var(--ui-soft,var(--surface-soft));overflow:hidden}.sub-quota-track i{display:block;height:100%;background:var(--ui-blue,var(--accent));border-radius:inherit;transition:width .35s ease}.sub-quota-note{margin:9px 2px 0;color:var(--muted);font-size:8px;line-height:1.45}.sub-quota-note.warn{color:var(--warn)}
-      .prompt-saver-notice{margin:0 0 16px;padding:12px 14px;border:1px solid color-mix(in srgb,#d99a32 45%,var(--ui-line,var(--line)));border-left:3px solid #d99a32;border-radius:6px;background:color-mix(in srgb,#d99a32 8%,transparent);color:var(--ink);font-size:12px!important;line-height:1.5}
-      .prompt-low-quota{border-color:color-mix(in srgb,var(--wk-rust,#a9541b) 40%,var(--ui-line,var(--line)));border-left-color:var(--wk-rust,#a9541b);background:color-mix(in srgb,var(--wk-rust,#a9541b) 6%,transparent)}
-      @media(max-width:680px){.sub-quota-row{padding:14px}.plan-quota-line{font-size:9px}.prompt-saver-notice{margin-bottom:12px;padding:11px 12px}}
-    `;document.head.appendChild(s)}
 
   async function quotaApi(action,extra={}){
     const headers=await authHeaders(),r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify({action,...extra})}),data=await r.json().catch(()=>({}));
@@ -136,6 +128,6 @@
     document.addEventListener('click',e=>{if(e.target.closest?.('#showPlansBtn,#upgradeBtn,#upgradeMenuBtn'))setTimeout(syncPlanCards,40);if(e.target.closest?.('#manageSubscriptionBtn'))setTimeout(()=>loadSummary(true),80)},true);
     window.addEventListener('promptai:access',()=>{cache=null;cacheAt=0;setTimeout(()=>loadSummary(true),100)});window.addEventListener('pageshow',()=>setTimeout(()=>loadSummary(false),120));
   }
-  function init(){styles();syncPlanCards();patchFetch();bindWebsiteQuota();observe();setTimeout(()=>loadSummary(false),350)}
-  styles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+  function init(){syncPlanCards();patchFetch();bindWebsiteQuota();observe();setTimeout(()=>loadSummary(false),350)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

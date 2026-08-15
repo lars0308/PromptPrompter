@@ -5,25 +5,6 @@
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   let lastOutcome=null,objectUrls=[],thanksShown=false;
 
-  function injectStyles(){
-    if($('#promptProductPolishStyles'))return;
-    const style=document.createElement('style');style.id='promptProductPolishStyles';style.textContent=`
-      body>#welcomeIntroDialog.welcome-intro-dialog.splash-only{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:#fff!important;overflow:hidden!important}
-      body>#welcomeIntroDialog.welcome-intro-dialog.splash-only::backdrop{background:#fff!important;backdrop-filter:none!important}
-      body>#welcomeIntroDialog.welcome-intro-dialog.splash-only .dialog-frame{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;overflow:hidden!important}
-      body>#welcomeIntroDialog.welcome-intro-dialog.splash-only .welcome-intro-body{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:0!important;margin:0!important;display:block!important;background:#fff!important}
-      body>#welcomeIntroDialog.welcome-intro-dialog.splash-only .welcome-intro-body>:not(.welcome-intro-video){display:none!important}
-      body>#welcomeIntroDialog.welcome-intro-dialog.splash-only .welcome-intro-video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;aspect-ratio:auto!important;object-fit:cover!important;object-position:center!important;margin:0!important;border:0!important;border-radius:0!important;background:#fff!important;box-shadow:none!important}
-      body>#welcomeIntroDialog.welcome-intro-dialog.splash-only .intro-close{display:grid!important;place-items:center!important;position:fixed!important;z-index:5!important;top:max(18px,env(safe-area-inset-top))!important;right:max(18px,env(safe-area-inset-right))!important;width:48px!important;height:48px!important;border-radius:50%!important;background:rgba(20,22,19,.72)!important;color:#fff!important;backdrop-filter:blur(12px)!important}
-      .outcome-lab{margin:28px 0 0;padding:22px;border:1px solid var(--glass-line,var(--line));border-radius:18px;background:var(--glass,var(--surface));box-shadow:var(--frost-shadow,var(--shadow));color:var(--ink)}
-      .outcome-lab-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:18px}.outcome-lab-head span{display:block;font-size:9px;font-weight:850;letter-spacing:.12em;color:var(--accent)}.outcome-lab-head h2{margin:5px 0 6px;font-size:24px;letter-spacing:-.03em}.outcome-lab-head p{margin:0;color:var(--muted);font-size:10px;line-height:1.55;max-width:62ch}
-      .outcome-upload{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}.outcome-upload .field{margin:0}.outcome-preview-status{min-height:20px;margin:10px 0;color:var(--muted);font-size:10px;line-height:1.5}.outcome-preview-status.error{color:var(--danger)}.outcome-preview-status.good{color:var(--good)}
-      .outcome-frame-wrap{display:none;margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface-soft);aspect-ratio:16/10}.outcome-frame-wrap.ready{display:block}.outcome-frame-wrap iframe{display:block;width:100%;height:100%;border:0;background:#fff}
-      .outcome-learning{display:block;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}/* Vorher war der ganze Block bis zum geladenen Projekt unsichtbar - wer bewerten wollte, fand nichts und wusste auch nicht, was ihm fehlt. Er steht jetzt da und sagt es. */.outcome-learning .check-row{margin-bottom:14px}.outcome-learning-grid{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px}.outcome-learning .field{margin-bottom:12px}.outcome-learning-note{font-size:9px;line-height:1.5;color:var(--muted);margin:8px 0 14px}.outcome-learning-result{display:none;margin-top:14px;padding:13px 14px;border:1px solid color-mix(in srgb,var(--good) 38%,var(--line));border-radius:12px;background:color-mix(in srgb,var(--good) 8%,var(--surface));font-size:10px;line-height:1.55}.outcome-learning-result.show{display:block}
-      .system-ai-note{margin:10px 0 0;color:var(--muted);font-size:9px;line-height:1.5}
-      @media(max-width:720px){body>#welcomeIntroDialog.welcome-intro-dialog.splash-only .welcome-intro-video{object-fit:cover!important;transform:scale(1.06)}.outcome-lab{padding:17px;margin-left:-2px;margin-right:-2px}.outcome-lab-head{display:block}.outcome-upload,.outcome-learning-grid{grid-template-columns:1fr}.outcome-frame-wrap{aspect-ratio:9/13}.outcome-frame-wrap iframe{min-height:620px}}
-    `;document.head.appendChild(style);
-  }
 
   function primeIntro(){
     const intro=$('#welcomeIntroDialog');if(!intro)return;
@@ -169,6 +150,6 @@
   }
 
   async function ensureConfig(){if(window.SiteBriefCloud?.config?.systemAiRoutes)return;try{const data=await fetch('/api/config',{cache:'no-store'}).then(r=>r.json());if(window.SiteBriefCloud?.config)Object.assign(window.SiteBriefCloud.config,{systemAiRoutes:data.systemAiRoutes||[],systemAiProviders:data.systemAiProviders||[],learningHints:data.learningHints||[],previewRoutes:data.previewRoutes||[],previewProviders:data.previewProviders||[]})}catch{}}
-  async function init(){injectStyles();primeIntro();rememberCheckout();await ensureConfig();injectOutcomeLab();observePrompt();bindGlobalClicks();observers();enforceAccessUi();setTimeout(()=>{enforceAccessUi();maybeShowThanks();applyLearningHints()},600)}
+  async function init(){primeIntro();rememberCheckout();await ensureConfig();injectOutcomeLab();observePrompt();bindGlobalClicks();observers();enforceAccessUi();setTimeout(()=>{enforceAccessUi();maybeShowThanks();applyLearningHints()},600)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
