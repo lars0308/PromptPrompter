@@ -2090,3 +2090,14 @@ html.prompt-full-redesign .plan-card-fairuse{
   border-top:1px solid var(--line)!important;
   color:var(--mist)!important;font-size:11.5px!important;line-height:1.5!important;
 }
+
+/* Der Fuss traegt jetzt fuenf Links; auf dem Telefon lief der letzte aus dem Bild. Sie brechen
+   um und ruecken zusammen, statt sich in eine Zeile zu zwaengen. */
+@media(max-width:560px){
+  html.prompt-full-redesign .prompt-footer-links{
+    display:flex!important;flex-wrap:wrap!important;justify-content:center!important;
+    gap:4px 10px!important;max-width:100%!important;
+  }
+  html.prompt-full-redesign .prompt-footer-links .footer-divider{display:none!important}
+  html.prompt-full-redesign .prompt-footer-links .footer-link{font-size:11.5px!important}
+}

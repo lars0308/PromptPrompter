@@ -686,3 +686,27 @@ test('a new dialog can style itself without a chain of four IDs',async()=>{
   assert.match(home,/\n      \.prompt-picker-dialog\{width:100vw!important/);
   assert.doesNotMatch(home,/:not\(#welcomePage\):not\(#workflowApp\):not\(#promptFooter\)/,'die Gewichts-Kette darf weg sein');
 });
+
+test('every footer link actually opens something',async()=>{
+  const app=await read('app.js'),css=await read('promptai-full-app-design.css');
+  // Die drei alten Links hingen an el.* - dort waren sie nie eingetragen, also war jeder Klick
+  // ein stiller Fehlschlag. Genau die Sorte Fehler, die ein Quelltext-Test nicht sieht.
+  for(const id of ['footerImpressumLink','footerPrivacyLink','footerCookieLink','footerTermsLink','footerWithdrawalLink']){
+    assert.ok(app.includes(`document.getElementById('${id}')`),id);
+  }
+  assert.doesNotMatch(app,/el\.footerImpressumLink/,'der Umweg ueber den Elementspeicher muss weg sein');
+  // Und auf dem Telefon passen fünf Links nicht in eine Zeile.
+  assert.match(css,/\.prompt-footer-links\{[\s\S]{0,120}flex-wrap:wrap!important/);
+});
+
+test('the drawer can be closed again, on every device',async()=>{
+  const drawer=await read('promptai-nav-drawer.js');
+  // Die Schublade legt sich über die ganze rechte Seite - also auch über ihren eigenen Knopf.
+  // Ein zweiter Klick landete auf der Schublade, und auf dem Telefon gibt es kein Esc.
+  assert.match(drawer,/function ensureCloseButton\(menu\)\{/);
+  assert.match(drawer,/id='promptDrawerClose'/);
+  assert.match(drawer,/\.prompt-drawer-close\{/);
+  // Und jeder Klick daneben schließt - egal wie der Vorhang gerade heißt.
+  assert.match(drawer,/if\(e\.target\.closest\?\.\('#topbarMenu'\)\)return;/);
+  assert.doesNotMatch(drawer,/if\(e\.target\.closest\?\.\('\.topbar-menu-backdrop'\)\)close\(\)/,'der Vorhang heißt nicht überall gleich');
+});

@@ -19,6 +19,18 @@
   function styles(){
     if($('#promptNavDrawerStyles'))return;
     const s=document.createElement('style');s.id='promptNavDrawerStyles';s.textContent=`
+      /* Die Schublade liegt ueber der Kopfzeile - damit lag sie auch ueber ihrem eigenen Knopf,
+         und ein zweiter Klick darauf kam nie an. Zu ging sie dann nur mit Esc oder ueber den
+         Vorhang, obwohl jeder zuerst denselben Knopf noch einmal drueckt. Der Knopf liegt jetzt
+         darueber und schliesst wieder, was er geoeffnet hat. */
+      html.prompt-full-redesign #topbarMenuToggle{z-index:2147483003!important}
+      html.prompt-full-redesign .prompt-drawer-close{
+        position:absolute!important;top:10px!important;right:12px!important;z-index:3!important;
+        width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;
+        border:1px solid var(--line)!important;border-radius:11px!important;
+        background:var(--surface)!important;color:var(--ink)!important;
+        font:700 19px/1 Arial,Helvetica,sans-serif!important;cursor:pointer!important;
+      }
       html.prompt-full-redesign .topbar-menu{
         position:fixed!important;inset:0 0 0 auto!important;top:0!important;bottom:0!important;right:0!important;left:auto!important;
         z-index:2147483001!important;display:flex!important;flex-direction:column!important;gap:0!important;
@@ -196,8 +208,20 @@
       button.replaceChild(span,node);
     }
   }
+  // Die Schublade legt sich ueber die ganze rechte Seite - also auch ueber ihren eigenen Knopf.
+  // Ein zweiter Klick darauf landet deshalb auf der Schublade und tut nichts, und auf dem Telefon
+  // gibt es kein Esc. Sie bekommt darum ein eigenes Kreuz, genau dort, wo der Knopf war.
+  function ensureCloseButton(menu){
+    if($('#promptDrawerClose',menu))return;
+    const button=document.createElement('button');
+    button.type='button';button.id='promptDrawerClose';button.className='prompt-drawer-close';
+    button.setAttribute('aria-label','Menü schließen');button.textContent='×';
+    button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();close()});
+    menu.prepend(button);
+  }
   function shell(){
     const menu=$('#topbarMenu');if(!menu)return false;
+    ensureCloseButton(menu);
     wrapAccountLabel();
     // Die zwei fehlenden Arbeitswege: sie klicken den echten Knopf der Startseite, damit
     // Tarifsperre und Ablauf dort bleiben, wo sie schon geprüft werden.
@@ -242,7 +266,20 @@
   function bind(){
     // Esc und der Vorhang schließen; sonst bleibt die Schublade offen, weil sie kein Dialog ist.
     document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-    document.addEventListener('click',e=>{if(e.target.closest?.('.topbar-menu-backdrop'))close()},true);
+    // Der Vorhang heisst nicht ueberall gleich: die Schublade legt .topbar-menu-backdrop an, eine
+    // spaetere Ebene #promptFinalMenuBackdrop - und auf den hoerte niemand. Ergebnis: bei offenem
+    // Menue schloss kein Klick mehr, und auf dem Telefon gibt es kein Esc. Deshalb schliesst jetzt
+    // jeder Klick ausserhalb der Schublade; der eigene Knopf bleibt aussen vor, der schaltet selbst.
+    document.addEventListener('click',e=>{
+      const menu=$('#topbarMenu');
+      if(!menu||!menu.classList.contains('open'))return;
+      if(e.target.closest?.('#topbarMenu'))return;
+      // Der eigene Knopf oeffnet nur, er schaltet nicht um - deshalb schliesst er hier, bevor
+      // sein Oeffnen-Handler ueberhaupt dran ist. Sonst ginge die Schublade auf und sofort wieder
+      // auf, und der zweite Klick faende nie ein Ende.
+      if(e.target.closest?.('#topbarMenuToggle')){e.preventDefault();e.stopPropagation()}
+      close();
+    },true);
     document.addEventListener('click',e=>{
       const inside=e.target.closest?.('#topbarMenu');
       if(inside&&e.target.closest('button,a')&&!e.target.closest('.theme-toggle'))setTimeout(close,40);
