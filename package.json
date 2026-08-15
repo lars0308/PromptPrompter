@@ -6,7 +6,8 @@
     "dev": "node scripts/dev-server.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:smoke": "node --test tests/smoke.test.mjs",
-    "e2e": "node tests/e2e/run.mjs"
+    "e2e": "node tests/e2e/run.mjs",
+    "pruefung": "node tests/pruefung/missbrauch.mjs"
   },
   "dependencies": {
     "@vercel/sandbox": "2.9.0"

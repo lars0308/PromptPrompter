@@ -317,5 +317,9 @@ Damit ein Gutachten nicht damit aufhört, was hier schon bekannt ist:
 
 **Die Rechtstexte enthalten noch Platzhalter.** Impressum, Datenschutz, Nutzungsbedingungen und Widerrufsbelehrung sind vollständig aufgebaut, aber die eckigen Klammern sind ungefüllt und anwaltlich nicht geprüft.
 
+**Der Stripe-Katalog trägt noch Altlasten.** Zwei 0-€-Preise und ein alter 3,99-€-Einzelkauf stehen weiter aktiv darin. Sie stören die Preisfindung nicht mehr, seit alle vier Kennungen sitzen, gehören aber archiviert — sonst kann sie jemand versehentlich verkaufen.
+
+**Was sich maschinell prüfen lässt, ist geprüft; der Rest bleibt Handarbeit.** `npm run pruefung` schickt Anfragen an eine laufende Adresse, die abgelehnt werden sollen: ohne Anmeldung, mit gefälschtem Tarif im Datenkörper, überdimensioniert, an die Verwaltungswege, an den Zahlungs-Webhook ohne Signatur. Was sich nicht zusenden lässt — Einschleusen über Beschreibung, Referenz oder Gedächtnis, das Umgehen des Kontingents über mehrere Tabs, das Lesen fremder Daten — steht als Testblock G in `docs/TESTAUFTRAG.md` und ist bisher nur von uns selbst geprüft.
+
 **Was ausdrücklich nicht als Schwäche gilt:** dass wir nicht hosten. Das ist eine Entscheidung, keine Lücke — Hosting hieße Ausfälle nachts, Domain-Support und Haftung für fremde Seiten.
 
