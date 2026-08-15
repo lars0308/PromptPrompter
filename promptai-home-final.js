@@ -94,21 +94,45 @@
       .prompt-setup-line{display:inline-flex;align-items:center;gap:7px;max-width:calc(100% - 46px);min-height:30px;padding:0 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--home-muted);font:650 11px/1 Arial,Helvetica,sans-serif;text-align:left;cursor:pointer}
       .prompt-setup-line:hover,.prompt-setup-line[aria-expanded="true"]{border-color:#33465a;color:#e7f1f9}
       .prompt-setup-line>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .prompt-setup-tag{flex:0 0 auto;padding:2px 6px;border:1px solid #33465a;border-radius:6px;color:#8fd0f5;font:850 8.5px/1.4 ui-monospace,monospace;font-style:normal;letter-spacing:.1em;text-transform:uppercase}
       .prompt-setup-line .mode-chevron{flex:0 0 auto;width:6px;height:6px;margin:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
       /* Unter der Konsole statt darüber: nach oben lief das Blatt über Überschrift und Textfeld,
          also genau über das, was man beim Einstellen noch sehen will. */
-      .prompt-setup-sheet{position:absolute;z-index:9;left:14px;right:14px;top:calc(100% + 8px);max-height:min(52vh,380px);overflow-y:auto;overscroll-behavior:contain;padding:6px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:#141e28;box-shadow:0 26px 64px rgba(0,0,0,.55)}
-      .prompt-setup-sheet[hidden]{display:none!important}
+      /* Vier Abschnitte nebeneinander, solange die Breite es hergibt - untereinander wären sie
+         eine Rolltreppe, und genau die sollte hier nicht entstehen. */
+      .prompt-setup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:0 26px;align-content:start}
+      .prompt-setup-grid .prompt-setup-section{border-bottom:1px solid rgba(255,255,255,.07)}
       .prompt-setup-section{padding:8px 6px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
       .prompt-setup-section:last-of-type{border-bottom:0}
       .prompt-setup-section>b{display:block;padding:0 5px 7px;color:#8b9dc3;font:850 9px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase}
       .prompt-setup-section>b .tier-flag{float:right;color:var(--home-orange);font-size:9px;font-weight:850;letter-spacing:.08em;text-transform:none}
-      .prompt-setup-section button{display:block;width:100%;padding:9px 11px;border:0;border-radius:9px;background:transparent;color:#dfe9f2;text-align:left;font:700 12.5px/1.3 Arial,Helvetica,sans-serif;cursor:pointer}
-      .prompt-setup-section button small{display:block;margin-top:3px;color:#8b9dc3;font-size:10.5px;font-weight:550;line-height:1.4}
+      .prompt-setup-section button{position:relative;display:block;width:100%;padding:9px 68px 9px 11px;border:0;border-radius:9px;background:transparent;color:#dfe9f2;text-align:left;font:700 12.5px/1.3 Arial,Helvetica,sans-serif;cursor:pointer}
+      .prompt-setup-section button>span{font:inherit;color:inherit}
+      .prompt-setup-section button small{display:block;margin-top:3px;color:#8395ab!important;font:400 10.5px/1.45 Arial,Helvetica,sans-serif!important;letter-spacing:0!important;text-transform:none!important}
       .prompt-setup-section button[aria-checked="true"],.prompt-setup-section button:hover{background:rgba(45,147,201,.18);color:#f4f9fd}
       .prompt-setup-section button[data-locked="1"]{color:#8b9dc3}
-      .prompt-setup-section button[data-locked="1"]:after{content:attr(data-tier);float:right;color:var(--home-orange);font-size:9px;font-weight:850;letter-spacing:.08em}
+      /* Der Tarifhinweis gehört zur Zeile, nicht unter sie: schwebend am rechten Rand, auf Höhe
+         des Namens - sonst rutscht er unter die Beschreibung und sieht aus wie ein eigener Eintrag. */
+      .prompt-setup-section button[data-locked="1"]:after{content:attr(data-tier);position:absolute;top:10px;right:11px;color:var(--home-orange);font:850 9px/1 ui-monospace,monospace;letter-spacing:.08em}
       .prompt-setup-note{margin:0;padding:9px 11px 4px;color:#7d8fa3;font:550 10px/1.5 Arial,Helvetica,sans-serif}
+      /* "Mehr …" ist kein Eintrag der Liste, sondern der Weg zur vollstaendigen Liste - deshalb
+         sitzt er abgesetzt am Fuss des Abschnitts und traegt nie einen Haken. */
+      .prompt-setup-more{margin-top:4px;border-top:1px solid rgba(255,255,255,.07);color:#8fd0f5!important;font-size:11.5px!important}
+      .prompt-setup-more:hover{background:rgba(45,147,201,.14)}
+      /* Der vereinheitlichte Dialogstil aus unified-ui-v1.js nimmt jedem dialog den Hintergrund, ist
+         selbst !important und zaehlt ueber seine :not()-Kette drei IDs. Genau so viel steht hier
+         dagegen - die drei IDs treffen nie einen Dialog, sie heben nur das Gewicht. */
+      dialog.prompt-picker-dialog:not(#welcomePage):not(#workflowApp):not(#promptFooter):not(#promptCommandForm){width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:#0d151d!important;color:#dfe9f2!important;box-shadow:none!important}
+      .prompt-picker-dialog::backdrop{background:rgba(6,10,15,.72)}
+      .prompt-picker-frame{display:flex;flex-direction:column;width:min(760px,calc(100vw - 48px));height:100%;margin:0 auto;padding:26px 0 30px}
+      .prompt-picker-dialog header{display:flex;align-items:flex-start;gap:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.1)}
+      .prompt-picker-dialog header div{flex:1 1 auto;min-width:0}
+      .prompt-picker-dialog header b{display:block;font:850 19px/1.2 Arial,Helvetica,sans-serif}
+      .prompt-picker-dialog header small{display:block;margin-top:5px;color:#8b9dc3;font:550 12px/1.5 Arial,Helvetica,sans-serif}
+      .prompt-picker-dialog header button{flex:0 0 auto;width:34px;height:34px;padding:0;border:1px solid rgba(255,255,255,.16);border-radius:11px;background:transparent;color:#dfe9f2;font:700 17px/1 Arial,Helvetica,sans-serif;cursor:pointer}
+      .prompt-picker-dialog .prompt-picker-dialog-body{flex:1 1 auto;overflow-y:auto;padding:12px 0 0}
+      .prompt-picker-dialog .prompt-setup-section{border-bottom:0}
+      .prompt-setup-sheet .prompt-picker-frame{width:min(1080px,calc(100vw - 48px))}
       .prompt-flow-button{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 10px;border:1px solid #33465a;border-radius:9px;background:transparent;color:#c8d6e2;font:700 11px/1 Arial,Helvetica,sans-serif;white-space:nowrap;cursor:pointer}
       .prompt-flow-button:hover{border-color:#4d637a;color:#e7f1f9}
       .prompt-flow-button .mode-chevron{width:6px;height:6px;margin:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
@@ -220,7 +244,71 @@
   // #imageInput, der Link geht durch #referenceUrl und #addUrlBtn. Damit gelten dieselben
   // Formate, Grenzen und Tarifregeln wie bisher - hier ist nur der Ort des Klicks neu. Die
   // Kacheln spiegeln die echte Liste, es gibt also keine zweite Wahrheit.
-  function attachFile(){const input=$('#imageInput');if(input)input.click();else message('Anhänge stehen im Projekt bereit.')}
+  // Was hochgeladen wird, wird vor der Übernahme geprüft: erlaubte Endung, Größe, und der Inhalt
+  // muss zur Endung passen. Sonst genügt es, eine beliebige Datei .txt zu nennen, damit der
+  // Leser in app.js sie als Text in den Prompt zieht - und ein 300-MB-"Bild" bliebe beim
+  // Verkleinern hängen. Das Ergebnis steht sichtbar an der Konsole statt in einer Konsole.
+  const FILE_MAX=12*1024*1024;
+  const FILE_NAME=/\.(png|jpe?g|webp|pdf|txt|md|csv|json)$/i;
+  async function fileLooksReal(file){
+    const head=new Uint8Array(await file.slice(0,16).arrayBuffer());
+    const hex=[...head].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+    if(/\.png$/i.test(file.name))return hex.startsWith('89504e470d0a1a0a');
+    if(/\.jpe?g$/i.test(file.name))return hex.startsWith('ffd8ff');
+    if(/\.webp$/i.test(file.name))return hex.startsWith('52494646')&&hex.slice(16,24)==='57454250';
+    if(/\.pdf$/i.test(file.name))return hex.startsWith('255044462d');
+    // Textformate haben keine Signatur, dafür keine Steuerzeichen. Eine umbenannte
+    // Programmdatei fällt hier durch, weil sie voller Nullbytes steckt.
+    const sample=new Uint8Array(await file.slice(0,4096).arrayBuffer());
+    return !sample.some(byte=>byte===0||byte<9||(byte>13&&byte<32));
+  }
+  function attachNote(text,state){
+    const list=$('#promptAttachList');if(!list)return;
+    let note=$('#promptAttachFileNote',list);
+    if(!text){note?.remove();return}
+    if(!note){note=document.createElement('small');note.id='promptAttachFileNote';note.className='prompt-attach-note';list.prepend(note)}
+    note.textContent=text;
+    if(state)note.dataset.state=state;else delete note.dataset.state;
+    list.hidden=false;
+  }
+  function attachFile(){
+    const target=$('#imageInput');
+    if(!target){message('Anhänge stehen im Projekt bereit.');return}
+    let input=$('#promptAttachFile');
+    if(!input){
+      input=document.createElement('input');
+      input.type='file';input.id='promptAttachFile';input.multiple=true;input.hidden=true;
+      input.accept=target.getAttribute('accept')||'';
+      input.addEventListener('change',()=>checkFiles(input,target));
+      document.body.appendChild(input);
+    }
+    input.value='';input.click();
+  }
+  async function checkFiles(input,target){
+    const files=[...(input.files||[])];
+    input.value='';
+    if(!files.length)return;
+    attachNote(files.length===1?'Datei wird geprüft …':`${files.length} Dateien werden geprüft …`,'busy');
+    const good=[],bad=[];
+    for(const file of files){
+      if(!FILE_NAME.test(file.name)){bad.push(`${file.name}: dieses Format nehmen wir nicht an`);continue}
+      if(!file.size){bad.push(`${file.name}: die Datei ist leer`);continue}
+      if(file.size>FILE_MAX){bad.push(`${file.name}: größer als 12 MB`);continue}
+      let real=false;
+      try{real=await fileLooksReal(file)}catch{real=false}
+      if(!real){bad.push(`${file.name}: Inhalt passt nicht zur Endung`);continue}
+      good.push(file);
+    }
+    if(good.length){
+      if(typeof DataTransfer==='function'){
+        const box=new DataTransfer();
+        for(const file of good)box.items.add(file);
+        target.files=box.files;target.dispatchEvent(new Event('change',{bubbles:true}));
+      }else bad.push('Dieser Browser kann geprüfte Dateien nicht übergeben.');
+    }
+    if(bad.length)attachNote(bad.slice(0,3).join(' · '),'error');
+    else{attachNote('');setTimeout(syncAttachments,200)}
+  }
   function attachUrl(){
     const list=$('#promptAttachList');if(!list)return;
     let row=$('.prompt-attach-input',list);
@@ -295,7 +383,7 @@
       });
       list.appendChild(chip);
     }
-    list.hidden=!items.length&&!$('.prompt-attach-input',list);
+    list.hidden=!items.length&&!$('.prompt-attach-input',list)&&!$('#promptAttachFileNote',list);
   }
 
   // Vorlagen und Skills gibt es bereits: die Vorlage als <select id="templateSelect">, die
@@ -313,24 +401,124 @@
     if(!flag){flag=document.createElement('i');flag.className='tier-flag';head.appendChild(flag)}
     if(flag.textContent!==tier)flag.textContent=tier;
   }
+  // Wie oft ein Eintrag schon aktiviert wurde. Bei dreissig Skills und ebenso vielen Vorlagen
+  // waere die Liste sonst eine Rolltreppe. Sichtbar sind darum hoechstens zehn - die
+  // meistgenutzten und alles, was gerade aktiv ist -, der Rest steht hinter "Mehr …".
+  const USE_KEY='prompt-ai-picker-use-v1',PICKER_LIMIT=10;
+  function useCounts(){try{const raw=JSON.parse(localStorage.getItem(USE_KEY)||'{}');return raw&&typeof raw==='object'?raw:{}}catch{return{}}}
+  function countUse(kind,id){
+    if(!id)return;
+    const all=useCounts(),key=`${kind}:${id}`;
+    all[key]=(Number(all[key])||0)+1;
+    try{localStorage.setItem(USE_KEY,JSON.stringify(all))}catch{}
+  }
+  // Aktive Eintraege muessen sichtbar bleiben, auch wenn sie selten benutzt werden - sonst
+  // stuende in den Settings ein Haken, den man nirgends wiederfindet.
+  function topEntries(kind,entries){
+    const counts=useCounts();
+    const ranked=entries
+      .map((entry,index)=>({entry,index,used:Number(counts[`${kind}:${entry.id}`]||0)}))
+      .sort((a,b)=>(b.used-a.used)||(a.index-b.index))
+      .map(item=>item.entry);
+    if(ranked.length<=PICKER_LIMIT)return {shown:ranked,rest:0};
+    const head=ranked.slice(0,PICKER_LIMIT),missing=ranked.slice(PICKER_LIMIT).filter(entry=>entry.checked);
+    const shown=missing.length?head.slice(0,Math.max(1,PICKER_LIMIT-missing.length)).concat(missing):head;
+    return {shown,rest:ranked.length-shown.length};
+  }
+  function pickerButton(entry){
+    const button=document.createElement('button');
+    button.type='button';button.setAttribute('role',entry.role||'menuitemradio');
+    button.setAttribute('aria-checked',String(Boolean(entry.checked)));
+    if(entry.always)button.dataset.always='1';
+    if(entry.locked){button.dataset.locked='1';button.dataset.tier=entry.tier||'ab Pro'}
+    const label=document.createElement('span');label.textContent=entry.label;button.appendChild(label);
+    if(entry.note){const note=document.createElement('small');note.textContent=entry.note;button.appendChild(note)}
+    button.addEventListener('click',()=>entry.select());
+    return button;
+  }
+  function paintPicker(menu,kind,entries){
+    menu.innerHTML='';
+    const {shown,rest}=topEntries(kind,entries);
+    for(const entry of shown)menu.appendChild(pickerButton(entry));
+    if(!rest)return;
+    const more=document.createElement('button');
+    more.type='button';more.className='prompt-setup-more';
+    more.textContent=`Mehr … (${rest} weitere)`;
+    more.addEventListener('click',()=>openPicker(kind));
+    menu.appendChild(more);
+  }
+  // Das vollstaendige Fenster zeigt dieselben Eintraege ohne Deckelung - eine Liste, zwei Orte.
+  function openPicker(kind){
+    const spec=PICKERS[kind];if(!spec)return;
+    let dialog=$('#promptPickerDialog');
+    if(!dialog){
+      dialog=document.createElement('dialog');
+      dialog.id='promptPickerDialog';dialog.className='prompt-picker-dialog';
+      dialog.innerHTML='<div class="prompt-picker-frame"><header><div><b></b><small></small></div><button type="button" data-close aria-label="Schließen">×</button></header><div class="prompt-picker-dialog-body"><div class="prompt-setup-section" id="promptPickerList"></div></div></div>';
+      dialog.addEventListener('click',event=>{if(event.target===dialog||event.target.closest('[data-close]'))dialog.close()});
+      document.body.appendChild(dialog);
+    }
+    dialog.dataset.pickerKind=kind;
+    dialog.querySelector('b').textContent=spec.title;
+    dialog.querySelector('small').textContent=spec.hint;
+    paintPickerDialog();
+    if(!dialog.open)dialog.showModal();
+  }
+  function paintPickerDialog(){
+    const dialog=$('#promptPickerDialog');if(!dialog)return;
+    const spec=PICKERS[dialog.dataset.pickerKind||''],list=dialog.querySelector('#promptPickerList');
+    if(!spec||!list)return;
+    const entries=spec.entries();
+    list.innerHTML='';
+    if(!entries.length){list.innerHTML=`<p class="prompt-picker-empty">${spec.empty}</p>`;return}
+    for(const entry of entries)list.appendChild(pickerButton(entry));
+  }
+  const pickerOpen=()=>Boolean($('#promptPickerDialog')?.open);
+
+  function templateEntries(){
+    const select=document.querySelector('#templateSelect');
+    if(!select)return [];
+    const current=select.value;
+    return [...select.options].map(option=>{
+      const text=(option.textContent||'').trim(),parts=text.split(' · ');
+      const id=option.value||text;
+      return {
+        id,label:parts[0]||'Vorlage',note:parts.slice(1).join(' · '),
+        checked:option.value===current,role:'menuitemradio',
+        select(){
+          select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));
+          if(option.value)countUse('template',id);
+          setTimeout(()=>{syncTemplateMenu();syncSetupSummary()},80);
+        }
+      };
+    });
+  }
+  function skillEntries(){
+    const host=document.querySelector('#skillSelection');
+    return [...(host?.querySelectorAll('.selection-row')||[])].map(row=>{
+      const box=row.querySelector('input[type="checkbox"]');
+      const name=(row.querySelector('strong')?.textContent||'Skill').trim();
+      const scope=(row.querySelector('code')?.textContent||'').trim();
+      const trigger=(row.querySelector('p')?.textContent||'').split(' · Quelle:')[0].trim();
+      const note=[scope==='ALLE'?'Alle Agents':scope,trigger].filter(Boolean).join(' · ');
+      return {
+        id:name,label:name.slice(0,44),note:note.slice(0,84),
+        checked:Boolean(box?.checked),always:Boolean(box?.disabled),role:'menuitemcheckbox',
+        select(){
+          if(box&&!box.disabled){box.click();if(box.checked)countUse('skill',name)}
+          setTimeout(()=>{syncSkillsMenu();syncSetupSummary()},80);
+        }
+      };
+    });
+  }
   function syncTemplateMenu(){
-    const menu=$('#promptTemplateMenu'),select=document.querySelector('#templateSelect');
+    const menu=$('#promptTemplateMenu');
     if(!menu)return;
     markSectionTier('promptTemplateMenu',planIsFree()?'ab Pro':'');
-    if(!select){menu.innerHTML='<p class="prompt-picker-empty">Vorlagen stehen im Projekt bereit.</p>';return}
-    const current=select.value;
-    menu.innerHTML='';
-    for(const option of select.options){
-      const button=document.createElement('button');
-      button.type='button';button.setAttribute('role','menuitemradio');
-      button.setAttribute('aria-checked',String(option.value===current));
-      button.textContent=option.textContent;
-      button.addEventListener('click',()=>{
-        select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));
-        setTimeout(syncTemplateMenu,80);
-      });
-      menu.appendChild(button);
-    }
+    const entries=templateEntries();
+    if(!entries.length)menu.innerHTML='<p class="prompt-picker-empty">Vorlagen stehen im Projekt bereit.</p>';
+    else paintPicker(menu,'template',entries);
+    if(pickerOpen())paintPickerDialog();
     syncSetupSummary();
   }
   function syncSkillsMenu(){
@@ -339,33 +527,50 @@
     markSectionTier('promptSkillsMenu',planIsFree()?'ab Pro':'');
     const locked=host?.querySelector('.feature-lock-note');
     if(locked){menu.innerHTML='<p class="prompt-picker-empty">'+(locked.querySelector('strong')?.textContent||'Skills sind in diesem Tarif nicht aktiv.')+'</p>';return}
-    const rows=[...(host?.querySelectorAll('.selection-row')||[])];
-    if(!rows.length){menu.innerHTML='<p class="prompt-picker-empty">Noch keine Skills angelegt. Bibliothek → Agent-Skills.</p>';return}
-    // Nach Agent gruppieren - der steht im <code> der Reihe (Claude, Codex, global ...).
-    const groups=new Map();
-    for(const row of rows){
-      const key=(row.querySelector('code')?.textContent||'Alle Agents').trim();
-      if(!groups.has(key))groups.set(key,[]);
-      groups.get(key).push(row);
-    }
-    menu.innerHTML='';
-    for(const [group,list] of groups){
-      const head=document.createElement('b');head.className='prompt-picker-group';head.textContent=group;menu.appendChild(head);
-      for(const row of list){
-        const box=row.querySelector('input[type="checkbox"]');
-        const button=document.createElement('button');
-        button.type='button';button.setAttribute('role','menuitemcheckbox');
-        button.setAttribute('aria-checked',String(Boolean(box?.checked)));
-        if(box?.disabled)button.dataset.always='1';
-        button.textContent=(row.querySelector('strong')?.textContent||'Skill').slice(0,40);
-        button.addEventListener('click',()=>{
-          if(box&&!box.disabled)box.click();
-          setTimeout(()=>{syncSkillsMenu();syncSetupSummary()},80);
-        });
-        menu.appendChild(button);
-      }
-    }
+    const entries=skillEntries();
+    if(!entries.length)menu.innerHTML=`<p class="prompt-picker-empty">Noch keine Skills für ${agentLabel(activeAgent())}. Bibliothek → Agent-Skills.</p>`;
+    else paintPicker(menu,'skill',entries);
+    if(pickerOpen())paintPickerDialog();
   }
+
+  // Ziel-KI. Es ist immer genau eine aktiv - der Master-Prompt wird für sie gebaut, und zur
+  // Auswahl stehen ihre Skills plus die globalen. Die echte Wahl sitzt in #agentSelector; hier
+  // wird sie bedient und nicht nachgebaut, sonst gäbe es zwei Wahrheiten und zwei Tarifsperren.
+  const AGENT_LABEL={codex:'Codex',claude:'Claude Code',gemini:'Gemini',chatgpt:'ChatGPT',cursor:'Cursor',v0:'v0',universal:'Universal'};
+  const AGENT_NOTE={codex:'Kompaktes Markdown, Skills für Codex',claude:'Prompt in XML-Abschnitten, Skills für Claude',gemini:'Kompaktes Markdown, Skills für Gemini',chatgpt:'Kompaktes Markdown, Skills für ChatGPT',cursor:'Kompaktes Markdown, Skills für Cursor',v0:'Kompaktes Markdown, Skills für v0',universal:'Neutrale Fassung für jedes Werkzeug'};
+  // Dieselbe Staffelung wie PLAN_RULES.agents in app.js: free nur Codex, Pro zusätzlich Claude,
+  // alles Weitere ab Ultimate.
+  const AGENT_TIER={claude:'ab Pro',gemini:'ab Ultimate',chatgpt:'ab Ultimate',cursor:'ab Ultimate',v0:'ab Ultimate',universal:'ab Ultimate'};
+  const agentButton=key=>document.querySelector(`#agentSelector button[data-agent="${key}"]`);
+  const agentAllowed=key=>{const button=agentButton(key);return button?!button.hidden:key==='codex'};
+  function activeAgent(){return document.querySelector('#agentSelector button[data-agent].active')?.dataset.agent||'codex'}
+  function agentLabel(key){return AGENT_LABEL[key]||'Codex'}
+  function agentEntries(){
+    const current=activeAgent();
+    return Object.keys(AGENT_LABEL).map(key=>({
+      id:key,label:AGENT_LABEL[key],note:AGENT_NOTE[key],checked:key===current,
+      locked:!agentAllowed(key),tier:AGENT_TIER[key]||'ab Pro',role:'menuitemradio',
+      select(){selectAgent(key)}
+    }));
+  }
+  function selectAgent(key){
+    const button=agentButton(key);
+    if(!button||button.hidden){document.querySelector('#plansDialog')?.showModal();return}
+    if(!button.classList.contains('active'))button.click();
+    // app.js schreibt bei diesem Klick die Skill-Liste neu - nur noch die Skills dieser KI plus
+    // die globalen - und legt die Wahl in den Projektstand. Beides braucht einen Tick.
+    setTimeout(()=>{syncAgentMenu();syncSkillsMenu();syncSetupSummary()},90);
+  }
+  function syncAgentMenu(){
+    const menu=$('#promptAgentMenu');if(!menu)return;
+    menu.innerHTML='';
+    for(const entry of agentEntries())menu.appendChild(pickerButton(entry));
+  }
+
+  const PICKERS={
+    template:{title:'Alle Vorlagen',hint:'Es gilt genau eine Vorlage pro Auftrag. In den Settings stehen die zehn, die du am häufigsten nimmst.',empty:'Vorlagen stehen im Projekt bereit.',entries:templateEntries},
+    skill:{title:'Alle Skills',hint:'Skills gelten zusätzlich zum Master-Prompt, sobald ihr Auslöser zur Aufgabe passt. Angezeigt werden die Skills der gewählten Ziel-KI und die globalen.',empty:'Noch keine Skills angelegt. Bibliothek → Agent-Skills.',entries:skillEntries}
+  };
 
   const FLOW_KEY='prompt-ai-flow-mode-v1';
   const FLOW_LABEL={guided:'Mit Rückfragen',auto:'Ohne Rückfragen',expert:'Selbst einstellen'};
@@ -425,7 +630,7 @@
   // Der Stand steht als Satz in der Zeile - man sieht ihn, ohne etwas zu öffnen.
   function syncSetupSummary(){
     const out=$('#promptSetupSummary');if(!out)return;
-    const parts=[FLOW_LABEL[flowMode()]];
+    const parts=[agentLabel(activeAgent()),FLOW_LABEL[flowMode()]];
     const select=document.querySelector('#templateSelect');
     if(select?.value){const name=(select.options[select.selectedIndex]?.textContent||'').split(' · ')[0].trim();if(name)parts.push(name)}
     const skills=[...document.querySelectorAll('#skillSelection .selection-row input[type="checkbox"]')].filter(b=>b.checked).length;
@@ -450,7 +655,7 @@
 
   function ensureThemeToggle(){const actions=$('.topbar .top-actions');if(!actions)return;let button=$('#homeThemeToggle');if(!button){button=document.createElement('button');button.id='homeThemeToggle';button.type='button';button.className='home-theme-toggle';button.addEventListener('click',()=>$('#themeToggleBtn')?.click());actions.insertBefore(button,$('#topbarMenuToggle'))}const dark=document.documentElement.dataset.theme==='dark';button.textContent=dark?'☀':'◐';button.title=dark?'Helles Design':'Dunkles Design';button.setAttribute('aria-label',button.title)}
 
-  function markup(){return `<section class="prompt-command-home" aria-label="Prompt.ai Start"><header class="prompt-home-intro"><span class="prompt-system-line">Workspace bereit</span><h1>Hallo <span id="promptHomeName">Lars</span>.</h1><p>Was möchtest du heute umsetzen?</p></header><form class="prompt-command-panel" id="promptCommandForm"><div class="prompt-command-top"><button class="prompt-mode-button" id="promptModeButton" type="button" aria-haspopup="listbox" aria-expanded="false">${icons.website}<span id="promptModeLabel">Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-mode-menu" id="promptModeMenu" role="listbox" aria-label="Arbeitsart wählen" hidden><button type="button" class="prompt-mode-option" role="option" data-command-mode="website" aria-checked="true">${icons.website}<span>Internetseite erstellen<small>Neues Website-Projekt</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="free" aria-checked="false">${icons.prompt}<span>Freier Prompt<small>Text, Bild, Video, Code & mehr</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="revision" data-locked="0" aria-checked="false">${icons.revision}<span>Website überarbeiten<small>Bestehende Seite gezielt ändern</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="check" data-locked="0" aria-checked="false">${icons.shield}<span>Projekt prüfen<small>Aktuellen Stand prüfen lassen</small></span></button></div></div><textarea class="prompt-command-input" id="promptCommandInput" rows="5" minlength="8" placeholder="Beschreibe kurz, was entstehen soll …" aria-label="Projekt oder Aufgabe beschreiben"></textarea><button class="prompt-command-submit" id="promptCommandSubmit" type="submit" aria-label="Absenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg></button><div class="prompt-attach-list" id="promptAttachList" aria-live="polite"></div><footer class="prompt-command-meta"><button type="button" class="prompt-attach-button" id="promptAttachButton" aria-haspopup="menu" aria-expanded="false" title="Anhang hinzufügen">+</button><div class="prompt-attach-menu" id="promptAttachMenu" role="menu" hidden><button type="button" role="menuitem" data-attach="file"><span>Bild oder Datei</span><i class="prompt-attach-count" id="promptAttachCountFile"></i></button><button type="button" role="menuitem" data-attach="url"><span>Link einfügen</span><i class="prompt-attach-count" id="promptAttachCountUrl"></i></button></div><button type="button" class="prompt-setup-line" id="promptSetupButton" aria-haspopup="dialog" aria-expanded="false"><span id="promptSetupSummary">Mit Rückfragen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-setup-sheet" id="promptSetupSheet" role="dialog" aria-label="Einstellungen für diesen Auftrag" hidden><div class="prompt-setup-section"><b>Ablauf</b><div id="promptFlowMenu"></div></div><div class="prompt-setup-section"><b>Vorlage</b><div id="promptTemplateMenu"></div></div><div class="prompt-setup-section"><b>Skills</b><div id="promptSkillsMenu"></div></div><p class="prompt-setup-note">Was du hier einstellst, gilt auch beim nächsten Mal.</p></div><span id="promptHomeMeta">Kontingent wird geladen</span><span class="prompt-plan-chip"><b id="promptHomePlan">Free</b></span><span class="prompt-command-error" id="promptCommandError" role="status"></span></footer></form><section class="prompt-latest" aria-label="Letztes Projekt"><span class="prompt-latest-icon">${icons.folder}</span><div class="prompt-latest-copy"><strong>Letztes Projekt</strong><small id="promptLatestTitle">Gespeicherten Arbeitsstand fortsetzen</small></div><button type="button" class="prompt-latest-action" id="promptLatestAction">Weiterarbeiten →</button></section></section>`}
+  function markup(){return `<section class="prompt-command-home" aria-label="Prompt.ai Start"><header class="prompt-home-intro"><span class="prompt-system-line">Workspace bereit</span><h1>Hallo <span id="promptHomeName">Lars</span>.</h1><p>Was möchtest du heute umsetzen?</p></header><form class="prompt-command-panel" id="promptCommandForm"><div class="prompt-command-top"><button class="prompt-mode-button" id="promptModeButton" type="button" aria-haspopup="listbox" aria-expanded="false">${icons.website}<span id="promptModeLabel">Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button><div class="prompt-mode-menu" id="promptModeMenu" role="listbox" aria-label="Arbeitsart wählen" hidden><button type="button" class="prompt-mode-option" role="option" data-command-mode="website" aria-checked="true">${icons.website}<span>Internetseite erstellen<small>Neues Website-Projekt</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="free" aria-checked="false">${icons.prompt}<span>Freier Prompt<small>Text, Bild, Video, Code & mehr</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="revision" data-locked="0" aria-checked="false">${icons.revision}<span>Website überarbeiten<small>Bestehende Seite gezielt ändern</small></span></button><button type="button" class="prompt-mode-option" role="option" data-command-mode="check" data-locked="0" aria-checked="false">${icons.shield}<span>Projekt prüfen<small>Aktuellen Stand prüfen lassen</small></span></button></div></div><textarea class="prompt-command-input" id="promptCommandInput" rows="5" minlength="8" placeholder="Beschreibe kurz, was entstehen soll …" aria-label="Projekt oder Aufgabe beschreiben"></textarea><button class="prompt-command-submit" id="promptCommandSubmit" type="submit" aria-label="Absenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg></button><div class="prompt-attach-list" id="promptAttachList" aria-live="polite"></div><footer class="prompt-command-meta"><button type="button" class="prompt-attach-button" id="promptAttachButton" aria-haspopup="menu" aria-expanded="false" title="Anhang hinzufügen">+</button><div class="prompt-attach-menu" id="promptAttachMenu" role="menu" hidden><button type="button" role="menuitem" data-attach="file"><span>Bild oder Datei</span><i class="prompt-attach-count" id="promptAttachCountFile"></i></button><button type="button" role="menuitem" data-attach="url"><span>Link einfügen</span><i class="prompt-attach-count" id="promptAttachCountUrl"></i></button></div><button type="button" class="prompt-setup-line" id="promptSetupButton" aria-haspopup="dialog" aria-expanded="false"><i class="prompt-setup-tag" aria-hidden="true">Settings</i><span id="promptSetupSummary">Codex · Mit Rückfragen</span><i class="mode-chevron" aria-hidden="true"></i></button><dialog class="prompt-setup-sheet prompt-picker-dialog" id="promptSetupSheet" aria-label="Settings für diesen Auftrag"><div class="prompt-picker-frame"><header><div><b>Settings für diesen Auftrag</b><small>Es ist immer genau eine Ziel-KI aktiv; welche Skills zur Wahl stehen und wie der Master-Prompt aufgebaut wird, richtet sich nach ihr. Was hier steht, gilt auch beim nächsten Auftrag.</small></div><button type="button" data-close aria-label="Schließen">×</button></header><div class="prompt-picker-dialog-body prompt-setup-grid"><div class="prompt-setup-section"><b>Ziel-KI</b><div id="promptAgentMenu"></div></div><div class="prompt-setup-section"><b>Ablauf</b><div id="promptFlowMenu"></div></div><div class="prompt-setup-section"><b>Vorlage</b><div id="promptTemplateMenu"></div></div><div class="prompt-setup-section"><b>Skills</b><div id="promptSkillsMenu"></div></div></div></div></dialog><span id="promptHomeMeta">Kontingent wird geladen</span><span class="prompt-plan-chip"><b id="promptHomePlan">Free</b></span><span class="prompt-command-error" id="promptCommandError" role="status"></span></footer></form><section class="prompt-latest" aria-label="Letztes Projekt"><span class="prompt-latest-icon">${icons.folder}</span><div class="prompt-latest-copy"><strong>Letztes Projekt</strong><small id="promptLatestTitle">Gespeicherten Arbeitsstand fortsetzen</small></div><button type="button" class="prompt-latest-action" id="promptLatestAction">Weiterarbeiten →</button></section></section>`}
   function ensureHome(){const page=$('#welcomePage');if(!page)return null;let home=$('.prompt-command-home',page);if(!home){page.insertAdjacentHTML('beforeend',markup());home=$('.prompt-command-home',page);bindHome(home)}return home}
   function modeCopy(mode){return mode==='free'?{label:'Freier Prompt',placeholder:'Beschreibe, welchen Prompt du brauchst …',icon:icons.prompt}:mode==='revision'?{label:'Website überarbeiten',placeholder:'Was soll an der bestehenden Website geändert werden?',icon:icons.revision}:{label:'Internetseite erstellen',placeholder:'Beschreibe kurz, was entstehen soll …',icon:icons.website}}
   function closeModeMenu(home){const menu=$('#promptModeMenu',home);if(menu)menu.hidden=true;$('#promptModeButton',home)?.setAttribute('aria-expanded','false')}
@@ -574,22 +779,21 @@
       if(host)new MutationObserver(()=>setTimeout(syncAttachments,60)).observe(host,{childList:true,subtree:true});
     }
     const setupButton=$('#promptSetupButton',home),setupSheet=$('#promptSetupSheet',home);
+    // Vier Abschnitte passen nicht unter die Konsole, ohne dass man scrollt oder etwas unter der
+    // Fensterkante verschwindet - und scrollen war hier ausdrücklich nicht gewollt. Die Settings
+    // nehmen darum die ganze Seite ein, wie jedes andere Fenster der App auch.
+    // Das Fenster gehört nicht in die Konsolen-Form: ein Klick darin wäre sonst ein Absenden,
+    // und ein Formular im Formular verwirft der Parser ohnehin.
+    if(setupSheet.parentElement!==document.body)document.body.appendChild(setupSheet);
+    setupSheet.querySelector('[data-close]')?.addEventListener('click',()=>setupSheet.close());
     setupButton.addEventListener('click',()=>{
-      const open=setupSheet.hidden;
-      if(open){
-        syncFlowUi();syncTemplateMenu();syncSkillsMenu();
-        // Das Blatt hängt jetzt unter der Konsole, also zählt der Platz bis zur Fensterunterkante.
-        // Ohne diese Deckelung wüchse es bei vielen Skills über den sichtbaren Bereich hinaus.
-        const panelBottom=setupButton.closest('.prompt-command-panel').getBoundingClientRect().bottom;
-        const room=window.innerHeight-panelBottom-28;
-        setupSheet.style.maxHeight=`${Math.max(200,Math.min(380,room))}px`;
-      }
-      setupSheet.hidden=!open;setupButton.setAttribute('aria-expanded',String(open));
+      syncAgentMenu();syncFlowUi();syncTemplateMenu();syncSkillsMenu();
+      if(!setupSheet.open)setupSheet.showModal();
+      setupButton.setAttribute('aria-expanded','true');
     });
-    document.addEventListener('click',event=>{
-      if(event.target.closest?.('#promptSetupButton,#promptSetupSheet'))return;
-      setupSheet.hidden=true;setupButton.setAttribute('aria-expanded','false');
-    });
+    setupSheet.addEventListener('close',()=>{setupButton.setAttribute('aria-expanded','false');syncSetupSummary()});
+    // Klick auf die Fläche daneben schließt - dieselbe Geste wie beim Blatt vorher.
+    setupSheet.addEventListener('click',event=>{if(event.target===setupSheet)setupSheet.close()});
     // Zeichen und Token laufen mit, waehrend man schreibt - syncMeta() kannte den Text schon,
     // es fehlte nur der Aufruf bei jedem Tastendruck. 'input' allein reicht auf dem Telefon nicht
     // zuverlaessig: Android-Tastaturen fassen Woerter beim Tippen oft in eine Komposition

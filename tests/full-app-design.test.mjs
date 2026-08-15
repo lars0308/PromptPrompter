@@ -417,8 +417,18 @@ test('the flow selector drives the real mode switch and never claims a mode the 
 
 test('the plus in the console feeds the real reference inputs instead of a second store',async()=>{
   const home=await read('promptai-home-final.js');
-  // Datei: der echte Dateidialog der Referenzen, mit dessen Formaten, Grenzen und Sperren.
-  assert.match(home,/function attachFile\(\)\{const input=\$\('#imageInput'\);if\(input\)input\.click\(\)/);
+  // Datei: eigener Dialog, aber mit den Formaten des echten Feldes - und was durchkommt, geht
+  // durch genau dieses Feld weiter. Geprüft wird vorher: Endung, Größe und ob der Inhalt zur
+  // Endung passt, damit eine umbenannte Datei nicht als Text im Prompt landet.
+  assert.match(home,/input\.accept=target\.getAttribute\('accept'\)\|\|''/);
+  assert.match(home,/target\.files=box\.files;target\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/);
+  assert.match(home,/attachNote\(files\.length===1\?'Datei wird geprüft …'/);
+  assert.match(home,/const FILE_NAME=\/\\\.\(png\|jpe\?g\|webp\|pdf\|txt\|md\|csv\|json\)\$\/i/);
+  assert.match(home,/größer als 12 MB/);
+  assert.match(home,/Inhalt passt nicht zur Endung/);
+  assert.match(home,/hex\.startsWith\('89504e470d0a1a0a'\)/,'PNG-Signatur');
+  assert.match(home,/hex\.startsWith\('255044462d'\)/,'PDF-Signatur');
+  assert.match(home,/sample\.some\(byte=>byte===0\|\|byte<9\|\|\(byte>13&&byte<32\)\)/,'Textdateien ohne Steuerzeichen');
   // Link: durch das echte Feld und den echten Knopf - kein zweiter Zähler, kein zweiter Speicher.
   // Geprüft wird die Eingabe aber hier, denn die Prüfung in app.js meldet sich an einem Feld,
   // das auf der Startseite gar nicht sichtbar ist.
@@ -437,22 +447,70 @@ test('templates and skills are pickable in the console, mirrored from the real c
   // Die Vorlage ist ein <select>, das app.js aus state.templates füllt - das Menü liest
   // genau dessen Optionen und setzt seinen Wert, statt eine zweite Liste zu führen.
   assert.match(app,/el\.templateSelect\.innerHTML='<option value="">Ohne Vorlage<\/option>'/);
-  assert.match(home,/const menu=\$\('#promptTemplateMenu'\),select=document\.querySelector\('#templateSelect'\)/);
+  assert.match(home,/const select=document\.querySelector\('#templateSelect'\)/);
   assert.match(home,/select\.value=option\.value;select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/);
   // Skills sind Reihen mit Kontrollkästchen; das Menü drückt genau diese Kästchen.
-  assert.match(home,/const rows=\[\.\.\.\(host\?\.querySelectorAll\('\.selection-row'\)\|\|\[\]\)\]/);
-  assert.match(home,/if\(box&&!box\.disabled\)box\.click\(\)/);
+  assert.match(home,/host\?\.querySelectorAll\('\.selection-row'\)\|\|\[\]/);
+  assert.match(home,/if\(box&&!box\.disabled\)\{box\.click\(\)/);
   // Sperrt der Tarif die Skills, zeigt das Menü den Grund statt einer leeren Liste.
   assert.match(home,/const locked=host\?\.querySelector\('\.feature-lock-note'\)/);
-  // Gruppiert nach Agent - der steht im <code> der Reihe.
-  assert.match(home,/row\.querySelector\('code'\)\?\.textContent\|\|'Alle Agents'/);
+  // Zu welchem Agent ein Skill gehört, steht im <code> der Reihe - das steht als Hinweis am
+  // Eintrag, denn welche Skills überhaupt zur Wahl stehen, entscheidet jetzt die Ziel-KI.
+  assert.match(home,/const scope=\(row\.querySelector\('code'\)\?\.textContent\|\|''\)\.trim\(\)/);
   // Drei Knöpfe nebeneinander sahen voll und verrutscht aus. Es gibt jetzt eine Zeile mit
   // dem Stand und dahinter ein Blatt mit allen Einstellungen - links tun, rechts einstellen.
   assert.match(home,/id="promptSetupButton"/);
-  assert.match(home,/<div class="prompt-setup-sheet" id="promptSetupSheet"/);
+  assert.match(home,/<dialog class="prompt-setup-sheet prompt-picker-dialog" id="promptSetupSheet"/);
   assert.doesNotMatch(home,/id="promptSkillsButton"/,'kein eigener Knopf mehr je Einstellung');
   assert.doesNotMatch(home,/id="promptTemplateButton"/);
   // Der Stand steht als Satz in der Zeile: Ablauf, Vorlage, Anzahl der Skills.
   assert.match(home,/function syncSetupSummary\(\)\{/);
   assert.match(home,/parts\.push\(skills===1\?'1 Skill':skills\+' Skills'\)/);
+});
+
+test('the console settings pick exactly one target AI and the skills follow it',async()=>{
+  const home=await read('promptai-home-final.js'),app=await read('app.js');
+  // Die Zeile unter dem Textfeld ist jetzt die Settings des Laufs - Ziel-KI zuerst.
+  assert.match(home,/class="prompt-setup-tag" aria-hidden="true">Settings</);
+  assert.match(home,/<b>Ziel-KI<\/b><div id="promptAgentMenu">/);
+  assert.match(home,/const parts=\[agentLabel\(activeAgent\(\)\),FLOW_LABEL\[flowMode\(\)\]\]/);
+  // Genau eine KI: gewählt wird über den echten Schalter, der state.targetAgent setzt - und der
+  // schreibt im selben Zug die Skill-Liste auf diese KI plus die globalen um.
+  assert.match(home,/if\(!button\.classList\.contains\('active'\)\)button\.click\(\)/);
+  assert.match(app,/state\.selectedSkillIds=state\.selectedSkillIds\.filter\(id=>visibleSkills\(\)\.some\(s=>s\.id===id\)\);applyAlwaysActiveItems\(false\);renderSkillSelection\(\)/);
+  assert.match(home,/setTimeout\(\(\)=>\{syncAgentMenu\(\);syncSkillsMenu\(\);syncSetupSummary\(\)\},90\)/);
+  // Was der Tarif nicht hergibt, führt zur Tarifseite statt zu einer stillen Auswahl.
+  assert.match(home,/if\(!button\|\|button\.hidden\)\{document\.querySelector\('#plansDialog'\)\?\.showModal\(\);return\}/);
+  assert.match(home,/const AGENT_TIER=\{claude:'ab Pro'/);
+  assert.match(app,/pro:\{label:"Pro",modes:\["guided","auto"\][^}]*agents:\["codex","claude"\]/);
+});
+
+test('long setting lists stay short: ten entries plus a window with all of them',async()=>{
+  const home=await read('promptai-home-final.js');
+  assert.match(home,/const USE_KEY='prompt-ai-picker-use-v1',PICKER_LIMIT=10/);
+  assert.match(home,/`Mehr … \(\$\{rest\} weitere\)`/);
+  // Was aktiv ist, bleibt sichtbar - auch wenn es selten benutzt wird.
+  assert.match(home,/const head=ranked\.slice\(0,PICKER_LIMIT\),missing=ranked\.slice\(PICKER_LIMIT\)\.filter\(entry=>entry\.checked\)/);
+  // Das Fenster nimmt die ganze Seite ein, wie jeder andere Dialog.
+  assert.match(home,/dialog\.prompt-picker-dialog:not\(#welcomePage\)[^{]*\{width:100vw!important/);
+  assert.match(home,/if\(!dialog\.open\)dialog\.showModal\(\)/);
+});
+
+test('the master prompt is written in the format the target AI reads best',async()=>{
+  const app=await read('app.js');
+  assert.match(app,/return agentDocument\(`# PROMPT\.AI MASTER-PROMPT/);
+  assert.match(app,/Beginne jetzt mit der Umsetzung auf Basis dieses Briefings\.\\n`,state\.targetAgent\)/);
+  // Verhalten statt Wortlaut: derselbe Text, für Claude in Abschnitts-Tags, sonst unverändert.
+  const start=app.indexOf('const XML_SECTION='),end=app.indexOf('function buildMasterPrompt()');
+  assert.ok(start>0&&end>start);
+  const agentDocument=new Function(`${app.slice(start,end)}\nreturn agentDocument;`)();
+  const text='# KOPF\n\nEinleitung.\n\n## ROLLE, AUFTRAG & SPIELRAUM\nA\n\n## 1. PROJEKT\nB\n\n## AKTIVE AGENT-SKILLS\nS\n\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\nC\n\n## 12. DEFINITION OF DONE\nD\n\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n';
+  assert.equal(agentDocument(text,'codex'),text,'Markdown bleibt Markdown');
+  const claude=agentDocument(text,'claude');
+  assert.match(claude,/<role>\n## ROLLE, AUFTRAG & SPIELRAUM\nA\n<\/role>/);
+  assert.match(claude,/<context>\n## 1\. PROJEKT\nB\n<\/context>/);
+  assert.match(claude,/<rules>\n## AKTIVE AGENT-SKILLS\nS\n\n## 9\. VERBINDLICHE ANTI-SLOP-REGELN\nC\n<\/rules>/);
+  assert.match(claude,/<definition_of_done>\n## 12\. DEFINITION OF DONE\nD\n<\/definition_of_done>/);
+  assert.ok(claude.trim().endsWith('Beginne jetzt mit der Umsetzung auf Basis dieses Briefings.'));
+  for(const part of ['## ROLLE','## 1. PROJEKT','## 9.','## 12.'])assert.ok(claude.includes(part),part);
 });
