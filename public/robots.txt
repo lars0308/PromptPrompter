@@ -1,0 +1,14 @@
+# robots.txt for Prompt.ai
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /.next/
+Disallow: /.git/
+
+# Sitemap location
+Sitemap: https://www.prompt-ai.app/sitemap.xml
+
+# Crawl delay (optional - prevent overload)
+Crawl-delay: 1
