@@ -4,7 +4,7 @@ const {currentPublicOffer:currentOffer}=require('../server/public-offer');
 
 function appOrigin(req){
   const host=String(req.headers['x-forwarded-host']||req.headers.host||'').trim();
-  const fallback=host?`https://${host}`:'https://prompt-prompter.vercel.app';
+  const fallback=host?`https://${host}`:'https://prompt-ai.app';
   const raw=String(process.env.APP_URL||fallback).trim();
   try{
     const normalized=/^https?:\/\//i.test(raw)?raw:`https://${raw}`;
