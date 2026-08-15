@@ -532,7 +532,9 @@ module.exports = async function handler(req,res){
     await primePromptTemplates();
     const entitlement=await getEntitlements(req);
     const {action="concepts",engine="gateway",model,project={},references=[],images=[],controls={},template={},clarifications=[],projectReview={},revisionInput={},siteContext={}}=body,modules=entitlement.plan==='free'?[]:(Array.isArray(body.modules)?body.modules:[]),settings=entitlement.plan==='free'?{legalRegion:'Deutschland / EU',checks:{privacy:true,imprint:true,accessibility:true,security:true,performance:true},noInventLegal:true,finalChecklist:true}:body.settings||{};usageEvent={action,provider:engine,model:model||'',project};
-    if(entitlement.plan==="free"&&!entitlement.ownApiKeys&&action!=="revision-brief") return res.status(403).json({error:"Externe KI-Generierung ist ab Pro oder mit dem eigenen API-Key-Add-on verfügbar."});
+    // "Website überarbeiten" führt die Oberfläche seit jeher ab Pro - hier stand der Modus für
+    // jeden offen und lief auf unsere Kosten, ohne in irgendeinem Kontingent aufzutauchen.
+    if(entitlement.plan==="free"&&!entitlement.ownApiKeys) return res.status(403).json({error:"Externe KI-Generierung ist ab Pro oder mit dem eigenen API-Key-Add-on verfügbar."});
     if(entitlement.plan==="pro" && !entitlement.ownApiKeys && !["openai","gateway"].includes(engine) && action!=="preview-image") return res.status(403).json({error:"Dieser KI-Anbieter ist in Ultimate oder mit dem API-Key-Add-on verfügbar."});
     if(action==="preview-image"){
       if(entitlement.plan==="pro"&&!entitlement.ownApiKeys&&body.imageProvider!=="cloudflare")return res.status(403).json({error:"Gemini-Bildvorschauen sind in Ultimate oder mit dem API-Key-Add-on verfügbar."});

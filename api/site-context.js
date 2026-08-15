@@ -1,6 +1,7 @@
 const dns=require('dns').promises;
 const net=require('net');
 const {rateLimit}=require('../server/rate-limit');
+const {authenticatedUser}=require('../server/supabase-user');
 
 function blocked(ip){
   if(net.isIPv4(ip)){const p=ip.split('.').map(Number);return p[0]===10||p[0]===127||p[0]===0||p[0]===169&&p[1]===254||p[0]===172&&p[1]>=16&&p[1]<=31||p[0]===192&&p[1]===168||p[0]>=224}
@@ -57,6 +58,10 @@ async function fetchDocument(req,res){
 module.exports=async function(req,res){
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
   if(!rateLimit(req,res,{key:'site-context',limit:8,windowMs:60000}))return;
+  // Der Abruf holt fremde Seiten ueber unseren Server - Rechenzeit und Datenverkehr auf unsere
+  // Rechnung. Er gehoert zum Import im Projekt und damit hinter die Anmeldung; ohne Konto war er
+  // ein offener Seitenabrufdienst.
+  try{await authenticatedUser(req)}catch{return res.status(401).json({error:'Bitte zuerst anmelden.'})}
   try{
     if(req.body?.document)return await fetchDocument(req,res);
     const first=await fetchHtml(await safeUrl(String(req.body?.url||''))),origin=first.url.origin;

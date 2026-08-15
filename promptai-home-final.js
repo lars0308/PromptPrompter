@@ -538,9 +538,9 @@
   // wird sie bedient und nicht nachgebaut, sonst gäbe es zwei Wahrheiten und zwei Tarifsperren.
   const AGENT_LABEL={codex:'Codex',claude:'Claude Code',gemini:'Gemini',chatgpt:'ChatGPT',cursor:'Cursor',v0:'v0',universal:'Universal'};
   const AGENT_NOTE={codex:'Kompaktes Markdown, Skills für Codex',claude:'Prompt in XML-Abschnitten, Skills für Claude',gemini:'Kompaktes Markdown, Skills für Gemini',chatgpt:'Kompaktes Markdown, Skills für ChatGPT',cursor:'Kompaktes Markdown, Skills für Cursor',v0:'Kompaktes Markdown, Skills für v0',universal:'Neutrale Fassung für jedes Werkzeug'};
-  // Dieselbe Staffelung wie PLAN_RULES.agents in app.js: free nur Codex, Pro zusätzlich Claude,
-  // alles Weitere ab Ultimate.
-  const AGENT_TIER={claude:'ab Pro',gemini:'ab Ultimate',chatgpt:'ab Ultimate',cursor:'ab Ultimate',v0:'ab Ultimate',universal:'ab Ultimate'};
+  // Dieselbe Staffelung wie PLAN_RULES.agents in app.js: Codex, Claude und Universal sind frei,
+  // Gemini und Cursor gehören zu Pro, ChatGPT und v0 zu Ultimate.
+  const AGENT_TIER={gemini:'ab Pro',cursor:'ab Pro',chatgpt:'ab Ultimate',v0:'ab Ultimate'};
   const agentButton=key=>document.querySelector(`#agentSelector button[data-agent="${key}"]`);
   const agentAllowed=key=>{const button=agentButton(key);return button?!button.hidden:key==='codex'};
   function activeAgent(){return document.querySelector('#agentSelector button[data-agent].active')?.dataset.agent||'codex'}

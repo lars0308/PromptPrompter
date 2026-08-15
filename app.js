@@ -38,11 +38,16 @@
     pro:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Kundenportal","Buchungsplattform","Mitgliederbereich","Portfolio","Magazin oder Blog","Dokumentation","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Besuche vor Ort gewinnen","Bestellungen zur Abholung oder Lieferung","Direkt verkaufen","Termine oder Buchungen","Marke positionieren","Leistungen verständlich erklären","Registrierungen gewinnen","Kunden binden","Inhalte veröffentlichen","Interne Abläufe vereinfachen","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]},
     ultimate:{types:["Website","Web-App","Mehrseitige Unternehmenswebsite","Onlineshop","Marktplatz","SaaS-Anwendung","Kundenportal","Buchungsplattform","Mitgliederbereich","Community","Magazin oder Blog","Dokumentation","Dashboard","Interne Fachanwendung","Bestehendes Projekt überarbeiten"],goals:["Anfragen gewinnen","Besuche vor Ort gewinnen","Bestellungen zur Abholung oder Lieferung","Direkt verkaufen","Abonnements verkaufen","Termine oder Buchungen","Marke positionieren","Registrierungen gewinnen","Aktive Nutzung steigern","Kunden binden","Community aufbauen","Inhalte veröffentlichen","Interne Abläufe automatisieren","Bestehende Conversion verbessern","Technik und Bedienung modernisieren"]}
   };
+  // Welche Ziel-KI erlaubt ist, kostet uns nichts: der Prompt entsteht hier, gebaut wird beim
+  // Nutzer mit dessen eigenem Abo. Frueher hing die Wahl trotzdem am Tarif - wer mit Claude
+  // arbeitete, bekam im kostenlosen Tarif einen Prompt fuer Codex und damit das schlechtere
+  // Ergebnis, das wir haetten verhindern koennen. Die drei verbreiteten Ziele sind deshalb frei;
+  // bezahlt wird, was uns wirklich kostet (Pruefung, Vorschauen, Probelauf, Bibliothek).
   // Three previews, for every plan. More was a choice nobody could judge; fewer is not a real set.
   const PREVIEW_COUNT=3;
   const PLAN_RULES = {
-    free:{label:"Free",modes:["guided"],libraryItems:0,concepts:3,previewRetries:1,agents:["codex"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,aiPreviews:false,maxRefUrls:1,maxRefImages:0},
-    pro:{label:"Pro",modes:["guided","auto"],libraryItems:10,concepts:3,previewRetries:2,agents:["codex","claude"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:false,github:false,existing:true,aiPreviews:true,maxRefUrls:3,maxRefImages:3},
+    free:{label:"Free",modes:["guided"],libraryItems:0,concepts:3,previewRetries:1,agents:["codex","claude","universal"],clientDocs:false,modules:false,customProfiles:false,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,aiPreviews:false,maxRefUrls:1,maxRefImages:0},
+    pro:{label:"Pro",modes:["guided","auto"],libraryItems:10,concepts:3,previewRetries:2,agents:["codex","claude","universal","gemini","cursor"],clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:false,zip:false,github:false,existing:true,aiPreviews:true,maxRefUrls:3,maxRefImages:3},
     ultimate:{label:"Ultimate",modes:["guided","auto","expert"],libraryItems:Infinity,concepts:3,previewRetries:3,agents:Object.keys(AGENT_NAMES),clientDocs:true,modules:true,customProfiles:true,generatorChoice:true,advanced:true,zip:true,github:true,existing:true,aiPreviews:true,maxRefUrls:5,maxRefImages:5}
   };
   const DEFAULT_SETTINGS = {

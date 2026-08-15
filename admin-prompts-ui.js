@@ -35,6 +35,8 @@
       .admin-prompt-editor{min-width:0;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
       .admin-prompt-editor h4{margin:0;font-size:17px}
       .admin-prompt-editor .admin-prompt-hint{margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+      .admin-prompt-editor .admin-prompt-outdated{margin:12px 0 0;padding:10px 12px;border:1px solid color-mix(in srgb,var(--warn,#c8791f) 40%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--warn,#c8791f) 8%,transparent);color:var(--ink);font-size:12px;line-height:1.5}
+      .admin-prompt-editor .admin-prompt-outdated[hidden]{display:none}
       .admin-prompt-vars{margin:12px 0 0;padding:9px 11px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:11px}
       .admin-prompt-vars code{font-size:11px}
       #adminPromptBody{width:100%;margin-top:12px;padding:13px;border:1px solid var(--line);border-radius:11px;background:var(--paper);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.6;resize:vertical}
@@ -111,6 +113,7 @@
       <p class="admin-prompt-hint">${esc(item.hint||'')}</p>
       ${placeholders?`<p class="admin-prompt-vars">Platzhalter, die beim Erstellen ersetzt werden: ${placeholders}</p>`:''}
       <textarea id="adminPromptBody" rows="18" spellcheck="false"></textarea>
+      <p class="admin-prompt-outdated" id="adminPromptOutdated" hidden></p>
       <div class="admin-prompt-meta"><span id="adminPromptState">${active?`Aktiv: Version ${esc(active.version)} · zuletzt geändert ${esc(date(active.updated_at))}`:'Aktiv: eingebauter Standardtext'}</span><span id="adminPromptCount"></span></div>
       <div class="admin-prompt-actions">
         <button type="button" class="solid-btn" data-prompt-action="save">Als neue Version speichern und aktivieren</button>
@@ -126,9 +129,19 @@
     const field=$('#adminPromptBody');
     field.value=state.pendingBody!==undefined?state.pendingBody:(active?state.bodies?.[active.id]??item.body:item.body);
     state.pendingBody=undefined;
-    countChars();
+    countChars();markOutdated();
     field.addEventListener('input',countChars);
     if(active&&!state.bodies?.[active.id])loadBody(active.id);
+  }
+  // Eine eigene Fassung gewinnt immer - auch dann, wenn der eingebaute Standardtext inzwischen
+  // dazugelernt hat. Ohne diesen Hinweis merkt das niemand: der Bereich sieht gepflegt aus, und
+  // die neue Regel greift trotzdem nicht.
+  function markOutdated(){
+    const host=$('#adminPromptOutdated'),item=defaultFor(state.key);if(!host||!item)return;
+    const active=activeFor(item.key),stored=active?state.bodies?.[active.id]:undefined;
+    const differs=Boolean(active)&&stored!==undefined&&String(stored).trim()!==String(item.body).trim();
+    host.hidden=!differs;
+    if(differs)host.textContent='Der eingebaute Standardtext wurde inzwischen geändert. Deine gespeicherte Version gilt weiter - mit „Standardtext einsetzen“ holst du die neue Fassung ins Feld und kannst sie speichern.';
   }
   function countChars(){const field=$('#adminPromptBody'),host=$('#adminPromptCount');if(field&&host)host.textContent=`${field.value.length.toLocaleString('de-DE')} Zeichen`}
   function render(){renderList();renderEditor()}
@@ -136,7 +149,7 @@
   async function loadBody(id){
     try{
       const {template}=await api({action:'prompt-load',id});
-      state.bodies=state.bodies||{};state.bodies[id]=template?.body||'';
+      state.bodies=state.bodies||{};state.bodies[id]=template?.body||'';markOutdated();
       const field=$('#adminPromptBody');
       if(field&&!state.dirty&&activeFor(state.key)?.id===id){field.value=state.bodies[id];countChars()}
     }catch(error){msg(error.message,'error')}

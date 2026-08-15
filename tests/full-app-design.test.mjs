@@ -481,8 +481,10 @@ test('the console settings pick exactly one target AI and the skills follow it',
   assert.match(home,/setTimeout\(\(\)=>\{syncAgentMenu\(\);syncSkillsMenu\(\);syncSetupSummary\(\)\},90\)/);
   // Was der Tarif nicht hergibt, führt zur Tarifseite statt zu einer stillen Auswahl.
   assert.match(home,/if\(!button\|\|button\.hidden\)\{document\.querySelector\('#plansDialog'\)\?\.showModal\(\);return\}/);
-  assert.match(home,/const AGENT_TIER=\{claude:'ab Pro'/);
-  assert.match(app,/pro:\{label:"Pro",modes:\["guided","auto"\][^}]*agents:\["codex","claude"\]/);
+  // Die drei verbreiteten Ziele sind frei - der Prompt entsteht hier, gebaut wird beim Nutzer.
+  assert.match(home,/const AGENT_TIER=\{gemini:'ab Pro',cursor:'ab Pro',chatgpt:'ab Ultimate',v0:'ab Ultimate'\}/);
+  assert.match(app,/free:\{label:"Free"[^}]*agents:\["codex","claude","universal"\]/);
+  assert.match(app,/pro:\{label:"Pro"[^}]*agents:\["codex","claude","universal","gemini","cursor"\]/);
 });
 
 test('long setting lists stay short: ten entries plus a window with all of them',async()=>{
@@ -546,4 +548,27 @@ test('the clarification round may ask about colour and structure, with usable pr
   assert.match(app,/function swatchMarkup\(text\)\{/);
   assert.match(app,/\$\{swatchMarkup\(s\)\}\$\{escapeHtml\(s\)\}/);
   assert.match(css,/\.suggestion-swatch b\{/);
+});
+
+test('what costs us money is either gated or counted',async()=>{
+  const core=await read('server/generate-core.js'),models=await read('api/models.js'),site=await read('api/site-context.js');
+  // "Website überarbeiten" führt die Oberfläche ab Pro - die Schnittstelle ließ den Modus für
+  // jeden durch, auf unsere Kosten und in keinem Kontingent.
+  assert.match(core,/if\(entitlement\.plan==="free"&&!entitlement\.ownApiKeys\) return res\.status\(403\)/);
+  assert.doesNotMatch(core,/action!=="revision-brief"\) return res\.status\(403\)/);
+  // Die Lern-Auswertung ist der längste Aufruf im Produkt: kürzerer Ausschnitt, Sperre pro Stunde.
+  assert.match(models,/key:'learning-feedback',limit:4,windowMs:60\*60\*1000/);
+  assert.match(models,/html:String\(out\.html\|\|''\)\.slice\(0,12000\)/);
+  assert.match(models,/finalPrompt=String\(body\.finalPrompt\|\|''\)\.slice\(0,20000\)/);
+  // Fremde Seiten über unseren Server abzurufen ist Rechenzeit und Datenverkehr auf unsere Rechnung.
+  assert.match(site,/try\{await authenticatedUser\(req\)\}catch\{return res\.status\(401\)/);
+});
+
+test('a stored prompt text wins, but the console says when the built-in one moved on',async()=>{
+  const ui=await read('admin-prompts-ui.js');
+  assert.match(ui,/function markOutdated\(\)\{/);
+  assert.match(ui,/const differs=Boolean\(active\)&&stored!==undefined&&String\(stored\)\.trim\(\)!==String\(item\.body\)\.trim\(\)/);
+  assert.match(ui,/Der eingebaute Standardtext wurde inzwischen geändert/);
+  // Der Weg zurück existiert bereits - der Hinweis verweist genau darauf.
+  assert.match(ui,/data-prompt-action="load-default">Standardtext einsetzen/);
 });
