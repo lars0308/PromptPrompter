@@ -6,7 +6,7 @@
   window.PromptAiCookieConsent=new Promise(resolve=>{resolveConsent=resolve});
 
   const IMPRINT_HTML=`
-    <h3>Angaben gemäß § 5 TMG / § 18 Abs. 2 MStV</h3>
+    <h3>Angaben gemäß § 5 DDG / § 18 Abs. 2 MStV</h3>
     <p>[Vor- und Nachname bzw. Firmenname eintragen]<br>[Straße und Hausnummer]<br>[Postleitzahl und Ort]<br>[Land]</p>
     <h3>Kontakt</h3>
     <p>Telefon: [Telefonnummer eintragen]<br>E-Mail: [Kontakt-E-Mail eintragen]</p>
@@ -36,9 +36,9 @@
     <h3>6. Cookies &amp; lokale Speicherung</h3>
     <p>Wir setzen technisch notwendige Cookies bzw. lokale Speicherung (localStorage/sessionStorage) ein, um Anmeldung, Sitzung und Einstellungen (z.&nbsp;B. Dunkelmodus) zu ermöglichen. [Falls Analyse-/Marketing-Cookies eingesetzt werden, hier ergänzen und Einwilligungslogik entsprechend erweitern.]</p>
     <h3>7. KI-Verarbeitung deiner Eingaben</h3>
-    <p>Deine Projektangaben, Referenztexte, hochgeladenen Bilder/PDFs und ausgewählten Antworten werden zur Erstellung von Prompts, Vorschauen und Bildvorschauen an angebundene KI-Anbieter übermittelt. Je nach Funktion und Tarif sind das: Vercel AI Gateway, OpenAI, Google (Gemini) und Cloudflare Workers AI. Die Verbindungen stellen wir zentral bereit; welcher Anbieter eine Anfrage bearbeitet, entscheidet Prompt.ai anhand deines Tarifs. [Rechtsgrundlage, Auftragsverarbeitungsverträge und Speicherdauer bei den jeweiligen Anbietern ergänzen.]</p>
+    <p>Deine Projektangaben, Referenztexte, hochgeladenen Bilder/PDFs und ausgewählten Antworten werden zur Erstellung von Prompts, Vorschauen und Bildvorschauen an angebundene KI-Anbieter übermittelt. Je nach Funktion und Tarif können das sein: Vercel AI Gateway, OpenAI, Google (Gemini), Cloudflare Workers AI, Anthropic (Claude), Alibaba (Qwen) und Black Forest Labs (FLUX). Die Verbindungen stellen wir zentral bereit; welcher Anbieter eine Anfrage bearbeitet, entscheidet Prompt.ai anhand deines Tarifs. [Rechtsgrundlage, Auftragsverarbeitungsverträge und Speicherdauer bei den jeweiligen Anbietern ergänzen.]</p>
     <h3>8. GitHub-Verbindung</h3>
-    <p>Ab Pro kannst du unter Einstellungen ein GitHub-Token hinterlegen. Es wird verschlüsselt in Supabase Vault gespeichert und ausschließlich für die von dir ausgelösten Veröffentlichungen verwendet.</p>
+    <p>In Ultimate kannst du unter Einstellungen ein GitHub-Token hinterlegen. Es wird verschlüsselt in Supabase Vault gespeichert und ausschließlich für die von dir ausgelösten Veröffentlichungen verwendet.</p>
     <h3>9. Kundeninformationen &amp; fremde Webseiten</h3>
     <p>Wenn du unter „Kundeninformationen" die Website oder einen Google-Eintrag deines Auftraggebers hinterlegst, ruft Prompt.ai diese öffentlich erreichbare Seite ab und liest Inhalte, Links und Bilder aus, um sie in dein Projekt zu übernehmen. Dabei können auch personenbezogene Daten Dritter enthalten sein (z.&nbsp;B. Namen oder Kontaktdaten auf einer „Über uns"-Seite). Du bist dafür verantwortlich, dass du zur Angabe dieser Quelle berechtigt bist; Prompt.ai übernimmt keine Haftung für Inhalte, die auf diesem Weg verarbeitet werden. Gleiches gilt für Referenz-Links und -Bilder, die du unter „Referenzen" hinterlegst.</p>
     <p><strong>Hinweis zu Referenzen und Unterlagen:</strong> Verlinke oder lade nur Inhalte hoch, an denen du die nötigen Rechte hast. Prompt.ai übernimmt keine Haftung für Inhalte Dritter, die du hier hinterlegst — die Verantwortung dafür liegt bei dir.</p>
