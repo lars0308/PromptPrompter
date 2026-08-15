@@ -3,7 +3,7 @@
   const $=(s,r=document)=>r.querySelector(s);
   const DAY=86400000;
   const fmt=value=>value?new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(value)):'';
-  const proPrice=()=>String(window.SiteBriefCloud?.config?.pricing?.pro||'20,99 € / Monat');
+  const proPrice=()=>String(window.PromptAiPrices?.pro||window.SiteBriefCloud?.config?.pricing?.pro||'20,99 € / Monat');
 
   function trialCopy(subscription){
     // Pro and Ultimate can both be in a trial now.

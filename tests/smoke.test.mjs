@@ -1060,7 +1060,7 @@ test('an opened settings section shows its last block instead of clipping it',as
   assert.match(css,/\.settings-danger-row\{\s*display:grid!important;grid-template-columns:minmax\(0,1fr\) auto!important/,'title, description and button are laid out, not run together');
 });
 
-test('a bought single review is visible and can actually be spent',async()=>{
+test('the one-off purchase tops up the monthly budget instead of selling a single check',async()=>{
   const app=await text('app.js'),home=await text('promptai-home-final.js');
   // Der gekaufte Einzelcheck oeffnet denselben Weg wie der freie Monatslauf.
   assert.match(app,/const paidReview=state\.plan==="free" && !state\.isAdmin && \(state\.reviewCredits>0 \|\| freeAiRun\);/);
@@ -1070,7 +1070,14 @@ test('a bought single review is visible and can actually be spent',async()=>{
   assert.match(app,/window\.dispatchEvent\(new CustomEvent\('promptai:credits'/);
   assert.match(home,/function creditNote\(\)/);
   assert.match(home,/'1 gekaufte Prüfung bereit'/);
-  assert.match(app,/`\$\{state\.reviewCredits\} Prüfung im Guthaben`/,'the buy button reports the credit instead of selling it twice');
+  // Aus dem Einzelcheck ist Monatsvorrat geworden - er passt zu jedem Tarif, alte Gutschriften
+  // bleiben nutzbar, und der Kauf landet als Bonus im selben Budget.
+  assert.match(app,/Monatsvorrat auffüllen · \$\{window\.PromptAiPrices\?\.topUp\|\|PRICE_FALLBACK\.topUp\}/);
+  assert.match(app,/beginCheckout\('top_up'\)/);
+  const hook=await text('api/stripe-webhook.js');
+  assert.match(hook,/const TOP_UP_UNITS=1000000/);
+  assert.match(hook,/product==='single_review'\|\|product==='top_up'\)await addBudgetTopUp/,'alte Käufe landen an derselben Stelle');
+  assert.match(hook,/monthly_token_bonus:current\+TOP_UP_UNITS/);
 });
 test('the header menu button keeps its place when the notice dot appears',async()=>{
   const drawer=await text('promptai-nav-drawer.js');

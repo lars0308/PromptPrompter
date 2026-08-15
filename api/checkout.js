@@ -190,10 +190,10 @@ module.exports=async function(req,res){
       const session=await portalSession(req,origin);
       return res.status(200).json({url:session.url});
     }
-    const product=String(req.body?.plan||''),isAddon=product==='own_api_keys',isSingleReview=product==='single_review';
+    const product=String(req.body?.plan||''),isAddon=product==='own_api_keys',isSingleReview=product==='single_review'||product==='top_up';
     // One slot, one API key. The quantity is what the customer buys, capped at the four providers.
     const slots=isAddon?Math.max(1,Math.min(4,Number(req.body?.slots)||1)):1;
-    if(!['pro','ultimate','own_api_keys','single_review'].includes(product))return res.status(400).json({error:'Unbekannter Tarif.'});
+    if(!['pro','ultimate','own_api_keys','single_review','top_up'].includes(product))return res.status(400).json({error:'Unbekannter Tarif.'});
     if(isSingleReview){
       const price=await resolveOneTimePrice('single_review');
       const session=await stripeRequest('checkout/sessions',{'metadata[consent_immediate_start]':consentStamp(req),mode:'payment','line_items[0][price]':price,'line_items[0][quantity]':1,customer_email:user.email,client_reference_id:user.id,'metadata[user_id]':user.id,'metadata[product]':'single_review',success_url:`${origin}/?checkout=success&product=single_review`,cancel_url:`${origin}/?checkout=cancel`});

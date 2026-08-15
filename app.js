@@ -45,6 +45,9 @@
   // Die Wahl ist deshalb in jedem Tarif offen; bezahlt wird, was uns wirklich kostet
   // (Pruefung, Vorschauen, Probelauf, Bibliothek).
   // Three previews, for every plan. More was a choice nobody could judge; fewer is not a real set.
+  // Ein Rueckfall fuer die ganze Oberflaeche - derselbe Satz Werte wie in server/prices.js.
+  // Was der Server liefert, gewinnt; das hier greift nur, wenn die Konfiguration nicht laedt.
+  const PRICE_FALLBACK={pro:'20,99 € / Monat',ultimate:'54,99 € / Monat',apiKeys:'5,99 € / Monat',topUp:'4,99 €'};
   const PREVIEW_COUNT=3;
   const PLAN_RULES = {
     free:{label:"Free",modes:["guided"],libraryItems:0,concepts:3,previewRetries:1,agents:Object.keys(AGENT_NAMES),clientDocs:false,modules:false,customProfiles:false,profileLimit:0,generatorChoice:false,advanced:false,zip:false,github:false,existing:false,aiPreviews:false,maxRefUrls:1,maxRefImages:0},
@@ -614,11 +617,12 @@
     // weiter der Kaufknopf, und das Guthaben tauchte nirgends auf.
     if(el.buySingleReviewBtn){
       const owned=state.reviewCredits>0;
-      el.buySingleReviewBtn.hidden=state.plan!=="free"||state.isAdmin;
-      el.buySingleReviewBtn.disabled=owned;
-      el.buySingleReviewBtn.textContent=owned
-        ?`${state.reviewCredits} Prüfung im Guthaben`
-        :"Einmalig für 3,99 € prüfen";
+      // Aus dem Einzelcheck ist das Auffuellen des Monatsvorrats geworden: derselbe einmalige
+      // Kauf, aber er passt zu jedem Tarif und zu dem, was uns die Nutzung wirklich kostet.
+      el.buySingleReviewBtn.hidden=state.isAdmin;
+      el.buySingleReviewBtn.disabled=false;
+      el.buySingleReviewBtn.textContent=`Monatsvorrat auffüllen · ${window.PromptAiPrices?.topUp||PRICE_FALLBACK.topUp}`;
+      el.buySingleReviewBtn.title='Einmalig eine Million Einheiten zusätzlich für diesen Monat.';
     }
     const generatorGrid=el.generatorEngine?.closest('.field-grid'),generatorTitle=generatorGrid?.previousElementSibling;[generatorGrid,generatorTitle].forEach(node=>{if(node)node.hidden=!(rules.generatorChoice||state.ownApiKeys)});
     document.querySelectorAll('[data-upgrade-plans]').forEach(button=>button.onclick=()=>el.plansDialog?.showModal());
@@ -767,7 +771,7 @@
     try{
       const result=await window.SiteBriefCloudReady;
       state.cloud.configured=Boolean(result?.configured);state.cloud.user=result?.user||null;
-      const pricing=window.SiteBriefCloud?.config?.pricing||{},displayPrice=(value,fallback)=>/\d+[,.]\d{2}\s*€/.test(String(value||''))?String(value):fallback,proPrice=displayPrice(pricing.pro,'20,99 € / Monat'),ultimatePrice=displayPrice(pricing.ultimate,'54,99 € / Monat'),apiPrice=displayPrice(pricing.apiKeys,'5,99 € / Monat');if(el.proPriceLabel)el.proPriceLabel.textContent=proPrice;if(el.ultimatePriceLabel)el.ultimatePriceLabel.textContent=ultimatePrice;document.querySelectorAll('[data-public-price="pro"]').forEach(x=>x.textContent=proPrice);document.querySelectorAll('[data-public-price="ultimate"]').forEach(x=>x.textContent=ultimatePrice);const addonPrice=el.apiAddonCard?.querySelector('b');if(addonPrice)addonPrice.textContent=apiPrice;
+      const pricing=window.SiteBriefCloud?.config?.pricing||{},displayPrice=(value,fallback)=>/\d+[,.]\d{2}\s*€/.test(String(value||''))?String(value):fallback,proPrice=displayPrice(pricing.pro,PRICE_FALLBACK.pro),ultimatePrice=displayPrice(pricing.ultimate,PRICE_FALLBACK.ultimate),apiPrice=displayPrice(pricing.apiKeys,PRICE_FALLBACK.apiKeys);window.PromptAiPrices={pro:proPrice,ultimate:ultimatePrice,apiKeys:apiPrice,topUp:displayPrice(pricing.topUp||pricing.singleReview,PRICE_FALLBACK.topUp)};if(el.proPriceLabel)el.proPriceLabel.textContent=proPrice;if(el.ultimatePriceLabel)el.ultimatePriceLabel.textContent=ultimatePrice;document.querySelectorAll('[data-public-price="pro"]').forEach(x=>x.textContent=proPrice);document.querySelectorAll('[data-public-price="ultimate"]').forEach(x=>x.textContent=ultimatePrice);const addonPrice=el.apiAddonCard?.querySelector('b');if(addonPrice)addonPrice.textContent=apiPrice;
       state.systemProfiles=(result?.systemProfiles?.length?result.systemProfiles:LOCAL_SYSTEM_PROFILES).map(x=>({...x,config:x.config||{}}));
       window.SiteBriefCloud?.subscribe?.(async(event,payload)=>{
         if(event==='password-recovery'){state.cloud.user=payload.user||null;el.accountLoggedOut.hidden=false;el.accountLoggedIn.hidden=true;el.passwordRecoveryPanel.hidden=false;el.accountDialogKicker.textContent='PASSWORT ZURÜCKSETZEN';el.accountDialogTitle.textContent='Neues Passwort festlegen';if(!el.accountDialog.open)el.accountDialog.showModal();return}
@@ -3126,7 +3130,7 @@ ${agentMemoryDocument()}`;
     el.copyPromptBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(el.masterPrompt.value);productSignal("copy-master-prompt",state.targetAgent);const old=el.copyPromptBtn.textContent;el.copyPromptBtn.textContent="Master-Prompt kopiert ✓";setTimeout(()=>el.copyPromptBtn.textContent=old,1600)}catch{}});el.downloadPromptBtn.addEventListener("click",()=>downloadText(`prompt-ai-${state.targetAgent}-master-prompt.md`,el.masterPrompt.value,"text/markdown"));el.downloadProjectSourcesBtn?.addEventListener("click",()=>downloadText('PROJEKT-QUELLEN.md',attachmentPromptBlock(),'text/markdown'));el.downloadHandoffPackageBtn?.addEventListener("click",downloadHandoffPackage);el.downloadBriefBtn.addEventListener("click",()=>downloadText("prompt-ai-blueprint.json",JSON.stringify(buildBlueprint(),null,2),"application/json"));
     el.downloadClientBriefBtn?.addEventListener("click",()=>downloadClientDocument("brief"));el.downloadHandoverBtn?.addEventListener("click",()=>downloadClientDocument("handover"));el.showPlansBtn?.addEventListener("click",()=>el.plansDialog?.showModal());
     el.downloadProjectReportBtn?.addEventListener('click',()=>downloadText('sitebrief-projektbericht.md',buildProjectReport(),'text/markdown'));
-    el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));[el.buySingleReviewBtn,el.buyReviewInlineBtn].forEach(button=>button?.addEventListener('click',()=>beginCheckout('single_review')));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
+    el.downloadWebsiteZipBtn?.addEventListener('click',downloadWebsiteZip);el.publishGithubBtn?.addEventListener('click',publishToGithub);el.startProCheckoutBtn?.addEventListener('click',()=>beginCheckout('pro'));el.startUltimateCheckoutBtn?.addEventListener('click',()=>beginCheckout('ultimate'));[el.buySingleReviewBtn,el.buyReviewInlineBtn].forEach(button=>button?.addEventListener('click',()=>beginCheckout('top_up')));el.manageSubscriptionBtn?.addEventListener('click',openBillingPortal);
     el.startApiAddonCheckoutBtn?.addEventListener('click',()=>beginCheckout('own_api_keys',{slots:Number(el.apiAddonSlots?.value)||1}));el.saveUserProfileBtn?.addEventListener('click',saveUserProfile);el.sendSupportBtn?.addEventListener('click',sendSupportRequest);el.importClientWebsiteBtn?.addEventListener('click',importClientWebsite);document.addEventListener('click',e=>{if(e.target.closest('[data-api-addon]'))beginCheckout('own_api_keys')});
     el.openLibraryBtn.addEventListener("click",()=>openLibrary("projects"));$$('[data-open-library]').forEach(b=>b.addEventListener("click",()=>openLibrary(b.dataset.openLibrary)));$$('[data-library-tab]').forEach(b=>b.addEventListener("click",()=>switchLibraryTab(b.dataset.libraryTab)));
     el.openSettingsBtn.addEventListener("click",()=>{populateSettingsDialog();el.settingsDialog.showModal()});el.saveSettingsBtn.addEventListener("click",saveSettingsFromDialog);

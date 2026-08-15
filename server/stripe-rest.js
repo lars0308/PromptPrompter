@@ -45,13 +45,13 @@ async function resolveRecurringPriceObject(product){
 async function resolveRecurringPrice(product){return (await resolveRecurringPriceObject(product)).id}
 async function resolveOneTimePriceObject(product){
   const item=String(product||'').toLowerCase();
-  const envName={single_review:'STRIPE_SINGLE_REVIEW_PRICE_ID'}[item];
+  const envName={single_review:'STRIPE_SINGLE_REVIEW_PRICE_ID',top_up:process.env.STRIPE_TOP_UP_PRICE_ID?'STRIPE_TOP_UP_PRICE_ID':'STRIPE_SINGLE_REVIEW_PRICE_ID'}[item];
   const configured=envName?String(process.env[envName]||'').trim():'';
   const configuredPrice=await configuredPriceObject(configured,false).catch(()=>null);if(configuredPrice)return configuredPrice;
-  const lookupKeys={single_review:['prompt_ai_single_review','sitebrief_single_review','single_review']}[item]||[];
+  const lookupKeys={top_up:['prompt_ai_top_up','prompt_ai_single_review','single_review'],single_review:['prompt_ai_single_review','sitebrief_single_review','single_review']}[item]||[];
   for(const lookupKey of lookupKeys){const result=await stripeGet('prices',{active:'true',type:'one_time','lookup_keys[0]':lookupKey,limit:10});const match=(result.data||[]).find(price=>price.active&&!price.recurring);if(match)return match;}
   const result=await stripeGet('prices',{active:'true',type:'one_time',limit:100,'expand[]':'data.product'});
-  const names={single_review:/(single.?review|einmal.*prüf|projekt.*prüf|review)/i};
+  const names={top_up:/(top.?up|vorrat|guthaben|single.?review|einmal.*prüf)/i,single_review:/(single.?review|einmal.*prüf|projekt.*prüf|review)/i};
   const byMeta=(result.data||[]).filter(price=>{const p=String(price.metadata?.product||price.metadata?.sitebrief_product||price.product?.metadata?.product||price.product?.metadata?.sitebrief_product||'').toLowerCase();return p===item});if(byMeta.length===1)return byMeta[0];
   const byName=(result.data||[]).filter(price=>price.active&&!price.recurring&&names[item]?.test(String(price.product?.name||price.nickname||'')));if(byName.length===1)return byName[0];
   throw Object.assign(new Error(`Kein aktiver Stripe-Einmalpreis für „${item}“ gefunden.`),{status:503});
