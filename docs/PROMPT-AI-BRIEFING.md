@@ -181,6 +181,8 @@ Dazu: Webhook auf `https://www.prompt-ai.app/api/stripe-webhook` mit `checkout.s
 
 **In Vercel:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, die KI-Schlüssel. Optional die vier `STRIPE_*_PRICE_ID`.
 
+Für die Support-Benachrichtigung zusätzlich: `SUPPORT_NOTIFY_TO` (deine Adresse) und entweder `RESEND_API_KEY` oder `MAIL_WEBHOOK_URL`. Fehlen sie, läuft alles weiter — nur ohne Mail.
+
 **In der Verwaltung:** Monatsbudgets eintragen (Free 150.000 · Pro 2.500.000 · Ultimate 6.000.000) — ohne sie greift der Vorrats-Mechanismus nicht. System-KI-Kette prüfen. Rechtstexte: alle eckigen Klammern füllen.
 
 **Hosting:** Vercel Pro (Hobby ist nicht für kommerzielle Nutzung) und Supabase Pro (Free pausiert nach 7 Tagen ohne Zugriff) — spätestens ab dem ersten zahlenden Kunden.
@@ -197,7 +199,6 @@ Dazu: Webhook auf `https://www.prompt-ai.app/api/stripe-webhook` mit `checkout.s
 - **Team-Zugänge für Ultimate** — mehrere Personen an einem Projekt. Braucht Projekte teilen, Rechte, Einladungen, neue Zugriffsregeln.
 - **Wochenpass** — 7 Tage Pro als Einmalkauf. Braucht einen befristeten Tarif; ein halber bis ganzer Tag.
 - **Hilfeseite** — die fünf häufigsten Fragen, sobald bekannt ist, welche das sind.
-- **E-Mail-Benachrichtigung** bei neuen Support-Anfragen — braucht einen Mailversand-Dienst, der noch nicht eingerichtet ist.
 
 ---
 

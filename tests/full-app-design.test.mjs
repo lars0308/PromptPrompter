@@ -726,3 +726,18 @@ test('a support request gets an answer, and the sender sees it',async()=>{
   assert.match(app,/Angekommen ✓ Wir melden uns per E-Mail und hier in der App/);
   assert.match(html,/id="supportHistory"/);
 });
+
+test('a new support request reaches the operator by mail, and never blocks on it',async()=>{
+  const mail=await read('server/notify-mail.js'),models=await read('api/models.js'),app=await read('app.js');
+  // Ohne eingerichteten Versand passiert nichts - eine Anfrage darf nie daran scheitern.
+  assert.match(mail,/if\(!to\|\|\(!resend&&!webhook\)\)return \{sent:false,reason:'nicht eingerichtet'\}/);
+  assert.match(mail,/SUPPORT_NOTIFY_TO/);
+  assert.match(mail,/api\.resend\.com\/emails/);
+  assert.match(mail,/MAIL_WEBHOOK_URL/,'auch ohne Resend nutzbar');
+  // Der Endpunkt verlangt eine Anmeldung und verschickt nur Betreff und Kategorie.
+  assert.match(models,/action==='support-notify'\)return supportNotify\(req,res\)/);
+  assert.match(models,/if\(!user\?\.id\)return res\.status\(401\)/);
+  assert.match(models,/Der vollständige Text steht in der Verwaltung/);
+  // Und der Absender merkt nichts davon, wenn der Versand klemmt.
+  assert.match(app,/action:'support-notify',subject,category:el\.supportCategory\.value\}\)\}\)\.catch\(\(\)=>\{\}\)/);
+});
