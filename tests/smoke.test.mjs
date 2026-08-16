@@ -1328,3 +1328,15 @@ test('only real clicks close the console menus',async()=>{
   for(const body of handlers) assert.match(body,/if\(!event\.isTrusted\)return;/,'a synthetic click must not close the menu');
   assert.doesNotMatch(src,/prompt-setup-tag" aria-hidden="true">Settings/,'the Settings caption is gone; the gear carries the line');
 });
+
+// Ein produktiver Stand darf nirgends behaupten, seine Rechtstexte seien noch nicht gueltig.
+// Der Hinweis stand im Rechts-Fenster in index.html und blieb dort stehen, als die Platzhalter
+// in legal-pages.js laengst ersetzt waren - ein externer Test hat ihn zu Recht angestrichen.
+test('nothing in the shipped page calls the legal texts a placeholder',async()=>{
+  for(const file of ['index.html','legal-pages.js']){
+    const src=await readFile(path.join(root,file),'utf8');
+    const body=src.replace(/<!--[\s\S]*?-->/g,'').replace(/^\s*\/\/.*$/gm,'');
+    assert.doesNotMatch(body,/Platzhalter\s*[–-]\s*noch nicht rechtsg/i,`${file} still declares the legal texts invalid`);
+    assert.doesNotMatch(body,/legal-placeholder-note/,`${file} still carries the placeholder banner`);
+  }
+});
