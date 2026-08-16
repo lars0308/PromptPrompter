@@ -9,6 +9,7 @@
     "test:auth": "node --test tests/authorization.test.mjs",
     "e2e": "node tests/e2e/run.mjs",
     "security-audit": "node tests/security-audit.mjs",
+    "audit:browser": "node tests/browser-audit.mjs",
     "pruefung": "node tests/pruefung/missbrauch.mjs"
   },
   "dependencies": {

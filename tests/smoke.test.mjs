@@ -1241,3 +1241,25 @@ test('the public config only hands out learning hints to a signed-in user',async
   assert.match(src,/const signedIn=await authenticatedUser\(req\)[^\n]*catch\(\(\)=>false\)/);
   assert.match(src,/signedIn\?learningHints\(\):Promise\.resolve\(\[\]\)/);
 });
+
+// Ein Dialog ohne Namen wird von der Sprachausgabe nur als "Dialog" angesagt. Alle Fenster der
+// Anwendung sind native <dialog> und tragen ihre Modalitaet damit selbst; was fehlte, war die
+// Beschriftung - und bei neun Feldern die Verknuepfung mit einem Label.
+test('every dialog and every form field carries an accessible name',async()=>{
+  const html=await readFile(path.join(root,'index.html'),'utf8');
+  const unnamed=(html.match(/<dialog\b[^>]*>/g)||[]).filter(tag=>!/aria-label(ledby)?=/.test(tag));
+  assert.deepEqual(unnamed,[],'a dialog without a name is announced as just "dialog"');
+  for(const id of ['imageInput','skillFileInput','masterPrompt','revisionPrompt','quickRevisionPrompt','quickRevisionVariantName','quickRevisionVariantSelect','importLibraryInput','adminUserSearch']){
+    const tag=(html.match(new RegExp(`<(?:input|textarea|select)\\b[^>]*\\bid="${id}"[^>]*>`))||[])[0];
+    assert.ok(tag,`${id} is missing from index.html`);
+    assert.match(tag,/aria-label=/,`${id} has no accessible name`);
+  }
+});
+
+// Die vier dynamisch gebauten Fenster bekommen ihren Namen im Skript, nicht im Markup.
+test('the dialogs built in script get their name there',async()=>{
+  for(const [file,name] of [['project-start-ui.js','Arbeitsweg'],['free-prompt-ui.js','Freier Prompt'],['subscription-ui.js','Abo-Übersicht'],['workflow-cleanup.js','Projektvorschau'],['project-history.js','Projektstände']]){
+    const src=await readFile(path.join(root,file),'utf8');
+    assert.match(src,new RegExp(`setAttribute\\('aria-label','${name}`),`${file} builds a dialog without a name`);
+  }
+});

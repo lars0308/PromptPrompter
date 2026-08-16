@@ -244,7 +244,7 @@
         <div id="urlReferences" class="reference-list"></div>
 
         <div class="dropzone" id="uploadZone" tabindex="0" role="button" aria-label="Referenzbilder auswählen">
-          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,application/pdf,text/plain,text/markdown,text/csv,application/json,.md,.csv,.txt,.json" multiple hidden />
+          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,application/pdf,text/plain,text/markdown,text/csv,application/json,.md,.csv,.txt,.json" multiple hidden aria-label="Bild oder Datei auswählen" />
           <span class="drop-icon">↗</span>
           <div><strong>Bilder, PDFs und Projektunterlagen</strong><small>Speisekarten, Sitzpläne, Preislisten, Logos, Screenshots · PDF, PNG, JPG, WebP, TXT, MD, CSV oder JSON · max. 12 MB</small></div>
           <button type="button" class="outline-btn mini">Dateien wählen</button>
@@ -345,7 +345,7 @@
         <div class="selection-head spaced">
           <div><span>AGENT-SKILLS</span><p id="skillContextLabel">Skills für Codex und globale Skills.</p></div>
           <div class="selection-actions"><button type="button" class="text-btn" id="importSkillFileBtn">Skill-Datei lesen</button><button type="button" class="text-btn" data-open-library="skills">Skills verwalten</button></div>
-          <input id="skillFileInput" type="file" accept=".md,.txt,.json,application/json,text/plain,text/markdown" multiple hidden />
+          <input id="skillFileInput" type="file" accept=".md,.txt,.json,application/json,text/plain,text/markdown" multiple hidden aria-label="Skill-Datei auswählen" />
         </div>
         <div id="skillSelection" class="selection-list empty-state"></div>
         <div id="skillImportMessage" class="import-message" aria-live="polite"></div>
@@ -427,7 +427,7 @@
         <section class="completion-summary" id="completionSummary"></section>
 
         <div class="prompt-meta" id="promptMeta"></div>
-        <textarea id="masterPrompt" class="master-prompt" spellcheck="false"></textarea>
+        <textarea id="masterPrompt" class="master-prompt" spellcheck="false" aria-label="Master-Prompt"></textarea>
         <div class="prompt-actions"><button type="button" class="solid-btn" id="copyPromptBtn">Master-Prompt kopieren</button><button type="button" class="outline-btn agent-open-btn" id="openAgentBtn">Agent öffnen</button><button type="button" class="outline-btn" id="downloadPromptBtn">Master-Prompt speichern</button><button type="button" class="outline-btn" id="downloadProjectSourcesBtn">Projekt-Quellen speichern</button><button type="button" class="outline-btn" id="downloadHandoffPackageBtn">Alle Dateien als ZIP</button><button type="button" class="outline-btn" id="downloadBriefBtn">Blueprint als JSON</button></div>
         <p class="prompt-actions-note">Kopieren gibt dir den Master-Prompt zum Einfügen in ChatGPT, Claude oder Codex. Seitenstruktur und Projekt-Quellen gehören dazu, passen aber nicht in die Zwischenablage - die liegen im ZIP.</p>
         <section class="prompt-handoff" id="promptHandoff"><div><span>MIT DER KI ÜBERGEBEN</span><h2>Vorschau und Referenzen gehören zum Prompt.</h2><p id="promptHandoffText">Prompt.ai stellt die ausgewählte Vorschau, Bildreferenzen, Unterlagen und eine Linkliste als gemeinsames Übergabepaket zusammen.</p></div><div class="prompt-handoff-preview" id="promptHandoffPreview"></div></section>
@@ -460,7 +460,7 @@
           <div class="field-grid two"><label class="field"><span>Projektdateien oder Screenshots</span><input id="revisionFiles" type="file" multiple accept=".zip,.html,.css,.js,.jsx,.ts,.tsx,.json,.md,image/png,image/jpeg,image/webp" /></label><label class="field"><span>Neue Referenz <em>optional</em></span><input id="revisionReference" type="url" placeholder="https://…" /></label></div>
           <label class="field field-large"><span>Was soll verbessert werden?</span><textarea id="revisionDescription" rows="6" placeholder="Beschreibe konkret, was heute nicht funktioniert, was erhalten bleiben soll und woran man die Verbesserung erkennen kann."></textarea></label>
           <div class="inline-actions"><button type="button" class="solid-btn" id="createRevisionPromptBtn">Überarbeitungsauftrag erstellen</button><small id="revisionStatus"></small></div>
-          <div id="revisionPromptResult" hidden><textarea id="revisionPrompt" class="master-prompt" spellcheck="false"></textarea><div class="prompt-actions"><button type="button" class="solid-btn" id="copyRevisionPromptBtn">Auftrag kopieren</button><button type="button" class="outline-btn" id="downloadRevisionPromptBtn">Als .md speichern</button></div></div>
+          <div id="revisionPromptResult" hidden><textarea id="revisionPrompt" class="master-prompt" spellcheck="false" aria-label="Überarbeitungs-Prompt"></textarea><div class="prompt-actions"><button type="button" class="solid-btn" id="copyRevisionPromptBtn">Auftrag kopieren</button><button type="button" class="outline-btn" id="downloadRevisionPromptBtn">Als .md speichern</button></div></div>
           </div>
         </section>
 
@@ -487,15 +487,15 @@
       </div>
     </aside>
   </div>
-<dialog id="appActionDialog" class="library-dialog app-action-dialog">
+<dialog id="appActionDialog" class="library-dialog app-action-dialog" aria-label="Aktion wählen">
     <div class="dialog-frame"><div class="app-action-body"><span id="appActionKicker">PROMPT.AI</span><h2 id="appActionTitle">Bestätigen</h2><p id="appActionMessage"></p><label class="field" id="appActionInputWrap" hidden><span id="appActionInputLabel">Eingabe</span><input id="appActionInput" type="text" /><select id="appActionSelect" hidden></select></label><div class="app-action-buttons"><button type="button" class="text-btn" id="appActionCancelBtn">Abbrechen</button><button type="button" class="solid-btn" id="appActionConfirmBtn">Bestätigen</button></div></div></div>
   </dialog>
 
-  <dialog id="agentLaunchDialog" class="library-dialog agent-launch-dialog">
+  <dialog id="agentLaunchDialog" class="library-dialog agent-launch-dialog" aria-label="Ziel-KI öffnen">
     <div class="dialog-frame"><button type="button" class="close-dialog agent-launch-close" id="closeAgentLaunchBtn" aria-label="Schließen">×</button><div class="agent-launch-body"><span>PROMPT IST KOPIERT</span><h2 id="agentLaunchTitle">Agent öffnen</h2><p id="agentLaunchText">Der fertige Prompt liegt in deiner Zwischenablage. Öffne jetzt den ausgewählten Agenten und füge ihn dort ein.</p><div class="agent-launch-options"><button type="button" class="solid-btn" id="openAgentWebBtn">Im Browser öffnen</button><button type="button" class="outline-btn" id="openAgentDesktopBtn" hidden>Desktop-App öffnen</button></div><small id="agentLaunchHint"></small></div></div>
   </dialog>
 
-  <dialog id="quickRevisionDialog" class="library-dialog quick-revision-dialog">
+  <dialog id="quickRevisionDialog" class="library-dialog quick-revision-dialog" aria-label="Website überarbeiten">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
         <div><span>WEBSITE ÜBERARBEITEN</span><h2>Vom Ist-Zustand zum klaren Änderungsauftrag</h2></div>
@@ -529,17 +529,17 @@
         <div class="quick-revision-actions"><button type="button" class="solid-btn" id="scanQuickRevisionBtn">Website scannen & Auftrag erstellen</button><small id="quickRevisionStatus"></small></div>
         <section class="quick-revision-result" id="quickRevisionResult" hidden>
           <div class="quick-result-head"><div><span>FERTIGER AUFTRAG</span><strong id="quickRevisionScanResult">Website ausgewertet</strong></div><div><button type="button" class="solid-btn mini" id="copyQuickRevisionBtn">Kopieren</button><button type="button" class="outline-btn mini" id="downloadQuickRevisionBtn">Speichern</button></div></div>
-          <textarea id="quickRevisionPrompt" class="master-prompt" rows="18" spellcheck="false"></textarea>
+          <textarea id="quickRevisionPrompt" class="master-prompt" rows="18" spellcheck="false" aria-label="Prompt für die Überarbeitung"></textarea>
           <div class="quick-variant-tools" id="quickRevisionVariantTools" hidden>
             <div><span>ULTIMATE SCHNELLAUSWAHL</span><strong>Mehrere Prompt-Varianten speichern</strong></div>
-            <div class="quick-variant-controls"><input id="quickRevisionVariantName" type="text" placeholder="z. B. Mobile Fix August" /><button type="button" class="outline-btn" id="saveQuickRevisionVariantBtn">Variante speichern</button><select id="quickRevisionVariantSelect"><option value="">Gespeicherte Variante wählen</option></select><button type="button" class="text-btn danger" id="deleteQuickRevisionVariantBtn">löschen</button></div>
+            <div class="quick-variant-controls"><input id="quickRevisionVariantName" type="text" placeholder="z. B. Mobile Fix August" aria-label="Name der Variante" /><button type="button" class="outline-btn" id="saveQuickRevisionVariantBtn">Variante speichern</button><select id="quickRevisionVariantSelect" aria-label="Gespeicherte Variante wählen"><option value="">Gespeicherte Variante wählen</option></select><button type="button" class="text-btn danger" id="deleteQuickRevisionVariantBtn">löschen</button></div>
           </div>
         </section>
       </div>
     </form>
   </dialog>
 
-  <dialog id="libraryDialog" class="library-dialog">
+  <dialog id="libraryDialog" class="library-dialog" aria-label="Bibliothek">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
         <div><span>DEINE BIBLIOTHEK</span><h2>Projekte und Bausteine</h2></div>
@@ -551,7 +551,7 @@
         <button type="button" data-library-tab="modules">Module</button>
         <button type="button" data-library-tab="skills">Agent-Skills</button>
       </div>
-      <div class="library-tools"><button type="button" class="text-btn" id="exportLibraryBtn">Alles als JSON sichern</button><button type="button" class="text-btn" id="importLibraryBtn">JSON importieren</button><input id="importLibraryInput" type="file" accept=".json,application/json" hidden /></div>
+      <div class="library-tools"><button type="button" class="text-btn" id="exportLibraryBtn">Alles als JSON sichern</button><button type="button" class="text-btn" id="importLibraryBtn">JSON importieren</button><input id="importLibraryInput" type="file" accept=".json,application/json" hidden aria-label="Bibliotheksdatei zum Importieren auswählen" /></div>
 
       <section class="library-pane active" data-library-pane="projects">
         <div id="libraryProjectList" class="welcome-project-list library-project-list" aria-live="polite"></div>
@@ -592,7 +592,7 @@
     </form>
   </dialog>
 
-  <dialog id="settingsDialog" class="library-dialog settings-dialog">
+  <dialog id="settingsDialog" class="library-dialog settings-dialog" aria-label="Einstellungen">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
         <div><span>EINSTELLUNGEN</span><h2>Verbindungen & Projektregeln</h2></div>
@@ -727,7 +727,7 @@
   </dialog>
 
 
-  <dialog id="accountDialog" class="library-dialog account-dialog">
+  <dialog id="accountDialog" class="library-dialog account-dialog" aria-label="Anmelden oder Konto anlegen">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
         <div><span id="accountDialogKicker">SUPABASE CLOUD</span><h2 id="accountDialogTitle">Konto & Synchronisierung</h2></div>
@@ -782,7 +782,7 @@
     </form>
   </dialog>
 
-  <dialog id="profileDialog" class="library-dialog profile-dialog">
+  <dialog id="profileDialog" class="library-dialog profile-dialog" aria-label="Profil">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>ARBEITSPROFILE</span><h2>Eigene Profile</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="profile-dialog-body">
@@ -797,7 +797,7 @@
     </form>
   </dialog>
 
-  <dialog id="clarificationDialog" class="library-dialog clarification-dialog">
+  <dialog id="clarificationDialog" class="library-dialog clarification-dialog" aria-label="Kurz abstimmen">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head">
         <div><span>KI-GEGENFRAGEN</span><h2>Noch ein paar Punkte klären</h2></div>
@@ -815,7 +815,7 @@
     </form>
   </dialog>
 
-  <dialog id="plansDialog" class="library-dialog plans-dialog">
+  <dialog id="plansDialog" class="library-dialog plans-dialog" aria-label="Tarife">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>TARIFE</span><h2>Passender Umfang für dein Projekt</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="plans-grid">
@@ -837,7 +837,7 @@
     </form>
   </dialog>
 
-  <dialog id="projectExtrasDialog" class="library-dialog project-extras-dialog">
+  <dialog id="projectExtrasDialog" class="library-dialog project-extras-dialog" aria-label="Projektangaben ergänzen">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>FÜR DIESES PROJEKT</span><h2>Bausteine &amp; Skills</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="project-extras-body">
@@ -847,7 +847,7 @@
     </form>
   </dialog>
 
-  <dialog id="websiteBuildDialog" class="library-dialog website-build-dialog">
+  <dialog id="websiteBuildDialog" class="library-dialog website-build-dialog" aria-label="Probelauf">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>PROBELAUF</span><h2>Briefing zur Probe bauen lassen</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="website-build-body">
@@ -858,14 +858,14 @@
     </form>
   </dialog>
 
-  <dialog id="adminDialog" class="library-dialog admin-dialog">
+  <dialog id="adminDialog" class="library-dialog admin-dialog" aria-label="Verwaltung">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>ADMINISTRATION</span><h2>Prompt.ai verwalten</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="admin-body">
         <nav class="admin-tabs" aria-label="Adminbereiche"><button type="button" class="active" data-admin-tab="overview">Übersicht</button><button type="button" data-admin-tab="users">Benutzer &amp; Abos</button><button type="button" data-admin-tab="support">Support</button><button type="button" data-admin-tab="messages">Mitteilungen</button><button type="button" data-admin-tab="offer">Aktion &amp; Testphase</button><button type="button" data-admin-tab="maintenance">Wartung</button></nav>
         <p id="adminMessage" class="auth-message"></p>
         <section class="admin-pane active" data-admin-pane="overview"><div class="admin-section-head"><div><span>ÜBERBLICK</span><h3>Aktueller Stand</h3></div><button type="button" class="outline-btn mini" id="adminReloadBtn">Neu laden</button></div><div id="adminStats" class="admin-stats"></div><details class="admin-fold"><summary><div><span>NUTZUNG</span><strong>Verwendete KI-Modelle</strong></div><em data-fold-count="usage"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><div id="adminUsage" class="admin-usage"></div></div></details><details class="admin-fold"><summary><div><span>LETZTE VERARBEITUNGEN</span><strong>Prompts und Projekte</strong></div><em data-fold-count="runs"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><p class="admin-fold-note">Aus Datenschutzgründen werden Projektname, Art, Ziel und Verarbeitung angezeigt – nicht der vollständige vertrauliche Prompttext.</p><div id="adminRuns" class="admin-runs"></div></div></details></section>
-        <section class="admin-pane" data-admin-pane="users"><div class="admin-section-head"><div><span>TARIFE</span><h3>Monatskontingente</h3><p>Wie viel freie Prompts, Website-Generierungen und KI-Vorschauen jeder Tarif pro Kalendermonat enthält. Die Token-Budgets stehen im Bereich <strong>Tokens</strong>.</p></div></div><div class="admin-quota-grid" id="adminQuotaGrid"><details class="admin-quota-col"><summary><strong>Kostenlos</strong><i aria-hidden="true">+</i></summary><label class="field"><span>Freie Prompts</span><input id="quotaFreeFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaFreeWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaFreeAiPreviews" type="number" min="0" max="100000" /></label></details><details class="admin-quota-col"><summary><strong>Pro</strong><i aria-hidden="true">+</i></summary><label class="field"><span>Freie Prompts</span><input id="quotaProFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaProWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaProAiPreviews" type="number" min="0" max="100000" /></label></details><details class="admin-quota-col"><summary><strong>Ultimate</strong><i aria-hidden="true">+</i></summary><label class="field"><span>Freie Prompts</span><input id="quotaUltimateFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaUltimateWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaUltimateAiPreviews" type="number" min="0" max="100000" /></label></details></div><button type="button" class="solid-btn" id="saveQuotaLimitsBtn">Kontingente speichern</button><details class="admin-fold"><summary><div><span>KONTEN</span><strong>Registrierte Benutzer</strong></div><em data-fold-count="users"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><input id="adminUserSearch" type="search" placeholder="E-Mail oder Firma suchen" /><div id="adminUsers" class="admin-users"></div></div></details></section>
+        <section class="admin-pane" data-admin-pane="users"><div class="admin-section-head"><div><span>TARIFE</span><h3>Monatskontingente</h3><p>Wie viel freie Prompts, Website-Generierungen und KI-Vorschauen jeder Tarif pro Kalendermonat enthält. Die Token-Budgets stehen im Bereich <strong>Tokens</strong>.</p></div></div><div class="admin-quota-grid" id="adminQuotaGrid"><details class="admin-quota-col"><summary><strong>Kostenlos</strong><i aria-hidden="true">+</i></summary><label class="field"><span>Freie Prompts</span><input id="quotaFreeFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaFreeWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaFreeAiPreviews" type="number" min="0" max="100000" /></label></details><details class="admin-quota-col"><summary><strong>Pro</strong><i aria-hidden="true">+</i></summary><label class="field"><span>Freie Prompts</span><input id="quotaProFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaProWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaProAiPreviews" type="number" min="0" max="100000" /></label></details><details class="admin-quota-col"><summary><strong>Ultimate</strong><i aria-hidden="true">+</i></summary><label class="field"><span>Freie Prompts</span><input id="quotaUltimateFreePrompts" type="number" min="0" max="100000" /></label><label class="field"><span>Website-Generierungen</span><input id="quotaUltimateWebsiteGenerations" type="number" min="0" max="100000" /></label><label class="field"><span>KI-Vorschauen</span><input id="quotaUltimateAiPreviews" type="number" min="0" max="100000" /></label></details></div><button type="button" class="solid-btn" id="saveQuotaLimitsBtn">Kontingente speichern</button><details class="admin-fold"><summary><div><span>KONTEN</span><strong>Registrierte Benutzer</strong></div><em data-fold-count="users"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><input id="adminUserSearch" type="search" placeholder="E-Mail oder Firma suchen" aria-label="Benutzer nach E-Mail oder Firma suchen" /><div id="adminUsers" class="admin-users"></div></div></details></section>
         <section class="admin-pane" data-admin-pane="support"><details class="admin-fold"><summary><div><span>SUPPORT</span><strong>Anfragen der Benutzer</strong></div><em data-fold-count="support"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><div id="adminSupport" class="admin-support"></div></div></details></section>
         <section class="admin-pane" data-admin-pane="messages"><div class="admin-split"><div><details class="admin-fold"><summary><div><span>AKTIVE MELDUNGEN</span><strong>Mitteilungen</strong></div><em data-fold-count="announcements"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><div id="adminAnnouncements" class="admin-announcements"></div></div></details></div><div class="admin-editor"><span>NEUE MITTEILUNG</span><label class="field"><span>Titel</span><input id="announcementTitle" maxlength="120" /></label><label class="field"><span>Text</span><textarea id="announcementBody" rows="5" maxlength="2000"></textarea></label><div class="field-grid two"><label class="field"><span>Stufe</span><select id="announcementLevel"><option value="info">Info</option><option value="success">Erfolg</option><option value="warning">Warnung</option><option value="critical">Kritisch</option></select></label><label class="field"><span>Ende <em>optional</em></span><input id="announcementEndsAt" type="datetime-local" /></label></div><label class="check-row"><input id="announcementActive" type="checkbox" checked /><span><strong>Sofort anzeigen</strong><small>Ist nach dem Speichern für Nutzer sichtbar.</small></span></label><button type="button" class="solid-btn" id="saveAnnouncementBtn">Mitteilung veröffentlichen</button></div></div></section>
         <section class="admin-pane" data-admin-pane="offer"><div class="admin-offer-editor"><div class="admin-section-head"><div><span>STRIPE & STARTSEITE</span><h3>Testphase oder Rabattaktion</h3></div></div><label class="check-row"><input id="offerEnabled" type="checkbox" /><span><strong>Aktion aktiv</strong><small>Banner wird öffentlich angezeigt und hat Vorrang vor Stripe-Metadaten.</small></span></label><div class="field-grid two"><label class="field"><span>Kleine Überschrift</span><input id="adminOfferEyebrow" placeholder="JETZT KOSTENLOS TESTEN" /></label><label class="field"><span>Button</span><input id="adminOfferCta" placeholder="Kostenlos testen" /></label></div><label class="field"><span>Hauptüberschrift</span><input id="adminOfferTitle" placeholder="Pro 14 Tage kostenlos testen" /></label><label class="field"><span>Beschreibung</span><textarea id="adminOfferDescription" rows="3"></textarea></label><div class="field-grid three"><label class="field"><span>Testtage</span><input id="adminOfferTrialDays" type="number" min="0" max="365" /></label><label class="field"><span>Rabatt in %</span><input id="adminOfferDiscount" type="number" min="0" max="100" /></label><label class="field"><span>Ende <em>optional</em></span><input id="adminOfferEndsAt" type="datetime-local" /></label></div><label class="field"><span>Stripe Coupon-ID <em>nur bei automatischem Rabatt</em></span><input id="adminOfferCoupon" placeholder="z. B. Coupon-ID" /></label><button type="button" class="solid-btn" id="saveOfferBtn">Aktion speichern</button></div></section>
@@ -874,7 +874,7 @@
     </form>
   </dialog>
 
-  <dialog id="generatingDialog" class="library-dialog generating-dialog">
+  <dialog id="generatingDialog" class="library-dialog generating-dialog" aria-label="Prompt wird erstellt">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span>WIRD GERADE ERSTELLT</span><h2>Master-Prompt wird generiert…</h2></div></header>
       <div class="generating-body">
@@ -884,7 +884,7 @@
     </form>
   </dialog>
 
-  <dialog id="legalDialog" class="library-dialog legal-dialog">
+  <dialog id="legalDialog" class="library-dialog legal-dialog" aria-label="Rechtliche Hinweise">
     <form method="dialog" class="dialog-frame">
       <header class="dialog-head"><div><span id="legalKicker">RECHTLICHES</span><h2 id="legalTitle">Impressum</h2></div><button type="submit" class="close-dialog" aria-label="Schließen">×</button></header>
       <div class="legal-body">

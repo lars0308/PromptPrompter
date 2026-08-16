@@ -8,7 +8,7 @@
 
   function ensureDialog(){
     let d=$('#subscriptionOverviewDialog');if(d)return d;
-    d=document.createElement('dialog');d.id='subscriptionOverviewDialog';d.className='library-dialog subscription-overview-dialog';d.innerHTML=`<div class="dialog-frame subscription-overview-frame"><header class="dialog-head"><div><span>ABO & ABRECHNUNG</span><h2>Abo verwalten</h2></div><button type="button" class="close-dialog" data-sub-close aria-label="Schließen">×</button></header><div class="subscription-overview-body" id="subscriptionOverviewBody"></div></div>`;
+    d=document.createElement('dialog');d.id='subscriptionOverviewDialog';d.setAttribute('aria-label','Abo-Übersicht');d.className='library-dialog subscription-overview-dialog';d.innerHTML=`<div class="dialog-frame subscription-overview-frame"><header class="dialog-head"><div><span>ABO & ABRECHNUNG</span><h2>Abo verwalten</h2></div><button type="button" class="close-dialog" data-sub-close aria-label="Schließen">×</button></header><div class="subscription-overview-body" id="subscriptionOverviewBody"></div></div>`;
     document.body.appendChild(d);
     d.querySelector('[data-sub-close]').onclick=()=>d.close();
     d.addEventListener('cancel',e=>{e.preventDefault();d.close()});
