@@ -33,6 +33,18 @@ async function measure(browser, vp) {
   });
   const page = await context.newPage();
 
+  // Die strengere Fassung laeuft als Content-Security-Policy-Report-Only mit. Sie blockiert
+  // nichts, meldet aber jeden Verstoss - so laesst sich vor dem Scharfschalten zaehlen, was
+  // brechen wuerde.
+  const csp = [];
+  await page.addInitScript(() => {
+    globalThis.__csp = [];
+    addEventListener('securitypolicyviolation', e => {
+      if (e.disposition !== 'report') return;
+      globalThis.__csp.push(`${e.effectiveDirective} <- ${String(e.blockedURI || '(inline)').slice(0, 70)}`);
+    });
+  });
+
   const failed = [];
   page.on('response', r => { if (r.status() >= 400) failed.push(`${r.status()} ${new global.URL(r.url()).pathname}`); });
   const consoleErrors = [];
@@ -129,15 +141,16 @@ async function measure(browser, vp) {
     return out;
   });
 
+  csp.push(...await page.evaluate(() => globalThis.__csp || []));
   await context.close();
-  return { perf, a11y, failed: [...new Set(failed)], consoleErrors: [...new Set(consoleErrors)] };
+  return { perf, a11y, failed: [...new Set(failed)], consoleErrors: [...new Set(consoleErrors)], csp };
 }
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' })
   .catch(() => chromium.launch());
 
 for (const vp of VIEWPORTS) {
-  const { perf, a11y, failed, consoleErrors } = await measure(browser, vp);
+  const { perf, a11y, failed, consoleErrors, csp } = await measure(browser, vp);
   console.log(`\n${'='.repeat(64)}\n${vp.name} ${vp.width}x${vp.height}\n${'='.repeat(64)}`);
   console.log(`TTFB ${perf.ttfb}ms | FCP ${perf.fcp}ms | LCP ${perf.lcp}ms | CLS ${perf.cls}`);
   console.log(`DOMContentLoaded ${perf.dcl}ms | Load ${perf.load}ms`);
@@ -160,6 +173,11 @@ for (const vp of VIEWPORTS) {
   console.log(`Bilder ohne alt: ${a11y.noAlt}`);
   console.log(`Ueberschriftensprünge: ${a11y.headingJumps.length}${a11y.headingJumps.length ? ' -> ' + a11y.headingJumps.slice(0, 4).join(' | ') : ''}`);
   console.log(`Fokussierbares trotz [hidden] sichtbar: ${a11y.focusableHidden}${a11y.focusableHidden?' -> '+[...new Set(a11y.focusableHiddenSamples)].slice(0,10).join(', '):''}`);
+  const cspCount = {};
+  for (const v of csp) cspCount[v] = (cspCount[v] || 0) + 1;
+  console.log(`\n-- CSP (nur gemeldet, nicht blockiert) --`);
+  console.log(Object.keys(cspCount).length ? '' : '   keine Verstoesse - die strengere Fassung koennte scharf geschaltet werden');
+  for (const [v, n] of Object.entries(cspCount).sort((a, b) => b[1] - a[1]).slice(0, 12)) console.log(`   ${String(n).padStart(3)}x ${v}`);
   if (failed.length) console.log(`\nFehlerhafte Requests: ${failed.slice(0, 10).join(', ')}`);
   if (consoleErrors.length) console.log(`Konsolenfehler: ${consoleErrors.slice(0, 5).join(' | ')}`);
 }
