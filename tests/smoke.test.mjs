@@ -1285,3 +1285,15 @@ test('the sitemap lists only pages that actually exist',async()=>{
   const locs=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
   assert.deepEqual(locs,['https://www.prompt-ai.app/'],'every other entry served the same homepage');
 });
+
+// theme-init.js legt die Papierflaeche schon im ersten Skript ueber die Seite, damit der alte
+// Bildschirm beim Projektstart nicht aufblitzt. Die Ausnahmeliste kannte den Uebergabe-Schirm
+// aber nicht - er wurde also von genau der Flaeche verdeckt, die er ersetzen soll, und sichtbar
+// erst, wenn die Klasse wieder fiel. Zu sehen war deshalb nur der Hintergrund.
+test('the handoff screen is exempt from the cover it replaces',async()=>{
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  const rule=(css.match(/html\.prompt-handoff-pending body>\*[^{]*\{visibility:hidden!important\}/)||[])[0];
+  assert.ok(rule,'the cover rule is missing');
+  assert.match(rule,/:not\(#promptModeHandoff\)/,'the handoff screen must not be hidden by the cover');
+  assert.match(css,/html\.prompt-handoff-pending #promptModeHandoff\{visibility:visible!important\}/);
+});

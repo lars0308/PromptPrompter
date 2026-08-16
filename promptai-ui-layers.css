@@ -948,7 +948,12 @@ html[data-clean-project-flow="1"] body{background:#f3f5f6}
          nicht steht, bleibt darunter nur die Papierfläche stehen - theme-init.js setzt die Klasse
          schon im ersten Skript und nimmt sie spätestens nach neun Sekunden wieder weg. */
       html.prompt-handoff-pending body{background:var(--paper)!important}
-      html.prompt-handoff-pending body>*:not(#promptBriefHandoff):not(#promptAppBoot){visibility:hidden!important}
+      html.prompt-handoff-pending body>*:not(#promptBriefHandoff):not(#promptAppBoot):not(#promptModeHandoff){visibility:hidden!important}
+      /* Der Uebergabe-Schirm stand nicht in der Ausnahmeliste: die Papierflaeche deckte ihn mit
+         ab, obwohl er genau das ist, was sie ueberdecken soll. Sichtbar wurde er erst, wenn die
+         Klasse wieder fiel - deshalb sah man erst nur den Hintergrund und die Animation kam zu
+         spaet oder gar nicht mehr. */
+      html.prompt-handoff-pending #promptModeHandoff{visibility:visible!important}
       .prompt-handoff-loader{position:fixed;z-index:2147483600;inset:0;display:grid;place-items:center;padding:28px 20px;background:var(--paper);color:var(--ink);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       .prompt-handoff-loader>div{width:min(590px,100%);text-align:center}.prompt-handoff-loader .prompt-process-lines{margin-top:24px;text-align:left}
       .prompt-process-kicker{display:block;color:var(--prompt-load-blue);font-size:9px;font-weight:850;letter-spacing:.12em}.prompt-process-title{display:block;margin-top:8px;font-size:clamp(30px,7vw,48px);line-height:1;letter-spacing:-.05em}
