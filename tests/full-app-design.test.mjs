@@ -473,9 +473,13 @@ test('templates and skills are pickable in the console, mirrored from the real c
 
 test('the console settings pick exactly one target AI and the skills follow it',async()=>{
   const home=await read('promptai-home-final.js'),app=await read('app.js');
-  // Die Zeile unter dem Textfeld ist jetzt die Settings des Laufs - Ziel-KI zuerst.
-  assert.match(home,/class="prompt-setup-tag" aria-hidden="true">Settings</);
-  assert.match(home,/<b>Ziel-KI<\/b><div id="promptAgentMenu">/);
+  // Die Zeile unter dem Textfeld ist jetzt die Settings des Laufs - Ziel-KI zuerst. Das Wort
+  // "Settings" ist raus, das Zahnrad traegt die Zeile; der Knopf behaelt seinen Namen fuer
+  // Sprachausgaben ueber aria-label.
+  assert.doesNotMatch(home,/class="prompt-setup-tag"/);
+  assert.match(home,/id="promptSetupButton"[^>]*aria-label="Settings für diesen Auftrag"/);
+  assert.match(home,/<svg class="prompt-setup-icon"/);
+  assert.match(home,/data-setup-pane="agent"><b>Ziel-KI<\/b><div id="promptAgentMenu">/);
   assert.match(home,/const parts=\[agentLabel\(activeAgent\(\)\),FLOW_LABEL\[flowMode\(\)\]\]/);
   // Genau eine KI: gewählt wird über den echten Schalter, der state.targetAgent setzt - und der
   // schreibt im selben Zug die Skill-Liste auf diese KI plus die globalen um.

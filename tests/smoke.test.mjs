@@ -1043,7 +1043,8 @@ test('restoring a saved project state never lands on the old description form',a
 });
 test('the gap between start screen and briefing screen is covered',async()=>{
   const src=await text('promptai-loading-v2.js');
-  assert.match(src,/html\.prompt-handoff-pending body>\*:not\(#promptBriefHandoff\):not\(#promptAppBoot\)\{visibility:hidden!important\}/);
+  // Der Uebergabe-Schirm gehoert seit dem leeren Hintergrund mit in die Ausnahmeliste.
+  assert.match(src,/html\.prompt-handoff-pending body>\*:not\(#promptBriefHandoff\):not\(#promptAppBoot\):not\(#promptModeHandoff\)\{visibility:hidden!important\}/);
   assert.match(src,/document\.documentElement\.classList\.remove\('prompt-handoff-pending'\)/,'lifted as soon as the briefing screen stands');
   assert.match(src,/setTimeout\(\(\)=>document\.documentElement\.classList\.remove\('prompt-handoff-pending'\),4000\)/,'and never left standing if it does not');
 });
