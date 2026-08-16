@@ -91,7 +91,47 @@
     const text=`Dein Kontingent wird knapp: ${parts} übrig. Am ${resetDate(cache?.periodEnd)} startet es neu – vorher lässt es sich über die Tarife aufstocken.`;
     if(note.textContent!==text)note.textContent=text;
   }
-  function renderAll(){syncPlanCards();syncSubscription();syncSaverNotice();syncLowQuotaNotice()}
+  // Die 15-Prozent-Marke gab es schon, sie stand aber nur als Satz in der Seite: "wird knapp,
+  // laesst sich ueber die Tarife aufstocken". Handeln konnte darauf niemand, ohne erst das
+  // Tarif-Fenster zu suchen. Jetzt kommt das Angebot von selbst - einmal je Abrechnungszeitraum,
+  // damit es nicht bei jedem Aufruf nervt, und nie ueber einem anderen offenen Fenster.
+  const TOPUP_OFFER_KEY='prompt-ai-topup-offer-v1';
+  function topUpPrice(){return window.PromptAiPrices?.topUp||'7,99 €'}
+  function ensureTopUpDialog(){
+    let dialog=$('#promptTopUpOffer');if(dialog)return dialog;
+    dialog=document.createElement('dialog');
+    dialog.id='promptTopUpOffer';dialog.className='prompt-topup-offer';
+    dialog.setAttribute('aria-label','Monatsvorrat auffüllen');
+    dialog.innerHTML='<form method="dialog" class="dialog-frame"><div class="topup-offer-body">'
+      +'<span class="topup-offer-kicker">MONATSVORRAT</span>'
+      +'<h2 id="promptTopUpTitle">Dein Kontingent wird knapp.</h2>'
+      +'<p id="promptTopUpDetail"></p>'
+      +'<p class="topup-offer-note">Einmalig, ohne Abo: 750.000 Einheiten zusätzlich für diesen Monat – genug für etwa 16 weitere Projektläufe. Gilt sofort und in jedem Tarif.</p>'
+      +'<div class="topup-offer-actions"><button type="button" class="solid-btn" id="promptTopUpBuy"></button>'
+      +'<button type="submit" class="outline-btn" id="promptTopUpLater">Später</button></div>'
+      +'</div></form>';
+    document.body.appendChild(dialog);
+    // Der Kauf haengt am vorhandenen Knopf im Tarif-Fenster, damit hier keine zweite
+    // Checkout-Logik entsteht, die auseinanderlaufen kann.
+    $('#promptTopUpBuy',dialog).addEventListener('click',()=>{dialog.close();$('#buySingleReviewBtn')?.click()});
+    return dialog;
+  }
+  function maybeOfferTopUp(){
+    const low=lowMetrics(cache);
+    if(!low.length||cache?.isAdmin||!window.SiteBriefCloud?.user)return;
+    const period=String(cache?.periodEnd||'');if(!period)return;
+    let seen='';try{seen=localStorage.getItem(TOPUP_OFFER_KEY)||''}catch{}
+    if(seen===period)return;
+    // Nicht ueber ein offenes Fenster legen - dann kommt das Angebot eben beim naechsten Durchlauf.
+    if(document.querySelector('dialog[open]'))return;
+    const dialog=ensureTopUpDialog();
+    const parts=low.map(item=>`${item.remaining} von ${item.limit} ${LABELS[item.key]}`).join(' · ');
+    $('#promptTopUpDetail',dialog).textContent=`Übrig sind ${parts}. Am ${resetDate(cache?.periodEnd)} startet dein Kontingent neu.`;
+    $('#promptTopUpBuy',dialog).textContent=`Monatsvorrat auffüllen · ${topUpPrice()}`;
+    try{localStorage.setItem(TOPUP_OFFER_KEY,period)}catch{}
+    try{dialog.showModal()}catch{}
+  }
+  function renderAll(){syncPlanCards();syncSubscription();syncSaverNotice();syncLowQuotaNotice();maybeOfferTopUp()}
 
   function quotaMessage(metric,summary){const item=summary?.metrics?.[metric],reset=resetDate(summary?.periodEnd);return `Dein Monatskontingent für ${LABELS[metric]||'diese Funktion'} ist aufgebraucht. Am ${reset} wird es automatisch zurückgesetzt.${item?.limit?` Dein Tarif enthält ${item.limit} pro Monat.`:''}`}
   async function checkWebsite(){

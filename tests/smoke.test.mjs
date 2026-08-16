@@ -1389,3 +1389,19 @@ test('the login gate offers three plan tiles with their contents',async()=>{
   assert.match(css,/@media\(max-height:790px\)\{\.gate-plan-points li:nth-child\(3\)\{display:none\}\}/);
   assert.match(css,/@media\(max-height:710px\)[\s\S]{0,120}\.gate-plan-pick>small\{display:none\}/);
 });
+
+// Die 15-Prozent-Marke gab es schon, sie sagte aber nur "wird knapp". Ab jetzt kommt an derselben
+// Marke das Auffuell-Angebot von selbst - einmal je Abrechnungszeitraum und nie ueber einem
+// anderen offenen Fenster.
+test('the top-up offers itself once the quota drops under fifteen percent',async()=>{
+  const src=await text('usage-quota-ui.js');
+  assert.match(src,/const LOW_QUOTA_SHARE=0\.15;/,'the threshold stays at fifteen percent');
+  assert.match(src,/function maybeOfferTopUp\(\)/);
+  assert.match(src,/renderAll\(\)\{[^}]*maybeOfferTopUp\(\)\}/,'the offer runs with every render');
+  assert.match(src,/if\(seen===period\)return;/,'once per billing period, not on every visit');
+  assert.match(src,/if\(document\.querySelector\('dialog\[open\]'\)\)return;/,'never on top of another dialog');
+  assert.match(src,/cache\?\.isAdmin\|\|!window\.SiteBriefCloud\?\.user/,'not for admins and not for signed-out visitors');
+  // Der Kauf haengt am vorhandenen Knopf, damit keine zweite Checkout-Logik entsteht.
+  assert.match(src,/\$\('#buySingleReviewBtn'\)\?\.click\(\)/);
+  assert.match(src,/setAttribute\('aria-label','Monatsvorrat auffüllen'\)/,'the dialog needs a name');
+});

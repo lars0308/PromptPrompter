@@ -162,7 +162,7 @@ test('the saver mode is visible to the user and settable per plan by an administ
   const ui=await text('usage-quota-ui.js'),tokens=await text('admin-tokens-ui.js'),action=await text('api/admin-action.js');
   assert.match(ui,/function syncSaverNotice\(\)/);
   assert.match(ui,/Sparmodus: Dein Token-Kontingent für diesen Monat ist aufgebraucht\./,'never a silent quality drop');
-  assert.match(ui,/renderAll\(\)\{syncPlanCards\(\);syncSubscription\(\);syncSaverNotice\(\);syncLowQuotaNotice\(\)\}/);
+  assert.match(ui,/renderAll\(\)\{syncPlanCards\(\);syncSubscription\(\);syncSaverNotice\(\);syncLowQuotaNotice\(\);maybeOfferTopUp\(\)\}/);
   // The budgets live in the Tokens area, next to the consumption they are meant to limit.
   assert.match(tokens,/const PLANS=\['free','pro','ultimate'\]/,'one budget field per plan');
   assert.match(tokens,/id="adminTokenBudget-\$\{plan\}"/);
