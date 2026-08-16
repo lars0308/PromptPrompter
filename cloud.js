@@ -185,7 +185,7 @@ const Cloud = {
       skills: (skillsRes.data || []).map(x => ({ ...x, sourceFile: x.source_file || null })),
       projects: projectsRes.data || [],
       aiConnections: connectionsRes.data || [],
-      subscription: {...(subscriptionRes.data || {plan:'free',status:'active'}),isAdmin:Boolean(adminRes.data),apiKeySlots:Boolean(adminRes.data)?4:(['active','trialing'].includes(addonRes.data?.status)?Math.max(1,Math.min(4,Number(addonRes.data?.quantity)||1)):0),ownApiKeys:Boolean(adminRes.data)||(['active','trialing'].includes(addonRes.data?.status))},
+      subscription: {...(subscriptionRes.data || {plan:'free',status:'active'}),isAdmin:Boolean(adminRes.data),apiKeySlots:Boolean(adminRes.data)?4:Math.min(4,(subscriptionRes.data?.plan==='ultimate'&&['active','trialing'].includes(subscriptionRes.data?.status)?2:0)+(['active','trialing'].includes(addonRes.data?.status)?Math.max(1,Math.min(4,Number(addonRes.data?.quantity)||1)):0)),ownApiKeys:Boolean(adminRes.data)||(subscriptionRes.data?.plan==='ultimate'&&['active','trialing'].includes(subscriptionRes.data?.status))||(['active','trialing'].includes(addonRes.data?.status))},
       // Ohne Profilzeile greifen die Angaben aus der Registrierung: sie liegen in den
       // Nutzer-Metadaten, weil vor der bestätigten E-Mail niemand in die Tabelle schreiben darf.
       userProfile:userProfileRes.data

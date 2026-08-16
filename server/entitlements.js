@@ -28,9 +28,14 @@ async function getEntitlements(req){
   const paidPlan=active&&['pro','ultimate'].includes(subscription?.plan)?subscription.plan:'free';
   const addonActive=apiAddon?.addon==='own_api_keys'&&['active','trialing'].includes(apiAddon?.status);
   const plan=isAdmin?'ultimate':paidPlan;
-  // One bought slot, one provider the account may store a key for. Nothing is included in a plan
-  // any more - the slots are the product.
-  const apiKeySlots=isAdmin?MAX_API_KEY_SLOTS:addonActive?Math.max(1,Math.min(MAX_API_KEY_SLOTS,Number(apiAddon?.quantity)||1)):0;
+  // Ultimate enthaelt zwei eigene KI-Verbindungen. Genau das sagt die Tarifkarte zu ("2 eigene
+  // KI-Verbindungen inklusive"), waehrend hier bis eben gar nichts im Tarif enthalten war: ein
+  // Ultimate-Konto stand ohne zusaetzlich gekauftes Add-on mit null Slots da und konnte keinen
+  // eigenen Schluessel hinterlegen. Ein trotzdem gebuchtes Add-on kommt oben drauf, gedeckelt
+  // bei MAX_API_KEY_SLOTS - wer nachkauft, verliert das Enthaltene nicht.
+  const includedSlots=plan==='ultimate'?2:0;
+  const addonSlots=addonActive?Math.max(1,Math.min(MAX_API_KEY_SLOTS,Number(apiAddon?.quantity)||1)):0;
+  const apiKeySlots=isAdmin?MAX_API_KEY_SLOTS:Math.min(MAX_API_KEY_SLOTS,includedSlots+addonSlots);
   const ownApiKeys=apiKeySlots>0;
   return {plan,isAdmin,ownApiKeys,apiKeySlots,maxConcepts:plan==='ultimate'?5:plan==='pro'?4:3};
 }
