@@ -64,13 +64,14 @@
         margin-top:auto!important;min-height:56px!important;
         border:1px solid var(--line)!important;background:var(--surface-soft)!important;
       }
-      /* app.js hängt unter "Profil" eine zweite Zeile mit dem angemeldeten Konto. Seit der
-         Eintrag ein Flex-Element ist, stand sie als zweites Element in derselben Zeile und wurde
-         auf null Breite gequetscht - also war nirgends mehr zu sehen, wer angemeldet ist. Sie
-         bekommt eine eigene Zeile zurück. */
-      html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){flex-wrap:wrap!important;align-content:center!important;padding-top:8px!important;padding-bottom:8px!important}
+      /* app.js hängt unter "Profil" eine zweite Zeile mit dem angemeldeten Konto. Der Eintrag war
+         (wie jeder Menüpunkt) ein Flex-Element - flex-wrap:wrap sollte der zweiten Zeile Platz
+         verschaffen, hat "Profil" (den ersten, textknoten-artigen Eintrag) aber aus seiner eigenen
+         Box herausrutschen lassen, sichtbar links außerhalb des Rahmens. Reiner Blockfluss kennt
+         dieses Problem nicht: Text und die volle Zeile darunter stapeln sich einfach normal. */
+      html.prompt-full-redesign .topbar-menu #accountBtn:not([hidden]){display:block!important;padding-top:12px!important;padding-bottom:12px!important}
       html.prompt-full-redesign .topbar-menu #accountBtn .account-btn-meta{
-        display:block!important;flex:0 0 100%!important;width:100%!important;margin-top:2px!important;
+        display:block!important;width:100%!important;margin-top:3px!important;
         color:var(--muted)!important;font-size:10px!important;font-weight:600!important;
         overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;
       }

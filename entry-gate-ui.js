@@ -101,17 +101,38 @@
       .gate-highlights b{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-size:11px;font-weight:850}
       .gate-highlights strong{display:block;font-size:13px}
       .gate-highlights small{display:block;margin-top:2px;color:var(--muted);font-size:11px;line-height:1.5}
-      .gate-plans-pick{display:block;width:100%;padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);text-align:left;transition:border-color .16s ease,background .16s ease,transform .16s ease}
-      .gate-plans-pick:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface));transform:translateY(-1px)}
-      .gate-plans-copy{display:block;min-width:0}
-      .gate-plans-pick span,.gate-plans-pick strong,.gate-plans-pick small{display:block}
-      .gate-plans-pick .gate-plans-kicker{font-size:8px;font-weight:800;letter-spacing:.12em;color:var(--accent)}
-      .gate-plans-pick strong{margin:4px 0 3px;font-size:14px}
-      .gate-plans-pick small{color:var(--muted);font-size:9px;line-height:1.45}
-      .gate-plans-tiers{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
-      .gate-plans-tiers i{padding:5px 10px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:99px;background:var(--surface);color:var(--ink);font-size:9px;font-style:normal;font-weight:750;white-space:nowrap}
+      /* Drei eigenständige Kacheln statt einer Sammelkarte, die erst im Tarifvergleich alles
+         zeigt - so steht der Vergleich direkt auf der Einstiegsseite, links neben der Konsole. */
+      .gate-plan-list{display:grid;gap:12px;width:100%}
+      .gate-plan-pick{display:block;width:100%;padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);text-align:left;transition:border-color .16s ease,background .16s ease,transform .16s ease}
+      .gate-plan-pick:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface));transform:translateY(-1px)}
+      .gate-plan-pick.featured{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+      .gate-plan-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+      .gate-plan-head strong{font-size:14px}
+      .gate-plan-head b{color:var(--accent);font-size:13px;font-weight:800;white-space:nowrap}
+      .gate-plan-pick small{display:block;margin-top:5px;color:var(--muted);font-size:11px;line-height:1.45}
+      .gate-plans-more{display:block;width:100%;padding:6px 0 2px;border:0;background:none;color:var(--muted);font-size:11px;text-align:center}
+      .gate-plans-more:hover{color:var(--accent)}
       .gate-theme-pick{margin-top:2px;display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--muted);font-size:9px}
       .gate-theme-pick:hover{color:var(--ink)}
+      /* "Anmelden" setzt das Formular jetzt als eigenständiges Pop-up über die weiterhin
+         sichtbare Einstiegsseite - dieselbe Optik wie jeder andere Dialog in der App, statt es
+         an derselben Stelle nach unten zu schieben. #accountDialog trägt die ID mit, damit diese
+         Regel unabhängig von Quellreihenfolge über die pauschale display:none-Regel gewinnt. */
+      #accountDialog.guest-gate.gate-auth-open .auth-layout{
+        display:flex!important;position:fixed;inset:0;z-index:70;align-items:center;justify-content:center;
+        padding:20px;margin:0;background:rgba(8,12,16,.6);
+        backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+        animation:gateAuthIn .18s ease both;
+      }
+      @keyframes gateAuthIn{from{opacity:0}to{opacity:1}}
+      #accountDialog.guest-gate.gate-auth-open .auth-layout>.auth-form-card{
+        position:relative;width:min(440px,100%);max-height:min(88vh,720px);overflow:auto;margin:0;
+        box-shadow:0 40px 100px rgba(0,0,0,.45);
+      }
+      #accountDialog.guest-gate.gate-auth-open .auth-layout>.auth-access-card{display:none!important}
+      .gate-auth-close{position:absolute;top:14px;right:14px;display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--muted);font-size:18px;line-height:1;cursor:pointer}
+      .gate-auth-close:hover{color:var(--ink);border-color:var(--accent)}
       /* The collapsed gate stretches .account-body to the full dialog height and pins the legal
          row to the bottom with margin-top:auto. Picking "Anmelden"/"Registrieren" swaps in the
          two-column auth-layout, but that layout never got the same treatment - on a dialog taller
@@ -162,11 +183,10 @@
         .gate-guest-note{text-align:left;font-size:11px}
         .gate-login-pick{font-size:13px}
         .gate-guest-btn{min-height:44px;font-size:13.5px;border-radius:12px;padding:0 22px}
-        .gate-plans-pick{padding:18px 22px;border-radius:16px}
-        .gate-plans-pick .gate-plans-kicker{font-size:9px}
-        .gate-plans-pick strong{font-size:16px;margin:6px 0 4px}
-        .gate-plans-pick small{font-size:11px}
-        .gate-plans-tiers i{font-size:11px;padding:6px 13px}
+        .gate-plan-pick{padding:18px 22px;border-radius:16px}
+        .gate-plan-head strong{font-size:16px}
+        .gate-plan-pick small{font-size:11px}
+        .gate-plans-more{font-size:12px}
         .gate-theme-pick{font-size:11px}
       }
       /* Zwischen 821 und 960 bleibt eine Spalte, aber das Bild darf mit. */
@@ -188,7 +208,14 @@
     const box=document.createElement('div');box.id='gateActions';
     box.innerHTML=''
       +'<div class="gate-cta"><p class="gate-guest-note">Kostenlos testen läuft ohne Konto: drei vollständige Durchläufe, danach jederzeit upgradebar.</p></div>'
-      +'<button type="button" class="gate-plans-pick" id="gatePlansPick"><span class="gate-plans-copy"><span class="gate-plans-kicker">ABO ABSCHLIESSEN</span><strong>Alle drei Tarife im Vergleich</strong><small>Kostenlos, Pro und Ultimate nebeneinander – mit allen Leistungen und Preisen.</small><span class="gate-plans-tiers"><i>Kostenlos 0 €</i><i id="gateProTier">Pro 15,99 €</i><i id="gateUltimateTier">Ultimate 25,99 €</i></span></span></button>'
+      // Drei eigene Kacheln statt einer Sammelkarte - der Vergleich steht direkt hier, links
+      // neben der Konsole. "Alle Tarife ansehen" bleibt daneben für alle Leistungsdetails.
+      +'<div class="gate-plan-list" id="gatePlanList">'
+      +'<button type="button" class="gate-plan-pick" data-gate-plan="free"><span class="gate-plan-head"><strong>Kostenlos</strong><b>0 €</b></span><small>Drei Richtungen, Master-Prompt und Projektbericht.</small></button>'
+      +'<button type="button" class="gate-plan-pick featured" data-gate-plan="pro"><span class="gate-plan-head"><strong>Pro</strong><b id="gateProPrice">15,99 €</b></span><small>Prüfung, Module, Skills, Unterlagen und direkte Vorschau.</small></button>'
+      +'<button type="button" class="gate-plan-pick" data-gate-plan="ultimate"><span class="gate-plan-head"><strong>Ultimate</strong><b id="gateUltimatePrice">25,99 €</b></span><small>Alle Agenten, eigene KI-Verbindungen und GitHub.</small></button>'
+      +'</div>'
+      +'<button type="button" class="gate-plans-more" id="gatePlansMore">Alle Tarife im Vergleich ansehen →</button>'
       +'<button type="button" class="gate-theme-pick" id="gateThemePick">Anderes Farbschema verwenden</button>';
     hero.insertAdjacentElement('afterend',box);
 
@@ -211,13 +238,58 @@
       +'<span class="gate-shot-note gate-shot-note-foot"><i></i>Ablauf und Richtungen</span>');
     box.insertAdjacentElement('afterend',wrap);
     rotateShot(shot);
-    const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
     // Die beiden Kopfzeilen-Knöpfe liegen in .gate-top, die übrigen in #gateActions - deshalb
     // wird hier im Dokument gesucht statt in einem der beiden Kästen.
-    $('#gateSignInPick',top).addEventListener('click',reveal);
+    $('#gateSignInPick',top).addEventListener('click',openAuthPopup);
     $('#gateGuestBtn',top).addEventListener('click',()=>$('#guestContinueBtn')?.click());
-    $('#gatePlansPick',box).addEventListener('click',()=>openPlansFromGate());
+    $('#gatePlanList',box).addEventListener('click',e=>{
+      const pick=e.target.closest('[data-gate-plan]');if(!pick)return;
+      pickGatePlan(pick.dataset.gatePlan);
+    });
+    $('#gatePlansMore',box).addEventListener('click',()=>openPlansFromGate());
     $('#gateThemePick',box).addEventListener('click',()=>$('#themeToggleBtn')?.click());
+  }
+
+  // "Anmelden" setzt das Formular als Pop-up über die Einstiegsseite statt sie zu ersetzen - die
+  // Karte selbst bleibt exakt die im HTML hinterlegte (gleiche Handler, gleiches Verhalten nach
+  // dem Absenden), nur ihre Hülle bekommt für diesen Moment eine feste Position und einen Schleier
+  // dahinter.
+  function ensureAuthClose(){
+    const card=$('.auth-form-card');if(!card||$('.gate-auth-close',card))return;
+    const close=document.createElement('button');
+    close.type='button';close.className='gate-auth-close';close.setAttribute('aria-label','Schließen');close.textContent='×';
+    close.addEventListener('click',closeAuthPopup);
+    card.insertAdjacentElement('afterbegin',close);
+  }
+  function openAuthPopup(){
+    const dialog=$('#accountDialog');if(!dialog)return;
+    ensureAuthClose();
+    dialog.classList.add('gate-auth-open');
+    setTimeout(()=>$('#authEmail')?.focus(),80);
+  }
+  function closeAuthPopup(){$('#accountDialog')?.classList.remove('gate-auth-open')}
+  // Kostenlos startet sofort als Gast. Pro/Ultimate öffnen dasselbe Pop-up wie "Anmelden" und
+  // rufen die echte pickAuthPlan() aus app.js über window.PromptAiAuthPlan auf - so bleibt die
+  // Tarif-Vormerkung (pendingAuthPlan) an einer einzigen Stelle statt hier zweites Mal nachgebaut.
+  function pickGatePlan(plan){
+    if(plan==='free'){$('#gateGuestBtn')?.click();return}
+    openAuthPopup();
+    // .auth-plan-grid und seine Knöpfe entfernt ui-regression-fixes.js aus dem DOM, sobald das
+    // Formular einmal sichtbar war - deshalb über die von app.js freigegebene Funktion selbst,
+    // nicht über einen Klick auf einen Knopf, der oft schon weg ist.
+    window.PromptAiAuthPlan?.pick(plan);
+  }
+  function bindAuthPopupDismiss(){
+    if(document.__gateAuthDismissBound)return;document.__gateAuthDismissBound=true;
+    document.addEventListener('click',e=>{
+      const dialog=$('#accountDialog');if(!dialog||!dialog.classList.contains('gate-auth-open'))return;
+      if(e.target.closest('.auth-form-card'))return;
+      if(e.target.closest('.auth-layout'))closeAuthPopup();
+    });
+    document.addEventListener('keydown',e=>{
+      if(e.key!=='Escape')return;
+      const dialog=$('#accountDialog');if(dialog?.classList.contains('gate-auth-open'))closeAuthPopup();
+    });
   }
 
   // Der Satz im Bild wechselt, damit die Reihe an Fällen sichtbar wird statt eines einzigen.
@@ -242,8 +314,8 @@
   // because a characterData change is not a childList or attribute mutation.
   function syncTierChips(){
     const pro=$('#proPriceLabel')?.textContent?.trim(),ultimate=$('#ultimatePriceLabel')?.textContent?.trim();
-    const chip=(id,label,price)=>{const node=$(id);if(!node||!price)return;const text=`${label} ${price.replace(/\s*\/\s*Monat$/,'').trim()}`;if(node.textContent!==text)node.textContent=text};
-    chip('#gateProTier','Pro',pro);chip('#gateUltimateTier','Ultimate',ultimate);
+    const chip=(id,price)=>{const node=$(id);if(!node||!price)return;const text=price.replace(/\s*\/\s*Monat$/,'').trim();if(node.textContent!==text)node.textContent=text};
+    chip('#gateProPrice',pro);chip('#gateUltimatePrice',ultimate);
   }
   function watchPricing(){
     for(const id of ['#proPriceLabel','#ultimatePriceLabel']){
@@ -265,7 +337,7 @@
 
   function resetExpansion(){
     const dialog=$('#accountDialog');if(!dialog)return;
-    if(!dialog.classList.contains('guest-gate'))dialog.classList.remove('gate-expanded');
+    if(!dialog.classList.contains('guest-gate')){dialog.classList.remove('gate-expanded');dialog.classList.remove('gate-auth-open')}
   }
 
   // Die Tarifseite lässt sich von mehreren Stellen öffnen (Einstiegsseite, "Tarife ansehen" im
@@ -285,7 +357,7 @@
     });
   }
 
-  function settle(){styles();ensureGateActions();watchPricing();syncTierChips();resetExpansion();guardGateReturn()}
+  function settle(){styles();ensureGateActions();watchPricing();syncTierChips();resetExpansion();guardGateReturn();bindAuthPopupDismiss()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
   function init(){settle();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});window.addEventListener('promptai:access',schedule);window.addEventListener('pageshow',schedule)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();

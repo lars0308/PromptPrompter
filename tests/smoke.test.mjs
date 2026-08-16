@@ -237,10 +237,12 @@ test('the top menu cannot republish entries the app has hidden',async()=>{
   assert.match(src,/\.topbar-menu>button:not\(\[hidden\]\)\{display:flex!important/);
   assert.doesNotMatch(src,/\.topbar-menu>button\{display:flex!important/,'the unguarded rule overrode the hidden attribute');
 });
-test('the login page opens the tier comparison and gets the visitor back afterwards',async()=>{
+test('the login page shows the three plan cards and gets the visitor back afterwards',async()=>{
   const gate=await text('entry-gate-ui.js'),fix=await text('ui-regression-fixes.js');
-  assert.match(gate,/class="gate-plans-copy"/,'all copy shares one grid cell so the arrow cannot land between the lines');
-  assert.match(gate,/class="gate-plans-tiers"/);
+  assert.match(gate,/class="gate-plan-list" id="gatePlanList"/,'three standalone cards, not a single summary tile');
+  assert.match(gate,/data-gate-plan="free"/);
+  assert.match(gate,/data-gate-plan="pro"/);
+  assert.match(gate,/data-gate-plan="ultimate"/);
   assert.match(gate,/function openPlansFromGate\(\)/);
   assert.match(gate,/plans\.addEventListener\('close',\(\)=>\{const dialog=\$\('#accountDialog'\);if\(dialog&&!dialog\.open\)\{try\{dialog\.showModal\(\)\}catch\{\}\}\},\{once:true\}\)/,'closing the plans dialog must return to the login page');
   assert.doesNotMatch(gate,/\.gate-plans-pick:after\{content:"→"/,'the arrow is its own element now, not a grid-row-spanning pseudo element');

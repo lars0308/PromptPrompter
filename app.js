@@ -389,6 +389,11 @@
     el.authMessage.textContent=`Lege zuerst ein Konto an oder melde dich an, dann geht es direkt weiter zu ${plan==="ultimate"?"Ultimate":"Pro"}.`;
     el.authMessage.className="auth-message";
   }
+  // ui-regression-fixes.js entfernt .auth-plan-grid samt seiner Knöpfe aus dem DOM (compactPlans),
+  // sobald das Formular einmal sichtbar war - andere Ebenen wie die Einstiegsseite können die
+  // echte Tarif-Vormerkung deshalb nicht mehr über einen Klick auf diese Knöpfe auslösen und
+  // brauchen einen direkten Zugriff auf dieselbe Funktion.
+  window.PromptAiAuthPlan={pick:pickAuthPlan};
   async function continuePendingAuthPlan(){
     if(!pendingAuthPlan)return;
     const plan=pendingAuthPlan;pendingAuthPlan=null;
@@ -598,7 +603,11 @@
       // "Profil" alone never says which account is active. The second line names it; CSS shows it
       // only inside the dropdown menu, where there is room for two lines.
       const signedInAs=[(state.userProfile.displayName||'').trim(),state.cloud.user.email||''].filter(Boolean).join(' · ');
-      el.accountBtn.innerHTML=`Profil${signedInAs?`<small class="account-btn-meta">angemeldet als ${escapeHtml(signedInAs)}</small>`:''}`;
+      // "Profil" as a bare text node (statt in einem Element) ließ sich im mehrzeiligen
+      // Flex-Layout der Schublade (flex-wrap + align-content:center) nicht zuverlässig
+      // einordnen - es landete zeilenweise außerhalb des Rahmens. Ein <span> gibt der Zeile
+      // dieselbe eigene Box wie die zweite Zeile darunter.
+      el.accountBtn.innerHTML=`<span>Profil</span>${signedInAs?`<small class="account-btn-meta">angemeldet als ${escapeHtml(signedInAs)}</small>`:''}`;
       const welcomeAccount=document.getElementById('welcomeAccountBtn');if(welcomeAccount)welcomeAccount.textContent='Profil & Synchronisierung';
       el.accountLoggedOut.hidden=true;el.accountLoggedIn.hidden=false;
       el.accountEmail.textContent=state.cloud.user.email||"Angemeldet";el.accountUserId.textContent=state.cloud.user.id||"";
