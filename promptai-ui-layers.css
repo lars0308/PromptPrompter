@@ -1091,7 +1091,9 @@ html.prompt-home-surface{--home-bg:#f4f7fa;--home-card:#fff;--home-panel:#111923
       .prompt-budget-bar{flex:0 0 auto;position:relative;width:34px;height:5px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}
       .prompt-budget-bar i{display:block;height:100%;border-radius:3px;background:var(--home-blue-deep,#68b9ed);transition:width .3s ease}
       .prompt-budget-bar[data-low="1"] i{background:var(--home-orange,#ff9d78)}
-      .prompt-setup-icon{flex:0 0 auto;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+      /* Ohne die Beschriftung "Settings" traegt das Zahnrad die Zeile allein - bei 14px war es
+   daneben ein Punkt. Es steht jetzt so gross wie das Plus daneben. */
+.prompt-setup-icon{flex:0 0 auto;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
       .prompt-setup-tag{flex:0 0 auto;color:#8fd0f5;font:850 8.5px/1.4 ui-monospace,monospace;font-style:normal;letter-spacing:.1em;text-transform:uppercase}
       @media(max-width:700px){.prompt-setup-tag{display:none}}
       .prompt-setup-line .mode-chevron{flex:0 0 auto;width:6px;height:6px;margin:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}

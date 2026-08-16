@@ -1316,3 +1316,14 @@ test('the settings sheet shows one area at a time',async()=>{
   assert.match(css,/\.prompt-setup-panes>\.prompt-setup-section\{display:none/);
   assert.match(css,/\.prompt-setup-sheet\[data-setup-view="skills"\] \[data-setup-pane="skills"\]/);
 });
+
+// Dieselbe Falle wie im Topbar-Menue: die App klickt selbst, und diese Klicks haben das gerade
+// geoeffnete Menue mitgerissen. Alle drei Aussenklick-Handler pruefen jetzt isTrusted.
+test('only real clicks close the console menus',async()=>{
+  const src=await text('promptai-home-final.js');
+  const handlers=[...src.matchAll(/document\.addEventListener\('click',event=>\{([\s\S]{0,600}?)\n    \}\);/g)]
+    .map(m=>m[1]).filter(body=>/promptModeMenu|promptAttachMenu/.test(body));
+  assert.equal(handlers.length,2,'both outside-click handlers must be found');
+  for(const body of handlers) assert.match(body,/if\(!event\.isTrusted\)return;/,'a synthetic click must not close the menu');
+  assert.doesNotMatch(src,/prompt-setup-tag" aria-hidden="true">Settings/,'the Settings caption is gone; the gear carries the line');
+});
