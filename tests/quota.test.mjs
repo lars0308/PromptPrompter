@@ -80,7 +80,7 @@ test('everything about tokens lives in one admin area: consumption, plan budgets
 });
 
 test('token budgets and the extra tokens of a single account are saved on their own',async()=>{
-  const action=await text('api/admin-action.js'),overview=await text('api/admin-overview.js'),server=await text('server/quota.js'),migration=await text('supabase/migrations/20260815_add_token_bonus.sql');
+  const action=await text('api/admin-action.js'),overview=await text('api/admin-overview.js'),server=await text('server/quota.js'),migration=await text('supabase/migrations/20260815_add_token_bonus.sql'),ui=await text('admin-tokens-ui.js');
   assert.match(action,/action==='save-token-budgets'/);
   assert.match(action,/action==='set-token-bonus'/);
   assert.match(action,/Math\.min\(2000000000,Number\(plans\[plan\]\)\|\|0\)/,'budgets are clamped');
@@ -88,7 +88,10 @@ test('token budgets and the extra tokens of a single account are saved on their 
   assert.match(server,/const bonus=await tokenBonus\(user\.id\),limit=planLimit\+bonus;/,'extra tokens postpone the downgrade');
   assert.match(overview,/monthly_token_bonus/);
   assert.match(overview,/tokenEvents,tokenPeriod/,'the token area counts the running calendar month');
-  assert.match(overview,/total_tokens=gt\.0&created_at=gte\./);
+  assert.match(overview,/success=eq\.true&created_at=gte\./);
+  assert.match(overview,/total_tokens,key_source,created_at/);
+  assert.match(ui,/const budgetUnits=row=>row\?\.key_source==='account'\?0:/,'own-key calls must not move the cost brake');
+  assert.match(ui,/COST_EQUIVALENT=\{'preview-image':5000,'sandbox-build':10000\}/,'non-token costs must match the server');
 });
 
 test('administrators can test without being blocked while normal accounts are enforced',async()=>{

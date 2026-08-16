@@ -26,7 +26,9 @@ module.exports=async function(req,res){
       listAll('sitebrief_admins','user_id').catch(()=>[]),
       // Bodies stay out of the overview - they are loaded per version when the editor opens one.
       listAll('sitebrief_prompt_templates','id,prompt_key,label,version,active,updated_at','&order=prompt_key.asc,version.desc').catch(()=>[]),
-      listAll('sitebrief_usage_events','user_id,action,provider,model,success,prompt_tokens,completion_tokens,total_tokens,created_at',`&total_tokens=gt.0&created_at=gte.${encodeURIComponent(tokenPeriod.start)}&order=created_at.desc&limit=5000`).catch(()=>[])
+      // Include zero-token image and sandbox events: the live budget gives those calls a fixed
+      // cost equivalent, so omitting them here made the admin display disagree with routing.
+      listAll('sitebrief_usage_events','user_id,action,provider,model,success,prompt_tokens,completion_tokens,total_tokens,key_source,created_at',`&success=eq.true&created_at=gte.${encodeURIComponent(tokenPeriod.start)}&order=created_at.desc&limit=5000`).catch(()=>[])
     ]);
     const subMap=new Map(subscriptions.map(x=>[x.user_id,x])),profileMap=new Map(profiles.map(x=>[x.user_id,x])),stateMap=new Map(states.map(x=>[x.user_id,x])),adminIds=new Set((adminRows||[]).map(x=>x.user_id));
     const projectCounts=new Map(),usageCounts=new Map();

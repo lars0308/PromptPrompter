@@ -6,7 +6,8 @@
   }catch{}
   try{
     const internalReload=sessionStorage.getItem('sitebrief-v6-continue-workflow')==='1'||Boolean(sessionStorage.getItem('prompt-ai-mode-handoff-v1'));
-    if(!internalReload)document.documentElement.classList.add('prompt-app-booting');
+    document.documentElement.classList.add('prompt-full-redesign');
+    if(!internalReload)document.documentElement.classList.add('prompt-app-booting','prompt-home-surface');
     // Starting a project reloads the page, and the welcome page painted for a moment before the
     // handoff overlay existed - a flash of the screen the visitor just left. Hiding it from the
     // very first paint costs nothing: this reload is always on its way into the workflow.

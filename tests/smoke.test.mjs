@@ -133,11 +133,11 @@ test('the home page puts the four secondary tools in one row and only sells to f
   assert.match(home,/const plans=\$\('#showPlansBtn'\);if\(plans\)plans\.hidden=!free;/,'paid plans and admins have nothing to subscribe to here');
   assert.doesNotMatch(home,/free-workflow-upgrade/,'the removed fixed upsell bar leaves no styles behind');
 });
-test('the entry gate fills the page and its plans card carries no arrow button',async()=>{
+test('the entry gate fills the page and its tariff list carries no arrow button',async()=>{
   const gate=await text('entry-gate-ui.js');
   assert.doesNotMatch(gate,/gate-plans-arrow/,'the blue circle with the arrow is gone');
   assert.match(gate,/\.account-body\{display:flex;flex-direction:column;min-height:100dvh/);
-  assert.match(gate,/#gateActions\{display:grid;justify-items:stretch;gap:18px;max-width:520px;margin-top:auto;margin-bottom:auto/,'leftover height is split above and below the actions');
+  assert.match(gate,/#gateActions\{display:grid;justify-items:stretch;gap:14px;max-width:620px;margin-top:auto;margin-bottom:auto/,'leftover height is split above and below the actions');
   assert.match(gate,/#gateLegalRow\{margin-top:auto/,'the legal row sits on the bottom edge');
 });
 test('the login page carries its two entry points in the header and the headline across the full width',async()=>{
@@ -242,11 +242,16 @@ test('the top menu cannot republish entries the app has hidden',async()=>{
 });
 test('the login page opens the tier comparison and gets the visitor back afterwards',async()=>{
   const gate=await text('entry-gate-ui.js'),fix=await text('ui-regression-fixes.js');
-  assert.match(gate,/class="gate-plans-copy"/,'all copy shares one grid cell so the arrow cannot land between the lines');
-  assert.match(gate,/class="gate-plans-tiers"/);
+  assert.match(gate,/class="gate-plan-list"/,'the gate now shows the three tiers as a direct vertical list');
+  assert.match(gate,/data-gate-plan="free"/);
+  assert.match(gate,/data-gate-plan="pro"/);
+  assert.match(gate,/data-gate-plan="ultimate"/);
+  assert.match(gate,/function pickGatePlan\(plan\)/);
+  assert.match(gate,/#startUltimateCheckoutBtn/);
+  assert.doesNotMatch(gate,/gateThemePick|Anderes Farbschema verwenden/);
   assert.match(gate,/function openPlansFromGate\(\)/);
   assert.match(gate,/plans\.addEventListener\('close',\(\)=>\{const dialog=\$\('#accountDialog'\);if\(dialog&&!dialog\.open\)\{try\{dialog\.showModal\(\)\}catch\{\}\}\},\{once:true\}\)/,'closing the plans dialog must return to the login page');
-  assert.doesNotMatch(gate,/\.gate-plans-pick:after\{content:"→"/,'the arrow is its own element now, not a grid-row-spanning pseudo element');
+  assert.doesNotMatch(gate,/\.gate-plans-pick:after\{content:"→"/,'the removed comparison card must not bring its arrow back');
   assert.doesNotMatch(fix,/\$\('#accountDialog'\)\?\.close\(\);setTimeout\(\(\)=>\$\('#plansDialog'\)\?\.showModal\(\)/,'the login page stays open underneath instead of being closed');
 });
 test('reaching the modules step never interrupts a free user with a modal',async()=>{
@@ -803,7 +808,7 @@ test('modules and skills reach the prompt in every mode, not only in the expert 
   assert.match(app,/if\(state\.mode!=="expert"\)recommendModules\(true\)/);
   // "always active" was only applied when a dropdown in the library changed.
   assert.match(app,/function applyLibraryDefaults\(\)/);
-  assert.match(app,/state\.selectedModuleIds=\[\];state\.selectedSkillIds=\[\];state\.recommendedModuleIds=\[\];\n    applyLibraryDefaults\(\);/,'a new project starts from the library defaults');
+  assert.match(app,/state\.selectedModuleIds=\[\];state\.selectedSkillIds=\[\];state\.recommendedModuleIds=\[\];\r?\n    applyLibraryDefaults\(\);/,'a new project starts from the library defaults');
   assert.match(app,/window\.PromptAiProjectExtras=\{list:projectExtrasList,set:setProjectExtra,active:activeExtraNames\}/);
   // Never a silent activation: the confirmation names what travels with the briefing.
   assert.match(app,/Bausteine & Skills: \$\{activeExtraNames\(\)\.join\(', '\)\|\|'keine aktiv'\}/);
@@ -886,7 +891,7 @@ test('the library holds ten entries per kind in Pro and is open in Ultimate',asy
   assert.match(app,/pro:\{label:"Pro",modes:\["guided","auto"\],libraryItems:10,/);
   assert.match(app,/ultimate:\{label:"Ultimate",modes:\["guided","auto","expert"\],libraryItems:Infinity,/);
   // Editing an existing entry is never blocked - the limit is about how much is stored.
-  assert.match(app,/function libraryFull\(kind,editingId\)\{\n    if\(editingId\)return false;/);
+  assert.match(app,/function libraryFull\(kind,editingId\)\{\r?\n    if\(editingId\)return false;/);
   for(const kind of ['template','module','skill'])assert.ok(app.includes(`libraryFull('${kind}',state.editing.${kind})`),`${kind} is unchecked`);
   assert.match(app,/if\(libraryFull\('skill'\)\)continue;/,'the .md import respects the same limit');
   assert.match(app,/Lösche einen Eintrag, oder schalte mit Ultimate unbegrenzt viele frei\./);
@@ -1214,6 +1219,31 @@ test('the free prompt starts its working animation before the request',async()=>
   assert.match(src,/startWorking\(desc\.length\);/);
   assert.ok(src.indexOf('startWorking(desc.length);')<src.indexOf("fetch('/api/generate'"),'the animation has to start before the fetch');
   assert.match(src,/finally\{stopWorking\(\)/);
+});
+
+test('workflow AI intake and refinement show a full loading surface before their requests',async()=>{
+  const flow=await text('mode-flow-ui.js'),app=await text('app.js'),loader=await text('promptai-loading-v2.js');
+  assert.ok(flow.indexOf("beginTask?.('workflow-intake'")<flow.indexOf("fetch('/api/models'"),'intake loader must start before the request');
+  assert.match(flow,/finally\{clearTimeout\(timer\);intakeBusy=false;window\.PromptAiLoading\?\.endTask\?\.\('workflow-intake'/);
+  assert.ok(app.indexOf("beginTask?.('workflow-refinement'")<app.indexOf('action:"refine"'),'refinement loader must start before the request');
+  assert.match(app,/endTask\?\.\('workflow-refinement'/);
+  assert.match(loader,/window\.PromptAiLoading=\{[\s\S]*beginTask,endTask/);
+});
+
+test('expert mode gives AI questions their own visible step and keeps the inherited brief out of the form',async()=>{
+  const app=await text('app.js'),css=await text('promptai-ui-layers.css');
+  assert.match(app,/function prepareExpertFlow\(\)/);
+  assert.match(app,/qTitle\.textContent=expert\?'Offene Punkte bewusst klären\.'/);
+  assert.match(app,/state\.mode==="expert"&&state\.currentStep===4&&next===5/);
+  assert.match(app,/if\(state\.mode!=="expert"\)el\.clarificationDialog\.showModal\(\)/);
+  assert.match(css,/prompt-expert-has-brief #stepProject>label\.field-large\{display:none/);
+});
+
+test('URLs written in the project description become reference links before leaving step one',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/function importDescriptionUrls\(\)/);
+  assert.match(app,/label:'Aus der Kurzbeschreibung übernommen'/);
+  assert.match(app,/if\(state\.currentStep===1\)\{importDescriptionUrls\(\);/);
 });
 
 // Ein produktiver Stand darf keine eckig geklammerten Platzhalter mehr in den Rechtstexten haben.

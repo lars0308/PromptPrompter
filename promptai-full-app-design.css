@@ -392,7 +392,7 @@ html.prompt-full-redesign .api-addon-card,
 html.prompt-full-redesign .account-tool-card,
 html.prompt-full-redesign .account-support-card{border:1px solid var(--line)!important;border-radius:17px!important;background:var(--surface)!important;box-shadow:var(--shadow-soft)!important;backdrop-filter:none!important}
 html.prompt-full-redesign .gate-guest-btn{border:1px solid var(--accent)!important;border-radius:12px!important;background:var(--accent)!important;color:#07131c!important;box-shadow:none!important}
-html.prompt-full-redesign .gate-plans-pick{border:1px solid var(--line)!important;border-radius:14px!important;background:var(--surface)!important}
+html.prompt-full-redesign .gate-plan-pick{border:1px solid var(--line)!important;border-radius:14px!important;background:var(--surface)!important}
 
 /* Libraries, settings, plans, administration and history */
 html.prompt-full-redesign .library-tabs,
@@ -646,7 +646,7 @@ html.prompt-full-redesign #quickRevisionPrompt{
 
 /* Auth, plans, checkout and subscription */
 html.prompt-full-redesign .auth-plan-grid article,
-html.prompt-full-redesign .gate-plans-pick,
+html.prompt-full-redesign .gate-plan-pick,
 html.prompt-full-redesign .plan-card,
 html.prompt-full-redesign .subscription-card{
   border:1px solid var(--line)!important;
@@ -2098,8 +2098,8 @@ html.prompt-full-redesign .plan-card-fairuse{
     display:flex!important;flex-wrap:wrap!important;justify-content:center!important;
     gap:4px 10px!important;max-width:100%!important;
   }
-  html.prompt-full-redesign .prompt-footer-links .footer-divider{display:none!important}
-  html.prompt-full-redesign .prompt-footer-links .footer-link{font-size:11.5px!important}
+html.prompt-full-redesign .prompt-footer-links .footer-divider{display:none!important}
+html.prompt-full-redesign .prompt-footer-links .footer-link{font-size:11.5px!important}
 }
 
 /* Support: die eigenen Anfragen samt Antwort stehen unter dem Formular, die Antwort abgesetzt.
@@ -2131,3 +2131,17 @@ html.prompt-full-redesign .admin-support-reply{
   background:var(--surface-soft)!important;font-size:12.5px!important;line-height:1.5!important;white-space:pre-line!important;
 }
 html.prompt-full-redesign .admin-support-reply b{display:block!important;margin-bottom:3px!important;font-size:10px!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:var(--mist)!important}
+
+/* Die kompakte Startseite darf die tatsächliche Tippfläche nicht verkleinern. */
+html.prompt-full-redesign #upgradeBtn,
+html.prompt-full-redesign #topbarMenuToggle,
+html.prompt-full-redesign .prompt-latest-action{min-height:44px!important}
+html.prompt-full-redesign .prompt-footer-links .footer-link{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  min-width:44px!important;min-height:44px!important;
+}
+html.prompt-full-redesign.prompt-home-surface .topbar #upgradeBtn{min-height:44px!important}
+html.prompt-full-redesign.prompt-home-surface .topbar #topbarMenuToggle{
+  width:44px!important;height:44px!important;min-height:44px!important;
+}
+html.prompt-full-redesign.prompt-home-surface .prompt-latest .prompt-latest-action{min-height:44px!important}

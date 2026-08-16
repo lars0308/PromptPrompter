@@ -51,13 +51,14 @@
     if(currentMode()==='expert'||intakeBusy)return null;const project=projectPayload();if(project.description.length<20)return null;
     const signature=intakeSignature(),cached=savedIntake();if(cached?.signature===signature){applyIntake(cached.data);return cached.data}
     intakeBusy=true;setStatus('KI analysiert dein Briefing','Projektart, Ziel, Agent, Ausgabe, Regler und Richtungsumfang werden aus deinen Angaben abgeleitet.',true);
+    window.PromptAiLoading?.beginTask?.('workflow-intake',{title:'Briefing wird verstanden',kind:'briefing',inputLength:project.description.length});
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
     try{
       const headers=await authHeaders(),agentOptions=$$('#agentSelector [data-agent]').filter(x=>!x.hidden).map(x=>x.dataset.agent),outputOptions=$$('#outputTargetSelector [data-output]').filter(x=>!x.classList.contains('plan-locked')).map(x=>x.dataset.output);
       const response=await fetch('/api/models',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify({action:'intake',project,typeOptions:options($('#projectType')),goalOptions:options($('#projectGoal')),agentOptions,outputOptions}),signal:controller.signal}),data=await response.json();if(!response.ok)throw new Error(data.error||'KI-Intake nicht verfügbar');
       applyIntake(data);storeIntake(data,signature);setStatus('Briefing verstanden',data.summary||'Die technischen Startwerte wurden automatisch gesetzt.',false);return data;
     }catch(error){const message=error?.name==='AbortError'?'KI-Intake hat zu lange gedauert und wurde abgebrochen.':(error.message||'KI-Intake war nicht erreichbar. Deine Eingaben bleiben vollständig erhalten.');setStatus('Automatik nutzt sichere Standardwerte',message,false);return null}
-    finally{clearTimeout(timer);intakeBusy=false}
+    finally{clearTimeout(timer);intakeBusy=false;window.PromptAiLoading?.endTask?.('workflow-intake',{title:'Briefing ist eingeordnet',kind:'briefing'})}
   }
 
   function activeNext(step){return $(`[data-step-panel="${step}"] .next-btn`)}

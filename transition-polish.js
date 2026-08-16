@@ -1,6 +1,6 @@
 (()=>{
   'use strict';
-  const $=(s,r=document)=>r.querySelector(s);
+  const $=(s,r=document)=>r?.querySelector?.(s)||null;
   let settleTimer=0,settleDeadline=0,cycleTimer=0,activeKind='',pendingFromReferences=false,userExited=false;
   // Once the questions are answered the briefing is done. Without this the same 'Briefing wird
   // geprüft' screen came back after the dialog closed - the same screen twice around one dialog.

@@ -10,7 +10,8 @@
   const monthName=value=>value?new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(value)):'';
   const dayLabel=value=>new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',timeZone:'UTC'}).format(new Date(value));
   const PLANS=['free','pro','ultimate'],PLAN_LABEL={free:'Kostenlos',pro:'Pro',ultimate:'Ultimate'};
-  const ACTION_LABEL={concepts:'Konzepte & Vorschau-Texte','master-prompt':'Master-Prompt',review:'Projektprüfung',refine:'Nachschärfen',website:'Website-Generierung','revision-brief':'Änderungsauftrag','free-prompt':'Freier Prompt','preview-image':'Bildvorschau',generate:'Sonstige Verarbeitung'};
+  const ACTION_LABEL={concepts:'Konzepte & Vorschau-Texte','master-prompt':'Master-Prompt',review:'Projektprüfung',refine:'Nachschärfen',website:'Website-Generierung','revision-brief':'Änderungsauftrag','free-prompt':'Freier Prompt','preview-image':'Bildvorschau','sandbox-build':'Sandbox-Probelauf',generate:'Sonstige Verarbeitung'};
+  const COST_EQUIVALENT={'preview-image':5000,'sandbox-build':10000};
   const state={data:null,search:''};
 
   async function api(payload){
@@ -63,9 +64,9 @@
     const tab=document.createElement('button');tab.type='button';tab.dataset.adminTab='tokens';tab.textContent='Tokens';tabs.appendChild(tab);
     const pane=document.createElement('section');pane.className='admin-pane';pane.dataset.adminPane='tokens';
     pane.innerHTML=`
-      <div class="admin-section-head"><div><span>TOKENS</span><h3>Verbrauch und Budgets</h3><p id="adminTokenPeriod">Alle Zahlen beziehen sich auf den laufenden Kalendermonat. Ein erreichtes Budget sperrt niemanden aus: Die Verarbeitung läuft ab da auf der günstigsten KI des Tarifs weiter, bis der Zähler zurückgesetzt wird.</p></div><button type="button" class="outline-btn mini" id="adminTokenReload">Neu laden</button></div>
+      <div class="admin-section-head"><div><span>KOSTENBREMSE</span><h3>KI-Kosten und Sparmodus</h3><p id="adminTokenPeriod">Das Kostenbudget wird pro Konto und Kalendermonat geprüft. Nur Prompt.ai bezahlte Aufrufe zählen. Ist es erreicht, bleibt die Nutzung verfügbar und wechselt auf die günstigste KI des Tarifs.</p></div><button type="button" class="outline-btn mini" id="adminTokenReload">Neu laden</button></div>
       <div class="admin-token-stats" id="adminTokenStats"></div>
-      <div class="admin-section-head" style="margin-top:22px"><div><span>ANPASSUNG</span><h3>Monatsbudget pro Tarif</h3><p>Anzahl der Tokens, die ein Konto dieses Tarifs pro Kalendermonat auf der besten KI verbrauchen darf. <strong>0 bedeutet: kein Limit.</strong></p></div></div>
+      <div class="admin-section-head" style="margin-top:22px"><div><span>PRO KONTO</span><h3>Kostenbudget pro Tarif</h3><p>Bis zu diesem Wert nutzt ein Konto die bevorzugte KI. Bildvorschauen und Sandbox-Läufe erhalten einen festen Kostenwert. <strong>0 bedeutet: kein Sparmodus.</strong> Die harten Nutzungslimits stehen unter Benutzer.</p></div></div>
       <div class="admin-token-budgets" id="adminTokenBudgets"></div>
       <button type="button" class="solid-btn admin-token-save" id="adminTokenSaveBudgets">Budgets speichern</button>
       <details class="admin-fold"><summary><div><span>MODELLE</span><strong>Verbrauch nach KI-Modell</strong></div><em data-token-count="models"></em><i aria-hidden="true">+</i></summary><div class="admin-fold-body"><div class="admin-token-rows" id="adminTokenModels"></div></div></details>
@@ -87,12 +88,14 @@
 
   // The month slice is the same window the budgets reset in. Older payloads without it fall back to
   // the general usage list so the tab still shows something instead of an empty page.
-  const events=()=>(Array.isArray(state.data?.tokenEvents)?state.data.tokenEvents:(state.data?.usage||[])).filter(row=>Number(row.total_tokens)>0);
+  const events=()=>Array.isArray(state.data?.tokenEvents)?state.data.tokenEvents:(state.data?.usage||[]);
+  const aiTokens=row=>Math.max(0,Number(row?.total_tokens)||0);
+  const budgetUnits=row=>row?.key_source==='account'?0:aiTokens(row)+(COST_EQUIVALENT[row?.action]||0);
   const planBudget=plan=>{const row=(state.data?.quotaLimits||[]).find(x=>x.plan===plan);return Math.max(0,Number(row?.monthly_tokens)||0)};
   const bonusOf=user=>Math.max(0,Number(user?.adminState?.monthly_token_bonus)||0);
   function accountRows(){
     const used=new Map();
-    for(const row of events())used.set(row.user_id,(used.get(row.user_id)||0)+(Number(row.total_tokens)||0));
+    for(const row of events())used.set(row.user_id,(used.get(row.user_id)||0)+budgetUnits(row));
     return (state.data?.users||[]).map(user=>{
       const plan=user.subscription?.plan||'free',limit=planBudget(plan),bonus=bonusOf(user),total=limit?limit+bonus:0,tokens=used.get(user.id)||0;
       // Administrators are never downgraded, so they never count as being in saver mode.
@@ -103,18 +106,19 @@
   function renderStats(){
     const host=$('#adminTokenStats');if(!host)return;
     const rows=events();
-    const total=rows.reduce((sum,row)=>sum+(Number(row.total_tokens)||0),0);
+    const total=rows.reduce((sum,row)=>sum+aiTokens(row),0),cost=rows.reduce((sum,row)=>sum+budgetUnits(row),0);
     const prompt=rows.reduce((sum,row)=>sum+(Number(row.prompt_tokens)||0),0);
     const completion=rows.reduce((sum,row)=>sum+(Number(row.completion_tokens)||0),0);
     const accounts=accountRows(),saver=accounts.filter(x=>x.saver).length,active=accounts.filter(x=>x.tokens>0).length;
     const period=state.data?.tokenPeriod?.start;
     const note=$('#adminTokenPeriod');
-    if(note&&period)note.textContent=`Alle Zahlen beziehen sich auf ${monthName(period)}. Ein erreichtes Budget sperrt niemanden aus: Die Verarbeitung läuft ab da auf der günstigsten KI des Tarifs weiter, bis der Zähler am Monatsanfang zurückgesetzt wird.`;
+    if(note&&period)note.textContent=`Kostenbremse für ${monthName(period)}: pro Konto, nur für von Prompt.ai bezahlte Nutzung. Eigene API-Keys zählen nicht. Nach Erreichen des Budgets läuft die Verarbeitung mit der günstigsten KI weiter.`;
     host.innerHTML=[
-      ['Verbraucht',num(total),'Tokens in diesem Monat'],
+      ['Kostenbudget genutzt',num(cost),'systembezahlte Tokens und Kostenwerte'],
+      ['KI-Tokens gesamt',num(total),'einschließlich eigener API-Keys'],
       ['Eingabe',num(prompt),total?`${Math.round(prompt/total*100)} % des Verbrauchs`:'noch nichts erfasst'],
       ['Ausgabe',num(completion),total?`${Math.round(completion/total*100)} % des Verbrauchs`:'noch nichts erfasst'],
-      ['KI-Aufrufe',num(rows.length),rows.length?`Ø ${num(Math.round(total/rows.length))} Tokens pro Aufruf`:'noch keine Aufrufe'],
+      ['Erfasste Aufrufe',num(rows.length),'erfolgreiche KI-, Bild- und Sandbox-Aufrufe'],
       ['Aktive Konten',num(active),`von ${num((state.data?.users||[]).length)} Konten`],
       ['Im Sparmodus',num(saver),saver?'laufen auf der günstigsten KI':'kein Konto am Limit']
     ].map(([label,value,hint])=>`<article><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(hint)}</small></article>`).join('');
@@ -123,15 +127,15 @@
     const host=$('#adminTokenBudgets');if(!host)return;
     host.innerHTML=PLANS.map(plan=>{
       const limit=planBudget(plan);
-      return `<label class="admin-token-budget"><strong>${esc(PLAN_LABEL[plan])}</strong><input type="number" min="0" max="2000000000" step="1000" id="adminTokenBudget-${plan}" value="${limit}" /><small>${limit?`Sparmodus ab ${num(limit)} Tokens`:'Kein Limit – immer die beste KI'}</small></label>`;
+      return `<label class="admin-token-budget"><strong>${esc(PLAN_LABEL[plan])}</strong><input type="number" min="0" max="2000000000" step="1000" id="adminTokenBudget-${plan}" value="${limit}" /><small>${limit?`Günstigste KI ab ${num(limit)} Kostenpunkten`:'Kein Sparmodus – bevorzugte KI bleibt aktiv'}</small></label>`;
     }).join('');
   }
   function renderGroups(){
     const rows=events();
     const group=(keyOf,labelOf)=>{
       const map=new Map();
-      for(const row of rows){const key=keyOf(row),entry=map.get(key)||{tokens:0,calls:0};entry.tokens+=Number(row.total_tokens)||0;entry.calls++;map.set(key,entry)}
-      const total=rows.reduce((sum,row)=>sum+(Number(row.total_tokens)||0),0)||1;
+      for(const row of rows){const key=keyOf(row),entry=map.get(key)||{tokens:0,calls:0};entry.tokens+=budgetUnits(row);entry.calls++;map.set(key,entry)}
+      const total=rows.reduce((sum,row)=>sum+budgetUnits(row),0)||1;
       return [...map.entries()].sort((a,b)=>b[1].tokens-a[1].tokens).map(([key,entry])=>({label:labelOf(key),tokens:entry.tokens,calls:entry.calls,share:Math.round(entry.tokens/total*100)}));
     };
     const paint=(host,items,empty)=>{
@@ -158,7 +162,7 @@
   function renderDays(){
     const host=$('#adminTokenDays');if(!host)return;
     const map=new Map();
-    for(const row of events()){const day=String(row.created_at||'').slice(0,10);if(!day)continue;const entry=map.get(day)||{tokens:0,calls:0};entry.tokens+=Number(row.total_tokens)||0;entry.calls++;map.set(day,entry)}
+    for(const row of events()){const day=String(row.created_at||'').slice(0,10);if(!day)continue;const entry=map.get(day)||{tokens:0,calls:0};entry.tokens+=budgetUnits(row);entry.calls++;map.set(day,entry)}
     const days=[...map.entries()].sort((a,b)=>b[0].localeCompare(a[0]));
     const peak=days.reduce((max,[,entry])=>Math.max(max,entry.tokens),0)||1;
     count('days',days.length,'Tag','Tage');

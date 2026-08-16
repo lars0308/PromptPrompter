@@ -35,8 +35,11 @@
     const box=document.createElement('div');box.id='gateActions';
     box.innerHTML=''
       +'<div class="gate-cta"><p class="gate-guest-note">Kostenlos testen läuft ohne Konto: drei vollständige Durchläufe, danach jederzeit upgradebar.</p></div>'
-      +'<button type="button" class="gate-plans-pick" id="gatePlansPick"><span class="gate-plans-copy"><span class="gate-plans-kicker">ABO ABSCHLIESSEN</span><strong>Alle drei Tarife im Vergleich</strong><small>Kostenlos, Pro und Ultimate nebeneinander – mit allen Leistungen und Preisen.</small><span class="gate-plans-tiers"><i>Kostenlos 0 €</i><i id="gateProTier">Pro 15,99 €</i><i id="gateUltimateTier">Ultimate 25,99 €</i></span></span></button>'
-      +'<button type="button" class="gate-theme-pick" id="gateThemePick">Anderes Farbschema verwenden</button>';
+      +'<div class="gate-plan-list" aria-label="Tarif wählen">'
+      +'<button type="button" class="gate-plan-pick" data-gate-plan="free"><span><strong>Kostenlos</strong><small>Ohne Konto starten, drei vollständige Durchläufe.</small></span><b>Kostenlos starten</b></button>'
+      +'<button type="button" class="gate-plan-pick is-featured" data-gate-plan="pro"><span><strong>Pro</strong><small>Mehr Projekte, KI-Prüfung und Vorschauen für Kundenarbeit.</small></span><b id="gateProTier">Pro 15,99 €</b></button>'
+      +'<button type="button" class="gate-plan-pick" data-gate-plan="ultimate"><span><strong>Ultimate</strong><small>Website-Probelauf, GitHub, eigene KI und volle Kontrolle.</small></span><b id="gateUltimateTier">Ultimate 25,99 €</b></button>'
+      +'</div>';
     hero.insertAdjacentElement('afterend',box);
 
     // Das Produkt zeigen statt es zu beschreiben - dieselbe Konsole, die nach dem Einstieg kommt.
@@ -61,8 +64,7 @@
     // wird hier im Dokument gesucht statt in einem der beiden Kästen.
     $('#gateSignInPick',top).addEventListener('click',reveal);
     $('#gateGuestBtn',top).addEventListener('click',()=>$('#guestContinueBtn')?.click());
-    $('#gatePlansPick',box).addEventListener('click',()=>openPlansFromGate());
-    $('#gateThemePick',box).addEventListener('click',()=>$('#themeToggleBtn')?.click());
+    box.querySelectorAll('[data-gate-plan]').forEach(button=>button.addEventListener('click',()=>pickGatePlan(button.dataset.gatePlan)));
   }
 
   // Der Satz im Bild wechselt, damit die Reihe an Fällen sichtbar wird statt eines einzigen.
@@ -106,6 +108,14 @@
     if(!plans.open)plans.showModal();
     if(!wasOpen)return;
     plans.addEventListener('close',()=>{const dialog=$('#accountDialog');if(dialog&&!dialog.open){try{dialog.showModal()}catch{}}},{once:true});
+  }
+
+  function pickGatePlan(plan){
+    if(plan==='free'){$('#guestContinueBtn')?.click();return}
+    const selector=plan==='ultimate'?'#startUltimateCheckoutBtn':'#startProCheckoutBtn';
+    const button=$(selector);
+    if(button){button.click();return}
+    openPlansFromGate();
   }
 
   function resetExpansion(){
