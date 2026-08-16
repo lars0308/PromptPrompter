@@ -141,7 +141,7 @@ test('the login page carries its two entry points in the header and the headline
   const gate=await text('entry-gate-ui.js');
   assert.match(gate,/top\.className='gate-top'/,'Anmelden and Kostenlos testen share one header row');
   assert.match(gate,/id="gateSignInPick">Anmelden<\/button>'\s*\+'<button type="button" class="gate-guest-btn" id="gateGuestBtn">Kostenlos testen/,'both buttons sit next to each other');
-  assert.match(gate,/grid-template-areas:'hero hero' 'actions shot' 'proof proof'/,'the hero spans both columns');
+  assert.match(gate,/grid-template-areas:'hero hero' 'actions shot'/,'the hero spans both columns');
   assert.match(gate,/\.auth-hero h1\{grid-column:1\/-1;max-width:none/,'no character cap squeezes the headline any more');
   assert.doesNotMatch(gate,/\.gate-login-pick\{position:absolute/,'the sign-in button is a header item, not an overlay');
 });

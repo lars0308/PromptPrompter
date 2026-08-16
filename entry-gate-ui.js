@@ -41,26 +41,41 @@
       /* Ein Bild der Sache selbst statt einer Behauptung darüber: die Konsole, wie sie nach dem
          Einstieg aussieht, mit dem Satz darin, den man dort tatsächlich schreibt. Kein Screenshot -
          dieselben Bausteine wie die echte Oberfläche, damit sie nicht veraltet. */
+      .gate-shot-wrap{position:relative;width:100%;max-width:620px}
       .gate-shot{
-        position:relative;width:100%;max-width:520px;border-radius:20px;overflow:hidden;
+        position:relative;width:100%;border-radius:20px;overflow:hidden;
         border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));
         background:#111b26;box-shadow:0 30px 80px rgba(10,20,30,.28);
       }
       .gate-shot-bar{display:flex;align-items:center;gap:6px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
       .gate-shot-bar i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16)}
       .gate-shot-bar span{margin-left:auto;color:#61778a;font:800 7px/1 ui-monospace,monospace;letter-spacing:.16em}
-      .gate-shot-body{padding:18px 16px 16px}
+      .gate-shot-body{padding:26px 24px 24px}
       .gate-shot-mode{
-        display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;margin-bottom:14px;
-        border:1px solid #425262;border-radius:10px;color:#edf6fd;font:750 11px/1 Arial,Helvetica,sans-serif;
+        display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 14px;margin-bottom:18px;
+        border:1px solid #425262;border-radius:10px;color:#edf6fd;font:750 12.5px/1 Arial,Helvetica,sans-serif;
       }
       .gate-shot-mode:before{content:"";width:13px;height:13px;border:1.6px solid var(--accent);border-radius:50%}
-      .gate-shot-text{color:#9fb4c6;font-size:12.5px;line-height:1.6;min-height:66px}
+      .gate-shot-text{color:#9fb4c6;font-size:14.5px;line-height:1.7;min-height:88px}
       .gate-shot-text b{color:#edf6fd;font-weight:600}
       .gate-shot-caret{display:inline-block;width:1.5px;height:13px;margin-left:2px;background:var(--accent);vertical-align:-2px;animation:gateCaret 1.05s steps(1) infinite}
       @keyframes gateCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
-      .gate-shot-foot{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);color:#7d8fa3;font-size:9px}
+      .gate-shot-foot{display:flex;align-items:center;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);color:#7d8fa3;font-size:10px}
       .gate-shot-foot b{margin-left:auto;color:var(--accent);font-weight:800}
+      /* Kleine Pfeile statt der Belegzeile darunter: jeder Hinweis liegt außerhalb der Karte auf
+         Höhe der Zeile, die er erklärt, und zeigt mit einer kurzen Linie genau darauf. Nur ab
+         genug Breite, sonst kollidieren sie mit der Kachelspalte links. */
+      .gate-shot-note{display:none}
+      @media(min-width:1180px){
+        .gate-shot-note{
+          position:absolute;left:100%;display:flex;align-items:center;gap:9px;margin-left:18px;
+          max-width:180px;color:var(--muted);font-size:11px;line-height:1.35;white-space:normal;
+        }
+        .gate-shot-note i{flex:0 0 auto;width:26px;height:1px;background:color-mix(in srgb,var(--accent) 60%,var(--line))}
+        .gate-shot-note-mode{top:34px}
+        .gate-shot-note-text{top:104px}
+        .gate-shot-note-foot{bottom:26px}
+      }
       /* Die Reihe unter dem Einstieg: drei Belege, keine Werbezeilen. */
       .gate-proof{display:grid;gap:16px;width:100%;padding:0;margin:0;list-style:none}
       .gate-proof li{display:grid;gap:3px;padding:14px 0 0;border-top:2px solid color-mix(in srgb,var(--accent) 30%,var(--line));text-align:left}
@@ -116,7 +131,7 @@
            der Einstieg, rechts das Ding. Zentrierter Text auf leerer Fläche war das Problem. */
         .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{
           display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.92fr);
-          grid-template-areas:'hero hero' 'actions shot' 'proof proof';
+          grid-template-areas:'hero hero' 'actions shot';
           align-items:start;column-gap:clamp(40px,6vw,84px);row-gap:0;
           max-width:1320px;margin:0 auto;padding-top:clamp(24px,5vh,58px);
           /* Die einspaltige Regel oben setzt flex:1 und min-height:0 - beides bleibt sonst stehen
@@ -139,12 +154,10 @@
           grid-area:actions;justify-items:stretch;max-width:560px;width:100%;
           gap:20px;margin:6px 0 0;padding-top:0;align-self:start;
         }
-        /* "Weiter unten": das Bild beginnt erst unter dem Spruch auf Höhe der linken Spalte. */
-        .account-dialog.guest-gate:not(.gate-expanded) .gate-shot{grid-area:shot;justify-self:end;align-self:start;margin-top:6px;max-width:100%}
-        .account-dialog.guest-gate:not(.gate-expanded) .gate-proof{
-          grid-area:proof;grid-template-columns:repeat(3,minmax(0,1fr));
-          gap:26px;margin:clamp(48px,7vh,86px) 0 clamp(30px,5vh,58px);
-        }
+        /* Das Bild beginnt jetzt bewusst tiefer als die Kachelspalte - auf Höhe der zweiten
+           Tarifkachel statt ganz oben - und darf dabei größer sein, weil keine Belegzeile mehr
+           darunter für Platz konkurriert. */
+        .account-dialog.guest-gate:not(.gate-expanded) .gate-shot-wrap{grid-area:shot;justify-self:end;align-self:start;margin-top:clamp(48px,7vh,86px);max-width:100%}
         .gate-cta{justify-items:start}
         .gate-guest-note{text-align:left;font-size:11px}
         .gate-login-pick{font-size:13px}
@@ -158,7 +171,7 @@
       }
       /* Zwischen 821 und 960 bleibt eine Spalte, aber das Bild darf mit. */
       @media(max-width:959px){
-        .gate-shot{max-width:100%;margin:0 auto}
+        .gate-shot-wrap{max-width:100%;margin:0 auto}
         .account-dialog.guest-gate:not(.gate-expanded) #accountLoggedOut{max-width:620px;margin:0 auto}
       }
     `;document.head.appendChild(s);
@@ -180,6 +193,10 @@
     hero.insertAdjacentElement('afterend',box);
 
     // Das Produkt zeigen statt es zu beschreiben - dieselbe Konsole, die nach dem Einstieg kommt.
+    // Statt einer Erklärliste darunter zeigen kleine Pfeile direkt auf die Stelle im Feld, die sie
+    // erklären - deshalb steckt die Karte in einer eigenen Hülle, aus der die Hinweise seitlich
+    // herausragen dürfen (die Karte selbst schneidet mit overflow:hidden ihre Ecken rund).
+    const wrap=document.createElement('div');wrap.className='gate-shot-wrap';
     const shot=document.createElement('div');shot.className='gate-shot';
     shot.innerHTML='<div class="gate-shot-bar"><i></i><i></i><i></i><span>COMMAND / 01</span></div>'
       +'<div class="gate-shot-body">'
@@ -187,14 +204,12 @@
       +'<p class="gate-shot-text"><b></b><span class="gate-shot-rest"></span><span class="gate-shot-caret"></span></p>'
       +'<div class="gate-shot-foot"><span>Mit Rückfragen</span><span>·</span><span>3 Richtungen</span><b>Master-Prompt</b></div>'
       +'</div>';
-    box.insertAdjacentElement('afterend',shot);
-
-    // Drei Belege statt drei Werbezeilen - dieselben Schritte, die die App danach wirklich geht.
-    const proof=document.createElement('ul');proof.className='gate-proof';
-    proof.innerHTML='<li><strong>Beschreiben</strong><small>Ein paar Sätze reichen. Hast du schon eine Website, lesen wir sie aus und übernehmen Kontakt, Leistungen und Öffnungszeiten.</small></li>'
-      +'<li><strong>Richtung wählen</strong><small>Du siehst drei fertig gestaltete Vorschläge und entscheidest, welcher passt.</small></li>'
-      +'<li><strong>Auftrag mitnehmen</strong><small>Fertig ist ein Master-Prompt mit allen Fakten – für ChatGPT, Claude, Codex oder was du sonst nutzt.</small></li>';
-    shot.insertAdjacentElement('afterend',proof);
+    wrap.appendChild(shot);
+    wrap.insertAdjacentHTML('beforeend',''
+      +'<span class="gate-shot-note gate-shot-note-mode"><i></i>Art des Projekts</span>'
+      +'<span class="gate-shot-note gate-shot-note-text"><i></i>Kurz beschreiben, was entstehen soll</span>'
+      +'<span class="gate-shot-note gate-shot-note-foot"><i></i>Ablauf und Richtungen</span>');
+    box.insertAdjacentElement('afterend',wrap);
     rotateShot(shot);
     const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
     // Die beiden Kopfzeilen-Knöpfe liegen in .gate-top, die übrigen in #gateActions - deshalb
