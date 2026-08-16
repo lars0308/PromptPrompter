@@ -148,7 +148,7 @@
   function observers(){
     const status=$('#generationStatus');if(status)new MutationObserver(cleanTechnicalWarnings).observe(status,{childList:true,subtree:true,characterData:true,attributes:true});
     const account=$('#accountDialog'),settings=$('#settingsDialog'),revision=$('#quickRevisionDialog');[account,settings,revision].filter(Boolean).forEach(node=>new MutationObserver(()=>{if(node.open)setTimeout(enforceAccessUi,0)}).observe(node,{attributes:true,attributeFilter:['open']}));
-    window.addEventListener('promptai:access',()=>{enforceAccessUi();maybeShowThanks()});window.SiteBriefCloud?.subscribe?.(()=>setTimeout(()=>{enforceAccessUi();maybeShowThanks()},60));
+    window.addEventListener('promptai:access',()=>{enforceAccessUi();maybeShowThanks();ensureConfig()});window.SiteBriefCloud?.subscribe?.(()=>setTimeout(()=>{enforceAccessUi();maybeShowThanks()},60));
   }
 
   // Der Rueckkehrpunkt hing an config.systemAiRoutes. Seit die oeffentliche Antwort die internen
@@ -156,8 +156,17 @@
   // die Abfrage lief also bei jedem Aufruf erneut, jedes Mal mit no-store. Ein eigenes Merkmal
   // haelt sie bei einem Durchlauf. Die leeren Listen bleiben stehen, damit alles, was sie
   // durchlaeuft, weiterhin ein Feld vorfindet und nicht auf undefined stoesst.
-  let configLoaded=false;
-  async function ensureConfig(){if(configLoaded)return;try{const headers=await window.SiteBriefCloud?.authHeaders?.()||{};const data=await fetch('/api/config',{cache:'no-store',headers}).then(r=>r.json());configLoaded=true;if(window.SiteBriefCloud?.config)Object.assign(window.SiteBriefCloud.config,{systemAiRoutes:data.systemAiRoutes||[],systemAiProviders:data.systemAiProviders||[],learningHints:data.learningHints||[],previewRoutes:data.previewRoutes||[],previewProviders:data.previewProviders||[]})}catch{}}
+  // Zwei Zustaende statt einem: init() laeuft moeglicherweise, bevor die Sitzung wiederhergestellt
+  // ist. Ein einzelner Riegel haette den angemeldeten Abruf dann fuer immer verhindert und die
+  // Lernhinweise blieben leer. Ein Durchlauf ohne Anmeldung wird deshalb nur vorlaeufig gemerkt
+  // und spaeter - sobald ein Zugang da ist - genau einmal nachgeholt.
+  let configLoaded=false,configLoadedSignedIn=false;
+  async function ensureConfig(){
+    const headers=await window.SiteBriefCloud?.authHeaders?.()||{};
+    const signedIn=Boolean(headers.Authorization||headers.authorization);
+    if(configLoaded&&(configLoadedSignedIn||!signedIn))return;
+    try{const data=await fetch('/api/config',{cache:'no-store',headers}).then(r=>r.json());configLoaded=true;configLoadedSignedIn=signedIn;if(window.SiteBriefCloud?.config)Object.assign(window.SiteBriefCloud.config,{systemAiRoutes:data.systemAiRoutes||[],systemAiProviders:data.systemAiProviders||[],learningHints:data.learningHints||[],previewRoutes:data.previewRoutes||[],previewProviders:data.previewProviders||[]})}catch{}
+  }
   async function init(){primeIntro();rememberCheckout();await ensureConfig();injectOutcomeLab();observePrompt();bindGlobalClicks();observers();enforceAccessUi();setTimeout(()=>{enforceAccessUi();maybeShowThanks();applyLearningHints()},600)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
