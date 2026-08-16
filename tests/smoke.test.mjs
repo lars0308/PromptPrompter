@@ -1370,3 +1370,22 @@ test('nothing in the shipped page calls the legal texts a placeholder',async()=>
     assert.doesNotMatch(body,/legal-placeholder-note/,`${file} still carries the placeholder banner`);
   }
 });
+
+// Die Tarifauswahl auf der Anmeldeseite waren drei schmale Zeilen mit je einem Satz. Wer noch
+// kein Konto hat, soll vor der Anmeldung sehen, was in den Tarifen steckt - drei Kacheln
+// untereinander, und alle drei muessen ohne Scrollen ins Bild passen.
+test('the login gate offers three plan tiles with their contents',async()=>{
+  const gate=await text('entry-gate-ui.js');
+  for(const plan of ['free','pro','ultimate'])
+    assert.match(gate,new RegExp(`data-gate-plan="${plan}"`),`the ${plan} tile is missing`);
+  assert.equal((gate.match(/<ul class=.gate-plan-points.>/g)||[]).length,3,'every tile lists what it contains');
+  assert.doesNotMatch(gate,/<strong>Kostenlos<\/strong><b>Kostenlos<\/b>/,'the free tile said Kostenlos twice');
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  // Titel und Preis in einer Zeile - eine fruehere Regel setzt die Kachelkinder auf block.
+  assert.match(css,/\.gate-plan-pick \.gate-plan-head\{display:flex!important\}/);
+  // Der Spruch darueber war der Grund, warum die dritte Kachel unter die Kante rutschte.
+  assert.match(css,/guest-gate:not\(\.gate-expanded\) \.auth-hero h1\{font-size:clamp\(30px,5\.6vh,78px\)/);
+  // Zwei Stufen, damit auf flachen Bildschirmen lieber Text als eine Kachel verschwindet.
+  assert.match(css,/@media\(max-height:790px\)\{\.gate-plan-points li:nth-child\(3\)\{display:none\}\}/);
+  assert.match(css,/@media\(max-height:710px\)[\s\S]{0,120}\.gate-plan-pick>small\{display:none\}/);
+});

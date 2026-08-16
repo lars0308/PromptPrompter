@@ -36,9 +36,18 @@
     box.innerHTML=''
       +'<div class="gate-cta"><p class="gate-guest-note">Kostenlos testen läuft ohne Konto: drei vollständige Durchläufe, danach jederzeit upgradebar.</p></div>'
       +'<div class="gate-plan-list" aria-label="Tarif wählen">'
-      +'<button type="button" class="gate-plan-pick" data-gate-plan="free"><span><strong>Kostenlos</strong><small>Ohne Konto starten, drei vollständige Durchläufe.</small></span><b>Kostenlos starten</b></button>'
-      +'<button type="button" class="gate-plan-pick is-featured" data-gate-plan="pro"><span><strong>Pro</strong><small>Mehr Projekte, KI-Prüfung und Vorschauen für Kundenarbeit.</small></span><b id="gateProTier">Pro 15,99 €</b></button>'
-      +'<button type="button" class="gate-plan-pick" data-gate-plan="ultimate"><span><strong>Ultimate</strong><small>Website-Probelauf, GitHub, eigene KI und volle Kontrolle.</small></span><b id="gateUltimateTier">Ultimate 25,99 €</b></button>'
+      +'<button type="button" class="gate-plan-pick" data-gate-plan="free">'
+      +'<span class="gate-plan-head"><strong>Kostenlos</strong><b>0 €</b></span>'
+      +'<small>Ohne Konto starten, drei vollständige Durchläufe.</small>'
+      +'<ul class="gate-plan-points"><li>10 Prompts und 3 Website-Projekte im Monat</li><li>Drei Richtungen als HTML-Vorschau</li><li>Ein echter KI-Durchlauf im Monat</li></ul></button>'
+      +'<button type="button" class="gate-plan-pick is-featured" data-gate-plan="pro">'
+      +'<span class="gate-plan-head"><strong>Pro</strong><b id="gateProTier">Pro</b></span>'
+      +'<small>Mehr Projekte, KI-Prüfung und Vorschauen für Kundenarbeit.</small>'
+      +'<ul class="gate-plan-points"><li>100 Prompts und 25 Website-Projekte</li><li>KI-Bilder statt HTML, vier Richtungen</li><li>Ohne Rückfragen, KI-Prüfung ohne Monatsgrenze</li></ul></button>'
+      +'<button type="button" class="gate-plan-pick" data-gate-plan="ultimate">'
+      +'<span class="gate-plan-head"><strong>Ultimate</strong><b id="gateUltimateTier">Ultimate</b></span>'
+      +'<small>Website-Probelauf, GitHub, eigene KI und volle Kontrolle.</small>'
+      +'<ul class="gate-plan-points"><li>500 Prompts und 100 Website-Projekte</li><li>Fünf Richtungen, Probelauf und GitHub</li><li>Zwei eigene KI-Verbindungen inklusive</li></ul></button>'
       +'</div>';
     hero.insertAdjacentElement('afterend',box);
 

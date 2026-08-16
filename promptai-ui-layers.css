@@ -79,7 +79,37 @@
       .gate-highlights b{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-size:11px;font-weight:850}
       .gate-highlights strong{display:block;font-size:13px}
       .gate-highlights small{display:block;margin-top:2px;color:var(--muted);font-size:11px;line-height:1.5}
-      .gate-plan-list{display:grid;gap:9px;width:100%}
+      /* Drei echte Kacheln untereinander statt drei schmaler Zeilen: wer noch kein Konto hat, soll
+   vor der Anmeldung sehen, was in den Tarifen steckt. Alle drei muessen dabei ohne Scrollen
+   untereinander passen - deshalb sind Innenabstand und Schrift an die Fensterhoehe gekoppelt
+   und die Liste bekommt genau drei kurze Punkte je Tarif. */
+.gate-plan-list{display:grid;gap:clamp(7px,1vh,11px);width:100%}
+/* display:block hat gewonnen, weil eine fruehere Regel die Kachelkinder festlegt - deshalb hier
+   ausdruecklich. Titel und Preis stehen in einer Zeile, nicht uebereinander. */
+.gate-plan-pick .gate-plan-head{display:flex!important}
+/* Die Belegzeile ist Beiwerk - sie darf die drei Kacheln nicht aus dem Bild schieben. */
+.account-dialog.guest-gate:not(.gate-expanded) .gate-proof{margin-top:clamp(10px,1.4vh,22px)!important;gap:clamp(8px,1.2vw,18px)!important}
+.account-dialog.guest-gate:not(.gate-expanded) .gate-proof li{font-size:clamp(10.5px,1.15vh,12px)!important;line-height:1.4!important}
+/* Der Spruch darueber war mit 78px und 45px Vorabstand der Grund, warum die dritte Kachel unter
+   die Fensterkante rutschte - nicht die Kacheln selbst. */
+.account-dialog.guest-gate:not(.gate-expanded) .auth-hero h1{font-size:clamp(30px,5.6vh,78px)!important;line-height:1.04!important;margin-top:0!important;margin-bottom:clamp(6px,1vh,12px)!important}
+.account-dialog.guest-gate:not(.gate-expanded) .auth-hero p{margin-top:clamp(6px,1.1vh,16px)!important}
+.account-dialog.guest-gate:not(.gate-expanded) #gateActions{padding-top:clamp(8px,1.4vh,26px)!important}
+.gate-plan-pick{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-content:start;gap:clamp(4px,.7vh,8px)!important;min-height:0!important;padding:clamp(11px,1.5vh,16px) clamp(15px,1.6vw,21px)!important;text-align:left}
+.gate-plan-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%}
+.gate-plan-head>strong{font-size:clamp(16px,1.9vh,21px);letter-spacing:-.02em}
+.gate-plan-head>b{flex:0 0 auto;font-size:clamp(11px,1.3vh,13px);font-weight:800;color:#4f9fe4;white-space:nowrap}
+.gate-plan-pick>small{color:var(--muted);font-size:clamp(11px,1.25vh,12.5px);line-height:1.45}
+.gate-plan-points{display:grid;gap:clamp(2px,.45vh,5px);margin:clamp(1px,.5vh,5px) 0 0;padding:0;list-style:none}
+.gate-plan-points li{position:relative;padding-left:17px;color:var(--ink);font-size:clamp(11px,1.3vh,13px);line-height:1.4}
+.gate-plan-points li:before{content:'';position:absolute;left:3px;top:.52em;width:5px;height:5px;border-radius:50%;background:#4f9fe4}
+.gate-plan-pick.is-featured .gate-plan-points li:before{background:#7cc0f0}
+/* Auf flachen Bildschirmen zaehlt, dass alle drei Kacheln zu sehen sind - lieber ein Punkt
+   weniger je Tarif als eine Kachel, die unter der Fensterkante verschwindet. */
+@media(max-height:790px){.gate-plan-points li:nth-child(3){display:none}}
+/* Noch flacher: dann faellt auch der Einzeiler weg. Titel, Preis und die zwei wichtigsten
+   Punkte bleiben - drei sichtbare Kacheln sind mehr wert als eine vollstaendige und eine halbe. */
+@media(max-height:710px){.account-dialog.guest-gate:not(.gate-expanded) .gate-plan-pick>small{display:none}}
       .gate-plan-pick{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;width:100%;min-height:76px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-align:left;transition:border-color .16s ease,background .16s ease,transform .16s ease}
       .gate-plan-pick:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface));transform:translateY(-1px)}
       .gate-plan-pick.is-featured{border-color:color-mix(in srgb,var(--accent) 54%,var(--line));box-shadow:inset 3px 0 0 var(--accent)}
@@ -123,7 +153,7 @@
         }
         .account-dialog.guest-gate:not(.gate-expanded) .auth-brand{grid-column:1;justify-content:flex-start;margin:0}
         .account-dialog.guest-gate:not(.gate-expanded) .gate-top{grid-column:2;grid-row:1;justify-self:end;margin:0}
-        .account-dialog.guest-gate:not(.gate-expanded) .auth-kicker{grid-column:1/-1;margin-top:clamp(26px,5vh,58px)}
+        .account-dialog.guest-gate:not(.gate-expanded) .auth-kicker{grid-column:1/-1;margin-top:clamp(10px,2.2vh,34px)}
         /* Der Satz unter der Ueberschrift sagt, fuer wen die App gemacht ist. Er teilt die Spalte
            mit der Ueberschrift, damit er nicht in eine 15-Zeichen-Kolonne neben dem Bild rutscht. */
         .auth-lede{grid-column:1/-1;max-width:82ch;margin:16px 0 0;color:var(--muted);font-size:clamp(13px,1.55vw,16px);line-height:1.6}
