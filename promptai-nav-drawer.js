@@ -147,6 +147,12 @@
     document.addEventListener('click',e=>{
       const menu=$('#topbarMenu');
       if(!menu||!menu.classList.contains('open'))return;
+      // Nur echte Klicks schliessen. Die App klickt selbst: sobald die Sitzung aufloest, stellt
+      // restore() in stability-ui.js den gespeicherten Ablauf her, indem es den Modus-Knopf
+      // anklickt. Dieser Klick liegt ausserhalb der Schublade und hat sie mitgerissen - auf der
+      // Live-Seite ein bis zwei Sekunden nach dem Oeffnen, genau dann, wenn der Zugang eintrifft.
+      // Ortlich war davon nichts zu sehen, weil ohne API nie ein Zugang aufloest.
+      if(!e.isTrusted)return;
       if(e.target.closest?.('#topbarMenu'))return;
       // Der eigene Knopf oeffnet nur, er schaltet nicht um - deshalb schliesst er hier, bevor
       // sein Oeffnen-Handler ueberhaupt dran ist. Sonst ginge die Schublade auf und sofort wieder

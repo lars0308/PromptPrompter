@@ -192,7 +192,10 @@
     };
     el.topbarMenuToggle.addEventListener('click',toggle);
     el.topbarMenu.addEventListener('click',event=>{if(event.target.closest('#themeToggleBtn'))return;if(event.target.closest('button,a'))close()});
-    document.addEventListener('click',event=>{if(event.target.closest('#menuThemeQuick'))return;if(el.topbarMenu.classList.contains('open')&&!el.topbarMenu.contains(event.target)&&event.target!==el.topbarMenuToggle&&!el.topbarMenuToggle.contains(event.target))close()});
+    // isTrusted: die App klickt selbst - restore() stellt nach dem Aufloesen der Sitzung den
+    // gespeicherten Ablauf ueber einen Klick auf den Modus-Knopf her. Ohne diese Pruefung schloss
+    // dieser Klick das offene Menue mit.
+    document.addEventListener('click',event=>{if(!event.isTrusted)return;if(event.target.closest('#menuThemeQuick'))return;if(el.topbarMenu.classList.contains('open')&&!el.topbarMenu.contains(event.target)&&event.target!==el.topbarMenuToggle&&!el.topbarMenuToggle.contains(event.target))close()});
     document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
   }
 
