@@ -14,7 +14,7 @@
       html[data-clean-project-flow="1"] .workspace{display:block;width:min(780px,calc(100vw - 24px))!important;max-width:780px!important;margin:0 auto!important;padding:0!important;justify-self:center!important;align-self:start;background:var(--surface,#fff);border:1px solid #d9dde1;border-radius:22px;box-shadow:0 24px 70px rgba(29,38,48,.11);overflow:hidden}
       .guided-clean-head{display:none;align-items:center;justify-content:space-between;gap:16px;padding:17px 20px;border-bottom:1px solid #e2e5e8;background:var(--surface,#fff)}
       html[data-clean-project-flow="1"] .guided-clean-head{display:flex}
-      .guided-clean-brand{display:flex;align-items:center;gap:10px}.guided-clean-brand img{width:26px;height:26px;object-fit:contain}.guided-clean-brand strong{font-size:16px;letter-spacing:-.02em}.guided-clean-exit{width:42px;height:42px;border:0;background:transparent;font-size:26px;line-height:1;color:#6d747b;border-radius:50%}.guided-clean-exit:hover{background:#f0f2f4;color:#20252b}
+      .guided-clean-brand{display:flex;align-items:center;gap:10px;border:0;margin:0;padding:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}.guided-clean-brand img{width:26px;height:26px;object-fit:contain}.guided-clean-brand strong{font-size:16px;letter-spacing:-.02em}
       html[data-clean-project-flow="1"] .step-panel{min-height:0!important;padding:34px 34px 22px!important;background:var(--surface,#fff)}
       html[data-clean-project-flow="1"] .step-panel.active{display:flex!important;min-height:620px!important;flex-direction:column}
       html[data-clean-project-flow="1"] .step-panel>.section-kicker{margin:0 0 14px;color:#1689c7;font-size:10px;font-weight:850;letter-spacing:.1em}
@@ -82,7 +82,6 @@
       html[data-theme="dark"][data-clean-project-flow="1"] #workflowApp{background:var(--paper)}
       html[data-theme="dark"][data-clean-project-flow="1"] .workspace{background:var(--surface);border-color:var(--line);box-shadow:0 24px 70px rgba(0,0,0,.4)}
       html[data-theme="dark"] .guided-clean-head{border-color:var(--line);background:var(--surface)}
-      html[data-theme="dark"] .guided-clean-exit{color:var(--muted)}html[data-theme="dark"] .guided-clean-exit:hover{background:var(--surface-soft);color:var(--ink)}
       html[data-theme="dark"][data-clean-project-flow="1"] .step-panel{background:var(--surface)}
       html[data-theme="dark"][data-clean-project-flow="1"] .step-panel>h1,html[data-theme="dark"][data-clean-project-flow="1"] .preview-step-head h1{color:var(--ink)}
       html[data-theme="dark"] .guided-clean-lead{color:var(--muted)}
@@ -104,9 +103,12 @@
 
   function header(){
     const workspace=$('.workspace');if(!workspace||$('#guidedCleanHead'))return;
-    const h=document.createElement('div');h.id='guidedCleanHead';h.className='guided-clean-head';h.innerHTML='<div class="guided-clean-brand"><img src="./sitebrief-logo.svg?v=6" alt=""><strong>Prompt.ai</strong></div><button type="button" class="guided-clean-exit" aria-label="Projekt schließen">×</button>';
+    // Der eigene ×-Knopf tat nur, was ein Klick auf die Marke daneben ohnehin schon tut - beide
+    // führten zurück zur Startseite. Statt zwei Wegen für dieselbe Sache trägt die Marke die
+    // Funktion jetzt selbst.
+    const h=document.createElement('div');h.id='guidedCleanHead';h.className='guided-clean-head';h.innerHTML='<button type="button" class="guided-clean-brand" aria-label="Projekt schließen"><img src="./sitebrief-logo.svg?v=6" alt=""><strong>Prompt.ai</strong></button>';
     workspace.prepend(h);
-    $('.guided-clean-exit',h).onclick=()=>{const home=$('#brandHome');if(home){home.click();return}const flow=$('#workflowApp'),welcome=$('#welcomePage');if(flow)flow.hidden=true;if(welcome)welcome.hidden=false};
+    $('.guided-clean-brand',h).onclick=()=>{const home=$('#brandHome');if(home){home.click();return}const flow=$('#workflowApp'),welcome=$('#welcomePage');if(flow)flow.hidden=true;if(welcome)welcome.hidden=false};
   }
 
   const copy={
