@@ -188,7 +188,10 @@ async function main() {
 
   // Test authorization
   console.log('\n🔐 Authorization Checks:');
-  await testEndpointAuth('Admin Overview', '/api/admin-overview', 'POST', {});
+  // GET, nicht POST: der Endpunkt laesst nur GET zu und antwortet auf POST mit 405, bevor er
+  // ueberhaupt zur Authentifizierung kommt. Der Test las das als fehlende Absicherung und
+  // meldete zwei Fehlschlaege, obwohl GET ohne Token sauber 401 liefert.
+  await testEndpointAuth('Admin Overview', '/api/admin-overview', 'GET');
   await testEndpointAuth('Admin Action', '/api/admin-action', 'POST', { action: 'ai-models', provider: 'openai' });
   await testEndpointAuth('Config Admin', '/api/config?admin=true', 'GET');
 
@@ -198,7 +201,10 @@ async function main() {
 
   // Test rate limiting
   console.log('\n⏱️  Rate Limiting:');
-  await testRateLimiting();
+  // Nur auf ausdrueckliche Anforderung: 30 schnelle Anfragen sind ein Lasttest gegen eine
+  //   laufende Seite. Einschalten mit --rate-limit.
+  if(process.argv.includes('--rate-limit'))await testRateLimiting();
+  else console.log('\n  Rate-Limit-Test uebersprungen (30 schnelle Anfragen). Mit --rate-limit einschalten.');
 
   // Test secret exposure
   console.log('\n🔑 Secret Handling:');
