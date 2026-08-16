@@ -1188,3 +1188,47 @@ test('no public/ directory hijacks the Vercel output root',async()=>{
   for(const name of ['index.html','robots.txt','sitemap.xml'])
     assert.ok(entries.some(entry=>entry.isFile()&&entry.name===name),`${name} must sit in the deployment root`);
 });
+
+// Die Arbeitsflaeche "Briefing wird verstanden" hing an .step-panel.active und erschien damit in
+// jedem Ablauf - auch unter der Einstellungsseite von "Selbst einstellen", wo der Nutzer selbst
+// entscheidet und nichts im Hintergrund vorbereitet wird.
+test('the autopilot working panel only shows in the guided and auto flows',async()=>{
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  assert.doesNotMatch(css,/(?<!\] )\.step-panel\.active>\.streamline-working\{display:grid/,'the rule must be bound to a flow, not to any active step');
+  assert.match(css,/html\[data-prompt-mode="guided"\] \.step-panel\.active>\.streamline-working,html\[data-prompt-mode="auto"\] \.step-panel\.active>\.streamline-working\{display:grid!important\}/);
+});
+
+// Die Uebergabe wurde nur beim Klick auf eine data-project-mode-Karte gemerkt. Dieses Fenster
+// oeffnet niemand mehr, also blieb "Ohne Rueckfragen" und "Selbst einstellen" ohne Animation.
+test('the mode handoff falls back to the keys a project start actually writes',async()=>{
+  const src=await text('mode-handoff-fix.js');
+  assert.match(src,/sessionStorage\.getItem\(PENDING_MODE_KEY\)/);
+  assert.match(src,/sessionStorage\.getItem\(PENDING_BRIEF_KEY\)/);
+  assert.match(src,/data\.mode==='expert'[^\n]*finish\(data\)/,'the expert flow shows the handoff but never clicks a step forward');
+});
+
+// Der Aufruf an die KI dauert lange; die Anzeige muss vorher stehen, nicht danach.
+test('the free prompt starts its working animation before the request',async()=>{
+  const src=await text('free-prompt-ui.js');
+  assert.match(src,/startWorking\(desc\.length\);/);
+  assert.ok(src.indexOf('startWorking(desc.length);')<src.indexOf("fetch('/api/generate'"),'the animation has to start before the fetch');
+  assert.match(src,/finally\{stopWorking\(\)/);
+});
+
+// Ein produktiver Stand darf keine eckig geklammerten Platzhalter mehr in den Rechtstexten haben.
+test('the legal texts carry real details instead of placeholders',async()=>{
+  const src=await readFile(path.join(root,'legal-pages.js'),'utf8');
+  const legal=src.slice(0,src.indexOf('function openLegal'));
+  assert.deepEqual(legal.match(/\[[^\]]+\]/g)||[],[],'no bracketed placeholder may survive in a shipped legal text');
+  for(const detail of ['Lars Battermann','Südstraße 25','31698 Lindhorst','service.battermann@gmx.de','§ 19 UStG','§ 5 DDG'])
+    assert.ok(legal.includes(detail),`${detail} is missing from the legal texts`);
+});
+
+// Vercel Web Analytics wurde in index.html bedingungslos geladen - vor jeder Einwilligung.
+test('web analytics waits for an explicit consent',async()=>{
+  const html=await readFile(path.join(root,'index.html'),'utf8');
+  assert.doesNotMatch(html,/<script[^>]*_vercel\/insights/,'index.html must not load analytics unconditionally');
+  const src=await text('legal-pages.js');
+  assert.match(src,/consent!=='all'\|\|document\.getElementById\('vercelInsights'\)/);
+  assert.match(src,/settleConsent\(value\)/);
+});

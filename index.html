@@ -939,8 +939,11 @@
   <script src="./legal-pages.js?v=20260817-24" defer></script>
   <script src="./app.js?v=20260817-24" defer></script>
   <script src="./admin-console.js?v=20260817-24" defer></script>
-  <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
-  <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Die Jahreszahl stand hier als Inline-Skript und lief nie: die Content-Security-Policy
+       erlaubt nur script-src 'self', Inline-Skripte werden also verworfen. theme-init.js setzt
+       sie ohnehin schon. Vercel Web Analytics wurde direkt daneben ohne Einwilligung geladen -
+       das uebernimmt jetzt legal-pages.js, das den Cookie-Hinweis verwaltet und das Skript erst
+       nach ausdruecklicher Zustimmung nachlaedt. -->
 </body>
 </html>
 

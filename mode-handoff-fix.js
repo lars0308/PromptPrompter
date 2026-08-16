@@ -11,7 +11,22 @@
   const SENTENCE_MS=3000;
   const sentences=['Beschreibung wird übernommen.','Projektweg wird vorbereitet.','Referenzen werden bereitgestellt.'];
 
-  function read(){try{return JSON.parse(sessionStorage.getItem(HANDOFF_KEY)||'null')}catch{return null}}
+  // rememberSelection unten schreibt nur dann etwas, wenn eine Karte mit data-project-mode
+  // geklickt wurde. Dieses Auswahlfenster oeffnet project-start-ui.js aber gar nicht mehr - die
+  // drei Ablaeufe stehen jetzt im Settings-Blatt der Konsole. Damit blieb der Schluessel leer,
+  // boot() stieg sofort aus und der Start lief ohne Animation: die Seite lag nur kurz unter der
+  // Papierflaeche und sprang dann direkt in den Ablauf. persistNewProject() legt Modus und
+  // Beschreibung ohnehin schon ab, also lesen wir sie hier als Rueckfall - damit bekommen alle
+  // drei Ablaeufe dieselbe Uebergabe, nicht nur der ueber das alte Fenster gestartete.
+  function read(){
+    try{
+      const stored=JSON.parse(sessionStorage.getItem(HANDOFF_KEY)||'null');
+      if(stored?.brief&&stored?.mode)return stored;
+      const mode=sessionStorage.getItem(PENDING_MODE_KEY)||'',brief=(sessionStorage.getItem(PENDING_BRIEF_KEY)||'').trim();
+      if(mode&&brief.length>=8)return {mode,brief,createdAt:Date.now()};
+      return stored;
+    }catch{return null}
+  }
   function write(value){try{sessionStorage.setItem(HANDOFF_KEY,JSON.stringify(value))}catch{}}
   function clear(){try{[HANDOFF_KEY,SIMPLE_START_KEY,PENDING_MODE_KEY,PENDING_BRIEF_KEY].forEach(k=>sessionStorage.removeItem(k))}catch{}}
   function claimInitialAdvance(){try{sessionStorage.removeItem(SIMPLE_START_KEY)}catch{}}
@@ -58,8 +73,11 @@
   function finish(data){
     if(finishing)return;const elapsed=Date.now()-startedAt,box=$('#promptModeHandoff');if(elapsed<MIN_VISIBLE_MS||!uiReady()){timer=setTimeout(()=>tick(data),70);return}
     finishing=true;clearInterval(sentenceTimer);
-    setSentence('Referenzen sind bereit.');
-    setTimeout(()=>release(box),SENTENCE_MS+320);
+    // "Selbst einstellen" hat nichts vorbereitet, worauf jemand warten muesste - dort geht der
+    // Vorhang gleich wieder auf, statt drei Sekunden lang eine fertige Automatik zu behaupten.
+    const expert=data.mode==='expert';
+    setSentence(expert?'Alle Schritte sind offen.':'Referenzen sind bereit.');
+    setTimeout(()=>release(box),expert?720:SENTENCE_MS+320);
   }
   function failOpen(message){if(finishing)return;finishing=true;clearInterval(sentenceTimer);const box=$('#promptModeHandoff');setSentence(message||'Projekt wird geöffnet.',true);setTimeout(()=>release(box),520)}
 
@@ -67,6 +85,10 @@
     if(!active||finishing)return;
     if(Date.now()-startedAt>FAIL_OPEN_MS){failOpen('Projekt wird geöffnet.');return}
     const workflow=$('#workflowApp');applyBrief(data);applyMode(data);const n=step();if(n>=2){finish(data);return}
+    // Bei "Selbst einstellen" bleiben alle acht Schritte in der Hand des Nutzers. Die Uebergabe
+    // deckt hier nur den Neuaufbau der Seite ab; weitergeklickt wird nichts. Aus demselben Grund
+    // springt maybeSkipInitial() in streamlined-project-flow.js in diesem Ablauf nicht vor.
+    if(data.mode==='expert'&&workflow&&!workflow.hidden&&n===1&&applyBrief(data)){finish(data);return}
     if(workflow&&!workflow.hidden&&n===1&&!advanceStarted&&applyBrief(data)){const next=$('#stepProject .next-btn');if(next&&!next.disabled){advanceStarted=true;allowAdvance=true;next.click();allowAdvance=false}}
     if(advanceStarted&&n===1&&Date.now()-startedAt>5000&&retryCount<1){const next=$('#stepProject .next-btn');if(next&&!next.disabled){retryCount++;allowAdvance=true;next.click();allowAdvance=false}}
     timer=setTimeout(()=>tick(data),80)
