@@ -1,6 +1,6 @@
 (()=>{
   'use strict';
-  const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+  const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];
   const SIMPLE_START_KEY='prompt-ai-v1-simple-start';
   const DISMISS_KEY='prompt-ai-clarification-dismissed-v2';
   let settleTimer=0,lastClarificationOpen=false;
@@ -56,6 +56,19 @@
   function flashCompletion(title,lines){
     if(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return;
     let flash=$('#promptCompletionFlash');if(flash)flash.remove();flash=document.createElement('section');flash.id='promptCompletionFlash';flash.className='prompt-completion-flash';flash.setAttribute('aria-hidden','true');flash.innerHTML=`<div><span class="prompt-process-kicker">PROMPT.AI</span><strong class="prompt-process-title">${title}</strong><div class="prompt-process-lines complete"></div></div>`;document.body.appendChild(flash);const box=$('.prompt-process-lines',flash);for(const text of lines){const row=document.createElement('div');row.className='prompt-process-line';row.innerHTML=`<span>${text}</span><span class="prompt-process-fill" aria-hidden="true">${text}</span>`;box.appendChild(row)}setTimeout(()=>flash.remove(),520)
+  }
+
+  function beginTask(key,{title='Prompt.ai arbeitet',kind='generic',inputLength=0}={}){
+    let host=$('#promptAiTaskLoader');
+    if(!host){
+      host=document.createElement('section');host.id='promptAiTaskLoader';host.className='prompt-handoff-loader prompt-task-loader';host.setAttribute('aria-live','polite');host.setAttribute('aria-busy','true');host.innerHTML='<div><span class="prompt-process-kicker">PROMPT.AI</span><strong class="prompt-process-title"></strong></div>';document.body.appendChild(host)
+    }
+    host.dataset.taskKey=String(key||'generic');host.querySelector('.prompt-process-title').textContent=title;host.hidden=false;
+    renderLines(host,lineSet(kind),durationFor(inputLength));return host
+  }
+  function endTask(key,{title='Verarbeitung abgeschlossen',kind='generic'}={}){
+    const host=$('#promptAiTaskLoader');if(!host||host.dataset.taskKey!==String(key||'generic'))return;
+    finishLines(host);host.setAttribute('aria-busy','false');setTimeout(()=>{if(host.dataset.taskKey!==String(key||'generic'))return;host.remove();flashCompletion(title,lineSet(kind))},420)
   }
 
   function inputLength(){return String($('#projectDescription')?.value||'').trim().length}
@@ -139,7 +152,7 @@
     new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style']});
     window.addEventListener('pageshow',schedule);window.addEventListener('promptai:access',schedule)
   }
-  window.PromptAiLoading={render(host,options={}){return renderLines(host,options.lines||lineSet(options.kind||'generic'),options.duration||durationFor(options.inputLength||0))},complete:finishLines,flash:flashCompletion,durationFor,lineSet};
+  window.PromptAiLoading={render(host,options={}){return renderLines(host,options.lines||lineSet(options.kind||'generic'),options.duration||durationFor(options.inputLength||0))},complete:finishLines,flash:flashCompletion,beginTask,endTask,durationFor,lineSet};
   function init(){bind();settle();let n=0;const timer=setInterval(()=>{settle();if(++n>30)clearInterval(timer)},160)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init()
 })();

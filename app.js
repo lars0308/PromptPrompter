@@ -1084,11 +1084,11 @@
 
   async function scanAndBuildQuickRevision(){
     let url=el.quickRevisionUrl.value.trim(),description=el.quickRevisionDescription.value.trim();if(!/^https?:\/\//i.test(url))url=`https://${url}`;try{new URL(url)}catch{el.quickRevisionStatus.textContent='Bitte eine gültige Website-Adresse eingeben.';return}if(description.length<20){el.quickRevisionStatus.textContent='Beschreibe die gewünschten Änderungen etwas genauer.';return}
-    try{el.scanQuickRevisionBtn.disabled=true;el.quickRevisionStatus.textContent='Website, Seitenstruktur, Links und Bilder werden gelesen…';let context;
+    try{el.scanQuickRevisionBtn.disabled=true;window.PromptAiLoading?.beginTask?.('quick-revision',{title:'Website wird analysiert',kind:'review',inputLength:description.length});el.quickRevisionStatus.textContent='Website, Seitenstruktur, Links und Bilder werden gelesen…';let context;
       try{const response=await sitebriefApiFetch('/api/site-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Scan nicht möglich');context=data}
       catch(error){context={url,pages:[],links:[],images:[],error:error.message||'Website nicht automatisch erreichbar'}}
       state.quickRevisionContext=context;el.quickRevisionStatus.textContent='Änderungswünsche werden von der KI analysiert und professionell aufbereitet…';const brief=await analyzeQuickRevisionInputs(context,url);el.quickRevisionPrompt.value=await buildQuickRevisionPrompt(context,url,brief);el.quickRevisionResult.hidden=false;el.quickRevisionScanResult.textContent=context.error?'Auftrag erstellt · Website muss der Agent selbst öffnen':`${(context.pages||[]).length} Seiten · ${(context.links||[]).length} Links · ${(context.images||[]).length} Bilder erfasst`;el.quickRevisionStatus.textContent='Überarbeitungsauftrag ist professionell aufbereitet.';renderQuickRevisionVariants();el.quickRevisionResult.scrollIntoView({behavior:'smooth',block:'start'});
-    }catch(error){el.quickRevisionStatus.textContent=error.message||'Auftrag konnte nicht erstellt werden.'}finally{el.scanQuickRevisionBtn.disabled=false}
+    }catch(error){el.quickRevisionStatus.textContent=error.message||'Auftrag konnte nicht erstellt werden.'}finally{window.PromptAiLoading?.endTask?.('quick-revision',{title:'Änderungsauftrag ist bereit',kind:'review'});el.scanQuickRevisionBtn.disabled=false}
   }
 
   async function saveQuickRevisionVariant(){
@@ -1360,6 +1360,7 @@
   }
 
   function renderClarificationDialog(review){
+    placeClarifications();
     const warnings=[...(review.blockers||[]).map(x=>({...x,severity:"critical",area:x.area||"Blocker"})),...(review.warnings||[])];
     el.clarificationWarnings.innerHTML=warnings.map(w=>`<div class="clarification-warning ${w.severity==="critical"?"critical":""}"><strong>${escapeHtml(w.area||"Hinweis")}</strong> — ${escapeHtml(w.message||w.alternative||"Keine nähere Begründung angegeben.")}${w.alternative?`<br><span>Alternative: ${escapeHtml(w.alternative)}</span>`:""}</div>`).join("");
     el.clarificationQuestions.innerHTML="";
@@ -1373,7 +1374,25 @@
     });
     el.clarificationIntro.textContent=(review.questions||[]).length?"Beantworte nur die Fragen unterhalb der Hinweise. Die farbigen Kästen sind automatische Prüfpunkte und verlangen keine Eingabe.":"Du musst hier nichts beantworten. Die Kästen sind automatische Prüfhilfen, die Prompt.ai später in Blueprint und Arbeitsauftrag übernimmt.";
     el.deferClarificationsBtn.hidden=state.settings.criticalBehavior==="block" && (review.blockers||[]).length>0;
-    el.clarificationDialog.showModal();
+    if(state.mode!=="expert")el.clarificationDialog.showModal();
+  }
+
+  function placeClarifications(){
+    const body=el.clarificationDialog?.querySelector('.clarification-body'),step=$('#stepBlueprint');if(!body||!step)return;
+    let host=$('#expertClarificationHost');if(!host){host=document.createElement('div');host.id='expertClarificationHost';host.className='expert-clarification-host';const actions=step.querySelector('.step-actions');step.insertBefore(host,actions)}
+    const destination=state.mode==='expert'?host:body;
+    for(const node of [el.clarificationIntro,el.clarificationWarnings,el.clarificationQuestions,el.deferClarificationsBtn?.closest('.settings-footer')])if(node&&node.parentElement!==destination)destination.appendChild(node);
+    host.hidden=state.mode!=='expert';
+  }
+
+  function prepareExpertFlow(){
+    const modules=$('#stepModules'),questions=$('#stepBlueprint'),summary=el.blueprintSummary,controls=el.originality?.closest('.controls-strip');
+    if(modules&&summary&&summary.parentElement!==modules){const actions=modules.querySelector('.step-actions');modules.insertBefore(summary,actions);if(controls)modules.insertBefore(controls,actions)}
+    const expert=state.mode==='expert',hasBrief=Boolean(el.projectDescription?.value.trim());document.documentElement.classList.toggle('prompt-expert-has-brief',expert&&hasBrief);
+    const title=$('#stepProject h1');if(title)title.textContent=expert?'Angaben zum Projekt':'Was soll entstehen?';
+    const qKicker=questions?.querySelector('.section-kicker'),qTitle=questions?.querySelector('h1'),nav=$('.step-nav[data-step="5"] span'),next=$('#stepModules .next-btn');
+    if(qKicker)qKicker.textContent=expert?'05 — RÜCKFRAGEN':'05 — KONZEPT';if(qTitle)qTitle.textContent=expert?'Offene Punkte bewusst klären.':'Alles in einem Briefing.';if(nav)nav.textContent=expert?'Rückfragen':'Konzept';if(next)next.innerHTML=expert?'Rückfragen prüfen <i>→</i>':'Konzept prüfen <i>→</i>';
+    placeClarifications();
   }
 
   function renderOutputTarget(){
@@ -1445,7 +1464,7 @@
   function saveClarificationAnswers(){
     const questions=state.projectReview?.questions||[]; const rows=$$(".clarification-question",el.clarificationQuestions); const answers=[];
     for(const row of rows){const idx=rows.indexOf(row);const q=questions[idx];const ta=row.querySelector("textarea");if(q?.required && !ta.value.trim()){ta.reportValidity();return false}answers.push({id:q?.id||uid("answer"),question:q?.question||"",answer:ta.value.trim(),reason:q?.reason||""});}
-    state.clarifications=answers;state.reviewDeferred=false;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide();offerAfterFreeRun();return true;
+    state.clarifications=answers;state.reviewDeferred=false;saveState();if(state.mode!=="expert")el.clarificationDialog.close();renderAiReviewCard();updateGuide();offerAfterFreeRun();return true;
   }
 
   async function runProjectReview(force=false){
@@ -1522,6 +1541,11 @@
     state.urls.push(item);
     el.referenceUrl.value=""; renderReferences(); saveState(); updateGuide();
     readReferenceUrl(item);
+  }
+  function importDescriptionUrls(){
+    const matches=String(el.projectDescription?.value||'').match(/https?:\/\/[^\s<>()]+/gi)||[],limit=state.isAdmin?matches.length:planRules().maxRefUrls;
+    for(const raw of matches){if(state.urls.length>=limit)break;const value=raw.replace(/[),.;!?]+$/,'');if(state.urls.some(item=>normalizedSourceUrl(item.url)===normalizedSourceUrl(value)))continue;try{new URL(value)}catch{continue}const item={id:uid('url'),url:value,label:'Aus der Kurzbeschreibung übernommen',aspects:['Layout','Stimmung'],like:'',dislike:''};state.urls.push(item);readReferenceUrl(item)}
+    if(matches.length){renderReferences();saveState();updateGuide()}
   }
   // Ein angehängter Link war für die Prüfung bloß eine Zeichenkette: referencePayload() reichte
   // die Adresse mit leerer summary weiter, also konnten sich die Rückfragen auf nichts stützen,
@@ -2140,6 +2164,7 @@
   async function applyRefinement(){
     const instruction=el.refinementInput.value.trim(); const c=selectedConcept(); if(!instruction||!c)return;
     el.applyRefinementBtn.disabled=true;
+    window.PromptAiLoading?.beginTask?.('workflow-refinement',{title:'Änderung wird angewendet',kind:'preview',inputLength:instruction.length});
     try{
       let refined;
       try{
@@ -2150,6 +2175,7 @@
       }catch{refined=localRefine(c,instruction)}
       state.concepts=state.concepts.map(x=>x.id===c.id?refined:x);state.refinements.push({id:uid("ref"),text:instruction,at:new Date().toISOString()});el.refinementInput.value="";renderSelectedPreview();renderConcepts();saveState();updateGuide();
     }finally{
+      window.PromptAiLoading?.endTask?.('workflow-refinement',{title:'Vorschau ist aktualisiert',kind:'preview'});
       el.applyRefinementBtn.disabled=false;
     }
   }
@@ -2701,7 +2727,7 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     $$('[data-step-panel]').forEach(p=>p.classList.toggle("active",Number(p.dataset.stepPanel)===step));
     $$('.step-nav').forEach(btn=>{const n=Number(btn.dataset.step);btn.classList.toggle("active",n===step);btn.classList.toggle("done",n<step || n<state.maxVisited)});
     el.progressText.textContent=`${step} / 8`;
-    if(step===1) renderUnderstanding();
+    if(step===1){renderUnderstanding();prepareExpertFlow()}
     if(step===4){renderTemplateSelect();recommendModules(false);renderSkillSelection();if(state.mode!=="expert")recommendModules(true)}
     if(step===5) renderBlueprint();
     // No button any more: arriving at the preview step starts the run. The loading screen of the
@@ -2720,7 +2746,7 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     state.mode=mode;$$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
     if(mode==="expert") state.maxVisited=8;
     applyLibraryDefaults();
-    renderModeDescription();updateGuide();saveState();
+    renderModeDescription();prepareExpertFlow();updateGuide();saveState();
     window.dispatchEvent(new CustomEvent('promptai:project-extras'));
   }
 
@@ -3146,8 +3172,9 @@ ${agentMemoryDocument()}`;
     $$('.next-btn').forEach(b=>b.addEventListener("click",async()=>{
       const next=Number(b.dataset.next);
       try{
-        if(state.currentStep===1&&!state.understanding){const ok=await analyzeProject();if(!ok)return;}
-        if(state.currentStep===3&&next===4&&state.engine!=="local"&&state.settings.aiClarifications){const ok=await runProjectReview(false);if(!ok)return;}
+        if(state.currentStep===1){importDescriptionUrls();if(!state.understanding){const ok=await analyzeProject();if(!ok)return;}}
+        if(state.mode!=="expert"&&state.currentStep===3&&next===4&&state.engine!=="local"&&state.settings.aiClarifications){const ok=await runProjectReview(false);if(!ok)return;}
+        if(state.mode==="expert"&&state.currentStep===4&&next===5&&state.settings.aiClarifications)await runProjectReview(false);
         // Last gate before the briefing is written: in guided mode the project data is shown once
         // more, with a warning if name, customer, website or analysis do not match the description.
         if(next===8&&!await confirmProjectData())return;
@@ -3185,7 +3212,7 @@ ${agentMemoryDocument()}`;
     if(el.plansDialog){const nativePlansShowModal=el.plansDialog.showModal.bind(el.plansDialog);el.plansDialog.showModal=()=>{if(el.plansDialog.open)return;el.plansDialog.classList.toggle("plans-gate-mode",!cloudReady());nativePlansShowModal()};el.plansDialog.addEventListener("click",e=>{if(e.target===el.plansDialog)el.plansDialog.close()});}
     el.themeToggleBtn.addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
     el.runAiReviewBtn.addEventListener("click",()=>{if(state.engine!=="local"&&!state.settings.aiClarifications){populateSettingsDialog();el.settingsDialog.showModal();return;}runProjectReview(true)});
-    el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
+    el.saveClarificationsBtn.addEventListener("click",saveClarificationAnswers);el.deferClarificationsBtn.addEventListener("click",()=>{state.reviewDeferred=true;saveState();if(state.mode!=="expert")el.clarificationDialog.close();renderAiReviewCard();updateGuide()});
     el.clarificationDialog.querySelector('.close-dialog')?.addEventListener("click",()=>{state.reviewDeferred=true;saveState();renderAiReviewCard();updateGuide();showWelcome()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
@@ -3232,7 +3259,7 @@ el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBt
     renderLibrary();renderReferences();renderClientSources();renderUnderstanding();renderProfileUi();renderOutputTarget();
     el.generatorEngine.value=state.engine;el.generatorModel.value=state.model||"";updateEngineUi();
     $$('#agentSelector button').forEach(b=>b.classList.toggle('active',b.dataset.agent===state.targetAgent));
-    $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));renderModeDescription();
+    $$('.mode-switch button').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));renderModeDescription();prepareExpertFlow();
     if(state.concepts.length){renderConcepts();renderSelectedPreview();el.generationStatus.textContent=`${state.concepts.length} gespeicherte Richtungen geladen.`}
     bindEvents();renderAiConnections();renderAiReviewCard();applyPlanUi();goStep(state.currentStep,true);updateGuide();updateAccountUi();
     initCloudIntegration();

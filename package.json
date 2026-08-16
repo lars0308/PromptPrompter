@@ -10,10 +10,11 @@
     "e2e": "node tests/e2e/run.mjs",
     "security-audit": "node tests/security-audit.mjs",
     "audit:browser": "node tests/browser-audit.mjs",
+    "audit:roles": "node tests/e2e-role-based.mjs",
     "pruefung": "node tests/pruefung/missbrauch.mjs"
   },
   "dependencies": {
-    "@vercel/sandbox": "2.9.0"
+    "@vercel/sandbox": "2.9.2"
   },
   "devDependencies": {
     "jsdom": "^30.0.1"

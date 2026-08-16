@@ -44,7 +44,7 @@
     if(!file){setStatus('Bitte zuerst ein Projekt als ZIP auswählen.','error');return}
     if(!/\.zip$/i.test(file.name)){setStatus('Für den Sandbox-Build wird ein ZIP mit package.json benötigt.','error');return}
     if(file.size>24*1024*1024){setStatus('Das Projekt-ZIP darf höchstens 24 MB groß sein. node_modules, .next und dist bitte nicht mit hochladen.','error');return}
-    sandboxResult=null;setBusy(true);$('#sandboxBuildDetails').hidden=true;$('#sandboxOpenBtn').hidden=true;
+    sandboxResult=null;setBusy(true);window.PromptAiLoading?.beginTask?.('sandbox-build',{title:'Projekt wird in der Sandbox gebaut',kind:'build'});$('#sandboxBuildDetails').hidden=true;$('#sandboxOpenBtn').hidden=true;
     try{
       setStatus('Projekt wird verschlüsselt in deinen privaten Uploadbereich übertragen…');
       const storagePath=await uploadArchive(file);
@@ -55,7 +55,7 @@
     }catch(error){
       setStatus(error?.message||'Das Quellprojekt konnte nicht gebaut werden.','error');
       const frame=$('#outcomePreviewFrame');if(frame){frame.removeAttribute('src');frame.srcdoc=''}$('#outcomeFrameWrap')?.classList.remove('ready');
-    }finally{await removeUpload();setBusy(false)}
+    }finally{await removeUpload();window.PromptAiLoading?.endTask?.('sandbox-build',{title:'Sandbox-Lauf ist beendet',kind:'build'});setBusy(false)}
   }
   async function sendSandboxLearning(event){
     if(!sandboxResult)return;
@@ -63,7 +63,7 @@
     const status=$('#outcomePreviewStatus'),consent=$('#outcomeLearningConsent')?.checked,rating=Number($('#outcomeRating')?.value)||0;
     if(!consent){status.className='outcome-preview-status error';status.textContent='Bitte die freiwillige Lernfreigabe aktivieren oder die Vorschau einfach ohne Auswertung nutzen.';return}
     if(!rating){status.className='outcome-preview-status error';status.textContent='Bitte das Ergebnis zuerst mit 1 bis 5 bewerten.';return}
-    const button=$('#outcomeLearnBtn');button.disabled=true;status.className='outcome-preview-status';status.textContent='Master-Prompt und Sandbox-Ergebnis werden einmalig verglichen…';
+    const button=$('#outcomeLearnBtn');button.disabled=true;window.PromptAiLoading?.beginTask?.('learning-feedback',{title:'Ergebnis wird ausgewertet',kind:'review'});status.className='outcome-preview-status';status.textContent='Master-Prompt und Sandbox-Ergebnis werden einmalig verglichen…';
     try{
       const headers=await authHeaders(),payload={action:'learning-feedback',consent:true,rating,project:{type:$('#projectType')?.value||'',goal:$('#projectGoal')?.value||''},finalPrompt:$('#masterPrompt')?.value||'',outcome:{fileNames:sandboxResult.archiveFiles||[sandboxResult.fileName],html:sandboxResult.analysisSample||'',css:'',notes:$('#outcomeLearningNotes')?.value||''}},response=await fetch('/api/models',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(payload)}),data=await response.json().catch(()=>({}));
       if(!response.ok)throw new Error(data.error||'Auswertung nicht möglich.');
@@ -72,7 +72,7 @@
       // Mit Anmeldung abfragen: /api/config liefert die Lernhinweise nur noch an angemeldete
       // Nutzer, oeffentlich bleibt die Liste leer.
       try{const config=await fetch('/api/config',{cache:'no-store',headers}).then(r=>r.json());if(window.SiteBriefCloud?.config)window.SiteBriefCloud.config.learningHints=config.learningHints||[]}catch{}
-    }catch(error){status.className='outcome-preview-status error';status.textContent=error?.message||'Auswertung nicht möglich.'}finally{button.disabled=false}
+    }catch(error){status.className='outcome-preview-status error';status.textContent=error?.message||'Auswertung nicht möglich.'}finally{window.PromptAiLoading?.endTask?.('learning-feedback',{title:'Auswertung ist beendet',kind:'review'});button.disabled=false}
   }
   function injectStyles(){
     if($('#sandboxPreviewStyles'))return;const style=document.createElement('style');style.id='sandboxPreviewStyles';style.textContent=`
