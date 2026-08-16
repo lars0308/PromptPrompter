@@ -118,20 +118,27 @@
       /* "Anmelden" setzt das Formular jetzt als eigenständiges Pop-up über die weiterhin
          sichtbare Einstiegsseite - dieselbe Optik wie jeder andere Dialog in der App, statt es
          an derselben Stelle nach unten zu schieben. #accountDialog trägt die ID mit, damit diese
-         Regel unabhängig von Quellreihenfolge über die pauschale display:none-Regel gewinnt. */
+         Regel unabhängig von Quellreihenfolge über die pauschale display:none-Regel gewinnt. Die
+         drei Tarifkarten ziehen beim Öffnen als echtes Element aus #gateActions mit ins Pop-up -
+         links daneben, nicht nur auf der Seite dahinter - und wieder zurück, wenn es schließt. */
       #accountDialog.guest-gate.gate-auth-open .auth-layout{
         display:flex!important;position:fixed;inset:0;z-index:70;align-items:center;justify-content:center;
-        padding:20px;margin:0;background:rgba(8,12,16,.6);
+        gap:24px;padding:20px;margin:0;background:rgba(8,12,16,.6);
         backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
         animation:gateAuthIn .18s ease both;
       }
       @keyframes gateAuthIn{from{opacity:0}to{opacity:1}}
+      .gate-auth-plans{display:none;width:min(300px,100%);max-height:min(88vh,720px);overflow:auto}
+      .gate-auth-plans .gate-plan-list{gap:10px}
+      .gate-auth-plans .gate-plan-pick{padding:13px 15px}
+      #accountDialog.guest-gate.gate-auth-open .gate-auth-plans{display:block}
       #accountDialog.guest-gate.gate-auth-open .auth-layout>.auth-form-card{
         position:relative;width:min(440px,100%);max-height:min(88vh,720px);overflow:auto;margin:0;
         box-shadow:0 40px 100px rgba(0,0,0,.45);
       }
       #accountDialog.guest-gate.gate-auth-open .auth-layout>.auth-access-card{display:none!important}
       .gate-auth-close{position:absolute;top:14px;right:14px;display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--muted);font-size:18px;line-height:1;cursor:pointer}
+      @media(max-width:820px){.gate-auth-plans{display:none!important}}
       .gate-auth-close:hover{color:var(--ink);border-color:var(--accent)}
       /* The collapsed gate stretches .account-body to the full dialog height and pins the legal
          row to the bottom with margin-top:auto. Picking "Anmelden"/"Registrieren" swaps in the
@@ -261,13 +268,30 @@
     close.addEventListener('click',closeAuthPopup);
     card.insertAdjacentElement('afterbegin',close);
   }
+  // Die drei Tarifkarten sollen im Pop-up links neben dem Formular stehen, nicht nur auf der
+  // Seite dahinter. Statt sie ein zweites Mal zu bauen, zieht das echte #gatePlanList-Element
+  // (mit seinen Klick-Handlern) für die Dauer des Pop-ups um und wandert beim Schließen an seinen
+  // Platz in #gateActions zurück - derselbe "echtes Element umhängen"-Kniff wie sonst im Code.
+  function ensureAuthPlansSlot(){
+    const layout=$('.auth-layout');if(!layout||$('.gate-auth-plans',layout))return $('.gate-auth-plans');
+    const slot=document.createElement('div');slot.className='gate-auth-plans';
+    layout.insertAdjacentElement('afterbegin',slot);
+    return slot;
+  }
   function openAuthPopup(){
     const dialog=$('#accountDialog');if(!dialog)return;
     ensureAuthClose();
+    const slot=ensureAuthPlansSlot(),list=$('#gatePlanList');
+    if(slot&&list&&list.parentElement!==slot)slot.appendChild(list);
     dialog.classList.add('gate-auth-open');
     setTimeout(()=>$('#authEmail')?.focus(),80);
   }
-  function closeAuthPopup(){$('#accountDialog')?.classList.remove('gate-auth-open')}
+  function closeAuthPopup(){
+    $('#accountDialog')?.classList.remove('gate-auth-open');
+    // Zurück an den angestammten Platz zwischen der Gast-Notiz und "Alle Tarife ansehen".
+    const list=$('#gatePlanList'),more=$('#gatePlansMore');
+    if(list&&more&&list.nextElementSibling!==more)more.insertAdjacentElement('beforebegin',list);
+  }
   // Kostenlos startet sofort als Gast. Pro/Ultimate öffnen dasselbe Pop-up wie "Anmelden" und
   // rufen die echte pickAuthPlan() aus app.js über window.PromptAiAuthPlan auf - so bleibt die
   // Tarif-Vormerkung (pendingAuthPlan) an einer einzigen Stelle statt hier zweites Mal nachgebaut.
