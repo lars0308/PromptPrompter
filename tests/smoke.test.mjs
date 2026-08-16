@@ -1297,3 +1297,22 @@ test('the handoff screen is exempt from the cover it replaces',async()=>{
   assert.match(rule,/:not\(#promptModeHandoff\)/,'the handoff screen must not be hidden by the cover');
   assert.match(css,/html\.prompt-handoff-pending #promptModeHandoff\{visibility:visible!important\}/);
 });
+
+// Die Settings zeigten alle vier Bereiche gleichzeitig nebeneinander - am Telefon unbedienbar.
+// Jetzt stehen die Bereiche links untereinander, rechts nur der gewaehlte, und unter 860px
+// liegen beide als Schichten uebereinander.
+test('the settings sheet shows one area at a time',async()=>{
+  const src=await text('promptai-home-final.js');
+  for(const tab of ['agent','flow','template','skills']){
+    assert.match(src,new RegExp(`data-setup-tab="${tab}"`),`the ${tab} tab is missing`);
+    assert.match(src,new RegExp(`data-setup-pane="${tab}"`),`the ${tab} pane is missing`);
+  }
+  assert.match(src,/setupView\(narrow\(\)\?'':'agent'\)/,'mobile opens on the overview, desktop on an area');
+  assert.match(src,/promptSetupBack/,'the way back to the overview is missing');
+  // $$ gibt es in dieser Datei nicht - ein Aufruf davon wirft und bricht den Klick-Handler ab,
+  // womit sich das Fenster gar nicht mehr oeffnet.
+  assert.doesNotMatch(src,/\$\$\(/,'this file has no $$ helper; using it breaks the click handler');
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  assert.match(css,/\.prompt-setup-panes>\.prompt-setup-section\{display:none/);
+  assert.match(css,/\.prompt-setup-sheet\[data-setup-view="skills"\] \[data-setup-pane="skills"\]/);
+});

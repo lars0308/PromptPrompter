@@ -1099,7 +1099,36 @@ html.prompt-home-surface{--home-bg:#f4f7fa;--home-card:#fff;--home-panel:#111923
          also genau über das, was man beim Einstellen noch sehen will. */
       /* Vier Abschnitte nebeneinander, solange die Breite es hergibt - untereinander wären sie
          eine Rolltreppe, und genau die sollte hier nicht entstehen. */
-      .prompt-setup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:0 26px;align-content:start}
+      /* Reiter links untereinander, rechts nur der Bereich, den man gerade einstellt. Vorher
+         standen alle vier Spalten gleichzeitig da - am Telefon unbedienbar, am Rechner eine Wand.
+         Unter 860px liegen beide Ebenen uebereinander: erst die Bereiche, nach der Wahl der
+         Bereich selbst, zurueck ueber den Schalter in der Kopfzeile. */
+      .prompt-setup-grid{display:grid;grid-template-columns:minmax(200px,248px) minmax(0,1fr);gap:0 34px;align-content:start;align-items:start}
+      .prompt-setup-rail{display:flex;flex-direction:column;gap:4px;border-right:1px solid rgba(255,255,255,.07);padding-right:16px}
+      .prompt-setup-tab{display:block;width:100%;text-align:left;padding:11px 13px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s}
+      .prompt-setup-tab>b{display:block;font-size:14px;font-weight:700;letter-spacing:-.01em}
+      .prompt-setup-tab>small{display:block;margin-top:3px;color:var(--muted);font-size:11px;line-height:1.4}
+      .prompt-setup-tab:hover{background:color-mix(in srgb,#278bc2 8%,transparent)}
+      .prompt-setup-tab.active{background:color-mix(in srgb,#278bc2 14%,transparent);border-color:color-mix(in srgb,#278bc2 42%,var(--line))}
+      .prompt-setup-panes{min-width:0}
+      .prompt-setup-panes>.prompt-setup-section{display:none;border-bottom:0}
+      .prompt-setup-sheet[data-setup-view="agent"] [data-setup-pane="agent"],
+      .prompt-setup-sheet[data-setup-view="flow"] [data-setup-pane="flow"],
+      .prompt-setup-sheet[data-setup-view="template"] [data-setup-pane="template"],
+      .prompt-setup-sheet[data-setup-view="skills"] [data-setup-pane="skills"]{display:block}
+      .prompt-setup-back{display:none;align-items:center;gap:7px;padding:8px 13px;min-height:44px;border:1px solid var(--line);border-radius:11px;background:transparent;color:var(--ink);font-size:13px;font-weight:600;cursor:pointer}
+      @media(max-width:860px){
+        .prompt-setup-grid{grid-template-columns:minmax(0,1fr);gap:0}
+        .prompt-setup-rail{border-right:0;padding-right:0}
+        .prompt-setup-tab{min-height:56px}
+        .prompt-setup-sheet[data-setup-view=""] .prompt-setup-panes,
+        .prompt-setup-sheet:not([data-setup-view]) .prompt-setup-panes{display:none}
+        .prompt-setup-sheet[data-setup-view="agent"] .prompt-setup-rail,
+        .prompt-setup-sheet[data-setup-view="flow"] .prompt-setup-rail,
+        .prompt-setup-sheet[data-setup-view="template"] .prompt-setup-rail,
+        .prompt-setup-sheet[data-setup-view="skills"] .prompt-setup-rail{display:none}
+        .prompt-setup-back:not([hidden]){display:inline-flex}
+      }
       .prompt-setup-grid .prompt-setup-section{border-bottom:1px solid rgba(255,255,255,.07)}
       .prompt-setup-section{padding:8px 6px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
       .prompt-setup-section:last-of-type{border-bottom:0}
