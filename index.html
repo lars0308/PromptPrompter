@@ -22,7 +22,10 @@
   <link rel="icon" href="./sitebrief-logo.svg?v=6" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./sitebrief-logo.svg?v=6" />
   <title>Prompt.ai — Aus Ideen wird ein klares Projekt</title>
-  <script src="./global-init.js?v=1"></script>
+  <!-- global-init.js stand hier und meldete jeden Fehler per sendBeacon an /api/errors - diesen
+       Endpunkt gibt es in api/ nicht, jeder Fehler erzeugte also nur einen weiteren 404. Seine
+       Fehleranzeige doppelt ausserdem die vorhandene. Die Datei bleibt liegen, eingebunden ist
+       sie nicht mehr. -->
   <script src="./form-accessibility.js?v=1" defer></script>
   <script src="./dialog-accessibility.js?v=1" defer></script>
   <script src="./theme-init.js?v=6"></script>
@@ -921,18 +924,20 @@
   </footer>
 
   <script type="module" src="./cloud.js?v=20260817-24"></script>
-  <script src="./stylesheet-loader.js?v=20260817-24" defer></script>
-  <script type="module" src="./production-monitoring-setup.js?v=20260817-24" defer></script>
-  <script type="module" src="./app-error-integration.js?v=20260817-24" defer></script>
-  <script type="module" src="./api-wrapper.js?v=20260817-24" defer></script>
-  <script type="module" src="./service-worker-manager.js?v=20260817-24" defer></script>
-  <script type="module" src="./code-splitting-loader.js?v=20260817-24" defer></script>
-  <script type="module" src="./lazy-load-integration.js?v=20260817-24" defer></script>
+  <!-- stylesheet-loader.js, production-monitoring-setup.js, app-error-integration.js,
+       api-wrapper.js, service-worker-manager.js, code-splitting-loader.js,
+       lazy-load-integration.js und app-init-integration.js standen hier, sind aber nie in
+       einem erreichbaren Deployment gelaufen: die Seite antwortete waehrend ihrer ganzen
+       Standzeit mit 404. Zwei davon greifen tief ein - api-wrapper.js ersetzt window.fetch
+       fuer jeden Aufruf, service-worker-manager.js meldet einen Service Worker an, der sich
+       im Browser der Besucher festsetzt und dort auch einen kaputten Stand zwischenspeichern
+       wuerde. Dazu senden die Monitoring-Teile an /api/errors und /api/analytics, die es in
+       api/ gar nicht gibt. Die Dateien bleiben im Repository; eingebunden werden sie erst
+       wieder, wenn sie an einer laufenden Seite geprueft sind. -->
   <script src="./maintenance-mode.js?v=20260817-24" defer></script>
   <script src="./entry-gate-ui.js?v=20260817-24" defer></script>
   <script src="./legal-pages.js?v=20260817-24" defer></script>
   <script src="./app.js?v=20260817-24" defer></script>
-  <script type="module" src="./app-init-integration.js?v=20260817-24" defer></script>
   <script src="./admin-console.js?v=20260817-24" defer></script>
   <script>document.getElementById('currentYear').textContent=new Date().getFullYear();</script>
   <script defer src="/_vercel/insights/script.js"></script>
