@@ -69,7 +69,9 @@
       if(!response.ok)throw new Error(data.error||'Auswertung nicht möglich.');
       status.className='outcome-preview-status good';status.textContent='Danke. Prompt.ai hat Prompt und echtes Build-Ergebnis verglichen; gespeichert werden nur abstrahierte Lernhinweise.';
       const result=$('#outcomeLearningResult');if(result){result.textContent=data.summary||'Lernhinweis gespeichert.';result.classList.add('show')}
-      try{const config=await fetch('/api/config',{cache:'no-store'}).then(r=>r.json());if(window.SiteBriefCloud?.config)window.SiteBriefCloud.config.learningHints=config.learningHints||[]}catch{}
+      // Mit Anmeldung abfragen: /api/config liefert die Lernhinweise nur noch an angemeldete
+      // Nutzer, oeffentlich bleibt die Liste leer.
+      try{const config=await fetch('/api/config',{cache:'no-store',headers}).then(r=>r.json());if(window.SiteBriefCloud?.config)window.SiteBriefCloud.config.learningHints=config.learningHints||[]}catch{}
     }catch(error){status.className='outcome-preview-status error';status.textContent=error?.message||'Auswertung nicht möglich.'}finally{button.disabled=false}
   }
   function injectStyles(){

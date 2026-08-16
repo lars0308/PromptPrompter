@@ -124,7 +124,9 @@
     try{
       const headers=await window.SiteBriefCloud.authHeaders(),payload={action:'learning-feedback',consent:true,rating,project:{type:$('#projectType')?.value||'',goal:$('#projectGoal')?.value||''},finalPrompt:$('#masterPrompt')?.value||'',outcome:{...lastOutcome,notes:$('#outcomeLearningNotes')?.value||''}},response=await fetch('/api/models',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(payload)}),data=await response.json();if(!response.ok)throw new Error(data.error||'Auswertung nicht möglich.');
       status.className='outcome-preview-status good';status.textContent='Danke. Das Ergebnis wurde ausgewertet; gespeichert werden nur die abgeleiteten Lernhinweise.';const result=$('#outcomeLearningResult');result.textContent=data.summary||'Lernhinweis gespeichert.';result.classList.add('show');
-      try{const config=await fetch('/api/config',{cache:'no-store'}).then(r=>r.json());if(window.SiteBriefCloud?.config)window.SiteBriefCloud.config.learningHints=config.learningHints||[]}catch{}
+      // Mit Anmeldung abfragen: /api/config liefert die Lernhinweise nur noch an angemeldete
+      // Nutzer, oeffentlich bleibt die Liste leer.
+      try{const config=await fetch('/api/config',{cache:'no-store',headers}).then(r=>r.json());if(window.SiteBriefCloud?.config)window.SiteBriefCloud.config.learningHints=config.learningHints||[]}catch{}
     }catch(error){status.className='outcome-preview-status error';status.textContent=error.message||'Auswertung nicht möglich.'}finally{button.disabled=false}
   }
 
@@ -149,7 +151,13 @@
     window.addEventListener('promptai:access',()=>{enforceAccessUi();maybeShowThanks()});window.SiteBriefCloud?.subscribe?.(()=>setTimeout(()=>{enforceAccessUi();maybeShowThanks()},60));
   }
 
-  async function ensureConfig(){if(window.SiteBriefCloud?.config?.systemAiRoutes)return;try{const data=await fetch('/api/config',{cache:'no-store'}).then(r=>r.json());if(window.SiteBriefCloud?.config)Object.assign(window.SiteBriefCloud.config,{systemAiRoutes:data.systemAiRoutes||[],systemAiProviders:data.systemAiProviders||[],learningHints:data.learningHints||[],previewRoutes:data.previewRoutes||[],previewProviders:data.previewProviders||[]})}catch{}}
+  // Der Rueckkehrpunkt hing an config.systemAiRoutes. Seit die oeffentliche Antwort die internen
+  // Routing-Angaben aus Sicherheitsgruenden nicht mehr mitliefert, wurde das Feld nie gesetzt -
+  // die Abfrage lief also bei jedem Aufruf erneut, jedes Mal mit no-store. Ein eigenes Merkmal
+  // haelt sie bei einem Durchlauf. Die leeren Listen bleiben stehen, damit alles, was sie
+  // durchlaeuft, weiterhin ein Feld vorfindet und nicht auf undefined stoesst.
+  let configLoaded=false;
+  async function ensureConfig(){if(configLoaded)return;try{const headers=await window.SiteBriefCloud?.authHeaders?.()||{};const data=await fetch('/api/config',{cache:'no-store',headers}).then(r=>r.json());configLoaded=true;if(window.SiteBriefCloud?.config)Object.assign(window.SiteBriefCloud.config,{systemAiRoutes:data.systemAiRoutes||[],systemAiProviders:data.systemAiProviders||[],learningHints:data.learningHints||[],previewRoutes:data.previewRoutes||[],previewProviders:data.previewProviders||[]})}catch{}}
   async function init(){primeIntro();rememberCheckout();await ensureConfig();injectOutcomeLab();observePrompt();bindGlobalClicks();observers();enforceAccessUi();setTimeout(()=>{enforceAccessUi();maybeShowThanks();applyLearningHints()},600)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

@@ -1232,3 +1232,12 @@ test('web analytics waits for an explicit consent',async()=>{
   assert.match(src,/consent!=='all'\|\|document\.getElementById\('vercelInsights'\)/);
   assert.match(src,/settleConsent\(value\)/);
 });
+
+// /api/config ist oeffentlich erreichbar. Die Lernhinweise stammen aber aus den Projekten
+// anderer Nutzer und werden erst im Ablauf gebraucht - ohne Sitzung bleibt die Liste leer.
+test('the public config only hands out learning hints to a signed-in user',async()=>{
+  const src=await readFile(path.join(root,'api/config.js'),'utf8');
+  assert.match(src,/require\('\.\.\/server\/supabase-user'\)/);
+  assert.match(src,/const signedIn=await authenticatedUser\(req\)[^\n]*catch\(\(\)=>false\)/);
+  assert.match(src,/signedIn\?learningHints\(\):Promise\.resolve\(\[\]\)/);
+});
