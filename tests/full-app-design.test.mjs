@@ -107,7 +107,7 @@ test('the start page drops the bottom tools and puts the writing surface in the 
   const html=await read('index.html');
   for(const id of ['openLibraryBtn'])assert.ok(html.includes(id),id);
   assert.match(home,/data-command-mode="check"[\s\S]{0,120}Projekt prüfen/);
-  assert.match(home,/if\(mode==='check'\)\{closeModeMenu\(home\);proxy\('workspacePreviewBtn'\);return\}/,'checking is an action, not a writing mode');
+  assert.match(home,/if\(mode==='check'\)\{closeModeMenu\(home\);const text=\$\('#promptCommandInput',home\)\?\.value\.trim\(\)\|\|'';if\(window\.PromptAiHomeEntry\?\.submitBrief\)window\.PromptAiHomeEntry\.submitBrief\('preview',text\);else proxy\('workspacePreviewBtn'\);return\}/,'checking is an action, not a writing mode, and skips the extra description popup by reusing whatever is already in the home field');
   // The mode picker stays the dropdown it was: three tiles took the whole width of the
   // console for a choice that is made once, and suggestion chips added a second row below.
   assert.match(home,/id="promptModeButton"[\s\S]{0,300}id="promptModeMenu"/);
