@@ -1263,3 +1263,25 @@ test('the dialogs built in script get their name there',async()=>{
     assert.match(src,new RegExp(`setAttribute\\('aria-label','${name}`),`${file} builds a dialog without a name`);
   }
 });
+
+// Canonical stand als <meta name="canonical"> im Kopf. Das gibt es nicht - ausgewertet wird nur
+// <link rel="canonical">, die Angabe war also wirkungslos. og:image zeigte auf ein SVG, das
+// keine der grossen Plattformen verarbeitet: geteilte Links blieben ohne Vorschaubild.
+test('the page carries a canonical link and a shareable preview image',async()=>{
+  const html=await readFile(path.join(root,'index.html'),'utf8');
+  assert.match(html,/<link rel="canonical" href="https:\/\/www\.prompt-ai\.app\/"/);
+  assert.doesNotMatch(html,/<meta name="canonical"/,'a meta tag named canonical is ignored by search engines');
+  const og=(html.match(/<meta property="og:image" content="([^"]+)"/)||[])[1];
+  assert.ok(og,'og:image is missing');
+  assert.doesNotMatch(og,/\.svg$/,'no major platform renders SVG previews');
+  assert.match(og,/\.png$/);
+  for(const tag of ['og:image:width','og:image:height','twitter:image'])
+    assert.match(html,new RegExp(`property="${tag}"`),`${tag} is missing`);
+});
+
+// Die vier ?legal=-Adressen wurden nirgends ausgewertet und lieferten alle die Startseite.
+test('the sitemap lists only pages that actually exist',async()=>{
+  const xml=await readFile(path.join(root,'sitemap.xml'),'utf8');
+  const locs=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
+  assert.deepEqual(locs,['https://www.prompt-ai.app/'],'every other entry served the same homepage');
+});
