@@ -77,7 +77,10 @@
     // Vorhang gleich wieder auf, statt drei Sekunden lang eine fertige Automatik zu behaupten.
     const expert=data.mode==='expert';
     setSentence(expert?'Alle Schritte sind offen.':'Referenzen sind bereit.');
-    setTimeout(()=>release(box),expert?720:SENTENCE_MS+320);
+    // 720ms waren zu knapp: der Satz war noch im Einblenden, als der Vorhang schon aufging.
+    // Eine Satzlaenge steht, danach ist Schluss - immer noch klar kuerzer als die Ablaeufe, die
+    // wirklich etwas vorbereiten.
+    setTimeout(()=>release(box),expert?SENTENCE_MS-800:SENTENCE_MS+320);
   }
   function failOpen(message){if(finishing)return;finishing=true;clearInterval(sentenceTimer);const box=$('#promptModeHandoff');setSentence(message||'Projekt wird geöffnet.',true);setTimeout(()=>release(box),520)}
 

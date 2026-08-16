@@ -457,6 +457,15 @@
   const FLOW_KEY='prompt-ai-flow-mode-v1';
   const FLOW_LABEL={guided:'Mit Rückfragen',auto:'Ohne Rückfragen',expert:'Selbst einstellen'};
   function flowMode(){try{const v=localStorage.getItem(FLOW_KEY);if(FLOW_LABEL[v])return v}catch{}return 'guided'}
+  // Der gespeicherte Arbeitsstand merkt sich, in welchem Ablauf er entstanden ist. In der Zeile
+  // "Letztes Projekt" stand das bisher nicht - man sah erst nach dem Weiterarbeiten, ob der Stand
+  // mit Rueckfragen, ohne Rueckfragen oder selbst eingestellt begonnen wurde. Faellt der Eintrag
+  // aus, gilt der aktuell eingestellte Ablauf.
+  const CHECKPOINT_KEY='prompt-ai-ui-checkpoint-v2';
+  function lastProjectFlow(){
+    try{const saved=JSON.parse(localStorage.getItem(CHECKPOINT_KEY)||'null');if(FLOW_LABEL[saved?.mode])return saved.mode}catch{}
+    return flowMode();
+  }
   // Die drei Abläufe gibt es bereits als .mode-switch in der Kopfzeile. Das Menü hier bedient
   // genau diese Knöpfe; ein nachgebauter Schalter hieße, jede Sperre und jede Folgeregel ein
   // zweites Mal zu pflegen.
@@ -709,7 +718,7 @@
   function syncHome(){enforceSurface();const visible=homeVisible();document.documentElement.classList.toggle('prompt-home-surface',visible);if(!visible)return;const home=ensureHome();if(!home)return;$('#promptHomeName',home).textContent=resolvedName()||'Lars';const access=window.PromptAiAccess||{},plan=access.isAdmin?'Ultimate':String(access.plan||'free');$('#promptHomePlan',home).textContent=plan.charAt(0).toUpperCase()+plan.slice(1);const title=projectTitle(),original=$('#workspaceLastProjectBtn'),latest=$('.prompt-latest',home);
     // Ohne gespeichertes Projekt bot die Zeile etwas an, das es nicht gibt.
     if(latest)latest.hidden=!title;
-    $('#promptLatestTitle',home).textContent=title||'Gespeicherten Arbeitsstand fortsetzen';$('#promptLatestAction',home).disabled=Boolean(original?.disabled);syncMeta();syncFlowUi();applyFlow(flowMode());syncAttachments();syncSetupSummary();syncModeMenuLocks(home);applyPreferredMode(home);ensureThemeToggle();const topbar=$('body>.topbar')||$('.topbar');if(topbar){topbar.hidden=false;topbar.removeAttribute('aria-hidden')}}
+    $('#promptLatestTitle',home).textContent=title?`${title} · ${FLOW_LABEL[lastProjectFlow()]}`:'Gespeicherten Arbeitsstand fortsetzen';$('#promptLatestAction',home).disabled=Boolean(original?.disabled);syncMeta();syncFlowUi();applyFlow(flowMode());syncAttachments();syncSetupSummary();syncModeMenuLocks(home);applyPreferredMode(home);ensureThemeToggle();const topbar=$('body>.topbar')||$('.topbar');if(topbar){topbar.hidden=false;topbar.removeAttribute('aria-hidden')}}
   // Entprellt, aber mit Deckel: die Seite schreibt waehrend Ladeanimationen jeden Frame an
   // style-Attributen, und jede dieser Aenderungen hat den Timer neu gestartet. syncHome lief
   // dann minutenlang nicht - und genau daran haengt die Klasse, die Startseite und Ablauf
