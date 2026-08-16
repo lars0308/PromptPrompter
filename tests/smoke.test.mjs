@@ -1176,3 +1176,15 @@ test('the plan chip stays on the right when the console meta row wraps',async()=
   assert.match(home,/<span class="prompt-plan-chip">/);
   assert.match(home,/\.prompt-command-meta>\.prompt-plan-chip\{order:10;margin-left:auto/);
 });
+
+// Ein Ordner "public/" im Wurzelverzeichnis macht Vercel bei Zero-Config zum Ausgabeordner:
+// ab dann liefert das Deployment nur noch dessen Inhalt, index.html im Wurzelverzeichnis wird
+// gar nicht mehr ausgeliefert und die ganze Seite antwortet mit 404. Genau das ist passiert,
+// als robots.txt und sitemap.xml unter public/ abgelegt wurden. Beide gehoeren neben
+// index.html, und dieser Test haelt den Ordner fern.
+test('no public/ directory hijacks the Vercel output root',async()=>{
+  const entries=await readdir(root,{withFileTypes:true});
+  assert.ok(!entries.some(entry=>entry.isDirectory()&&entry.name==='public'),'public/ would become the Vercel output directory and hide index.html');
+  for(const name of ['index.html','robots.txt','sitemap.xml'])
+    assert.ok(entries.some(entry=>entry.isFile()&&entry.name===name),`${name} must sit in the deployment root`);
+});
