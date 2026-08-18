@@ -10,17 +10,19 @@
   function signature(){const text=[$('#projectName')?.value||'',$('#projectDescription')?.value||'',$('#selectedPreviewLarge')?.textContent||''].join('|');let h=2166136261;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}return `m${(h>>>0).toString(36)}`}
   function masterLoader(){
     const step=$('#stepPrompt');if(!step)return;
-    if(!$('#masterGeneration')){const l=document.createElement('div');l.id='masterGeneration';l.className='master-generation';l.innerHTML='<div class="master-generation-inner"><div class="master-generation-spinner"></div><span>PROMPT.AI</span><strong class="prompt-fill-sweep">Dein Master-Prompt entsteht</strong><small>Alle Angaben, Referenzen, Änderungen und die gewählte Richtung werden zu deinem individuellen Auftrag zusammengeführt.</small><div class="master-generation-track"><i></i></div></div>';step.insertBefore(l,$('#completionSummary')||step.children[2]||null)}
-    // Only react to an actual enter/leave of step 8. revealMaster() toggles `master-generating`
-    // on this same element, so reacting to every class mutation made the observer re-enter
-    // itself in an endless add/remove cycle and locked up the whole tab.
+    // Hier stand eine eigene Anzeige mitten in der Schrittseite - Spinner, eigene Ueberschrift,
+    // eigener Balken. Sie war der Grund, warum der Master-Prompt kurz aufblitzte und dann noch
+    // einmal von vorn anfing: erst diese, dann der KI-Lauf mit seiner eigenen. Beide melden sich
+    // jetzt beim gemeinsamen Ladeschirm an, die Anzeige hier wird nicht mehr gebraucht.
+    $('#masterGeneration')?.remove();
+    // Nur auf ein echtes Betreten oder Verlassen von Schritt 8 reagieren.
     masterStepActive=step.classList.contains('active');
     new MutationObserver(()=>{
       const active=step.classList.contains('active');
       if(active===masterStepActive)return;
       masterStepActive=active;
       if(active)revealMaster();
-      else{clearTimeout(masterTimer);step.classList.remove('master-generating')}
+      else{clearTimeout(masterTimer);window.PromptAiLoading?.endTask?.(ZUSAMMENBAU)}
     }).observe(step,{attributes:true,attributeFilter:['class']});
     if(masterStepActive)revealMaster();
   }
@@ -30,10 +32,7 @@
     clearTimeout(masterTimer);
     const done=prompt=>{
       lastMasterSignature=sig;
-      // When the overlay was actually up, close it the same way every other loading screen does:
-      // the headline fills to full, blinks blue once, then the step appears.
-      if(step.classList.contains('master-generating'))window.PromptAiFill?.finish($('#masterGeneration strong'),()=>step.classList.remove('master-generating'));
-      else step.classList.remove('master-generating');
+      window.PromptAiLoading?.endTask?.(ZUSAMMENBAU);
       try{sessionStorage.setItem(`prompt-ai-master-ready:${sig}`,'1')}catch{}
       if(prompt)window.dispatchEvent(new CustomEvent('promptai:prompt-version',{detail:{source:'master',title:$('#projectName')?.value||'Master-Prompt',prompt}}));
     };
@@ -41,8 +40,7 @@
     // The prompt is assembled synchronously, so in practice it is already there. Never hold the
     // finished result behind an artificial delay, and always release the overlay after the cap.
     if(ready().length>=80||($('#projectValidation')?.textContent||'').trim()){done(ready());return}
-    window.PromptAiFill?.reset($('#masterGeneration strong'));
-    step.classList.add('master-generating');
+    window.PromptAiLoading?.beginTask?.(ZUSAMMENBAU,{title:MASTER_TITEL,kind:'build'});
     const start=Date.now(),check=()=>{
       const prompt=ready();
       if(prompt.length>=80||($('#projectValidation')?.textContent||'').trim()||Date.now()-start>=MASTER_MAX_WAIT){done(prompt);return}
@@ -50,12 +48,16 @@
     };
     masterTimer=setTimeout(check,120);
   }
-  // The AI writes the final master prompt from the assembled material; the overlay stays up for
-  // that pass instead of showing a briefing that is about to be replaced.
+  // Der Master-Prompt entsteht in zwei Zuegen: erst wird das Material zusammengesetzt (das geht
+  // sofort), dann schreibt die KI daraus den fertigen Text. Beide hatten frueher ihre eigene
+  // Anzeige - erst blitzte die eine auf und war weg, dann kam die andere. Beide melden sich jetzt
+  // beim gemeinsamen Ladeschirm an; der bleibt vom ersten bis zum letzten Zug stehen.
+  const ZUSAMMENBAU='master-zusammenbau',KI_LAUF='master-ki';
+  const MASTER_TITEL='Dein Master-Prompt entsteht';
   function masterAiOverlay(state){
     const step=$('#stepPrompt');if(!step||!step.classList.contains('active'))return;
-    if(state==='start'){window.PromptAiFill?.reset($('#masterGeneration strong'));step.classList.add('master-generating');return}
-    window.PromptAiFill?.finish($('#masterGeneration strong'),()=>step.classList.remove('master-generating'));
+    if(state==='start'){window.PromptAiLoading?.beginTask?.(KI_LAUF,{title:MASTER_TITEL,kind:'build'});return}
+    window.PromptAiLoading?.endTask?.(KI_LAUF);
   }
   function settle(){clean();previews();previewPage()}
   function init(){settle();masterLoader();observer=new MutationObserver(()=>{clearTimeout(observer._t);observer._t=setTimeout(settle,60)});observer.observe(document.body,{childList:true});setTimeout(()=>observer?.disconnect(),5000);window.addEventListener('promptai:access',()=>setTimeout(settle,0));window.addEventListener('promptai:system-ai-ready',previews);window.addEventListener('promptai:master-ai',event=>masterAiOverlay(event.detail?.state))}

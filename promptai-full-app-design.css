@@ -2283,3 +2283,66 @@ html.prompt-full-redesign .prompt-attach-button{
   font-size:17px!important;
   line-height:1!important;
 }
+
+/* ------------------------------------------------------------------
+   Rückfragen: ein Bildschirm, keine Karte in der Karte
+   ------------------------------------------------------------------
+   Bisher lag ein Fenster mit eigenem Rahmen auf der Seite, darin ein Kasten pro
+   Frage, darin wieder ein umrandetes Antwortfeld - drei Rahmen tief, und auf dem
+   Handy blieb für den Text kaum Breite übrig. Die Rückfragen sind kein Beiwerk,
+   sondern der eigentliche Schritt: sie bekommen den ganzen Bildschirm, und die
+   Fragen stehen untereinander, getrennt durch eine Linie statt durch einen Rahmen. */
+html.prompt-full-redesign #clarificationDialog{
+  width:100vw!important;height:100dvh!important;
+  max-width:none!important;max-height:none!important;
+  margin:0!important;padding:0!important;
+  border:0!important;border-radius:0!important;
+  background:var(--paper)!important;color:var(--ink)!important;box-shadow:none!important;
+}
+html.prompt-full-redesign #clarificationDialog::backdrop{background:var(--paper)!important;backdrop-filter:none!important}
+html.prompt-full-redesign #clarificationDialog>.dialog-frame{
+  display:flex!important;flex-direction:column!important;
+  width:100%!important;height:100%!important;
+  max-width:none!important;max-height:none!important;
+  margin:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;overflow:hidden!important;
+}
+html.prompt-full-redesign #clarificationDialog .dialog-head{
+  flex:0 0 auto!important;
+  width:min(760px,100%)!important;margin:0 auto!important;
+  padding:var(--sp-5) var(--dlg-x) var(--sp-4)!important;
+  border-bottom:1px solid var(--line)!important;background:transparent!important;
+}
+html.prompt-full-redesign #clarificationDialog .clarification-body{
+  flex:1 1 auto!important;
+  width:min(760px,100%)!important;margin:0 auto!important;
+  padding:var(--sp-5) var(--dlg-x) var(--sp-8)!important;
+  overflow-y:auto!important;overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+/* Kein Kasten mehr um die einzelne Frage - eine Linie darunter reicht, um zu zeigen,
+   wo die nächste anfängt. Die letzte braucht auch die nicht. */
+html.prompt-full-redesign #clarificationDialog .clarification-question{
+  padding:0 0 var(--sp-6)!important;margin:0 0 var(--sp-6)!important;
+  border:0!important;border-bottom:1px solid var(--line)!important;
+  border-radius:0!important;background:transparent!important;
+}
+html.prompt-full-redesign #clarificationDialog .clarification-question:last-child{
+  border-bottom:0!important;margin-bottom:0!important;padding-bottom:0!important;
+}
+html.prompt-full-redesign #clarificationDialog .clarification-question h3{
+  font-size:clamp(19px,4.2vw,23px)!important;
+}
+html.prompt-full-redesign #clarificationDialog .clarification-question textarea{
+  width:100%!important;min-height:96px!important;
+  background:var(--surface)!important;
+}
+/* Der Abschluss steht unten und schwebt nicht mit der Liste weg. */
+html.prompt-full-redesign #clarificationDialog .settings-footer{
+  position:sticky!important;bottom:0!important;
+  display:flex!important;justify-content:space-between!important;align-items:center!important;
+  gap:var(--sp-3)!important;
+  margin-top:var(--sp-7)!important;padding:var(--sp-4) 0 max(var(--sp-4),env(safe-area-inset-bottom))!important;
+  border-top:1px solid var(--line)!important;
+  background:var(--paper)!important;
+}

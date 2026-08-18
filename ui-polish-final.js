@@ -21,9 +21,27 @@
   }
   function syncBriefCard(){const desc=$('#freePromptDescription'),label=desc?.closest('label'),text=$('#freePromptBriefText');if(!desc||!label||!text)return;const value=desc.value.trim(),copy=value||'Noch keine Beschreibung übernommen.';setText(text,copy);if(label.dataset.editing==='1')return;label.classList.toggle('free-description-collapsed',value.length>=1)}
 
+  // Ein Fenster faengt oben an - aber nur beim Aufgehen.
+  //
+  // Hier stand vorher dasselbe ohne die Merker: settle() laeuft nach jeder Aenderung im Dokument,
+  // und damit wurde jedes offene Fenster staendig wieder nach oben gezogen. Auf dem Handy hiess
+  // das: man scrollt auf der Vorschauseite nach unten, und die Seite springt von selbst zurueck -
+  // an jeder Stelle mit einem Fenster, nicht nur dort. Jetzt merkt sich jedes Fenster, dass es
+  // schon oben angefangen hat, und wird erst beim naechsten Aufgehen wieder zurueckgesetzt.
   function topDialogs(){
-    $$('dialog[open]').forEach(d=>{const frame=d.querySelector('.dialog-frame,.free-prompt-shell,.project-mode-frame,.simple-intake-shell');if(frame&&matchMedia('(max-width:820px)').matches&&frame.scrollTop!==0)frame.scrollTop=0});
-    const menu=$('#topbarMenu');if(menu&&(menu.classList.contains('open')||menu.dataset.open==='true')&&menu.scrollTop!==0)menu.scrollTop=0;
+    const schmal=matchMedia('(max-width:820px)').matches;
+    for(const d of $$('dialog')){
+      if(!d.open){delete d.dataset.startOben;continue}
+      if(d.dataset.startOben==='1')continue;
+      d.dataset.startOben='1';
+      const frame=d.querySelector('.dialog-frame,.free-prompt-shell,.project-mode-frame,.simple-intake-shell');
+      if(frame&&schmal)frame.scrollTop=0;
+    }
+    const menu=$('#topbarMenu');if(!menu)return;
+    const offen=menu.classList.contains('open')||menu.dataset.open==='true';
+    if(!offen){delete menu.dataset.startOben;return}
+    if(menu.dataset.startOben==='1')return;
+    menu.dataset.startOben='1';menu.scrollTop=0;
   }
 
   function settle(){cleanHints();freeFlow();topDialogs()}

@@ -1437,17 +1437,40 @@
     const open=await ask('Das waren echte Rückfragen aus deinem Briefing – dein KI-Durchlauf für diesen Monat. Mit Pro fragt die KI bei jedem Projekt nach, und die Vorschauen kommen als Bilder statt als HTML.',{title:'Dein Monatslauf ist verbraucht',confirmLabel:'Tarife ansehen',cancelLabel:'Später'});
     if(open)el.plansDialog?.showModal();
   }
+  // Antwortvorschläge zu einer Rückfrage.
+  //
+  // Zwei Fehler steckten hier drin, und zusammen ergaben sie das Bild, das aufgefallen ist:
+  // unter "Welches Angebot bietet Ihr Unternehmen an und wer ist die Zielgruppe?" standen
+  // Sanity, WordPress und "Kein CMS".
+  //
+  // Erstens wurde die Begründung mitgelesen. Die ist Fließtext ("… um Inhalte, Conversion-Pfade
+  // und die Tonalität auszurichten …"), und darin steht irgendwann jedes Alltagswort. Gesucht
+  // wird jetzt nur noch in der Frage selbst.
+  // Zweitens war "inhalte" als Erkennungswort für ein Redaktionssystem viel zu weit gefasst.
+  // Ein CMS heißt jetzt CMS, Redaktionssystem oder Pflege von Inhalten - nicht "Inhalte".
+  //
+  // Und der wichtigste Punkt zuletzt: hat die KI eigene Vorschläge zur Frage geliefert, bleibt
+  // es bei denen. Die Listen hier sind der Ersatz für den Fall, dass keine kommen - kein
+  // Zusatz, der sich danebenstellt.
   function questionSuggestions(q){
-    const text=`${q.question||""} ${q.reason||""}`.toLowerCase();let suggestions=[...(Array.isArray(q.suggestions)?q.suggestions:[]),q.suggestedAnswer].filter(Boolean);
-    if(/cms|content.management|inhalte|beiträge|tagebuch/.test(text))suggestions.push("Sanity – flexibel und strukturiert","WordPress – vertraut und leicht selbst pflegbar","Kein CMS – Inhalte werden im Code gepflegt");
-    if(/exif|standort|metadaten/.test(text))suggestions.push("Ja – EXIF-Daten automatisch entfernen","Nein – Metadaten bewusst erhalten","Vor jedem Upload manuell entscheiden");
-    if(/animation|effekt|ladezeit|performance/.test(text))suggestions.push("Ausgewogen – dezente Animationen und optimierte Bilder","Performance zuerst – nur minimale Bewegung","Visuell stark – Bewegung gezielt einsetzen");
-    // Fällt die KI-Prüfung aus, standen bei Farb- und Aufbaufragen gar keine Vorschläge da.
+    const eigene=[...(Array.isArray(q.suggestions)?q.suggestions:[]),q.suggestedAnswer].filter(Boolean);
+    const sauber=list=>[...new Set(list.map(x=>String(x).trim()).filter(Boolean))].slice(0,4);
+    if(eigene.length)return sauber(eigene);
+
+    const frage=String(q.question||"").toLowerCase();
+    const suggestions=[];
+    if(/\bcms\b|content.management|redaktionssystem|inhalte pflegen|inhalte selbst|selbst pflegen|beiträge|blog|tagebuch/.test(frage))
+      suggestions.push("Sanity – flexibel und strukturiert","WordPress – vertraut und leicht selbst pflegbar","Kein CMS – Inhalte werden im Code gepflegt");
+    if(/exif|standort|metadaten/.test(frage))
+      suggestions.push("Ja – EXIF-Daten automatisch entfernen","Nein – Metadaten bewusst erhalten","Vor jedem Upload manuell entscheiden");
+    if(/animation|effekt|ladezeit|performance/.test(frage))
+      suggestions.push("Ausgewogen – dezente Animationen und optimierte Bilder","Performance zuerst – nur minimale Bewegung","Visuell stark – Bewegung gezielt einsetzen");
     // Die Grundtöne folgen der Farbe, die im Auftrag steht - "rot" wird ein getragenes Rot,
     // kein Signalrot -, und jede Zeile bringt ihre Hex-Werte gleich mit.
-    if(/farb|palette|farbwelt|kolorit/.test(text))for(const value of palettesFor(project()))suggestions.push(value);
-    if(/struktur|aufbau|navigation|kopfzeile|menü|seitenstruktur|gliederung/.test(text))suggestions.push("Schmale Kopfzeile mit Ankerlinks – eine geführte Startseite, wenig Unterseiten","Kopfzeile mit Menü und Kontaktaktion – klassisch, gut für mehrere Leistungen","Seitliche Navigation – für viele Inhalte und Nachschlagen");
-    return [...new Set(suggestions.map(x=>String(x).trim()).filter(Boolean))].slice(0,4);
+    if(/farb|palette|farbwelt|kolorit/.test(frage))for(const value of palettesFor(project()))suggestions.push(value);
+    if(/struktur|aufbau|navigation|kopfzeile|menü|seitenstruktur|gliederung/.test(frage))
+      suggestions.push("Schmale Kopfzeile mit Ankerlinks – eine geführte Startseite, wenig Unterseiten","Kopfzeile mit Menü und Kontaktaktion – klassisch, gut für mehrere Leistungen","Seitliche Navigation – für viele Inhalte und Nachschlagen");
+    return sauber(suggestions);
   }
 
   const progressTimers={};
@@ -2734,6 +2757,12 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
 
   function goStep(step,force=false){
     step=clamp(step,1,8);if(!force && state.mode!=="expert" && step>state.maxVisited+1)return;if(!validateStep(step))return;
+    // Ob wirklich ein Schritt gewechselt wurde, entscheidet weiter unten darueber, ob die Seite
+    // nach oben springt. goStep() wird auch mit dem Schritt aufgerufen, auf dem man schon steht -
+    // beim Wiederherstellen eines Projekts, beim Oeffnen des Ablaufs, aus dem Ablauf-Automaten.
+    // Ohne diese Unterscheidung sprang die Seite dabei jedes Mal an den Anfang zurueck, mitten
+    // im Lesen. Genau das ist beim Herunterscrollen auf der Vorschauseite aufgefallen.
+    const gewechselt=state.currentStep!==step;
     state.currentStep=step;state.maxVisited=Math.max(state.maxVisited,step);
     $$('[data-step-panel]').forEach(p=>p.classList.toggle("active",Number(p.dataset.stepPanel)===step));
     $$('.step-nav').forEach(btn=>{const n=Number(btn.dataset.step);btn.classList.toggle("active",n===step);btn.classList.toggle("done",n<step || n<state.maxVisited)});
@@ -2747,7 +2776,7 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     if(step===6) renderRegenerateButton();
     if(step===7) renderSelectedPreview();
     if(step===8){try{updateMasterPrompt();renderCompletionSummary()}catch(err){const message=err?.message||"Der Master-Prompt konnte nicht zusammengestellt werden. Bitte versuch es erneut.";el.projectValidation.textContent=message;if(el.masterPrompt)el.masterPrompt.value=`Der Master-Prompt konnte nicht erstellt werden: ${message}\n\nBitte versuch es erneut oder ändere zuletzt getroffene Auswahl (z. B. Feinschliff-Änderungen) und komm zu diesem Schritt zurück.`}}
-    updateGuide();saveState();requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"auto"}));
+    updateGuide();saveState();if(gewechselt)requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"auto"}));
   }
 
   const MODE_DESCRIPTIONS={guided:"Schritt für Schritt mit klaren Vorgaben – bei jeder wichtigen Entscheidung wird nachgefragt.",auto:"Sinnvolle Standardwerte werden automatisch gewählt, Module empfohlen und Vorschauen direkt erzeugt.",expert:"Freie Navigation zwischen allen Schritten, volle manuelle Kontrolle über jede Einstellung."};

@@ -152,11 +152,27 @@
     setTimeout(()=>host.classList.add('is-complete'),reduceMotion()?0:420);
     setTimeout(()=>{
       host.classList.add('is-leaving');
-      setTimeout(()=>{host.remove();after?.()},250);
+      setTimeout(()=>{host.remove();laufende.length=0;after?.()},250);
     },Math.max(wait,420+flash*FLASH_COUNT));
   }
 
+  // Mehrere Arbeiten koennen sich ueberlappen: die Uebernahme laeuft noch, waehrend die erste
+  // Anfrage schon raus ist, und der Master-Prompt wird erst zusammengesetzt und dann von der KI
+  // ausgeschrieben. Frueher zog jede davon ihren eigenen Schirm auf - drei Ladebilder fuer einen
+  // Vorgang. Jetzt teilen sie sich einen: die Liste haelt fest, was gerade laeuft, die Ueberschrift
+  // gehoert der zuletzt begonnenen Arbeit, und weg ist der Schirm erst, wenn die Liste leer ist.
+  const laufende=[];
+  function renderTask(host){
+    const oben=laufende[laufende.length-1];if(!oben)return;
+    host.dataset.taskKey=oben.key;
+    const strong=$('strong',host);
+    if(strong.textContent!==oben.title){strong.textContent=oben.title;startSentences(host,lineSet(oben.kind))}
+  }
   function beginTask(key,{title='Prompt.ai arbeitet',kind='generic'}={}){
+    const id=String(key||'generic');
+    const vorhanden=laufende.findIndex(x=>x.key===id);
+    if(vorhanden>=0)laufende.splice(vorhanden,1);
+    laufende.push({key:id,title,kind});
     let host=$('#promptAiTaskLoader');
     if(!host){
       host=document.createElement('section');host.id='promptAiTaskLoader';
@@ -164,17 +180,23 @@
       host.setAttribute('aria-live','polite');host.setAttribute('aria-busy','true');
       host.innerHTML=LOADER_MARKUP;document.body.appendChild(host);
       host.dataset.shownAt=String(Date.now());
+      startSentences(host,lineSet(kind));startFill(host);
     }
-    host.dataset.taskKey=String(key||'generic');
+    host.setAttribute('aria-busy','true');
     host.dataset.closing='0';host.classList.remove('is-complete','is-leaving');
     host.style.removeProperty('--prompt-flash-count');
-    $('strong',host).textContent=title;
-    startSentences(host,lineSet(kind));startFill(host);
+    renderTask(host);
+    // Die Fuellung laeuft weiter, wenn sie schon laeuft - ein Abschnittswechsel setzt sie nicht
+    // zurueck. Nur ein abgebrochener Abgang startet sie neu.
+    if(host.dataset.raf==='0'||!host.dataset.raf)startFill(host);
     return host;
   }
   function endTask(key){
-    const host=$('#promptAiTaskLoader');
-    if(!host||host.dataset.taskKey!==String(key||'generic'))return;
+    const id=String(key||'generic');
+    const index=laufende.findIndex(x=>x.key===id);
+    if(index>=0)laufende.splice(index,1);
+    const host=$('#promptAiTaskLoader');if(!host)return;
+    if(laufende.length){renderTask(host);return}
     host.setAttribute('aria-busy','false');finishScreen(host);
   }
 
@@ -218,7 +240,7 @@
     // Die Aufrufe in app.js brechen selbst nach 60 bis 120 Sekunden ab; das hier ist das Netz
     // darunter.
     clearTimeout(aiWatchdog);
-    aiWatchdog=setTimeout(()=>{aiWaits=0;$('#promptAiTaskLoader')?.remove()},180000);
+    aiWatchdog=setTimeout(()=>{aiWaits=0;laufende.length=0;$('#promptAiTaskLoader')?.remove()},180000);
   }
   function endWait(){
     if(aiWaits>0&&--aiWaits)return;

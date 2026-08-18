@@ -34,8 +34,13 @@ test('guided feedback hides technical provider failures and the intro/background
 test('fresh guided preview defaults to stable HTML but manual choice remains possible',async()=>{const src=await text('ux-stability-fix.js');assert.match(src,/FRESH_WEBSITE_KEY/);assert.match(src,/PREVIEW_MANUAL_KEY/);assert.match(src,/format\.value='html'/);assert.match(src,/isTrusted/)});
 test('master prompt transition is a short intentional handoff',async()=>{
   const src=await text('workflow-cleanup.js');
-  assert.match(src,/Dein Master-Prompt entsteht/);
-  assert.match(src,/individuellen Auftrag/);
+  assert.match(src,/const MASTER_TITEL='Dein Master-Prompt entsteht'/);
+  // Der Master-Prompt entsteht in zwei Zuegen (zusammensetzen, dann von der KI ausschreiben).
+  // Beide hatten frueher ihre eigene Anzeige - der Schirm blitzte auf, war weg, kam wieder. Sie
+  // melden sich jetzt beim gemeinsamen Ladeschirm an, mit derselben Ueberschrift.
+  assert.match(src,/const ZUSAMMENBAU='master-zusammenbau',KI_LAUF='master-ki'/);
+  assert.doesNotMatch(src,/master-generation-spinner/,'keine eigene Anzeige mehr mitten in der Schrittseite');
+  assert.doesNotMatch(src,/classList\.add\('master-generating'\)/);
   assert.match(src,/const MASTER_MAX_WAIT=8000;/,'the overlay must always be released after a bounded wait');
   assert.match(src,/Date\.now\(\)-start>=MASTER_MAX_WAIT/,'the wait cap must actually be checked in the poll');
   assert.doesNotMatch(src,/elapsed<3200/,'a finished master prompt must never be hidden behind an artificial minimum delay');
@@ -744,7 +749,7 @@ test('the loading screen is bound to the AI request itself, so no step can forge
   for(const action of ['intake','revision-brief','sandbox-build','quota-summary'])
     assert.doesNotMatch(src,new RegExp(`'?${action}'?:\\{title:`),`${action} must not get a second screen`);
   // Haengt eine Anfrage, ohne je aufzuloesen, darf der Schirm nicht ewig stehen.
-  assert.match(src,/aiWatchdog=setTimeout\(\(\)=>\{aiWaits=0;\$\('#promptAiTaskLoader'\)\?\.remove\(\)\},180000\)/);
+  assert.match(src,/aiWatchdog=setTimeout\(\(\)=>\{aiWaits=0;laufende\.length=0;\$\('#promptAiTaskLoader'\)\?\.remove\(\)\},180000\)/);
   // usage-quota-ui.js haengt sich ebenfalls in fetch - die beiden duerfen sich nicht gegenseitig
   // aushebeln.
   assert.match(src,/if\(native\.__quotaWrapped\)wrapped\.__quotaWrapped=true;/);
@@ -896,10 +901,10 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   assert.match(css,/\.prompt-fill-sweep\{background-image:linear-gradient/,'indeterminate waits sweep instead');
   assert.match(css,/-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important/,'more specific colour rules would otherwise repaint the glyphs opaque');
   assert.doesNotMatch(css,/\.prompt-fill-progress\{[^}]*clip-path/,'clip-path cut ascenders and descenders in half');
-  assert.match(css,/\.master-generation-track,#promptAppBoot \.boot-track\{display:none\}/);
+
   assert.match(css,/\.task-progress \.task-progress-track\{display:none\}/);
   assert.match(html,/<strong class="prompt-fill-progress" style="--prompt-fill:6%">Arbeitsbereich wird vorbereitet<\/strong>/,'boot screen headline - same build as every other loading screen');
-  assert.match(cleanup,/<strong class="prompt-fill-sweep">Dein Master-Prompt entsteht<\/strong>/,'master prompt screen');
+  assert.match(cleanup,/beginTask\?\.\(ZUSAMMENBAU,\{title:MASTER_TITEL,kind:'build'\}\)/,'der Master-Prompt nutzt den gemeinsamen Ladeschirm');
   assert.match(app,/box\?\.style\.setProperty\('--prompt-fill',`\$\{pct\}%`\);label\?\.classList\.add\('prompt-fill-progress'\)/,'inline task progress');
 });
 test('starting a new project does not ask first, and finished projects are marked as such',async()=>{
@@ -943,8 +948,14 @@ test('every loading screen ends the same way: full fill, blinking, then gone - a
   assert.match(handoff,/if\(document\.querySelector\('#promptWorkflowLoader,#promptAiTaskLoader'\)\)\{leave\(box\);return\}/);
   const design=await text('promptai-full-app-design.css');
   assert.match(design,/body:has\(#promptWorkflowLoader\) :is\(#promptAiTaskLoader,#promptBriefHandoff\)/);
-  assert.match(cleanup,/window\.PromptAiFill\?\.finish\(\$\('#masterGeneration strong'\),\(\)=>step\.classList\.remove\('master-generating'\)\)/);
-  assert.match(cleanup,/window\.PromptAiFill\?\.reset\(\$\('#masterGeneration strong'\)\)/,'the overlay can run again for the next project');
+  // Der Master-Prompt hat keine eigene Anzeige mehr: er meldet sich beim gemeinsamen Ladeschirm
+  // an und wieder ab, und der endet fuer alle gleich.
+  assert.match(cleanup,/window\.PromptAiLoading\?\.endTask\?\.\(ZUSAMMENBAU\)/);
+  assert.match(cleanup,/window\.PromptAiLoading\?\.endTask\?\.\(KI_LAUF\)/);
+  // Ueberlappende Arbeiten teilen sich einen Schirm, statt jede ihren eigenen aufzuziehen.
+  const v2b=await text('promptai-loading-v2.js');
+  assert.match(v2b,/const laufende=\[\];/);
+  assert.match(v2b,/if\(laufende\.length\)\{renderTask\(host\);return\}/);
   assert.match(app,/el\[`\$\{kind\}ProgressText`\]\?\.classList\.add\('prompt-fill-complete'\)/,'inline task progress ends the same way');
 });
 test('admin announcements pop up large and come back on a fresh app open, not on the way home',async()=>{

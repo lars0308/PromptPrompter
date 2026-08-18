@@ -52,7 +52,7 @@
   };
   let loginActive=false;
 
-  let fillRaf=0,fillStartedAt=0,flashTimer=0,shownAt=0;
+  let fillRaf=0,fillStartedAt=0,flashTimer=0,leaveTimer=0,shownAt=0;
   const FLASH_MS=window.PromptAiFill?.flashMs??420;
   const reduceMotion=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}};
   function fillProgress(elapsed){const tau=15000;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
@@ -69,8 +69,15 @@
     setTitle(box,'Das dauert länger als erwartet');
     setSentence('Tippe oben rechts auf ×, um zurückzukehren und es erneut zu versuchen. Dein Projekt bleibt dabei erhalten.',true);
   }
+  // Die Uhr haengt an der Flaeche, nicht am Modul: wird ein Abgang abgebrochen und gleich wieder
+  // gezeigt, laeuft die Fuellung weiter, statt von vorn zu beginnen. Nur eine wirklich neue
+  // Flaeche faengt bei null an.
   function startFillLoop(){
-    cancelAnimationFrame(fillRaf);fillStartedAt=performance.now();
+    cancelAnimationFrame(fillRaf);
+    const box=$('#promptWorkflowLoader');
+    const gemerkt=Number(box?.dataset.fillStartedAt||0);
+    fillStartedAt=gemerkt||performance.now();
+    if(box&&!gemerkt)box.dataset.fillStartedAt=String(fillStartedAt);
     if(reduceMotion()){applyFill(.94);return}
     const tick=()=>{
       if(!$('#promptWorkflowLoader')){fillRaf=0;return}
@@ -90,7 +97,27 @@
     // says exactly that instead of cycling through three guesses.
     if(kind==='preview'&&stageText){setSentence(stageText,true);return}
     let index=0;setSentence(data.sentences[index],true);cycleTimer=setInterval(()=>{const box=$('#promptWorkflowLoader');if(!box||activeKind!==kind){clearInterval(cycleTimer);return}index=(index+1)%data.sentences.length;setSentence(data.sentences[index])},SENTENCE_MS+240)}
-  function show(kind){const data=copy[kind];if(!data)return;if(kind!=='login'&&(userExited||!workflowVisible()||!cleanMode()))return;const box=loader();clearTimeout(flashTimer);if(!shownAt||box.classList.contains('is-complete'))shownAt=Date.now();box.classList.remove('is-leaving','is-complete');box.style.removeProperty('--prompt-flash-count');document.documentElement.classList.add('prompt-workflow-loading');const kicker=$('.kicker',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;setTitle(box,data.title);if(activeKind!==kind){activeKind=kind;startCycle(kind);startFillLoop()}}
+  // Ein Durchlauf, ein Schirm - auch wenn der Abschnitt wechselt.
+  //
+  // Der Ablauf geht durch mehrere Abschnitte: erst wird geprueft, dann entsteht die Vorschau,
+  // dann werden die Bilder gebaut. Jeder davon rief show() mit einem anderen kind auf, und jedes
+  // Mal fing die Fuellung wieder bei null an - dazwischen lag oft ein hide(), das die Flaeche
+  // ausblendete und entfernte. Auf dem Bildschirm sah das aus wie drei Ladebilder hintereinander,
+  // obwohl es ein einziger Vorgang ist.
+  //
+  // Jetzt gilt: die Flaeche bleibt stehen, Ueberschrift und Zeile darunter wechseln mit dem
+  // Abschnitt, und die Fuellung laeuft durch. Ein schon begonnener Abgang wird dabei abgebrochen.
+  function show(kind){const data=copy[kind];if(!data)return;if(kind!=='login'&&(userExited||!workflowVisible()||!cleanMode()))return;
+    const box=loader();clearTimeout(flashTimer);flashTimer=0;clearTimeout(leaveTimer);leaveTimer=0;
+    if(!shownAt||box.classList.contains('is-complete'))shownAt=Date.now();
+    box.classList.remove('is-leaving','is-complete');box.style.removeProperty('--prompt-flash-count');
+    document.documentElement.classList.add('prompt-workflow-loading');
+    const kicker=$('.kicker',box);if(kicker.textContent!==data.kicker)kicker.textContent=data.kicker;
+    setTitle(box,data.title);
+    if(activeKind!==kind){activeKind=kind;startCycle(kind)}
+    // Nur wenn gerade keine laeuft: ein Abschnittswechsel setzt den Fortschritt nicht zurueck.
+    if(!fillRaf)startFillLoop();
+  }
   // force=true is the user asking to get out (× or leaving the workflow) - only that may cut a
   // closing blink short. A passing sync() must not: it used to remove the login screen ~120ms after
   // hide(), so the screen flashed by without the fill ever finishing.
@@ -104,7 +131,7 @@
     // blinks until then.
     const wait=window.PromptAiFill?.tail?.(shownAt)??FLASH_MS;
     box.style.setProperty('--prompt-flash-count',String(Math.max(2,Math.round(wait/(FLASH_MS||420)))));
-    box.classList.add('is-complete');flashTimer=setTimeout(()=>{flashTimer=0;box.classList.add('is-leaving');setTimeout(()=>{box.remove();shownAt=0},250)},wait)}
+    box.classList.add('is-complete');flashTimer=setTimeout(()=>{flashTimer=0;box.classList.add('is-leaving');leaveTimer=setTimeout(()=>{leaveTimer=0;box.remove();shownAt=0},250)},wait)}
 
   function closeLateWorkflowUi(){const dialog=$('#clarificationDialog');if(dialog?.open){try{dialog.close('cancel')}catch{dialog.removeAttribute('open')}}$('#promptCompletionFlash')?.remove();document.documentElement.classList.remove('prompt-review-transition','prompt-clarification-exit')}
 

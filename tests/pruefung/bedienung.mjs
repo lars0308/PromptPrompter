@@ -383,6 +383,48 @@ async function gastKontingent(browser) {
   await page.context().close();
 }
 
+// Eine Seite, auf der man liest, darf nicht von selbst an den Anfang zurückspringen. Geprüft
+// wird jede Fläche, die überhaupt scrollen kann: hinunterscrollen, kurz warten, nachsehen.
+async function scrollBleibt(browser) {
+  const page = await newPage(browser, 390, 844);
+  await enterAsGuest(page);
+  await page.evaluate(() => {
+    const app = document.querySelector('#workflowApp'), welcome = document.querySelector('#welcomePage');
+    if (app && welcome) { app.hidden = false; welcome.hidden = true }
+  });
+  await page.waitForTimeout(700);
+
+  const wandert = await page.evaluate(async () => {
+    const warte = ms => new Promise(r => setTimeout(r, ms));
+    const raus = [];
+    const name = el => el === document.scrollingElement ? '(die Seite selbst)'
+      : el.id ? '#' + el.id : '.' + String(el.className || '').trim().split(/\s+/)[0];
+
+    const flaechen = [document.scrollingElement, ...document.querySelectorAll('body *')].filter(el => {
+      if (el === document.scrollingElement) return document.scrollingElement.scrollHeight > innerHeight + 40;
+      if (!el.checkVisibility?.({ checkVisibilityCSS: true })) return false;
+      const s = getComputedStyle(el);
+      return /auto|scroll/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 40;
+    });
+
+    for (const el of flaechen) {
+      const ziel = Math.min(200, el.scrollHeight - el.clientHeight);
+      if (ziel < 40) continue;
+      el.scrollTop = ziel;
+      await warte(80);
+      const gesetzt = el.scrollTop;
+      // Ließ sich gar nicht scrollen (Sperre, Layout noch nicht fertig), ist hier nichts zu messen.
+      if (Math.abs(gesetzt - ziel) > 8) continue;
+      await warte(1400);
+      if (Math.abs(el.scrollTop - gesetzt) > 8) raus.push(`${name(el)}: ${Math.round(gesetzt)} → ${Math.round(el.scrollTop)}`);
+    }
+    return raus;
+  });
+
+  check('Keine Fläche scrollt von selbst wieder nach oben', wandert.length === 0, wandert.join(', '));
+  await page.context().close();
+}
+
 // Kontrast nach WCAG: das Verhältnis zwischen Textfarbe und dem, was dahinter liegt. Ab 4,5
 // gilt normaler Text als lesbar, großer Text ab 3.
 function kontrast(vorne, hinten) {
@@ -463,7 +505,8 @@ for (const [titel, lauf] of [
   ['Zurück-Taste (6)', zurueckTaste],
   ['Hell und Dunkel (53)', hellDunkel],
   ['Dünne Eingaben (12)', duenneEingabe],
-  ['Gast-Kontingent (43)', gastKontingent]
+  ['Gast-Kontingent (43)', gastKontingent],
+  ['Scrollen bleibt stehen', scrollBleibt]
 ]) {
   console.log(`\n--- ${titel}`);
   try { await lauf(browser); }
