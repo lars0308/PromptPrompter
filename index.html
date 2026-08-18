@@ -65,6 +65,10 @@
     #promptAppBoot>div{width:min(520px,100%);text-align:center}
     html[data-theme="dark"] #promptAppBoot img{content:url("./sitebrief-logo-trace-light.svg?v=7")}
     #promptAppBoot img{display:block;width:52px;height:52px;margin:0 auto;object-fit:contain}
+    /* Nur eine der beiden Fassungen steht im Bild - welche, entscheidet theme-init.js,
+       bevor das erste Pixel gezeichnet wird. */
+    html:not(.prompt-boot-gast) #promptAppBoot [data-boot="gast"],
+    html.prompt-boot-gast #promptAppBoot [data-boot="konto"]{display:none!important}
     #promptAppBoot .kicker{display:block;margin-top:20px;color:var(--accent,#1689c7);font-size:9px;font-weight:850;letter-spacing:.13em}
     #promptAppBoot strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,47px);line-height:1.14;letter-spacing:-.05em}
     .brand-ai-suffix{color:var(--accent,#1b76aa)}
@@ -135,7 +139,7 @@
   <!-- Global error boundary toast container -->
   <div id="error-boundary-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 999999; max-width: 400px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;" aria-live="polite" aria-atomic="true"></div>
 
-  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo-trace.svg?v=7" alt="Prompt.ai"><span class="kicker">PROMPT.AI</span><strong class="prompt-fill-progress" style="--prompt-fill:6%">Arbeitsbereich wird vorbereitet</strong><div class="prompt-loader-sentence">Projekte, Konto und Werkzeuge laden.</div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div></section>
+  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo-trace.svg?v=7" alt="Prompt.ai"><span class="kicker">PROMPT.AI</span><strong class="prompt-fill-progress" style="--prompt-fill:6%" data-boot="konto">Arbeitsbereich wird vorbereitet</strong><strong class="prompt-fill-progress" style="--prompt-fill:6%" data-boot="gast">Aus Ideen wird ein klares Projekt</strong><div class="prompt-loader-sentence" data-boot="konto">Projekte, Konto und Werkzeuge laden.</div><div class="prompt-loader-sentence" data-boot="gast">Einen Moment, die Seite wird geladen.</div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div></section>
   <aside id="offerBanner" class="offer-banner" hidden>
     <div><span id="offerEyebrow">AKTION</span><strong id="offerTitle"></strong><p id="offerDescription"></p></div>
     <button type="button" class="solid-btn mini" id="offerCta">Kostenlos testen</button><button type="button" class="offer-close" id="offerClose" aria-label="Aktion ausblenden">×</button>

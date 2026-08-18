@@ -199,14 +199,29 @@
     let row=$('.prompt-attach-input',list);
     if(!row){
       row=document.createElement('div');row.className='prompt-attach-input';
-      row.innerHTML='<input type="url" placeholder="https://beispiel.de" aria-label="Link einfügen"><button type="button">Übernehmen</button>';
+      // Ein Link allein sagt nicht, was er ist.
+      //
+      // Die App kennt zwei Sorten, und sie werden voellig verschieden behandelt: die Website des
+      // Auftraggebers wird ausgelesen und liefert die gesicherten Fakten (Adresse, Zeiten,
+      // Leistungen), aus denen der Master-Prompt spaeter zitieren darf. Eine Referenz dagegen ist
+      // Inspiration - daraus darf ausdruecklich nichts als Tatsache uebernommen werden.
+      //
+      // Vom Textfeld der Startseite aus ging bisher jeder Link als Referenz durch. Die Fakten des
+      // Kunden kamen damit nie an, und die KI konnte nicht wissen, ueber wen ueberhaupt geredet
+      // wird. Statt einer zusaetzlichen Frage sind die beiden Woerter der Absendeknopf: ein Tipp,
+      // und die Sorte steht mit fest.
+      row.innerHTML='<input type="url" placeholder="https://beispiel.de" aria-label="Link einfügen">'
+        +'<div class="prompt-attach-kind">'
+        +'<button type="button" data-link-kind="client">Seite des Kunden</button>'
+        +'<button type="button" data-link-kind="reference">Referenz</button>'
+        +'</div>';
       list.prepend(row);list.hidden=false;
       // Bisher ging jede Eingabe ungeprueft weiter. Die eigentliche Pruefung sitzt in app.js an
       // einem Feld, das auf der Startseite gar nicht sichtbar ist - eine Fehlermeldung dort sieht
       // niemand. Also wird hier geprueft, wo getippt wurde, und der Zustand steht daneben.
       const note=document.createElement('small');note.className='prompt-attach-note';row.appendChild(note);
       const fail=text=>{note.textContent=text;note.dataset.state='error';$('input',row).focus();return false};
-      const apply=()=>{
+      const apply=(kind='reference')=>{
         const input=$('input',row),raw=input.value.trim();
         if(!raw){row.remove();return}
         if(/\s/.test(raw))return fail('Bitte nur eine Adresse ohne Leerzeichen.');
@@ -214,12 +229,21 @@
         try{url=new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)?raw:`https://${raw}`)}catch{return fail('Das ist keine Adresse. Beispiel: https://beispiel.de')}
         if(!/^https?:$/i.test(url.protocol))return fail('Nur Adressen mit http oder https sind moeglich.');
         if(!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(url.hostname))return fail('Die Adresse hat keinen gueltigen Namen, z. B. beispiel.de');
+        if(kind==='client'){
+          note.dataset.state='busy';note.textContent='Seite des Kunden wird ausgelesen \u2026';
+          const feld=$('#clientWebsite');
+          if(feld){feld.value=url.href;feld.dispatchEvent(new Event('input',{bubbles:true}));$('#importClientWebsiteBtn')?.click()}
+          setTimeout(()=>{row.remove();syncAttachments()},400);
+          return;
+        }
         note.dataset.state='busy';note.textContent='Link wird geprueft \u2026';
         const field=$('#referenceUrl');if(field){field.value=url.href;$('#addUrlBtn')?.click()}
         setTimeout(()=>{row.remove();syncAttachments()},400);
       };
-      $('button',row).addEventListener('click',apply);
-      $('input',row).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();apply()}if(e.key==='Escape')row.remove()});
+      row.querySelectorAll('[data-link-kind]').forEach(button=>button.addEventListener('click',()=>apply(button.dataset.linkKind)));
+      // Die Eingabetaste nimmt die Referenz - der haeufigere Fall, und die harmlosere Annahme:
+      // eine Referenz darf ohnehin nichts als Tatsache liefern.
+      $('input',row).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();apply('reference')}if(e.key==='Escape')row.remove()});
     }
     list.hidden=false;$('input',row).focus();
   }

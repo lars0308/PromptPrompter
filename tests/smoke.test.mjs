@@ -909,7 +909,12 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   assert.doesNotMatch(css,/\.prompt-fill-progress\{[^}]*clip-path/,'clip-path cut ascenders and descenders in half');
 
   assert.match(css,/\.task-progress \.task-progress-track\{display:none\}/);
-  assert.match(html,/<strong class="prompt-fill-progress" style="--prompt-fill:6%">Arbeitsbereich wird vorbereitet<\/strong>/,'boot screen headline - same build as every other loading screen');
+  // Zwei Fassungen: wer noch kein Konto hat, hat auch keinen Arbeitsbereich, den man vorbereiten
+  // koennte - er landet auf der Startseite mit den Tarifen.
+  assert.match(html,/data-boot="konto">Arbeitsbereich wird vorbereitet<\/strong>/);
+  assert.match(html,/data-boot="gast">Aus Ideen wird ein klares Projekt<\/strong>/);
+  const themeBoot=await text('theme-init.js');
+  assert.match(themeBoot,/if\(!angemeldet\)document\.documentElement\.classList\.add\('prompt-boot-gast'\)/);
   assert.match(cleanup,/beginTask\?\.\(ZUSAMMENBAU,\{title:MASTER_TITEL,kind:'build'\}\)/,'der Master-Prompt nutzt den gemeinsamen Ladeschirm');
   assert.match(app,/box\?\.style\.setProperty\('--prompt-fill',`\$\{pct\}%`\);label\?\.classList\.add\('prompt-fill-progress'\)/,'inline task progress');
 });
@@ -927,7 +932,7 @@ test('the boot screen fills with the load it really has, then blinks blue once b
   assert.match(boot,/for\(const src of CRITICAL_SCRIPTS\)\{await \(src==='core'\?loadCore\(\):load\(src\)\);bootProgress\(\+\+ready\/CRITICAL_SCRIPTS\.length\)\}/,'every loaded script moves the fill');
   assert.doesNotMatch(boot,/ready&&elapsed>=1050/,'a minimum showtime makes the screen a timer again');
   assert.match(boot,/if\(ready\|\|elapsed>=5200\)/,'ready leaves immediately, the cap stays as a failsafe');
-  assert.match(boot,/window\.PromptAiFill\?\.finish\(boot\?\.querySelector\('p'\),\(\)=>\{boot\?\.classList\.add\('is-leaving'\)/,'the blink runs before the fade');
+  assert.match(boot,/window\.PromptAiFill\?\.finish\(boot\?\.querySelector\('strong'\),\(\)=>\{boot\?\.classList\.add\('is-leaving'\)/,'the blink runs before the fade - auf der Ueberschrift, wie bei jedem anderen Ladeschirm');
   assert.match(theme,/window\.PromptAiFill=\{/,'shared driver ships in the first blocking script');
   assert.match(theme,/if\(pct<previous\)return/,'progress never walks backwards');
   assert.match(css,/\.prompt-fill-complete\{--prompt-fill:100%!important;animation:promptFillFlash/);
@@ -1780,4 +1785,51 @@ test('blue as text gets its own darker token, blue as a surface keeps the logo t
   assert.match(css,/background:#b45309!important;border-color:#b45309!important/);
   assert.match(css,/background:#106fa4!important;border-color:#106fa4!important/);
   assert.match(css,/color:#15100b!important;/,'im Dunkelmodus traegt der Kaufknopf dunkle Schrift');
+});
+
+// Vier Abschnitte, die der Master-Prompt vorher nicht hatte. Alle vier stehen fest, sobald
+// Seitenliste und gesicherte Fakten vorliegen - sie kosten keinen zusaetzlichen KI-Aufruf.
+test('the master prompt says in which order to build, how much, what counts as done and what is still missing',async()=>{
+  const app=await text('app.js');
+  for(const fn of ['buildOrderBlock','scopeBlock','acceptanceBlock','contentNeedsBlock','situationsBlock'])
+    assert.ok(app.includes(`function ${fn}(`),`${fn} fehlt`);
+  // Und sie muessen auch wirklich im Prompt landen, nicht nur existieren.
+  assert.match(app,/\$\{buildOrderBlock\(\)\}\$\{scopeBlock\(\)\}/);
+  assert.match(app,/\$\{acceptanceBlock\(\)\}\$\{contentNeedsBlock\(\)\}/);
+  assert.match(app,/\$\{situationsBlock\(\)\}/);
+  // Die Reihenfolge haengt am Hauptziel, nicht an einer festen Liste.
+  assert.match(app,/const GOAL_PAGE=\{'Anfragen':'contact','Verkaufen':'offer'/);
+  // Der Umfang ist eine Zahl, keine Empfehlung.
+  assert.match(app,/Seiten: genau \$\{pages\.length\}/);
+  // Was fehlt, wird benannt statt gefuellt.
+  assert.match(app,/Sie dürfen nicht erfunden werden/);
+  // Und oben steht, wie das Briefing zu lesen ist - was gesetzt ist, was belegt, was Rahmen,
+  // was offen. Ohne das sind zwoelf Abschnitte gleichrangig.
+  assert.match(app,/## SO IST DIESES BRIEFING AUFGEBAUT/);
+  assert.match(app,/belegt schlägt entschieden, entschieden schlägt Rahmen/);
+});
+
+// Nutzungssituationen und Abgrenzung kommen aus der Pruefung, die ohnehin laeuft - kein
+// zusaetzlicher Aufruf, keine zusaetzliche Frage an den Nutzer.
+test('the project review also returns usage situations and a differentiation, in the same call',async()=>{
+  const core=await text('server/generate-core.js'),app=await text('app.js');
+  assert.match(core,/situations:\{type:"array",maxItems:3,items:\{type:"string"\}\}/);
+  assert.match(core,/differentiation:\{type:"string"\}/);
+  assert.match(core,/required:\["ready","questions","warnings","blockers","assumptions","situations","differentiation"\]/);
+  assert.match(core,/Zwei bis drei konkrete Nutzungssituationen statt eines Zielgruppen-Etiketts/);
+  assert.match(app,/review\.situations=Array\.isArray\(review\.situations\)/);
+  assert.match(app,/review\.differentiation=String\(review\.differentiation\|\|''\)\.trim\(\)/);
+});
+
+// Ein Link allein sagt nicht, ob er die Seite des Auftraggebers ist oder eine Referenz. Die
+// beiden werden voellig verschieden behandelt: die eine wird ausgelesen und liefert die
+// gesicherten Fakten, aus der anderen darf ausdruecklich nichts als Tatsache uebernommen werden.
+test('a link added from the console says whether it is the customer site or a reference',async()=>{
+  const home=await text('promptai-home-final.js');
+  assert.match(home,/data-link-kind="client">Seite des Kunden</);
+  assert.match(home,/data-link-kind="reference">Referenz</);
+  assert.match(home,/const apply=\(kind='reference'\)=>\{/);
+  // Der Kundenweg fuehrt in das Feld, das ausgelesen wird - nicht in die Referenzliste.
+  assert.match(home,/if\(kind==='client'\)\{[\s\S]{0,400}\$\('#importClientWebsiteBtn'\)\?\.click\(\)/);
+  assert.match(home,/const field=\$\('#referenceUrl'\);if\(field\)\{field\.value=url\.href;\$\('#addUrlBtn'\)\?\.click\(\)\}/);
 });

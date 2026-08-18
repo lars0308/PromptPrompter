@@ -8,6 +8,13 @@
     const internalReload=sessionStorage.getItem('sitebrief-v6-continue-workflow')==='1'||Boolean(sessionStorage.getItem('prompt-ai-mode-handoff-v1'));
     document.documentElement.classList.add('prompt-full-redesign');
     if(!internalReload)document.documentElement.classList.add('prompt-app-booting','prompt-home-surface');
+    // "Arbeitsbereich wird vorbereitet" stimmt nur fuer jemanden, der einen hat. Wer zum ersten
+    // Mal auf die Adresse kommt, landet auf der Startseite mit den Tarifen - und liest dort als
+    // Erstes, dass etwas vorbereitet wird, das er nicht kennt. Ob eine Sitzung gespeichert ist,
+    // steht schon vor dem ersten Bild fest; die Marke traegt dann den Satz, um den es geht.
+    let angemeldet=false;
+    try{angemeldet=Boolean(JSON.parse(localStorage.getItem('sitebrief-auth-session')||'null')?.access_token)}catch{}
+    if(!angemeldet)document.documentElement.classList.add('prompt-boot-gast');
     // Starting a project reloads the page, and the welcome page painted for a moment before the
     // handoff overlay existed - a flash of the screen the visitor just left. Hiding it from the
     // very first paint costs nothing: this reload is always on its way into the workflow.

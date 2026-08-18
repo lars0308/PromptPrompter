@@ -34,8 +34,13 @@ function reviewSchema(maxQuestions=4){
     questions:{type:"array",maxItems:maxQuestions,items:{type:"object",additionalProperties:false,properties:{id:{type:"string"},question:{type:"string"},reason:{type:"string"},suggestedAnswer:{type:"string"},suggestions:{type:"array",maxItems:4,items:{type:"string"}},required:{type:"boolean"}},required:["id","question","reason","suggestedAnswer","suggestions","required"]}},
     warnings:{type:"array",items:{type:"object",additionalProperties:false,properties:{area:{type:"string"},message:{type:"string"},severity:{type:"string",enum:["info","warning"]}},required:["area","message","severity"]}},
     blockers:{type:"array",items:{type:"object",additionalProperties:false,properties:{area:{type:"string"},message:{type:"string"},alternative:{type:"string"}},required:["area","message","alternative"]}},
-    assumptions:{type:"array",items:{type:"string"}}
-  },required:["ready","questions","warnings","blockers","assumptions"]};
+    assumptions:{type:"array",items:{type:"string"}},
+    // Zwei Felder, die der Master-Prompt spaeter braucht und die hier ohne einen zweiten Aufruf
+    // mitkommen: konkrete Nutzungssituationen statt eines Zielgruppen-Etiketts, und ein Satz
+    // dazu, was dieses Projekt von den ueblichen Auftritten seiner Branche unterscheidet.
+    situations:{type:"array",maxItems:3,items:{type:"string"}},
+    differentiation:{type:"string"}
+  },required:["ready","questions","warnings","blockers","assumptions","situations","differentiation"]};
 }
 function revisionBriefSchema(){
   return {type:"object",additionalProperties:false,properties:{
@@ -195,6 +200,10 @@ ${JSON.stringify({name:baseConcept.name,mood:baseConcept.mood,palette:baseConcep
 Originality ${controls.originality}/100; avoid AI/template look ${controls.antiSlop}/100; motion ${controls.motion}/100; information density ${controls.density}/100.
 
 For every direction return a memorable project-specific name, a short mood, exactly four valid hex colors, typography concept, layout principle, hero principle, one of the required composition variants, and concrete preview copy. ${promptText('concepts-quality')}
+
+ZUSAETZLICH ZU DEN RUECKFRAGEN
+situations: Zwei bis drei konkrete Nutzungssituationen statt eines Zielgruppen-Etiketts. Jede Zeile nennt, wer die Seite aufruft, in welchem Moment, auf welchem Gerät und mit welcher Frage im Kopf. Nur aus den Angaben ableiten, nichts erfinden.
+differentiation: Ein bis zwei Sätze, was diesen Auftritt von den drei üblichen Auftritten seiner Branche unterscheidet - inhaltlich, nicht dekorativ. Wenn die Angaben dafuer nicht reichen, benenne stattdessen, welche Angabe dafuer fehlt.
 
 Schreibe alle sichtbaren Textwerte auf Deutsch (Fragen, Begründungen, Antwortvorschläge, Hinweise, Blocker, Annahmen, Namen und Vorschautexte), auch wenn Projektangaben oder Referenzen in einer anderen Sprache verfasst sind. Feldnamen, Aufzählungswerte und Hex-Farben bleiben unverändert.
 Gib ausschließlich das verlangte JSON zurück.`;

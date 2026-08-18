@@ -1516,7 +1516,7 @@
         const payload={action:"review",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),settings:settingsForApi(),template:selectedTemplate()||{},modules:selectedModules(),clarifications:state.clarifications};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000});const data=await res.json();if(!res.ok)throw new Error(data.error||"Projektprüfung fehlgeschlagen");review=data;
       }
-      review.questions=Array.isArray(review.questions)?review.questions.slice(0,state.settings.maxQuestions):[];review.warnings=Array.isArray(review.warnings)?review.warnings:[];review.blockers=Array.isArray(review.blockers)?review.blockers:[];review.assumptions=Array.isArray(review.assumptions)?review.assumptions:[];
+      review.questions=Array.isArray(review.questions)?review.questions.slice(0,state.settings.maxQuestions):[];review.warnings=Array.isArray(review.warnings)?review.warnings:[];review.blockers=Array.isArray(review.blockers)?review.blockers:[];review.assumptions=Array.isArray(review.assumptions)?review.assumptions:[];review.situations=Array.isArray(review.situations)?review.situations.filter(x=>String(x||'').trim()).slice(0,3):[];review.differentiation=String(review.differentiation||'').trim();
       // When the review reports a blocker but no required question, the user still has to decide
       // how to proceed - so one is added here. It used to read "Wie soll mit dem offenen kritischen
       // Punkt umgegangen werden?" with no options: it never named the actual point (that sat in the
@@ -2511,6 +2511,96 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     if(entry.type.key==='start'&&!entry.crawled)open.push('Kein ausgelesener Startseiten-Inhalt. Aufbau aus Briefing und gesicherten Fakten ableiten.');
     return open;
   }
+  /* ---------------------------------------------------------------------------
+     Vier Abschnitte, die der Master-Prompt bisher nicht hatte
+
+     Sie kosten keinen zusaetzlichen KI-Aufruf: alles darin steht schon fest, sobald
+     Seitenliste und gesicherte Fakten vorliegen. Was gefehlt hat, war nicht Wissen,
+     sondern dass es dem Ziel-Agenten in einer Form vorliegt, mit der er arbeiten
+     kann - eine Reihenfolge, ein Umfang, ein Abnahmemassstab und eine Liste dessen,
+     was der Auftraggeber noch liefern muss.
+     --------------------------------------------------------------------------- */
+
+  // 1. Reihenfolge. Zwoelf gleichrangige Abschnitte sind kein Bauplan. Zuerst entsteht die
+  //    Seite, die das Hauptziel traegt; Pflichtseiten kommen zum Schluss, weil ihr Inhalt
+  //    ohnehin vom Auftraggeber kommt.
+  const GOAL_PAGE={'Anfragen':'contact','Verkaufen':'offer','Termine':'contact','Bekanntheit':'start','Information':'offer'};
+  function buildOrderBlock(){
+    const pages=siteStructure();if(!pages.length)return '';
+    const goal=String(project().goal||'');
+    const zielSeite=Object.entries(GOAL_PAGE).find(([wort])=>goal.includes(wort))?.[1]||'start';
+    const rang=entry=>{
+      if(entry.type.key==='start')return 0;
+      if(entry.type.key===zielSeite)return 1;
+      if(['imprint','privacy','terms'].includes(entry.type.key))return 9;
+      return 5;
+    };
+    const reihe=[...pages].sort((a,b)=>rang(a)-rang(b));
+    const zeilen=reihe.map((entry,i)=>{
+      const grund=entry.type.key==='start'?'Einstieg: ohne sie hat keine andere Seite einen Zusammenhang.'
+        :entry.type.key===zielSeite?`Trägt das Hauptziel „${goal||'des Projekts'}“ - hier entscheidet sich, ob die Seite funktioniert.`
+        :['imprint','privacy','terms'].includes(entry.type.key)?'Pflichtseite. Struktur zuletzt, Inhalt kommt vom Auftraggeber.'
+        :'Gehört zum Angebot, trägt aber nicht das Hauptziel.';
+      return `${i+1}. ${entry.type.label} (${entry.path||'/'}) — ${grund}`;
+    });
+    return `\n## UMSETZUNGSREIHENFOLGE\nArbeite in dieser Reihenfolge. Eine fertige erste Seite ist mehr wert als acht angefangene.\n${zeilen.join('\n')}\n\nDie Sektion, die das Hauptziel traegt, wird zuerst fertig und ist auf jeder Seite ohne Scrollen erreichbar.\n`;
+  }
+
+  // 2. Umfang. Ohne Rahmen baut der eine Agent einen Onepager und der naechste zwoelf Seiten
+  //    aus demselben Briefing.
+  function scopeBlock(){
+    const pages=siteStructure();if(!pages.length)return '';
+    const mitInhalt=pages.filter(entry=>entry.crawled||entry.documents.length).length;
+    const komponenten=Math.max(6,Math.min(18,pages.length*2+4));
+    return `\n## UMFANG\n- Seiten: genau ${pages.length} (siehe \`SEITENSTRUKTUR.md\`). Keine zusätzliche Seite, keine weglassen.\n- Davon mit belegtem Inhalt: ${mitInhalt}. Die übrigen entstehen mit sichtbar offenen Stellen, nicht mit erfundenem Text.\n- Wiederverwendbare Komponenten: etwa ${komponenten}. Wer deutlich mehr braucht, baut Varianten statt Bausteinen.\n- Kein Ausbau über diesen Rahmen hinaus ohne Rücksprache: kein Blog, kein Kundenkonto, keine Mehrsprachigkeit, wenn nichts davon im Briefing steht.\n`;
+  }
+
+  // 3. Abnahme. "Die gewaehlte Richtung ist klar wiederzuerkennen" kann niemand pruefen.
+  //    Pro Seite ein Satz, den man abhaken kann.
+  function acceptanceBlock(){
+    const pages=siteStructure(),facts=verifiedFacts();if(!pages.length)return '';
+    const zeilen=pages.map(entry=>{
+      const offen=pageOpenPoints(entry,facts).length;
+      const pruefung=entry.type.key==='contact'?'Ein Anfrageweg ist ohne Scrollen erreichbar und funktioniert.'
+        :entry.type.key==='offer'?'Jede Leistung trägt eine echte Bezeichnung aus den Quellen; nichts steht als Platzhalter da.'
+        :entry.type.key==='hours'?'Es stehen entweder echte Zeiten da oder eine sichtbare offene Stelle - keine Beispielzeiten.'
+        :entry.type.key==='start'?'Wer die Seite drei Sekunden ansieht, kann sagen, worum es geht und was der nächste Schritt ist.'
+        :['imprint','privacy','terms'].includes(entry.type.key)?'Die Struktur steht, der Pflichttext ist als vom Auftraggeber zu liefern markiert.'
+        :'Der Zweck der Seite ist am Inhalt erkennbar, nicht nur an der Überschrift.';
+      return `- ${entry.type.label}: ${pruefung}${offen?` (${offen} offene Stelle${offen===1?'':'n'} laut Seitenstruktur — ${offen===1?'sie muss':'sie müssen'} im Ergebnis sichtbar bleiben.)`:''}`;
+    });
+    return `\n## ABNAHME JE SEITE\nDiese Punkte sind prüfbar. Gehe sie am Ende einzeln durch und benenne, was nicht erfüllt ist.\n${zeilen.join('\n')}\n`;
+  }
+
+  // 4. Was noch fehlt. Steht heute verteilt in den offenen Punkten der Seitenstruktur -
+  //    als eine Liste am Ende ist es das, was der Auftraggeber tatsaechlich liefern muss.
+  function contentNeedsBlock(){
+    const pages=siteStructure(),facts=verifiedFacts();
+    const bedarf=[];
+    if(!facts.phone.length)bedarf.push('Telefonnummer');
+    if(!facts.mail.length)bedarf.push('E-Mail-Adresse');
+    if(!facts.street.length)bedarf.push('Vollständige Anschrift');
+    if(!facts.hours.length)bedarf.push('Öffnungszeiten');
+    if(!facts.legal.length)bedarf.push('Impressumsangaben und Datenschutzerklärung');
+    for(const entry of pages){
+      const offen=pageOpenPoints(entry,facts);
+      if(offen.length&&!['imprint','privacy','terms'].includes(entry.type.key))bedarf.push(`Inhalt für „${entry.type.label}“`);
+    }
+    const liste=[...new Set(bedarf)].slice(0,12);
+    if(!liste.length)return '';
+    return `\n## NOCH ZU LIEFERN\nDiese Angaben fehlen in den Quellen. Sie dürfen nicht erfunden werden. Gib sie am Ende deines Ergebnisses als Liste aus, damit der Auftraggeber sie nachreichen kann.\n${liste.map(x=>`- ${x}`).join('\n')}\n`;
+  }
+
+  // 5. Was die Pruefung im Hintergrund schon herausgefunden hat. "Zielgruppe: Familien" steuert
+  //    nichts; drei konkrete Situationen steuern Reihenfolge, Textlaenge und Tonfall.
+  function situationsBlock(){
+    const review=state.projectReview||{};
+    const situationen=Array.isArray(review.situations)?review.situations.filter(Boolean):[];
+    const abgrenzung=String(review.differentiation||'').trim();
+    if(!situationen.length&&!abgrenzung)return '';
+    return `${situationen.length?`\n\nNutzungssituationen (aus der Projektprüfung abgeleitet - danach richten sich Reihenfolge, Textlänge und Tonfall):\n${situationen.map(x=>`- ${x}`).join('\n')}`:''}${abgrenzung?`\n\nAbgrenzung zum Üblichen der Branche:\n${abgrenzung}`:''}`;
+  }
+
   function structureDocument(){
     const facts=verifiedFacts(),pages=siteStructure();
     const body=pages.map((entry,index)=>{
@@ -2604,7 +2694,7 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     const refinementBlock=state.refinements.length?state.refinements.map((r,i)=>`${i+1}. ${r.text}`).join("\n"):"Keine zusätzlichen Änderungen nach der Vorschau.";
     const finalCompliance=state.settings.finalChecklist?`\n9. alle unter „Pflichtprüfungen & rechtlicher Rahmen“ aktivierten Bereiche geprüft und offene Punkte transparent benannt wurden,\n10. keine rechtliche Konformität, Einwilligung oder Pflichtinformation erfunden wurde,\n11. generische KI-Texte, künstliche Dreiermuster und unnötige Standardsektionen entfernt wurden,\n12. alle Buttons, Links, Formulare, Navigationen und CMS-Inhalte im echten Ablauf funktionieren,\n13. Mobile, Tastaturbedienung, reduzierte Bewegung, Build, Console und 404-Pfade geprüft wurden.`:"";
     const agentQuestionRule=state.settings.aiClarifications?"Wenn während der Umsetzung ein fehlender, widersprüchlicher oder nicht machbarer Punkt auftaucht, stelle eine kurze konkrete Gegenfrage, sofern die Antwort das Ergebnis wesentlich verändert. Bei einem Blocker erkläre das Problem knapp und nenne eine machbare Alternative, wenn eine existiert.":"Stelle keine zusätzlichen Präferenzfragen. Wenn ein echter Blocker auftritt, benenne ihn knapp und markiere die nötige Entscheidung; erfinde keine fehlenden Fakten.";
-    return agentDocument(`# PROMPT.AI MASTER-PROMPT — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhältst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fünf neue Richtungen. Setze die ausgewählte Richtung konsequent um und nutze Referenzen nur für die ausdrücklich freigegebenen Eigenschaften.\n\n## ROLLE, AUFTRAG & SPIELRAUM\n${rolePromptBlock()}\n${templateBlock}\n## 1. PROJEKT\nName der Marke auf der Seite: ${masterBrandName()||"nicht festgelegt"}${masterBrandName()&&p.name&&masterBrandName()!==p.name?`\nInterner Projekttitel (nicht auf der Website verwenden): ${p.name}`:""}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${projectAudience()||"nicht ausdrücklich angegeben"}\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusätzlicher Wunsch."}\n${verifiedFactsBlock()}\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritäten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}\n\n## 3. PROJEKTPRÜFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÜFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese Entwicklungsprüfung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen Prüfpunkt statt Sicherheit vorzutäuschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Übernimm nur die jeweils ausgewählten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÄHLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nKomposition: ${c.layoutVariant}\nLayoutprinzip: ${c.layout}\nHero: ${c.hero}\nTypografie: ${c.type}\nPalette: ${c.palette.join(" / ")}\nPreview-Headline: ${c.headline}\nPreview-Subline: ${c.subline}\n\n${componentSpecBlock(c,ctrl)}`:"Es wurde noch keine Designrichtung ausgewählt."}\n\n## 7. FEINSCHLIFF NACH DER VORSCHAU\n${refinementBlock}\n\n## 8. DESIGNREGLER\n- Originalität: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und drei Karten; keine austauschbare Navigationsfolge oder künstliche Kennzahlenzeile.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-Flächen, Glow-Effekte, Farbverläufe, pillenförmigen Dauer-Buttons, symmetrischen Standardkarten, starren Text-Bild-Zickzackfolgen oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als Standardlösung für beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Preise, Öffnungszeiten, Kundenlogos, Zertifikate, Kunden, Referenzen, Auszeichnungen oder sonstige Unternehmensfakten. Fehlende Inhalte als offene Punkte kennzeichnen.\n- Keine generischen Marketingfloskeln oder künstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewählten Richtung gehören.\n- Bildsprache und Typografie müssen den Charakter tragen; Container dürfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenständig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÜR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n## 11. UMSETZUNGSANFORDERUNGEN\n${languageRequirement()}\n- Responsive ab kleinen Mobilgeräten bis große Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und Bildgrößen bewusst behandeln; unnötige Abhängigkeiten vermeiden.\n- Zentrale Design-Tokens für Farben, Typografie, Abstände, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Jede angezeigte Telefonnummer, E-Mail, Adresse, Öffnungszeit, Preis- und Jahresangabe stammt aus „Gesicherte Fakten aus den Quellen“ oder aus \`PROJEKT-QUELLEN.md\`. Nicht auffindbare Werte bleiben sichtbar offene Punkte statt Platzhalter, die echt aussehen.\n- Texte, Zahlen und Namen aus dem Vorschaubild sind Artefakte des Bildmodells und werden nie übernommen.\n- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. die gewählte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist,\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berücksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster übrig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsächlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen,\n8. jede angezeigte Kontakt-, Orts-, Zeit- und Preisangabe auf eine benannte Quelle zurückführbar ist und der Rest sichtbar als offen markiert wurde.${finalCompliance}\n\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`,state.targetAgent);
+    return agentDocument(`# PROMPT.AI MASTER-PROMPT — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhältst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fünf neue Richtungen. Setze die ausgewählte Richtung konsequent um und nutze Referenzen nur für die ausdrücklich freigegebenen Eigenschaften.\n\n## SO IST DIESES BRIEFING AUFGEBAUT\nVier Arten von Angaben, mit unterschiedlichem Gewicht:\n1. ENTSCHIEDEN — Projekt, gewählte Designrichtung, Feinschliff, Module, Skills. Das ist gesetzt und wird umgesetzt, nicht neu verhandelt.\n2. BELEGT — gesicherte Fakten aus den Quellen und die Seitenliste. Nur daraus dürfen Kontakt-, Orts-, Zeit- und Preisangaben stammen.\n3. RAHMEN — Reihenfolge, Umfang, Pflichtprüfungen, Anti-Slop-Regeln, Arbeitsweise deiner Ziel-KI. Das begrenzt, wie weit du gehst.\n4. OFFEN — alles unter „noch zu liefern“ und jede als offen markierte Stelle. Diese Punkte werden sichtbar gemacht, niemals gefüllt.\n\nBei Widerspruch gilt: belegt schlägt entschieden, entschieden schlägt Rahmen, und offen wird nie stillschweigend geschlossen.\n\n## ROLLE, AUFTRAG & SPIELRAUM\n${rolePromptBlock()}\n${templateBlock}\n## 1. PROJEKT\nName der Marke auf der Seite: ${masterBrandName()||"nicht festgelegt"}${masterBrandName()&&p.name&&masterBrandName()!==p.name?`\nInterner Projekttitel (nicht auf der Website verwenden): ${p.name}`:""}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${projectAudience()||"nicht ausdrücklich angegeben"}\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusätzlicher Wunsch."}\n${verifiedFactsBlock()}\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritäten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}${situationsBlock()}\n\n## 3. PROJEKTPRÜFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÜFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese Entwicklungsprüfung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen Prüfpunkt statt Sicherheit vorzutäuschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Übernimm nur die jeweils ausgewählten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÄHLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nKomposition: ${c.layoutVariant}\nLayoutprinzip: ${c.layout}\nHero: ${c.hero}\nTypografie: ${c.type}\nPalette: ${c.palette.join(" / ")}\nPreview-Headline: ${c.headline}\nPreview-Subline: ${c.subline}\n\n${componentSpecBlock(c,ctrl)}`:"Es wurde noch keine Designrichtung ausgewählt."}\n\n## 7. FEINSCHLIFF NACH DER VORSCHAU\n${refinementBlock}\n\n## 8. DESIGNREGLER\n- Originalität: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und drei Karten; keine austauschbare Navigationsfolge oder künstliche Kennzahlenzeile.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-Flächen, Glow-Effekte, Farbverläufe, pillenförmigen Dauer-Buttons, symmetrischen Standardkarten, starren Text-Bild-Zickzackfolgen oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als Standardlösung für beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Preise, Öffnungszeiten, Kundenlogos, Zertifikate, Kunden, Referenzen, Auszeichnungen oder sonstige Unternehmensfakten. Fehlende Inhalte als offene Punkte kennzeichnen.\n- Keine generischen Marketingfloskeln oder künstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewählten Richtung gehören.\n- Bildsprache und Typografie müssen den Charakter tragen; Container dürfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenständig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÜR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n${buildOrderBlock()}${scopeBlock()}\n## 11. UMSETZUNGSANFORDERUNGEN\n${languageRequirement()}\n- Responsive ab kleinen Mobilgeräten bis große Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und Bildgrößen bewusst behandeln; unnötige Abhängigkeiten vermeiden.\n- Zentrale Design-Tokens für Farben, Typografie, Abstände, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Jede angezeigte Telefonnummer, E-Mail, Adresse, Öffnungszeit, Preis- und Jahresangabe stammt aus „Gesicherte Fakten aus den Quellen“ oder aus \`PROJEKT-QUELLEN.md\`. Nicht auffindbare Werte bleiben sichtbar offene Punkte statt Platzhalter, die echt aussehen.\n- Texte, Zahlen und Namen aus dem Vorschaubild sind Artefakte des Bildmodells und werden nie übernommen.\n- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. die gewählte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist,\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berücksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster übrig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsächlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen,\n8. jede angezeigte Kontakt-, Orts-, Zeit- und Preisangabe auf eine benannte Quelle zurückführbar ist und der Rest sichtbar als offen markiert wurde.${finalCompliance}\n${acceptanceBlock()}${contentNeedsBlock()}\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`,state.targetAgent);
   }
 
   // The app assembles every fact deterministically; with a cloud connection the AI then writes the

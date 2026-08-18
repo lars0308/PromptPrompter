@@ -2346,3 +2346,20 @@ html.prompt-full-redesign #clarificationDialog .settings-footer{
   border-top:1px solid var(--line)!important;
   background:var(--paper)!important;
 }
+
+/* Die Zeile zum Link-Einfuegen sitzt in der Konsole und gehoert deshalb ihr: dunkles Feld,
+   helle Schrift. Die allgemeine Feldregel der App faerbte sie weiss - ein heller Kasten
+   mitten in der dunklen Flaeche. */
+html.prompt-full-redesign .prompt-attach-input input{
+  background:#0f1721!important;color:#eef6fb!important;
+  border:1px solid #33465a!important;border-radius:9px!important;
+  min-height:38px!important;font-size:14px!important;
+}
+html.prompt-full-redesign .prompt-attach-input input::placeholder{color:#7a8ba7!important}
+html.prompt-full-redesign .prompt-attach-kind button{
+  min-height:38px!important;border:1px solid #33465a!important;border-radius:9px!important;
+  background:transparent!important;color:#c8d6e2!important;font-weight:700!important;font-size:12px!important;
+}
+html.prompt-full-redesign .prompt-attach-kind button[data-link-kind="client"]{
+  border-color:#3f6f92!important;color:#9fd0f0!important;
+}

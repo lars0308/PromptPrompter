@@ -35,13 +35,13 @@
   // the tail so the line never sits at 100% while the screen is still waiting.
   function bootProgress(ratio){
     if(!bootVisible)return;
-    window.PromptAiFill?.set(document.querySelector('#promptAppBoot p'),6+Math.max(0,Math.min(1,ratio))*88);
+    window.PromptAiFill?.set(document.querySelector('#promptAppBoot strong'),6+Math.max(0,Math.min(1,ratio))*88);
   }
   function releaseBootIntro(){
     if(!bootVisible)return;clearTimeout(bootReleaseTimer);const tick=()=>{const elapsed=Date.now()-bootStartedAt,ready=document.documentElement.classList.contains('prompt-home-ready')&&!document.documentElement.classList.contains('prompt-access-pending');
       // No minimum showtime: when the app is ready the screen finishes right away. The only tail
       // left is the completion blink, so a fast load leaves fast.
-      if(ready||elapsed>=5200){bootVisible=false;const boot=document.getElementById('promptAppBoot');window.PromptAiFill?.finish(boot?.querySelector('p'),()=>{boot?.classList.add('is-leaving');setTimeout(()=>{document.documentElement.classList.remove('prompt-app-booting');boot?.classList.remove('is-leaving')},300)});return}
+      if(ready||elapsed>=5200){bootVisible=false;const boot=document.getElementById('promptAppBoot');window.PromptAiFill?.finish(boot?.querySelector('strong'),()=>{boot?.classList.add('is-leaving');setTimeout(()=>{document.documentElement.classList.remove('prompt-app-booting');boot?.classList.remove('is-leaving')},300)});return}
       bootReleaseTimer=setTimeout(tick,80)};tick()
   }
 
