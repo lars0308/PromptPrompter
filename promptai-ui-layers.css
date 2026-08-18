@@ -1228,6 +1228,11 @@ html.prompt-home-surface{--home-bg:#f4f7fa;--home-card:#fff;--home-panel:#111923
       .prompt-attach-chip b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
       .prompt-attach-chip button{width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;color:#8b9dc3;font-size:15px;line-height:1;cursor:pointer}
       .prompt-attach-chip button:hover{background:rgba(255,255,255,.08);color:#f2f8fd}
+      /* Aus der Seite des Kunden dürfen Adresse, Zeiten und Leistungen als Tatsachen zitiert
+         werden, aus einer Referenz ausdrücklich nichts. Die beiden gleich aussehen zu lassen
+         verwischt genau den Unterschied, auf dem der ganze Auftrag beruht. */
+      .prompt-attach-chip[data-kind="kunde"]{border-color:#2d93c9;background:#12263a;color:#cfe6f6}
+      .prompt-attach-chip[data-kind="kunde"]::before{content:'KUNDE';flex:0 0 auto;color:#63b3e0;font-size:8px;font-weight:850;letter-spacing:.1em}
       /* Der Absende-Knopf schwebt (position:absolute) über dieser Zeile - ohne die freie Spur
          rechts lag er genau auf "Übernehmen" und fing dessen Klicks ab. */
       .prompt-attach-input{display:flex;gap:8px;width:100%;padding-right:62px}

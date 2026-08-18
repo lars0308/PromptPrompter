@@ -109,7 +109,19 @@
   //
   // Jetzt gilt: die Flaeche bleibt stehen, Ueberschrift und Zeile darunter wechseln mit dem
   // Abschnitt, und die Fuellung laeuft durch. Ein schon begonnener Abgang wird dabei abgebrochen.
+  // Ein Vorgang, ein Schirm - auch über Dateigrenzen hinweg.
+  //
+  // promptai-loading-v2.js zieht einen eigenen Schirm auf, sobald eine KI-Anfrage rausgeht, und
+  // einen weiteren für die Übernahme von der Startseite. Diese Datei hängt ihren an den Schritt.
+  // Beim Weg von der Startseite in die Rückfragen trafen sich beide: erst „Beschreibung wird
+  // übernommen“, dann „Briefing wird geprüft“ darüber - zwei Ladebilder für einen Vorgang.
+  //
+  // Wer schon steht, behält den Platz. Der Schirm an der Anfrage weiß genauer, was gerade läuft,
+  // also tritt dieser hier zurück, solange einer von beiden da ist - und zwar sofort und ohne
+  // Abschlussblinken, denn ein Blinken mitten im Vorgang liest sich als Fehlschlag.
+  const foreignLoader=()=>$('#promptAiTaskLoader')||$('#promptBriefHandoff');
   function show(kind){const data=copy[kind];if(!data)return;if(kind!=='login'&&(userExited||!workflowVisible()||!cleanMode()))return;
+    if(foreignLoader()){if($('#promptWorkflowLoader'))hide(true,true);return}
     const box=loader();clearTimeout(flashTimer);flashTimer=0;clearTimeout(leaveTimer);leaveTimer=0;
     if(!shownAt||box.classList.contains('is-complete'))shownAt=Date.now();
     box.classList.remove('is-leaving','is-complete');box.style.removeProperty('--prompt-flash-count');

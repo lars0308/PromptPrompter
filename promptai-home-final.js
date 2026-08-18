@@ -271,7 +271,11 @@
     syncAttachCounts();
     const list=$('#promptAttachList');if(!list)return;
     const items=[];
-    for(const [selector,kind] of [['#urlReferences','link'],['#imageReferences','bild'],['#documentReferences','datei']]){
+    // #clientSources fehlte hier. Wer im Textfeld „Seite des Kunden“ wählte, sah danach nichts:
+    // der Link lag in der Kundenliste, und die wurde nicht gelesen. Sichtbar war die Ablage nur
+    // im Ablauf, den man von der Startseite aus gar nicht offen hat - es sah aus, als sei der
+    // Link verloren gegangen, und viele haben ihn danach zweimal eingetragen.
+    for(const [selector,kind] of [['#clientSources','kunde'],['#urlReferences','link'],['#imageReferences','bild'],['#documentReferences','datei']]){
       const host=document.querySelector(selector);if(!host)continue;
       for(const node of host.children){
         // Der Name steht im <strong> des Eintrags; das <span> davor ist nur die Marke
@@ -742,7 +746,7 @@
       const m=$('#promptAttachMenu',home);if(m)m.hidden=true;
       $('#promptAttachButton',home)?.setAttribute('aria-expanded','false');
     });
-    for(const selector of ['#urlReferences','#imageReferences','#documentReferences']){
+    for(const selector of ['#clientSources','#urlReferences','#imageReferences','#documentReferences']){
       const host=document.querySelector(selector);
       if(host)new MutationObserver(()=>setTimeout(syncAttachments,60)).observe(host,{childList:true,subtree:true});
     }

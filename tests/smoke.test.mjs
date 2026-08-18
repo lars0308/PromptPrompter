@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {layer} from './helpers/ui-layer.mjs';
 import {readFile,readdir} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
@@ -884,7 +885,20 @@ test('the preview image prompt never names a device and fits the provider limit'
   assert.match(src,/const PROMPT_LIMIT=1900;/);
   assert.match(defaults,/FLAT WEB DESIGN ARTBOARD, 16:9, FULL BLEED/,'the framing rule leads');
   assert.match(src,/Every pixel of the frame is the webpage\./,'and closes');
-  assert.match(src,/while\(prompt\.length>PROMPT_LIMIT&&blocks\.length>4\)/,'overflow drops middle blocks, never the closing rule');
+  assert.match(src,/while\(prompt\.length>PROMPT_LIMIT&&blocks\.length>6\)/,'overflow drops middle blocks, never the closing rule');
+  // Drei Richtungen ergaben drei Mal dasselbe Bild, weil das fuer alle gleiche Branchenmotiv vorn
+  // stand und die Richtung nur als Stichwort hinten. Was die Richtungen trennt, fuehrt jetzt.
+  assert.match(src,/COMPOSITION \(this is what makes this design different from the others/,'the direction leads the prompt');
+  assert.ok(src.indexOf('COMPOSITION (this is what')<src.indexOf('SUBJECT of every photographic area'),'…and stands before the subject');
+  assert.match(src,/const COMPOSITIONS=\{/,'each variant is a real instruction to the image, not a keyword');
+  for(const variant of ['split','poster','ledger','stacked','editorial','minimal'])
+    assert.match(src,new RegExp(`\\n  ${variant}:'[^']{80,}'`),`${variant} describes an actual composition`);
+  assert.match(src,/function paletteText/,'colour is named by role, not listed as hex values');
+  assert.match(src,/Colour is binding: page background exactly/);
+  // Ein Vorschaubild wird als Kachel gelesen. Die hoechste Stufe im Quadrat kostete ein
+  // Vielfaches an Zeit und lief regelmaessig in den Abbruch.
+  assert.match(src,/const EXTRA_SPEED=\{size:'1536x1024',quality:'low'\}/,'previews render fast and in the tile format');
+  assert.match(src,/if\(err\?\.status!==400\)throw err;\r?\n    return ask\(\{\}\);/,'a model that rejects those parameters still delivers');
   // The positive prompt must not enumerate devices any more.
   const body=src.slice(src.indexOf('function imagePrompt('),src.indexOf('\nfunction safe('));
   assert.doesNotMatch(body,/monitor|laptop|tablet|desk|browser|mockup/i,'the positive prompt stays device-free');
@@ -1537,7 +1551,11 @@ test('URLs written in the project description become reference links before leav
 // Ein produktiver Stand darf keine eckig geklammerten Platzhalter mehr in den Rechtstexten haben.
 test('the legal texts carry real details instead of placeholders',async()=>{
   const src=await readFile(path.join(root,'legal-pages.js'),'utf8');
-  const legal=src.slice(0,src.indexOf('function openLegal'));
+  // Genau die vier Texte, nicht der Code daneben: „alles vor openLegal“ hat auch jede
+  // Klammer aus einer Zuordnungstabelle als vergessenen Platzhalter gemeldet.
+  const blocks=[...src.matchAll(/const (?:IMPRINT|PRIVACY|TERMS|WITHDRAWAL)_HTML=`([\s\S]*?)`;/g)];
+  assert.equal(blocks.length,4,'all four legal texts must be present');
+  const legal=blocks.map(m=>m[1]).join('\n');
   assert.deepEqual(legal.match(/\[[^\]]+\]/g)||[],[],'no bracketed placeholder may survive in a shipped legal text');
   for(const detail of ['Lars Battermann','Südstraße 25','31698 Lindhorst','service.battermann@gmx.de','§ 19 UStG','§ 5 DDG'])
     assert.ok(legal.includes(detail),`${detail} is missing from the legal texts`);
@@ -1598,11 +1616,23 @@ test('the page carries a canonical link and a shareable preview image',async()=>
     assert.match(html,new RegExp(`property="${tag}"`),`${tag} is missing`);
 });
 
-// Die vier ?legal=-Adressen wurden nirgends ausgewertet und lieferten alle die Startseite.
+// Die vier ?legal=-Adressen wurden nirgends ausgewertet und lieferten alle die Startseite. Eine
+// Adresse gehört erst dann in die Sitemap, wenn hinter ihr eine eigene Datei liegt - sonst meldet
+// die Suchmaschine doppelte Inhalte und wirft am Ende alle bis auf eine wieder heraus.
 test('the sitemap lists only pages that actually exist',async()=>{
   const xml=await readFile(path.join(root,'sitemap.xml'),'utf8');
   const locs=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
-  assert.deepEqual(locs,['https://www.prompt-ai.app/'],'every other entry served the same homepage');
+  assert.ok(locs.includes('https://www.prompt-ai.app/'),'the homepage belongs in the sitemap');
+  assert.deepEqual(locs.filter((x,i)=>locs.indexOf(x)!==i),[],'no address may be listed twice');
+  for(const loc of locs){
+    assert.match(loc,/^https:\/\/www\.prompt-ai\.app\//,`${loc} points outside the site`);
+    const slug=loc.replace('https://www.prompt-ai.app/','');
+    // cleanUrls:true in vercel.json löst /impressum auf impressum.html auf.
+    const file=slug?`${slug}.html`:'index.html';
+    assert.ok(existsSync(path.join(root,file)),`${loc} has no page behind it (${file} is missing)`);
+  }
+  const config=JSON.parse(await readFile(path.join(root,'vercel.json'),'utf8'));
+  assert.equal(config.cleanUrls,true,'without cleanUrls every listed address would 404');
 });
 
 // theme-init.js legt die Papierflaeche schon im ersten Skript ueber die Seite, damit der alte
@@ -1910,4 +1940,89 @@ test('below the phone stage there are the plan tiles and nothing that explains A
   assert.match(css,/\.gate-stage-slot \.prompt-command-input\{\s*flex:1 1 auto!important/);
   // Und darunter steht in drei Woertern, was man am Ende in der Hand haelt.
   assert.match(gate,/<li>Master-Prompt<\/li><li>Seitenstruktur<\/li><li>CLAUDE\.md &middot; AGENTS\.md<\/li>/);
+});
+
+// Die Rückfrage ist ein Werkzeug der Abstimmung, nicht Teil des Auftrags. Im Master-Prompt stand
+// sie bisher im Wortlaut - lang, in Mangelform ("… fehlt in den Referenz-URLs") und mit
+// Fragezeichen. Die bauende KI liest das als offenen Punkt statt als Vorgabe.
+test('answered questions reach the master prompt as statements, not as questions',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/function clarificationTopic\(question\)/);
+  assert.match(app,/function clarificationFact\(question,answer\)/);
+  assert.match(app,/return `\$\{clarificationTopic\(question\)\}: \$\{endSentence\(value\)\}`/,'topic from the question, value from the answer');
+  assert.doesNotMatch(app,/Auf die Frage „\$\{x\.question\}“/,'the wording of the question no longer travels into the order');
+  assert.match(app,/const answerText=facts\.length\?facts\.map\(x=>`- \$\{x\}`\)/);
+  // Genau ein Fall braucht den Wortlaut: eine Pflichtfrage, die niemand beantwortet hat. Dort muss
+  // die KI erkennen, was sie nicht weiß und deshalb nicht erfinden darf.
+  assert.match(app,/Unbeantwortet geblieben \(nicht erfinden, sichtbar als offen führen\)/);
+  assert.match(app,/const unanswered=\(review\?\.questions\|\|\[\]\)\.filter\(q=>q\.required&&!answers\.some/);
+  // Und eine Handvoll Themen muss zuverlässig erkannt werden.
+  for(const [pattern,label] of [[/zielgruppe/,'Zielgruppe'],[/öffnungszeit/,'Öffnungszeiten'],[/datenschutz/,'Rechtliches']])
+    assert.ok(app.includes(`,"${label}"]`),`${label} is missing from the topic list (${pattern})`);
+});
+
+// Tarif, Arbeitsmodus, Generator und Generatormodell änderten am gebauten Ergebnis nichts, standen
+// aber im Auftrag - samt Admin-Status, in einer Datei, die an Kunden weitergeht.
+test('the master prompt carries no Prompt.ai operating details',async()=>{
+  const app=await text('app.js');
+  assert.doesNotMatch(app,/## GEWÄHLTER PRODUKTKONTEXT/,'the block is gone');
+  assert.doesNotMatch(app,/Generatormodell: \$\{el\.generatorModel/,'and with it the model name');
+  assert.doesNotMatch(app,/\$\{selectionBlock\}/,'nothing still assembles it');
+  assert.match(app,/const templateBlock=`\$\{customTemplateBlock\}\$\{clientBlock\}\$\{instructionSafetyBlock\}/);
+});
+
+// Auftraggeber und Projektname blieben "nicht angegeben", obwohl eine Kundenwebsite hinterlegt und
+// ausgelesen war. Beide Felder sind optional - abzuleiten sind sie trotzdem.
+test('customer and project name are derived from the link when nobody typed them',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/function brandFromUrl\(value\)/);
+  assert.match(app,/function derivedClientName\(\)/);
+  assert.match(app,/name: el\.projectName\?\.value\.trim\(\) \|\| client \|\| ""/,'the customer is the fallback project name');
+  assert.match(app,/client:\{name:client,/,'and the customer name itself is the derived one');
+  // Portale tragen den Namen nicht im Host - dort greift der Titel der ausgelesenen Seite.
+  assert.match(app,/if\(\/\^\(maps\\\.\|www\\\.google\\\.\)\/i\.test\(host\)/,'a maps link must not become the company name');
+  // Die Ableitung selbst, an echten Adressen nachgerechnet.
+  const host=/const HOST_NOISE=(\/[^\n]+\/i);/.exec(app);
+  assert.ok(host,'the noise list is missing');
+  const noise=new RegExp(host[1].slice(1,-2),'i');
+  const brand=url=>{
+    let h='';try{h=new URL(/^https?:\/\//i.test(url)?url:`https://${url}`).hostname}catch{return ''}
+    const core=h.split('.').filter(x=>!noise.test(x))[0]||'';
+    return core.length<3?'':core.split(/[-_]+/).filter(Boolean).map(w=>w[0].toUpperCase()+w.slice(1)).join(' ');
+  };
+  assert.equal(brand('https://www.textilpflege-schubert.de'),'Textilpflege Schubert');
+  assert.equal(brand('kfz-meier-hannover.de'),'Kfz Meier Hannover');
+});
+
+// Der Link zur Kundenseite landete in #clientSources - einer Liste, die die Startseite nicht las.
+// Sichtbar war er erst im Ablauf, den man von dort aus gar nicht offen hat.
+test('a customer link posted from the console shows up as an attachment',async()=>{
+  const home=await text('promptai-home-final.js');
+  assert.match(home,/\[\['#clientSources','kunde'\],\['#urlReferences','link'\]/,'the customer list is read like every other');
+  assert.match(home,/for\(const selector of \['#clientSources','#urlReferences'/,'and watched for changes like every other');
+  const css=await text('promptai-ui-layers.css');
+  assert.match(css,/\.prompt-attach-chip\[data-kind="kunde"\]/,'a customer source is not a reference and must not look like one');
+});
+
+// Mehrere Projekte auf einmal löschen: pro Projekt eine Rückfrage war bei zwanzig Entwürfen
+// zwanzig Mal bestätigen.
+test('projects can be picked and deleted together',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/let projectPickMode=false;const projectPicked=new Set\(\);/);
+  assert.match(app,/async function deletePickedProjects\(\)/);
+  assert.match(app,/Projekt\$\{ids\.length===1\?'':'e'\} werden gelöscht/,'one question for the whole selection');
+  assert.match(app,/const deletable=rows\.filter\(row=>!row\.local\)/,'the running draft is not a stored project');
+  assert.match(app,/if\(projectPickMode&&!rows\.some\(row=>!row\.local\)\)\{projectPickMode=false/,'the mode cannot get stuck on an empty list');
+  const css=await text('promptai-full-app-design.css');
+  assert.match(css,/\.welcome-project-card\.is-picked\{/);
+});
+
+// Die eigenen Projekte hinter der Tarifschranke: wer im kostenlosen Tarif auf "Bibliothek" tippte,
+// sah das Tarif-Fenster statt seiner eigenen Prompts. Ab Pro sind die Bausteine, nicht die Liste.
+test('the free plan reaches its own projects in the library',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/function openLibrary\(tab="projects"\)\{\s*if\(tab!=="projects"&&!planRules\(\)\.modules\)/);
+  assert.match(app,/function switchLibraryTab\(tab\)\{\s*if\(tab!=="projects"&&!planRules\(\)\.modules\)/,'the gate sits on the three building-block tabs');
+  assert.match(app,/if\(el\.openLibraryBtn\)el\.openLibraryBtn\.hidden=false;/,'and the way in stays visible');
+  assert.doesNotMatch(app,/button\.hidden=!rules\.modules\)/,'nothing hides the library wholesale any more');
 });

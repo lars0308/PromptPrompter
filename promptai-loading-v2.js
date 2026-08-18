@@ -170,11 +170,21 @@
     const strong=$('strong',host);
     if(strong.dataset.fillText!==oben.title){strong.textContent=oben.title;window.PromptAiFill?.words?.(strong,0);startSentences(host,lineSet(oben.kind))}
   }
+  // transition-polish.js haelt einen zweiten Schirm, der am Schritt haengt statt an der Anfrage.
+  // Geht eine Anfrage raus, weiss dieser hier genauer, was laeuft - der andere geht auf der Stelle,
+  // ohne Abschlussblinken. Sonst stehen zwei Ladebilder fuer einen Vorgang uebereinander.
+  function dropStepLoader(){
+    const fremd=$('#promptWorkflowLoader');
+    if(!fremd)return;
+    fremd.remove();
+    document.documentElement.classList.remove('prompt-workflow-loading');
+  }
   function beginTask(key,{title='Prompt.ai arbeitet',kind='generic'}={}){
     const id=String(key||'generic');
     const vorhanden=laufende.findIndex(x=>x.key===id);
     if(vorhanden>=0)laufende.splice(vorhanden,1);
     laufende.push({key:id,title,kind});
+    dropStepLoader();
     let host=$('#promptAiTaskLoader');
     if(!host){
       host=document.createElement('section');host.id='promptAiTaskLoader';
@@ -296,10 +306,15 @@
     // Sobald der Schritt gewechselt hat, ist die Übergabe durch. Der Schirm bleibt nur noch
     // den gemeinsamen Mindestmoment stehen, blinkt zweimal und geht.
     if(currentStep()!==1&&currentStep()>0&&overlay.dataset.closing!=='1'){
-      finishScreen(overlay,()=>{
+      const fertig=()=>{
         document.documentElement.classList.remove('prompt-skip-intake-brief');
         try{sessionStorage.removeItem(SIMPLE_START_KEY)}catch{}
-      });
+      };
+      // Die Prüfung geht meist schon raus, während die Übernahme noch abschließt. Blinkt die
+      // Übernahme dann noch aus, sieht man zwei Ladebilder hintereinander für einen Weg. Läuft
+      // bereits eine Anfrage, geht dieser Schirm still - der andere steht ohnehin schon.
+      if(laufende.length){stopScreen(overlay);overlay.dataset.closing='1';overlay.remove();fertig();return}
+      finishScreen(overlay,fertig);
     }
   }
 

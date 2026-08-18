@@ -19,6 +19,14 @@ function controlText(ctrl={}){
 - Visual energy ${motion}/100: express this through composition, contrast and cropping - never draw motion blur, arrows or animation artefacts.
 - Information density ${density}/100: ${density>=65?'show a rich page with several distinct content bands':density>=35?'show a balanced page with a hero and two or three following bands':'show a sparse page with generous whitespace'}.`;
 }
+// Die Palette entscheidet mit, ob zwei Bilder überhaupt verschieden wirken können. Als blosse
+// Aufzählung von Hex-Werten wurde sie überlesen; benannt nach Rolle wird sie befolgt.
+function paletteText(c={}){
+  const hex=(Array.isArray(c.palette)?c.palette:[]).filter(x=>/^#[0-9a-f]{3,8}$/i.test(String(x||'')));
+  if(!hex.length)return 'Palette: restrained and specific to this project.';
+  const [bg,ink,accent,soft]=hex;
+  return `Colour is binding: page background exactly ${bg}${ink?`, text and lines ${ink}`:''}${accent?`, the single accent ${accent}`:''}${soft?`, secondary surface ${soft}`:''}. No colour outside this palette.`;
+}
 function ruleText(rules=[]){
   const clean=(Array.isArray(rules)?rules:[]).map(x=>String(x||'').replace(/\s+/g,' ').trim()).filter(Boolean).slice(0,6);
   return clean.length?clean.map((x,i)=>`${i+1}. ${x.slice(0,220)}`).join('\n'):'none';
@@ -33,41 +41,89 @@ const NEGATIVE_PROMPT='monitor, computer screen, laptop, tablet, phone, device m
 // used to be cut off, which is exactly where the "flat artboard, no device" reminder sat.
 const PROMPT_LIMIT=1900;
 function clip(value,max){const text=String(value||'').replace(/\s+/g,' ').trim();return text.length>max?`${text.slice(0,max-1)}…`:text}
+// Was die drei Richtungen unterscheidet, muss als Bildkomposition dastehen - nicht als Name.
+//
+// Vorher stand die Variante nur als Wort in Klammern hinter dem Layout ("... (stacked)"). Ein
+// Bildmodell kann damit nichts anfangen: es kennt "stacked" nicht als Seitenaufbau. Das Motiv
+// dagegen - die Branche - stand ausformuliert und ganz vorn. Ergebnis waren drei Bilder derselben
+// Szene, in denen sich nur die Überschrift unterschied.
+//
+// Jede Variante bekommt deshalb eine echte Anweisung an das Bild: wo das Foto liegt, wie groß,
+// wie der Text dazu steht.
+const COMPOSITIONS={
+  split:'Split composition: the frame is divided into two unequal vertical halves, roughly 55/45. One half is a large photograph, the other a plain coloured area carrying the headline and a short paragraph. A hard straight edge separates them - no overlap, no rounded corners between them.',
+  poster:'Poster composition: one single photograph fills the entire frame edge to edge as the background. The headline sits directly on the photo in very large lettering. Below it only a thin strip hints at the next section. No side-by-side blocks, no cards.',
+  ledger:'Ledger composition: a strict rectangular grid of information zones with visible thin dividing lines and small numbered labels. Photography is small and secondary, placed inside grid cells. It reads like a well-kept record sheet, not like an advertisement.',
+  stacked:'Stacked composition: full-width horizontal bands running one below the other. The top band is a wide letterboxed photograph, the band under it is plain colour with text, the next is photography again. Nothing sits side by side; the page reads strictly top to bottom.',
+  editorial:'Offset magazine composition: an off-centre photograph with the headline deliberately overlapping its edge, generous asymmetric whitespace on one side, text set in an editorial column that does not align with the image. Nothing is centred.',
+  minimal:'Minimal composition: one photograph fills the whole frame and nothing else exists - no header, no navigation, no footer, no sections. A single short line of small type sits somewhere on the image.'
+};
+function compositionInstruction(c={}){
+  const key=String(c.layoutVariant||'').toLowerCase();
+  const base=COMPOSITIONS[key]||`Composition: ${clip(c.layout||'a clear, calm page layout',160)}`;
+  return c.mirror?`${base} The photographic side sits on the LEFT, the text side on the RIGHT.`:base;
+}
 function imagePrompt(p={},c={},design={}){
   const brand=clip(p.name||p.type||'Website',42),headline=clip(c.headline||p.goal||'',70),header=headerInstruction(p,c);
   const blocks=[
 promptText('preview-image-rules'),
-`SUBJECT: ${hint(p)}.
-${industryBlock(detectIndustry(p.description,p.type,p.goal))}
-Brand: ${brand}
-Type: ${clip(p.type||'Website',40)}
-Goal: ${clip(p.goal||'',60)}
-Audience: ${clip(p.audience||'',60)}
-Brief: ${clip(p.description||'',280)}`,
-p.special?`SPECIAL INSTRUCTION (authoritative for header, navigation or composition): ${clip(p.special,200)}`:'',
-`DIRECTION
-Name: ${clip(c.name||'',40)} · Mood: ${clip(c.mood||'',80)}
-Layout: ${clip(c.layout||'',90)} (${clip(c.layoutVariant||'',20)})
-Hero: ${clip(c.hero||'',90)}
+// Zuerst die Richtung, dann das Motiv: was in einem Bildauftrag vorn steht, wiegt schwerer, und
+// vorn stand bisher das für alle drei identische Branchenmotiv.
+`COMPOSITION (this is what makes this design different from the others — follow it exactly):
+${compositionInstruction(c)}
+Character: ${clip(c.mood||'',110)}
+Hero treatment: ${clip(c.hero||'',90)}
 Typography: ${clip(c.type||'',70)}
-Palette: ${(c.palette||[]).slice(0,4).join(', ')}`,
+${paletteText(c)}`,
+`SUBJECT of every photographic area: ${hint(p)}.
+Brand: ${brand} · Type: ${clip(p.type||'Website',40)}
+Goal: ${clip(p.goal||'',60)}
+Brief: ${clip(p.description||'',220)}`,
+p.special?`SPECIAL INSTRUCTION (authoritative for header, navigation or composition): ${clip(p.special,200)}`:'',
 `HEADER / STRUCTURE (follow exactly): ${header}`,
+`TEXT: render the brand name "${brand}" in the header and "${headline}" as the hero headline, in large high-contrast lettering. No other invented text, statistics, reviews or awards.`,
+industryBlock(detectIndustry(p.description,p.type,p.goal)),
 `DESIGN CONTROLS (the finished site is built from a master prompt carrying these same settings — this must be a truthful picture of that result)
 ${controlText(design.controls)}`,
 ruleText(design.designRules)!=='none'?`PROJECT DESIGN RULES\n${ruleText(design.designRules)}`:'',
-`TEXT: render the brand name "${brand}" in the header and "${headline}" as the hero headline, in large high-contrast lettering. No other invented text, statistics, reviews or awards.`,
 `Make it specific to this business, not a template. Every pixel of the frame is the webpage.`
   ].filter(Boolean);
   let prompt=blocks.join('\n\n');
-  // Drop the least critical middle blocks before the closing rule is ever at risk.
-  while(prompt.length>PROMPT_LIMIT&&blocks.length>4){blocks.splice(blocks.length-3,1);prompt=blocks.join('\n\n')}
+  // Drop the least critical middle blocks before the closing rule is ever at risk. Composition,
+  // subject, header and text sit in front of that window and can no longer be cut.
+  while(prompt.length>PROMPT_LIMIT&&blocks.length>6){blocks.splice(blocks.length-2,1);prompt=blocks.join('\n\n')}
   return clip(prompt,PROMPT_LIMIT);
 }
 
 function safe(v,f=''){const m=String(v||f||'').trim();return m&&m.length<190&&/^[a-zA-Z0-9@._:/-]+$/.test(m)?m:f}
 async function gemini(key,model,prompt){const m=safe(model,'gemini-3.1-flash-image').replace(/^models\//,''),r=await fetch('https://generativelanguage.googleapis.com/v1beta/interactions',{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({model:m,input:prompt,response_format:{type:'image',mime_type:'image/jpeg',aspect_ratio:'16:9',image_size:'1K'}})}),d=await r.json();if(!r.ok)throw Object.assign(new Error(d.error?.message||'Gemini image request failed'),{status:r.status});let img=d.output_image?.data?d.output_image:null;if(!img)for(const step of d.steps||[])for(const block of step.content||[])if(block.type==='image'&&block.data){img=block;break}if(!img)throw new Error('Gemini hat kein Bild zurückgegeben');return `data:${img.mime_type||img.mimeType||'image/jpeg'};base64,${img.data}`}
 async function cloudflare(key,model,prompt){const i=key.indexOf(':');if(i<1)throw new Error('Cloudflare-Verbindung ist unvollständig.');const account=key.slice(0,i),token=key.slice(i+1),m=safe(model,'@cf/black-forest-labs/flux-1-schnell');if(!m.startsWith('@cf/'))throw new Error('Ungültiges Cloudflare Workers AI Bildmodell.');const r=await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(account)}/ai/run/${m}`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt.slice(0,2048),negative_prompt:NEGATIVE_PROMPT,steps:8,width:1280,height:720,seed:Math.floor(Math.random()*2147483647)})}),d=await r.json().catch(()=>({}));if(!r.ok||d?.success===false)throw Object.assign(new Error(d?.errors?.[0]?.message||'Cloudflare image request failed'),{status:r.status||500});if(!d?.result?.image)throw new Error('Cloudflare hat kein Bild zurückgegeben');return `data:image/jpeg;base64,${d.result.image}`}
-async function compatible(provider,key,model,prompt){const url=provider==='gateway'?'https://ai-gateway.vercel.sh/v1/images/generations':'https://api.openai.com/v1/images/generations',m=safe(model,provider==='gateway'?'openai/gpt-image-2':'gpt-image-1.5'),r=await fetch(url,{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:m,prompt,n:1,response_format:'b64_json'})}),d=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(d.error?.message||`${provider} image request failed`),{status:r.status});const img=d.data?.[0];if(img?.b64_json)return `data:image/png;base64,${img.b64_json}`;if(img?.url)return img.url;throw new Error('Bildmodell hat kein Bild zurückgegeben')}
+// Größe und Qualität standen bisher nicht im Aufruf, also rechnete das Modell in seiner
+// Voreinstellung - quadratisch und auf hoher Stufe. Das dauert ein Vielfaches, und danach musste
+// ein quadratisches Bild noch in eine 16:9-Kachel gezwängt werden. Für eine Vorschau, die als
+// Kachel gezeigt und auf Komposition und Farbwirkung hin gelesen wird, reicht die niedrige Stufe
+// im Querformat.
+const EXTRA_SPEED={size:'1536x1024',quality:'low'};
+async function compatible(provider,key,model,prompt){
+  const url=provider==='gateway'?'https://ai-gateway.vercel.sh/v1/images/generations':'https://api.openai.com/v1/images/generations';
+  const m=safe(model,provider==='gateway'?'openai/gpt-image-2':'gpt-image-1.5');
+  const ask=async extra=>{
+    const r=await fetch(url,{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:m,prompt,n:1,response_format:'b64_json',...extra})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw Object.assign(new Error(d.error?.message||`${provider} image request failed`),{status:r.status});
+    const img=d.data?.[0];
+    if(img?.b64_json)return `data:image/png;base64,${img.b64_json}`;
+    if(img?.url)return img.url;
+    throw new Error('Bildmodell hat kein Bild zurückgegeben');
+  };
+  // Nicht jedes Modell hinter dem Gateway kennt size/quality. Ein abgelehnter Parameter darf die
+  // Vorschau nicht kosten - dann eben einmal ohne, in der Voreinstellung des Modells.
+  try{return await ask(EXTRA_SPEED)}
+  catch(err){
+    if(err?.status!==400)throw err;
+    return ask({});
+  }
+}
 const fallback=()=>[{id:'legacy-gemini',label:'Gemini Standard',provider:'gemini',model:'gemini-3.1-flash-image',priority:900,enabled:true},{id:'legacy-cloudflare',label:'Cloudflare Fallback',provider:'cloudflare',model:'@cf/black-forest-labs/flux-1-schnell',priority:950,enabled:true}];
 module.exports=async function previewImage(req,res){res.setHeader('Cache-Control','no-store, private');if(!rateLimit(req,res,{key:'preview-image',limit:12,windowMs:60000}))return;const started=Date.now(),body=req.body||{},project=body.project||{},requested=String(body.imageProvider||'auto').toLowerCase();let usage={action:'preview-image-call',provider:requested,model:'',project};try{await primePromptTemplates();const ent=await getEntitlements(req);if(ent.plan==='free'&&!ent.isAdmin)return res.status(403).json({error:'KI-Bildvorschauen sind ab Pro verfügbar. HTML-Vorschauen bleiben in Free verfügbar.'});let candidates=await listProfiles('image',{providers:['gateway','openai','gemini','cloudflare'],plan:ent.isAdmin?'ultimate':String(ent.plan||'free')});if(!candidates.length)candidates=fallback();const budget=await getTokenBudget(req);if(budget.exhausted&&candidates.length>1){candidates=[...candidates].reverse();res.setHeader('X-Prompt-AI-Saver','1')}if(body.useOwnApi===true&&['gateway','openai','gemini','cloudflare'].includes(requested))candidates=candidates.filter(x=>x.provider===requested);
 const wantedId=String(body.imageProfileId||'').trim();

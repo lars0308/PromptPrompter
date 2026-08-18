@@ -221,8 +221,16 @@ test('the old start page never shows through, and the handoff loader gets to fin
   const loader=await read('promptai-loading-v2.js');
   assert.match(loader,/overlay\.innerHTML=LOADER_MARKUP/,'derselbe Aufbau wie alle anderen Ladeschirme');
   assert.match(loader,/overlay\.dataset\.closing!=='1'/,'and it must not schedule its exit twice');
-  assert.match(loader,/finishScreen\(overlay,\(\)=>\{/);
+  assert.match(loader,/finishScreen\(overlay,fertig\)/);
   assert.doesNotMatch(loader,/durationFor/,'nichts wird mehr aus der Textlaenge gerechnet');
+  // Ein Vorgang, ein Schirm: laeuft schon eine Anfrage, geht die Uebergabe still - sonst blinkt
+  // sie aus, waehrend der naechste Schirm bereits steht, und das liest sich als zwei Ladebilder.
+  assert.match(loader,/if\(laufende\.length\)\{stopScreen\(overlay\);[\s\S]{0,80}overlay\.remove\(\)/,'no closing blink while a request is already up');
+  assert.match(loader,/function dropStepLoader\(\)/,'and the step-bound screen steps aside');
+  assert.match(loader,/dropStepLoader\(\);/);
+  const transition=await read('transition-polish.js');
+  assert.match(transition,/const foreignLoader=\(\)=>\$\('#promptAiTaskLoader'\)\|\|\$\('#promptBriefHandoff'\)/,'the step-bound screen knows the other two');
+  assert.match(transition,/if\(foreignLoader\(\)\)\{if\(\$\('#promptWorkflowLoader'\)\)hide\(true,true\);return\}/,'and yields immediately, without a blink');
   // Last project only appears once there is one; the meta line carries live numbers.
   assert.match(home,/if\(latest\)latest\.hidden=!title/);
   assert.match(home,/\$\{text\.length\} Zeichen · ≈\$\{total\} Token/);

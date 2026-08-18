@@ -2552,3 +2552,25 @@ html.prompt-full-redesign .gate-shot-result::after{
     flex:0 0 auto!important;min-width:0!important;padding:0 6px!important;white-space:nowrap!important;
   }
 }
+
+/* Mehrere Projekte auf einmal löschen.
+   Die Leiste sitzt über der Kachelliste; im Auswahlmodus wird aus jeder Karte eine Schaltfläche,
+   die an- und abhakt, statt das Projekt zu öffnen. */
+.library-project-tools{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:4px 0 12px;
+}
+.library-project-tools .library-project-count{
+  margin-right:auto;color:var(--muted);font-size:12px;
+}
+.library-project-tools .outline-btn[disabled]{opacity:.5;cursor:not-allowed}
+.welcome-project-card.is-picking button{cursor:pointer}
+.welcome-project-card.is-picking{
+  border-style:dashed;
+}
+.welcome-project-card.is-picked{
+  border-style:solid;
+  border-color:color-mix(in srgb,var(--accent) 60%,var(--line));
+  background:color-mix(in srgb,var(--accent) 7%,var(--surface));
+}
+.welcome-project-card.is-picked span{color:var(--accent)}

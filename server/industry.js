@@ -28,8 +28,16 @@ const INDUSTRIES=[
    subject:'a credible beauty, salon or treatment environment',
    sections:'Behandlungen mit Preisen, Terminbuchung, Team, Vorher/Nachher oder Raumbilder, Anfahrt',
    tone:'ruhig, hochwertig, vertrauensbildend'},
+  // Steht vor „Gesundheit & Praxis“, weil „Textilpflege“ und „Gebäudereinigung“ sonst über die
+  // Silbe „pflege“ bzw. den Begriff „Reinigung“ dort landen - eine Textilpflegerei bekam so
+  // Bildaufträge für einen Behandlungsraum.
+  {key:'reinigung',label:'Reinigung & Textilpflege',
+   match:/textilpflege|textilreinig|wäscherei|waescherei|waschsalon|reinigung|gebäudereinig|gebaeudereinig|chemischreinig|chemische reinigung|schädlingsbekämpf|glasreinig|teppichreinig|bügelservice|buegelservice|mangelwäsche|wäscheservice/,
+   subject:'real textiles, laundry or cleaning work in progress - fabric, machines, folded goods, people at work',
+   sections:'Leistungen mit Preisen, Abhol- und Bringservice, Einzugsgebiet, Bearbeitungsdauer, Geschäftskunden, Kontakt',
+   tone:'sachlich, zuverlässig, auf Termintreue und Sorgfalt ausgerichtet'},
   {key:'gesundheit',label:'Gesundheit & Praxis',
-   match:/arzt|ärzt|aerzt|praxis|zahnarzt|kieferorthop|physio|therapie|therapeut|heilprakt|osteopath|logopäd|psycholog|apotheke|pflege|hebamme|klinik|sanitätshaus/,
+   match:/arzt|ärzt|aerzt|praxis|zahnarzt|kieferorthop|physio|therapie|therapeut|heilprakt|osteopath|logopäd|psycholog|apotheke|pflegedienst|alten-?pflege|kranken-?pflege|senioren-?pflege|hebamme|klinik|sanitätshaus/,
    subject:'a calm, clean practice or treatment room, real people at work',
    sections:'Leistungen, Sprechzeiten, Team mit Qualifikation, Terminvergabe, Kassen/Privat, Anfahrt',
    tone:'sachlich, beruhigend, ohne Heilversprechen'},

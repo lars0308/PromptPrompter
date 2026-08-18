@@ -112,10 +112,11 @@
   `;
 
 
-  function getLegalPageUrl(kind){
-    const urls={'imprint':'/impressum','privacy':'/datenschutz','terms':'/agb','withdrawal':'/widerruf'};
-    return urls[kind]||'/';
-  }
+  // Dieselben vier Texte liegen zusätzlich als eigene Seiten unter diesen Adressen. Wer noch kein
+  // Konto hat, wird dorthin geschickt statt in ein Fenster: eine Adresse lässt sich verlinken,
+  // ausdrucken und von einer Suchmaschine lesen.
+  const LEGAL_PAGE_URLS=new Map([['imprint','/impressum'],['privacy','/datenschutz'],['terms','/agb'],['withdrawal','/widerruf']]);
+  function getLegalPageUrl(kind){return LEGAL_PAGE_URLS.get(kind)||'/'}
 
   function isAuthenticatedOrInApp(){
     try{return Boolean(JSON.parse(localStorage.getItem('sitebrief-auth-session')||'null')?.access_token)}catch{return false}
