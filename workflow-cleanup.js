@@ -26,8 +26,17 @@
     }).observe(step,{attributes:true,attributeFilter:['class']});
     if(masterStepActive)revealMaster();
   }
+  // Der Ablauf muss auch wirklich auf dem Bildschirm sein.
+  //
+  // #stepPrompt traegt "active" auch dann noch, wenn die App gerade erst startet und den letzten
+  // Stand wiederherstellt - der Ablauf liegt dabei versteckt hinter der Startseite. Solange die
+  // Anzeige ein Kasten mitten in der Schrittseite war, sah das niemand. Seit sie der gemeinsame
+  // Vollbild-Ladeschirm ist, stand direkt nach "Arbeitsbereich wird vorbereitet" grundlos
+  // "Dein Master-Prompt entsteht" auf dem Schirm.
+  function ablaufSichtbar(){const app=$('#workflowApp');return Boolean(app)&&!app.hidden}
   function revealMaster(){
     const step=$('#stepPrompt');if(!step?.classList.contains('active'))return;
+    if(!ablaufSichtbar())return;
     const sig=signature();
     clearTimeout(masterTimer);
     const done=prompt=>{
@@ -55,7 +64,7 @@
   const ZUSAMMENBAU='master-zusammenbau',KI_LAUF='master-ki';
   const MASTER_TITEL='Dein Master-Prompt entsteht';
   function masterAiOverlay(state){
-    const step=$('#stepPrompt');if(!step||!step.classList.contains('active'))return;
+    const step=$('#stepPrompt');if(!step||!step.classList.contains('active')||!ablaufSichtbar())return;
     if(state==='start'){window.PromptAiLoading?.beginTask?.(KI_LAUF,{title:MASTER_TITEL,kind:'build'});return}
     window.PromptAiLoading?.endTask?.(KI_LAUF);
   }

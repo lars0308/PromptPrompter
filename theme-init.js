@@ -73,6 +73,44 @@
       node.style.setProperty('--prompt-flash-count',String(Math.max(1,Math.round(wait/FLASH_MS))));
       setTimeout(end,wait);
     },
+    // Zeilenweise fuellen statt spaltenweise.
+    //
+    // Die Fuellung ist ein waagerechter Verlauf ueber die ganze Ueberschrift. Bricht die auf zwei
+    // Zeilen um, liegt derselbe Verlauf ueber beiden - bei 50 % ist die linke Haelfte von Zeile
+    // eins UND von Zeile zwei blau. Gelesen wird aber nacheinander.
+    //
+    // Ein Verlauf kann das nicht: er kennt nur eine Richtung. Also bekommt jedes Wort seinen
+    // eigenen. Die Woerter behalten ihren Umbruch (sie sind inline), und jedes bekommt den
+    // Abschnitt des Fortschritts, der ihm nach Zeichenzahl zusteht - Wort fuer Wort in
+    // Lesereihenfolge, und damit erst Zeile eins, dann Zeile zwei.
+    //
+    // Bewusst ueber Woerter und nicht ueber gemessene Zeilenkaesten: Zeilen ausmessen und
+    // nachzeichnen hat frueher versetzten und abgeschnittenen Text erzeugt.
+    words(node,progress){
+      if(!node)return;
+      const text=String(node.dataset.fillText||node.textContent||'').trim();
+      if(!text)return;
+      if(node.dataset.fillText!==text){
+        node.dataset.fillText=text;
+        const teile=text.split(/(\s+)/);
+        const laenge=teile.reduce((n,t)=>n+(/^\s+$/.test(t)?0:t.length),0)||1;
+        let gelaufen=0;
+        node.innerHTML=teile.map(teil=>{
+          if(/^\s+$/.test(teil))return teil;
+          const von=gelaufen/laenge;gelaufen+=teil.length;
+          const bis=gelaufen/laenge;
+          return `<i class="prompt-fill-word" style="--von:${von};--bis:${bis}">${teil.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</i>`;
+        }).join('');
+      }
+      const p=Math.max(0,Math.min(1,Number(progress)||0));
+      for(const wort of node.querySelectorAll('.prompt-fill-word')){
+        const von=Number(wort.style.getPropertyValue('--von'))||0;
+        const bis=Number(wort.style.getPropertyValue('--bis'))||1;
+        const anteil=bis>von?Math.max(0,Math.min(1,(p-von)/(bis-von))):(p>=bis?1:0);
+        const wert=(anteil*100).toFixed(1)+'%';
+        if(wort.style.getPropertyValue('--prompt-fill')!==wert)wort.style.setProperty('--prompt-fill',wert);
+      }
+    },
     // Screens that can run more than once (the master-prompt overlay) hand the headline back to
     // the state it started in, so the next wait animates again instead of sitting at 100%.
     reset(node){if(!node)return;delete node.dataset.fillDone;delete node.dataset.fillValue;delete node.dataset.fillStart;node.style.removeProperty('--prompt-flash-count');node.classList.remove('prompt-fill-complete');node.style.removeProperty('--prompt-fill');if(node.dataset.fillOrigin==='sweep'){node.classList.remove('prompt-fill-progress');node.classList.add('prompt-fill-sweep')}}

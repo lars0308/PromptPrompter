@@ -21,45 +21,45 @@
     if(kind==='briefing')return [
       'Beschreibung wird gelesen.',
       'Ziel und Angebot werden eingeordnet.',
-      'Wichtige Anforderungen werden zusammengefuehrt.',
+      'Wichtige Anforderungen werden zusammengeführt.',
       'Offene Punkte werden von klaren Angaben getrennt.',
       'Datenschutz und rechtliche Grundlagen laufen mit.',
       'Der Arbeitsstand wird gesichert.'
     ];
     if(kind==='preview')return [
-      'Angaben und Antworten werden zusammengefuehrt.',
+      'Angaben und Antworten werden zusammengeführt.',
       'Seitenstruktur wird abgeleitet.',
       'Farben und Typografie werden gesetzt.',
       'Bildsprache wird festgelegt.',
-      'Technische Rahmenbedingungen werden mitgefuehrt.',
+      'Technische Rahmenbedingungen werden mitgeführt.',
       'Die Vorschau wird vorbereitet.'
     ];
     if(kind==='review')return [
-      'Angaben werden geprueft.',
-      'Angehaengte Quellen werden ausgewertet.',
-      'Widersprueche werden gesucht.',
+      'Angaben werden geprüft.',
+      'Angehängte Quellen werden ausgewertet.',
+      'Widersprüche werden gesucht.',
       'Nur Punkte mit echtem Einfluss bleiben uebrig.',
       'Pflichtangaben werden abgeglichen.',
-      'Rueckfragen werden vorbereitet.'
+      'Rückfragen werden vorbereitet.'
     ];
     if(kind==='freeprompt')return [
       'Beschreibung wird eingeordnet.',
-      'Ausgabetyp und Ziel-KI werden beruecksichtigt.',
+      'Ausgabetyp und Ziel-KI werden berücksichtigt.',
       'Aufbau und Regeln werden gesetzt.',
-      'Beispiele werden ergaenzt.',
+      'Beispiele werden ergänzt.',
       'Der fertige Prompt wird zusammengestellt.'
     ];
     if(kind==='build')return [
-      'Briefing und gewaehlte Richtung werden zusammengefuehrt.',
+      'Briefing und gewählte Richtung werden zusammengeführt.',
       'Struktur und Inhalte werden umgesetzt.',
       'Technische Vorgaben werden angewendet.',
-      'Dateien und Nutzerwege werden geprueft.',
-      'Vorschau und Uebergabe werden vorbereitet.'
+      'Dateien und Nutzerwege werden geprüft.',
+      'Vorschau und Übergabe werden vorbereitet.'
     ];
     return [
       'Angaben werden verarbeitet.',
-      'Wichtige Anforderungen werden zusammengefuehrt.',
-      'Qualitaet und Umsetzbarkeit werden geprueft.',
+      'Wichtige Anforderungen werden zusammengeführt.',
+      'Qualität und Umsetzbarkeit werden geprüft.',
       'Das Ergebnis wird vorbereitet.'
     ];
   }
@@ -69,7 +69,7 @@
 
      Bis hierher gab es drei verschiedene: einen mit blau durchlaufender
      Ueberschrift (#promptWorkflowLoader), einen zweiten in derselben Machart fuer
-     die Uebergabe (#promptModeHandoff) - und diesen hier, der stattdessen eine
+     die Übergabe (#promptModeHandoff) - und diesen hier, der stattdessen eine
      Liste zeigte, in der erledigte Zeilen blau stehen blieben. Der dritte faellt
      jetzt weg: dieselbe Marke, derselbe Kicker, dieselbe blau durchlaufende
      Ueberschrift, darunter eine wechselnde Zeile in normaler Schrift.
@@ -110,6 +110,8 @@
   function applyFill(host,progress){
     const next=`${(progress*100).toFixed(1)}%`;
     if(host.style.getPropertyValue('--prompt-fill')!==next)host.style.setProperty('--prompt-fill',next);
+    // Woerter statt Spalten: bei einer zweizeiligen Ueberschrift laeuft erst die erste Zeile voll.
+    window.PromptAiFill?.words?.($('strong',host),progress);
   }
   function startFill(host){
     cancelAnimationFrame(Number(host.dataset.raf||0));
@@ -166,7 +168,7 @@
     const oben=laufende[laufende.length-1];if(!oben)return;
     host.dataset.taskKey=oben.key;
     const strong=$('strong',host);
-    if(strong.textContent!==oben.title){strong.textContent=oben.title;startSentences(host,lineSet(oben.kind))}
+    if(strong.dataset.fillText!==oben.title){strong.textContent=oben.title;window.PromptAiFill?.words?.(strong,0);startSentences(host,lineSet(oben.kind))}
   }
   function beginTask(key,{title='Prompt.ai arbeitet',kind='generic'}={}){
     const id=String(key||'generic');
@@ -267,7 +269,7 @@
   const flowMode=()=>$('.mode-switch button.active')?.dataset.mode||document.documentElement.dataset.promptMode||'guided';
   function workflowVisible(){return Boolean($('#workflowApp')&&!$('#workflowApp').hidden)}
 
-  // Die Uebergabe von der Startseite in den Ablauf. Frueher ein eigener Schirm mit Zeilenliste,
+  // Die Übergabe von der Startseite in den Ablauf. Frueher ein eigener Schirm mit Zeilenliste,
   // jetzt derselbe wie jeder andere - damit zwischen Startseite und erster Seite nicht zwei
   // verschiedene Ladebilder hintereinander stehen.
   function ensureHandoff(){
@@ -280,7 +282,7 @@
       overlay.className='prompt-handoff-loader';overlay.setAttribute('aria-live','polite');
       overlay.innerHTML=LOADER_MARKUP;document.body.appendChild(overlay);
       overlay.dataset.shownAt=String(Date.now());
-      $('strong',overlay).textContent='Beschreibung wird uebernommen';
+      $('strong',overlay).textContent='Beschreibung wird übernommen';
       startSentences(overlay,lineSet('briefing'));startFill(overlay);
       // Der Schirm steht - ab hier darf die Flaeche darunter wieder sichtbar werden, sie liegt
       // ohnehin dahinter. Ohne diese Zeile bliebe sie bis zum Notausstieg weg.
@@ -291,7 +293,7 @@
     // Projektname, Projektart, Hauptziel, Zielgruppe und der besondere Wunsch, die die
     // Startseite gar nicht abfragt; wer darueber hinwegspringt, nimmt sie ersatzlos weg.
     if(currentStep()===1&&text.length>=20&&flowMode()!=='expert'){const panel=$('#stepProject');if(panel?.dataset.promptV2Advance!=='1'){panel.dataset.promptV2Advance='1';setTimeout(()=>{if(currentStep()===1)$('#stepProject .next-btn')?.click()},50)}}
-    // Sobald der Schritt gewechselt hat, ist die Uebergabe durch. Der Schirm bleibt nur noch
+    // Sobald der Schritt gewechselt hat, ist die Übergabe durch. Der Schirm bleibt nur noch
     // den gemeinsamen Mindestmoment stehen, blinkt zweimal und geht.
     if(currentStep()!==1&&currentStep()>0&&overlay.dataset.closing!=='1'){
       finishScreen(overlay,()=>{

@@ -45,7 +45,7 @@
   function overlay(data){let box=$('#promptModeHandoff');if(box)return box;box=document.createElement('section');box.id='promptModeHandoff';box.className='prompt-mode-handoff';box.setAttribute('aria-live','polite');box.innerHTML=`<div><span class="kicker">PROMPT.AI · ${modeLabel(data.mode)}</span><strong>Projekt wird vorbereitet</strong><div class="prompt-mode-handoff-status"></div><div class="prompt-mode-handoff-bar"><i></i></div><div class="prompt-mode-handoff-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>`;document.body.appendChild(box);startSentences();startTitleFillLoop();return box}
   let titleFillRaf=0;
   function titleProgress(elapsed){const tau=1500;return Math.min(.94,.94*(1-Math.exp(-elapsed/tau)))}
-  function applyTitleFill(progress){const box=$('#promptModeHandoff');if(!box)return;const next=`${(progress*100).toFixed(1)}%`;if(box.style.getPropertyValue('--prompt-fill')!==next)box.style.setProperty('--prompt-fill',next)}
+  function applyTitleFill(progress){const box=$('#promptModeHandoff');if(!box)return;const next=`${(progress*100).toFixed(1)}%`;if(box.style.getPropertyValue('--prompt-fill')!==next)box.style.setProperty('--prompt-fill',next);window.PromptAiFill?.words?.(box.querySelector('strong'),progress)}
   function stopTitleFillLoop(complete=false){cancelAnimationFrame(titleFillRaf);titleFillRaf=0;if(complete)applyTitleFill(1)}
   function startTitleFillLoop(){
     stopTitleFillLoop();

@@ -537,7 +537,13 @@ test('loading-screen sentences stay on screen ~1.6s longer than before across ev
 });
 test('the loader title/sentence text updates instantly and cleanly, with no stale per-character fill overlay that could desync from the text',async()=>{
   const transition=await text('transition-polish.js'),v1=await text('promptai-experience-v1.js');
-  assert.match(transition,/function setTitle\(box,text\)\{const host=\$\('strong',box\);if\(!host\|\|host\.textContent===text\)return;host\.textContent=text\}/);
+  // Die Ueberschrift wird in Woerter zerlegt, damit bei zwei Zeilen erst die obere volllaeuft -
+  // verglichen wird deshalb gegen den gemerkten Text, nicht gegen textContent (das enthaelt jetzt
+  // die Wortelemente). Gesetzt wird weiter in einem Zug, ohne Zeichen-Overlay.
+  assert.match(transition,/function setTitle\(box,text\)\{const host=\$\('strong',box\);if\(!host\|\|host\.dataset\.fillText===text\)return;host\.textContent=text;window\.PromptAiFill\?\.words\?\.\(host,0\)\}/);
+  const theme=await text('theme-init.js');
+  assert.match(theme,/words\(node,progress\)\{/,'die Wortaufteilung gehoert in den gemeinsamen Treiber');
+  assert.doesNotMatch(theme,/getClientRects|getBoundingClientRect/,'Zeilen ausmessen hat frueher versetzten Text erzeugt - Woerter statt gemessener Zeilenkaesten');
   assert.match(transition,/const apply=\(\)=>\{host\.textContent=text;host\.classList\.remove\('is-changing'\)\};/);
   assert.match(v1,/const apply=\(\)=>\{host\.textContent=text;host\.classList\.remove\('is-changing'\)\};/);
 });

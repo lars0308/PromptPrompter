@@ -60,6 +60,8 @@
     const box=$('#promptWorkflowLoader');if(!box)return;
     const next=`${(progress*100).toFixed(1)}%`;
     if(box.style.getPropertyValue('--prompt-fill')!==next)box.style.setProperty('--prompt-fill',next);
+    // Woerter statt Spalten: bei einer zweizeiligen Ueberschrift laeuft erst die erste Zeile voll.
+    window.PromptAiFill?.words?.($('strong',box),progress);
   }
   function forceRecover(){
     clearInterval(cycleTimer);cycleTimer=0;
@@ -90,7 +92,7 @@
   function stopFillLoop(complete=false){cancelAnimationFrame(fillRaf);fillRaf=0;if(complete)applyFill(1)}
 
   function loader(){let box=$('#promptWorkflowLoader');if(box)return box;box=document.createElement('section');box.id='promptWorkflowLoader';box.setAttribute('aria-live','polite');box.innerHTML='<button type="button" id="promptWorkflowLoaderClose" aria-label="Abbrechen">×</button><div><span class="kicker"></span><strong></strong><div class="prompt-loader-sentence"></div><div class="prompt-loader-bar"><i></i></div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div>';document.body.appendChild(box);return box}
-  function setTitle(box,text){const host=$('strong',box);if(!host||host.textContent===text)return;host.textContent=text}
+  function setTitle(box,text){const host=$('strong',box);if(!host||host.dataset.fillText===text)return;host.textContent=text;window.PromptAiFill?.words?.(host,0)}
   function setSentence(text,immediate=false){const box=$('#promptWorkflowLoader'),host=$('.prompt-loader-sentence',box||document);if(!host)return;const apply=()=>{host.textContent=text;host.classList.remove('is-changing')};if(immediate){apply();return}host.classList.add('is-changing');setTimeout(()=>{if(host.isConnected)apply()},160)}
   function startCycle(kind){const data=copy[kind];if(!data)return;clearInterval(cycleTimer);
     // A real stage beats the generic rotation: while the run reports what it is doing the screen
