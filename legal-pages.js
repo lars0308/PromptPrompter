@@ -112,7 +112,23 @@
   `;
 
 
+  function getLegalPageUrl(kind){
+    const urls={'imprint':'/impressum','privacy':'/datenschutz','terms':'/agb','withdrawal':'/widerruf'};
+    return urls[kind]||'/';
+  }
+
+  function isAuthenticatedOrInApp(){
+    try{return Boolean(JSON.parse(localStorage.getItem('sitebrief-auth-session')||'null')?.access_token)}catch{return false}
+  }
+
   function openLegal(kind){
+    // Für unauthentifizierte User oder Besucher: navigiere zu einer echten Seite
+    if(!isAuthenticatedOrInApp()){
+      const url=getLegalPageUrl(kind);
+      window.location.href=url;
+      return;
+    }
+    // Für angemeldete User: zeige Modal (verlasse die App nicht)
     const dialog=$('#legalDialog');if(!dialog)return;
     const title=$('#legalTitle'),content=$('#legalContent');
     if(kind==='privacy'){title.textContent='Datenschutzerklärung';content.innerHTML=PRIVACY_HTML}
