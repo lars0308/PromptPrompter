@@ -84,7 +84,12 @@
     if(active&&n===6){setText($('#generateConceptsBtn'),'Vorschau erstellen');const fresh=sessionStorage.getItem(FRESH_WEBSITE_KEY)==='1',manual=sessionStorage.getItem(PREVIEW_MANUAL_KEY)==='1',format=$('#previewFormat');if(fresh&&!manual&&format&&format.value!=='html'){format.value='html';format.dispatchEvent(new Event('change',{bubbles:true}))}if(fresh)sessionStorage.removeItem(FRESH_WEBSITE_KEY)}
   }
 
-  function skipDuplicateDescription(){let simple=false;try{simple=sessionStorage.getItem(SIMPLE_START_KEY)==='1'}catch{}if(!simple||!workflowVisible()||currentStep()!==1)return;const description=$('#projectDescription')?.value.trim()||'';if(description.length<20)return;const panel=$('#stepProject');if(panel?.dataset.uxAutoForward==='1')return;panel.dataset.uxAutoForward='1';setTimeout(()=>{if(currentStep()===1)$('#stepProject .next-btn')?.click()},90)}
+  // "Selbst einstellen" heisst: jeder Schritt bleibt sichtbar und in der Hand des Nutzers. Ueber
+  // Schritt 1 hinwegzuspringen nahm dort genau die Angaben weg, die die Startseite gar nicht
+  // abfragt - Projektname, Projektart, Hauptziel, Zielgruppe und den besonderen Wunsch. In den
+  // beiden gefuehrten Ablaeufen bleibt es beim Vorspringen: dort ist der Sinn, dass Prompt.ai
+  // entscheidet.
+  function skipDuplicateDescription(){let simple=false;try{simple=sessionStorage.getItem(SIMPLE_START_KEY)==='1'}catch{}if(!simple||!workflowVisible()||currentStep()!==1)return;if(currentMode()==='expert')return;const description=$('#projectDescription')?.value.trim()||'';if(description.length<20)return;const panel=$('#stepProject');if(panel?.dataset.uxAutoForward==='1')return;panel.dataset.uxAutoForward='1';setTimeout(()=>{if(currentStep()===1)$('#stepProject .next-btn')?.click()},90)}
 
   function cleanClarification(){
     const dialog=$('#clarificationDialog');if(!dialog)return;const head=$('.dialog-head>div',dialog);if(head){setText($('span',head),'RÜCKMELDUNG');setText($('h2',head),'Kurz abstimmen')}const warnings=$('#clarificationWarnings');if(warnings&&!warnings.hidden)warnings.hidden=true;

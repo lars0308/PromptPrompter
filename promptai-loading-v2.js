@@ -133,6 +133,7 @@
 
   function inputLength(){return String($('#projectDescription')?.value||'').trim().length}
   function currentStep(){return Number($('.step-panel.active')?.dataset.stepPanel||0)}
+  const flowMode=()=>$('.mode-switch button.active')?.dataset.mode||document.documentElement.dataset.promptMode||'guided';
   function workflowVisible(){return Boolean($('#workflowApp')&&!$('#workflowApp').hidden)}
 
   function ensureHandoff(){
@@ -152,7 +153,10 @@
       renderLines(overlay,lineSet('briefing'),runFor);
     }
     const text=String($('#projectDescription')?.value||'').trim();
-    if(currentStep()===1&&text.length>=20){const panel=$('#stepProject');if(panel?.dataset.promptV2Advance!=='1'){panel.dataset.promptV2Advance='1';setTimeout(()=>{if(currentStep()===1)$('#stepProject .next-btn')?.click()},50)}}
+    // "Selbst einstellen" laesst jeden Schritt stehen - auch den ersten. Dort haengen
+    // Projektname, Projektart, Hauptziel, Zielgruppe und der besondere Wunsch, die die
+    // Startseite gar nicht abfragt; wer darueber hinwegspringt, nimmt sie ersatzlos weg.
+    if(currentStep()===1&&text.length>=20&&flowMode()!=='expert'){const panel=$('#stepProject');if(panel?.dataset.promptV2Advance!=='1'){panel.dataset.promptV2Advance='1';setTimeout(()=>{if(currentStep()===1)$('#stepProject .next-btn')?.click()},50)}}
     // Der Schritt wechselt nach etwa 50 Millisekunden - der Ladeschirm verschwand deshalb,
     // bevor die erste Zeile überhaupt zu Ende gelaufen war. Er bleibt jetzt so lange stehen,
     // wie seine Zeilen brauchen, und schließt danach wie gehabt: fertigstellen, einmal

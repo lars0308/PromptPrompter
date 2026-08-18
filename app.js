@@ -1545,9 +1545,15 @@
     el.referenceUrl.value=""; renderReferences(); saveState(); updateGuide();
     readReferenceUrl(item);
   }
+  // Adressen aus der Kurzbeschreibung werden zu Referenzen, statt sie im naechsten Schritt noch
+  // einmal abzutippen. Bisher nur mit "http" davor - genau so schreibt sie aber kaum jemand in
+  // einen Satz. "www.beispiel.de" und "beispiel.de/preise" zaehlen deshalb mit; ein blosses Wort
+  // mit Punkt nicht, sonst wuerde jeder Satz mit einer Abkuerzung zur Referenz.
   function importDescriptionUrls(){
-    const matches=String(el.projectDescription?.value||'').match(/https?:\/\/[^\s<>()]+/gi)||[],limit=state.isAdmin?matches.length:planRules().maxRefUrls;
-    for(const raw of matches){if(state.urls.length>=limit)break;const value=raw.replace(/[),.;!?]+$/,'');if(state.urls.some(item=>normalizedSourceUrl(item.url)===normalizedSourceUrl(value)))continue;try{new URL(value)}catch{continue}const item={id:uid('url'),url:value,label:'Aus der Kurzbeschreibung übernommen',aspects:['Layout','Stimmung'],like:'',dislike:''};state.urls.push(item);readReferenceUrl(item)}
+    const text=String(el.projectDescription?.value||'');
+    const matches=[...(text.match(/https?:\/\/[^\s<>()]+/gi)||[]),...(text.match(/(?:^|[\s(])((?:www\.)[^\s<>()]+|[a-z0-9-]+\.(?:de|com|net|org|eu|at|ch|io|dev|app|shop)(?:\/[^\s<>()]*)?)/gi)||[]).map(x=>x.trim())];
+    const limit=state.isAdmin?matches.length:planRules().maxRefUrls;
+    for(const raw of matches){if(state.urls.length>=limit)break;const trimmed=raw.replace(/[),.;!?]+$/,'');const value=/^https?:\/\//i.test(trimmed)?trimmed:`https://${trimmed}`;if(state.urls.some(item=>normalizedSourceUrl(item.url)===normalizedSourceUrl(value)))continue;try{new URL(value)}catch{continue}const item={id:uid('url'),url:value,label:'Aus der Kurzbeschreibung übernommen',aspects:['Layout','Stimmung'],like:'',dislike:''};state.urls.push(item);readReferenceUrl(item)}
     if(matches.length){renderReferences();saveState();updateGuide()}
   }
   // Ein angehängter Link war für die Prüfung bloß eine Zeichenkette: referencePayload() reichte

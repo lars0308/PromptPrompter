@@ -543,6 +543,30 @@ test('the "Prompt genauer einstellen" free-prompt settings step is consolidated 
   // Kontext, sonst verschwaende ein sichtbar angehaengter Link still.
   assert.match(src,/category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:withReferences\(\$\('#freePromptDescription'\)\.value\),context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
 });
+// "Selbst einstellen" heisst: jeder Schritt bleibt sichtbar. Zwei Ebenen sprangen trotzdem ueber
+// Schritt 1 hinweg, sobald die Beschreibung von der Startseite kam - und nahmen damit Projektname,
+// Projektart, Hauptziel, Zielgruppe und den besonderen Wunsch ersatzlos weg, die die Startseite
+// gar nicht abfragt. app.js baut den Schritt fuer diesen Ablauf laengst um ("Angaben zum Projekt",
+// Kurzbeschreibung ausgeblendet); er wurde nur nie erreicht.
+test('the expert flow keeps step 1 instead of skipping it once a brief arrives',async()=>{
+  const ux=await text('ux-stability-fix.js'),loader=await text('promptai-loading-v2.js'),app=await text('app.js');
+  assert.match(ux,/currentStep\(\)!==1\)return;if\(currentMode\(\)==='expert'\)return;/,'ux-stability-fix must not auto-forward in expert');
+  assert.match(loader,/if\(currentStep\(\)===1&&text\.length>=20&&flowMode\(\)!=='expert'\)/,'the handoff must not auto-forward in expert either');
+  assert.match(loader,/const flowMode=\(\)=>\$\('\.mode-switch button\.active'\)\?\.dataset\.mode/);
+  // Das ist die Gegenprobe: der Schritt wird fuer diesen Ablauf umgebaut, statt einfach zu stehen.
+  assert.match(app,/title\.textContent=expert\?'Angaben zum Projekt':'Was soll entstehen\?'/);
+  assert.match(app,/prompt-expert-has-brief/,'the description that already came from the home console is hidden, not asked again');
+});
+
+// Wer eine Adresse in die Beschreibung schreibt, soll sie im Referenzen-Schritt wiederfinden.
+// Das gab es schon - aber nur mit "http" davor, und genau so schreibt sie kaum jemand in einen Satz.
+test('addresses in the description become references even without http in front',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/function importDescriptionUrls\(\)\{/);
+  assert.match(app,/\(\?:www\\\.\)/,'www.beispiel.de must count');
+  assert.match(app,/de\|com\|net\|org\|eu\|at\|ch\|io\|dev\|app\|shop/,'a bare domain with a known ending counts too');
+  assert.match(app,/const value=\/\^https\?:\\\/\\\/\/i\.test\(trimmed\)\?trimmed:`https:\/\/\$\{trimmed\}`;/,'a missing scheme is filled in before the URL is stored');
+});
 // "Jede Seite, wo etwas von der KI verarbeitet wird, bekommt den Ladebildschirm, und der soll
 // direkt nach dem Weiter-Klicken auftauchen - egal ob geführt oder Auto-Modus." Er haengt darum
 // an der Anfrage und nicht an einzelnen Aufrufstellen; frueher als der Aufruf kann er nicht
