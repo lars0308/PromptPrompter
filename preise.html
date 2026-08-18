@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="de" class="prompt-full-redesign">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ece9e1" />
+  <meta name="description" content="Preise - Prompt.ai Tarife und Abos im Überblick" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.prompt-ai.app/preise" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.prompt-ai.app/preise" />
+  <meta property="og:title" content="Preise — Prompt.ai" />
+  <meta property="og:description" content="Kostenlos testen oder eines der Abos buchen — von 0 € bis 54,99 € pro Monat" />
+  <meta property="og:locale" content="de_DE" />
+  <meta property="og:site_name" content="Prompt.ai" />
+  <title>Preise — Prompt.ai</title>
+  <script src="./theme-init.js?v=6"></script>
+  <link rel="stylesheet" href="./styles.css?v=20260816-4" />
+  <link rel="stylesheet" href="./touch-targets.css?v=1" />
+  <link rel="stylesheet" href="./promptai-ui-layers.css?v=20260817-2" />
+  <link rel="stylesheet" href="./promptai-full-app-design.css?v=20260817-15" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "PriceTable",
+    "name": "Prompt.ai Preise",
+    "url": "https://www.prompt-ai.app/preise",
+    "mainEntity": [
+      {
+        "@type": "Product",
+        "@id": "prompt-ai-kostenlos",
+        "name": "Kostenlos",
+        "description": "Perfekt zum Ausprobieren. 3 Projekte im Monat.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR",
+          "availability": "https://schema.org/InStock"
+        }
+      },
+      {
+        "@type": "Product",
+        "@id": "prompt-ai-pro",
+        "name": "Pro",
+        "description": "Für regelmäßige Nutzer. 25 Projekte, KI-Prüfung, Bildvorschau.",
+        "offers": {
+          "@type": "Offer",
+          "price": "20.99",
+          "priceCurrency": "EUR",
+          "availability": "https://schema.org/InStock"
+        }
+      },
+      {
+        "@type": "Product",
+        "@id": "prompt-ai-ultimate",
+        "name": "Ultimate",
+        "description": "Für Agenturen. Unbegrenzte Projekte, GitHub-Export, Expertenmodus.",
+        "offers": {
+          "@type": "Offer",
+          "price": "54.99",
+          "priceCurrency": "EUR",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    .pricing-page-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .pricing-page-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+    .pricing-page-header h1 {
+      margin: 0 0 10px 0;
+      font-size: 40px;
+      font-weight: 800;
+    }
+    .pricing-page-header p {
+      color: var(--muted);
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    .pricing-page-header a {
+      color: var(--blue-text);
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-block;
+      margin-top: 15px;
+    }
+    .pricing-page-header a:hover {
+      text-decoration: underline;
+    }
+    .pricing-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    .pricing-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 28px;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+    }
+    .pricing-card.featured {
+      border: 2px solid var(--blue);
+      background: #fff;
+      box-shadow: 0 6px 18px rgba(29,38,48,.09);
+      transform: scale(1.05);
+      position: relative;
+      margin-top: -10px;
+      margin-bottom: 10px;
+    }
+    .pricing-card.featured::before {
+      content: 'EMPFOHLEN';
+      position: absolute;
+      top: -12px;
+      left: 28px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      padding: 4px 8px;
+      border-radius: 5px;
+    }
+    .pricing-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .pricing-card .price {
+      margin: 16px 0 8px 0;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .pricing-card .price small {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .pricing-card .description {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+      flex-grow: 1;
+    }
+    .pricing-card ul {
+      margin: 0 0 20px 0;
+      padding-left: 20px;
+      list-style: none;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    .pricing-card ul li {
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+      color: var(--ink);
+    }
+    .pricing-card ul li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--blue);
+      font-weight: bold;
+    }
+    .pricing-card .cta {
+      display: block;
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      background: var(--blue-deep);
+      color: #fff;
+      padding: 14px;
+      font-size: 14px;
+      font-weight: 750;
+      text-align: center;
+      cursor: pointer;
+      transition: background .2s ease;
+      text-decoration: none;
+    }
+    .pricing-card .cta:hover {
+      background: var(--blue);
+    }
+    .pricing-card.featured .cta {
+      background: var(--blue);
+    }
+    .pricing-card.featured .cta:hover {
+      background: var(--blue-deep);
+    }
+    .pricing-faq {
+      margin-top: 60px;
+      border-top: 1px solid var(--line);
+      padding-top: 40px;
+    }
+    .pricing-faq h2 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 24px;
+    }
+    .faq-item {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .faq-item:last-child {
+      border-bottom: none;
+    }
+    .faq-item h4 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .faq-item p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="pricing-page-container">
+    <div class="pricing-page-header">
+      <h1>Einfache Preise, keine Überraschungen</h1>
+      <p>Kostenlos ausprobieren oder in einen Tarif upgrade — monatlich kündbar.</p>
+      <a href="/">← Zur Startseite</a>
+    </div>
+
+    <div class="pricing-cards">
+      <!-- Kostenlos -->
+      <div class="pricing-card">
+        <h3>Kostenlos</h3>
+        <div class="price">0 €<small>/Monat</small></div>
+        <p class="description">Perfekt zum Ausprobieren, ohne Konto, ohne Karte.</p>
+        <ul>
+          <li>3 Projekte im Monat</li>
+          <li>Kein Konto nötig</li>
+          <li>Vollständige Master-Prompts</li>
+          <li>Lokale Speicherung</li>
+        </ul>
+        <button class="cta" onclick="window.location.href='/';">Kostenlos testen</button>
+      </div>
+
+      <!-- Pro -->
+      <div class="pricing-card featured">
+        <h3>Pro</h3>
+        <div class="price">20,99 €<small>/Monat</small></div>
+        <p class="description">Für Entwickler und kleine Agenturen.</p>
+        <ul>
+          <li>25 Projekte im Monat</li>
+          <li>KI-Prüfung (Beta)</li>
+          <li>Bildvorschauen</li>
+          <li>E-Mail Support</li>
+          <li>Alle Master-Prompt-Funktionen</li>
+        </ul>
+        <button class="cta" onclick="window.location.href='/';">Pro buchen</button>
+      </div>
+
+      <!-- Ultimate -->
+      <div class="pricing-card">
+        <h3>Ultimate</h3>
+        <div class="price">54,99 €<small>/Monat</small></div>
+        <p class="description">Für Agenturen und professionelle Teams.</p>
+        <ul>
+          <li>Unbegrenzte Projekte</li>
+          <li>GitHub-Export & API</li>
+          <li>Expertenmodus</li>
+          <li>Prioritäts-Support</li>
+          <li>Team-Verwaltung</li>
+        </ul>
+        <button class="cta" onclick="window.location.href='/';">Ultimate buchen</button>
+      </div>
+    </div>
+
+    <div class="pricing-faq">
+      <h2>Häufig gestellte Fragen</h2>
+
+      <div class="faq-item">
+        <h4>Kann ich monatlich kündigen?</h4>
+        <p>Ja, alle Tarife laufen monatlich und können jederzeit zum Ende des Abrechnungszeitraums gekündigt werden — ohne Sperrfrist oder Strafgebühren.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4>Wie funktioniert die kostenlose Version?</h4>
+        <p>Du brauchst kein Konto: Öffne Prompt.ai, probiere 3 Projekte aus. Dein Fortschritt wird lokal in deinem Browser gespeichert. Nach Ablauf der 3 Durchläufe kannst du den Tarif upgraden oder ein neues Konto erstellen.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4>Ist ein Zahlungsabonnement erforderlich?</h4>
+        <p>Nein. Die kostenlose Version ist vollständig funktionsfähig und benötigt keine Kreditkarte. Erst wenn du auf einen Paid-Plan upgraden möchtest, geben wir dir die Option, dich anzumelden.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4>Werden meine Projekte nach dem Upgrade gespeichert?</h4>
+        <p>Deine kostenlosen Projekte (localStorage) werden nicht automatisch in dein Konto übertragen. Du kannst sie aber herunterladen oder manuell erneut eingeben, bevor du upgraden.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4>Was kostet die KI-Prüfung einzeln?</h4>
+        <p>Die KI-Prüfung ist in Pro enthalten. Für Einzelprüfungen außerhalb deines Kontingents liegt der Preis bei 3,99 € pro Prüfung (buchbar im Tarif-Menü).</p>
+      </div>
+
+      <div class="faq-item">
+        <h4>Wie ist es mit Steuern?</h4>
+        <p>Prompt.ai ist ein Kleinunternehmen nach § 19 UStG. Die angezeigten Preise enthalten keine Umsatzsteuer. Es fallen keine versteckten Gebühren an.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4>Kann ich die Rechnung einsehen?</h4>
+        <p>Ja. Nach dem Kauf erhältst du eine Rechnung per E-Mail und kannst sie jederzeit im Profil-Bereich abrufen. Alle Rechnungen werden gemäß deutschem Recht 10 Jahre aufbewahrt.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4>Welche Zahlungsmethoden werden akzeptiert?</h4>
+        <p>Wir nutzen Stripe: Visa, Mastercard, American Express, Apple Pay und Google Pay werden akzeptiert. Banküberweisung ist nicht verfügbar.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

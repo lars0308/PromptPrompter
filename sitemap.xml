@@ -8,6 +8,14 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- Pricing page -->
+  <url>
+    <loc>https://www.prompt-ai.app/preise</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Legal pages -->
   <url>
     <loc>https://www.prompt-ai.app/impressum</loc>
