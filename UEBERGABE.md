@@ -70,17 +70,24 @@ Wer eine weitere wartende Aktion einführt, trägt sie dort ein — sonst nirgen
 Nicht in der Liste, mit Absicht: `intake` und `revision-brief` (setzen selbst einen Schirm),
 `free-prompt` (eigene Anzeige im Ergebnisfenster), `sandbox-build`, Kontingent-Abfragen.
 
-### 2. Ablauf „Selbst einstellen" umbauen (vom Nutzer bestätigt)
+### 2. Ablauf „Selbst einstellen" — erledigt
 
-- **Rückfragen als eigener Schritt** in der Schrittleiste, statt als Fenster, das überrascht.
-  Begründung: In diesem Ablauf ist der Sinn, dass man jeden Schritt sieht.
-- **Schritt 1 umbauen.** Er heißt heute „Beschreib deine Internetseite" und wirkt wie eine
-  Wiederholung der Startseite. Der Schritt darf **nicht ersatzlos weg** — an ihm hängen
-  Projektname, Projektart, Hauptziel, Zielgruppe und besonderer Wunsch, die die Startseite nicht
-  abfragt. Richtig: Kurzbeschreibung kommt gefüllt von der Startseite, Überschrift wird zu
-  „Angaben zum Projekt", gezeigt wird nur noch, was die Startseite nicht kennt.
-- **Links und Angaben aus dem Textfeld zuordnen:** Wer eine URL in die Beschreibung schreibt,
-  soll sie im Schritt danach als Referenz wiederfinden, statt sie erneut eintragen zu müssen.
+Die drei Punkte sind umgesetzt, zwei davon waren gar keine Neubauten:
+
+- **Rückfragen als eigener Schritt:** war in `app.js` (`prepareExpertFlow`) längst gebaut —
+  Schritt 05 heißt in diesem Ablauf „Rückfragen", die Fragen stehen inline im Schritt statt im
+  Fenster (`placeClarifications`), `showModal()` wird für expert übersprungen.
+- **Schritt 1 als „Angaben zum Projekt":** ebenfalls dort schon vorhanden, samt ausgeblendeter
+  Kurzbeschreibung (`prompt-expert-has-brief`).
+- **Der eigentliche Fehler:** zwei Ebenen sprangen über Schritt 1 hinweg, sobald eine
+  Beschreibung von der Startseite kam (`skipDuplicateDescription` in `ux-stability-fix.js` und
+  `ensureHandoff` in `promptai-loading-v2.js`). Dadurch wurde von dem Umbau nie etwas sichtbar.
+  Beide haben jetzt eine `expert`-Ausnahme.
+- **Adressen aus dem Text:** `importDescriptionUrls()` in `app.js` gab es, erkannte aber nur
+  Adressen mit `http` davor. Jetzt zählen `www.beispiel.de` und `beispiel.de/preise` mit.
+
+Lehre daraus: vor dem Bauen in `app.js` nachsehen. Zwei meiner Umsetzungen waren Dubletten und
+mussten wieder heraus.
 
 ### 3. CSP scharf schalten (fast fertig)
 
