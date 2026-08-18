@@ -95,15 +95,52 @@
       +'<li><strong>In deiner KI weiterbauen</strong><small>Master-Prompt, Seitenstruktur, gesicherte Fakten und die passende Anweisungsdatei – <code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>GEMINI.md</code> oder Cursor-Rules. Direkt ins Projekt legen und loslegen.</small></li>';
     shot.insertAdjacentElement('afterend',proof);
     rotateShot(shot);
-    const reveal=()=>{$('#accountDialog')?.classList.add('gate-expanded');setTimeout(()=>{$('.auth-form-card')?.scrollIntoView({behavior:'smooth',block:'start'})},60)};
     // Die beiden Kopfzeilen-Knöpfe liegen in .gate-top, die übrigen in #gateActions - deshalb
     // wird hier im Dokument gesucht statt in einem der beiden Kästen.
-    $('#gateSignInPick',top).addEventListener('click',reveal);
+    $('#gateSignInPick',top).addEventListener('click',openLogin);
     $('#gateGuestBtn',top).addEventListener('click',()=>$('#guestContinueBtn')?.click());
     box.querySelectorAll('[data-gate-plan]').forEach(button=>button.addEventListener('click',()=>pickGatePlan(button.dataset.gatePlan)));
     // Die Rechtstexte liegen in legal-pages.js; hier wird nur geöffnet, damit es genau eine
     // Fassung gibt und nicht eine zweite, die irgendwann veraltet.
     box.querySelectorAll('[data-gate-legal]').forEach(button=>button.addEventListener('click',()=>window.PromptAiLegalPages?.openLegal?.(button.dataset.gateLegal)));
+  }
+
+  // "Anmelden" klappte das Formular unter den Tarifkacheln auf - man landete unterhalb der Seite
+  // und musste dorthin scrollen. Ein Anmeldefenster ist aber ein Fenster: es liegt ueber der
+  // Seite und hat oben rechts ein Kreuz.
+  //
+  // Kein zweites Formular dafuer. Das vorhandene wandert in das Fenster hinein und beim
+  // Schliessen wieder zurueck - eine zweite Anmeldemaske waere die, die irgendwann falsch ist.
+  function ensureLoginDialog(){
+    let dialog=$('#gateLoginDialog');if(dialog)return dialog;
+    dialog=document.createElement('dialog');
+    dialog.id='gateLoginDialog';
+    // prompt-own-style haelt die Vollbild-Regel fuer Dialoge fern - dies hier ist ein Popup.
+    dialog.className='gate-login-dialog prompt-own-style';
+    dialog.setAttribute('aria-label','Anmelden');
+    dialog.innerHTML='<div class="gate-login-frame">'
+      +'<header class="gate-login-head"><div><span>KONTO</span><h2>Anmelden</h2></div>'
+      +'<button type="button" class="gate-login-close" aria-label="Schließen">×</button></header>'
+      +'<div class="gate-login-body"></div></div>';
+    document.body.appendChild(dialog);
+    $('.gate-login-close',dialog).addEventListener('click',closeLogin);
+    dialog.addEventListener('cancel',event=>{event.preventDefault();closeLogin()});
+    // Klick auf die Flaeche daneben schliesst - wie bei jedem Fenster dieser App.
+    dialog.addEventListener('click',event=>{if(event.target===dialog)closeLogin()});
+    return dialog;
+  }
+  function openLogin(){
+    const layout=$('.auth-layout');if(!layout)return;
+    const dialog=ensureLoginDialog(),body=$('.gate-login-body',dialog);
+    if(layout.parentElement!==body)body.appendChild(layout);
+    try{if(!dialog.open)dialog.showModal()}catch{}
+    setTimeout(()=>$('#authEmail')?.focus({preventScroll:true}),90);
+  }
+  function closeLogin(){
+    const dialog=$('#gateLoginDialog');if(!dialog)return;
+    const layout=$('.gate-login-body .auth-layout',dialog),host=$('#accountLoggedOut');
+    if(layout&&host)host.appendChild(layout);
+    if(dialog.open)try{dialog.close()}catch{}
   }
 
   // Der Satz im Bild wechselt, damit die Reihe an Fällen sichtbar wird statt eines einzigen.
@@ -183,7 +220,10 @@
     });
   }
 
-  function settle(){ensureGateActions();watchPricing();syncTierChips();resetExpansion();guardGateReturn()}
+  // Ist die Anmeldung durch, gehoert das Fenster zu - und das Formular zurueck an seinen Platz,
+  // damit app.js es wie gewohnt zwischen angemeldet und abgemeldet umschalten kann.
+  function closeLoginWhenSignedIn(){if(window.SiteBriefCloud?.user&&$('#gateLoginDialog')?.open)closeLogin()}
+  function settle(){ensureGateActions();watchPricing();syncTierChips();resetExpansion();guardGateReturn();closeLoginWhenSignedIn()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
   function init(){settle();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});window.addEventListener('promptai:access',schedule);window.addEventListener('pageshow',schedule)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();

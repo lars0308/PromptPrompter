@@ -594,6 +594,25 @@ test('the drawer close button stays a 44px square and every entry is the same he
   assert.match(css,/html\.prompt-full-redesign #topbarMenu>button:not\(#accountBtn\)\{min-height:44px!important\}/);
 });
 
+// Auf der Einstiegsseite klappte "Anmelden" das Formular unter den Tarifkacheln auf - man landete
+// unterhalb der Seite und musste dorthin scrollen. Ein Anmeldefenster ist ein Fenster.
+test('the entry gate opens the login as a popup with a close button, not as a section below',async()=>{
+  const gate=await text('entry-gate-ui.js');
+  assert.match(gate,/function ensureLoginDialog\(\)\{/);
+  assert.match(gate,/dialog\.id='gateLoginDialog'/);
+  assert.match(gate,/class="gate-login-close" aria-label="Schließen">×/);
+  assert.match(gate,/\$\('#gateSignInPick',top\)\.addEventListener\('click',openLogin\)/);
+  assert.doesNotMatch(gate,/classList\.add\('gate-expanded'\)/,'the inline expansion was the old behaviour');
+  // Kein zweites Formular: das vorhandene wandert hinein und beim Schliessen wieder zurueck.
+  assert.match(gate,/const layout=\$\('\.auth-layout'\);if\(!layout\)return;/);
+  assert.match(gate,/if\(layout&&host\)host\.appendChild\(layout\);/);
+  assert.match(gate,/function closeLoginWhenSignedIn\(\)/,'after signing in the window has to close by itself');
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  assert.match(css,/\.gate-login-dialog\{/);
+  assert.match(css,/height:fit-content!important/,'a general dialog rule stretched it to the full allowed height');
+  assert.match(css,/#gateLoginDialog \.gate-login-body \.auth-form-card\{border:0!important/,'no window inside the window');
+});
+
 // Vor der Anmeldung ist das Konto-Fenster die ganze Seite. Aus der laufenden App heraus
 // ("Anmelden" im Menue) ist es ein Fenster - es kam aber ebenfalls als Vollbild, samt Spruch,
 // Tarifkacheln und Konsolenbild der Einstiegsseite darin.

@@ -56,6 +56,38 @@
       }
       /* In das Feld wird hier nichts geschrieben - Rollbalken und Anfasser gehören nicht ins Bild. */
       .gate-shot .prompt-command-input{resize:none;overflow:hidden;cursor:default}
+      /* Das Anmeldefenster der Einstiegsseite: ein Popup ueber der Seite, mit Kreuz oben rechts.
+         Es traegt prompt-own-style, damit die Vollbild-Regel fuer Dialoge es in Ruhe laesst. */
+      .gate-login-dialog{
+        width:min(520px,calc(100vw - 32px));max-width:min(520px,calc(100vw - 32px));
+        /* fit-content, weil eine allgemeine Dialogregel sonst auf die volle erlaubte Hoehe
+           streckt und unter dem Formular ein Drittel leere Flaeche stehenbleibt. */
+        height:fit-content!important;max-height:min(88dvh,860px);margin:auto;padding:0;
+        border:1px solid var(--line);border-radius:20px;background:var(--paper);color:var(--ink);
+        box-shadow:0 40px 120px rgba(8,14,22,.35);overflow:hidden;
+      }
+      .gate-login-dialog::backdrop{background:rgba(8,14,22,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+      .gate-login-frame{display:flex;flex-direction:column;max-height:min(88dvh,860px)}
+      .gate-login-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:20px 22px 6px}
+      .gate-login-head span{display:block;color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}
+      .gate-login-head h2{margin:6px 0 0;font-size:clamp(22px,3.4vw,28px);letter-spacing:-.03em}
+      .gate-login-close{display:grid;place-items:center;width:42px;height:42px;min-width:42px;min-height:42px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink);font:700 21px/1 Arial,Helvetica,sans-serif;cursor:pointer}
+      .gate-login-close:hover{border-color:var(--accent);color:var(--accent)}
+      .gate-login-body{padding:6px 22px 22px;overflow-y:auto}
+      /* Nur die Anmeldung - der Tarifvergleich steht schon auf der Seite dahinter. */
+      .gate-login-body .auth-layout{display:block!important;max-width:none!important;margin:0!important}
+      .gate-login-body .auth-access-card{display:none!important}
+      /* Kein Fenster im Fenster - mit der id, weil die allgemeine Kartenregel sonst mit
+         gleicher Spezifitaet und !important gewinnt. */
+      #gateLoginDialog .gate-login-body .auth-form-card{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
+      #gateLoginDialog .remember-login{background:transparent!important;border:0!important;border-radius:0!important}
+      /* "SICHER ANMELDEN / Willkommen zurueck" stand direkt unter "KONTO / Anmelden" - zweimal
+         dieselbe Ansage in einem Fenster, das ohnehin nur eine Sache tut. */
+      #gateLoginDialog .auth-form-heading{display:none!important}
+      @media(max-width:520px){
+        .gate-login-dialog{width:100vw;max-width:none;height:100dvh;max-height:none;border-radius:0;border:0}
+        .gate-login-frame{max-height:none;height:100%}
+      }
       /* Die Reihe unter dem Einstieg: drei Belege, keine Werbezeilen. */
       .gate-proof{display:grid;gap:16px;width:100%;padding:0;margin:0;list-style:none}
       .gate-proof li{display:grid;gap:3px;padding:14px 0 0;border-top:2px solid color-mix(in srgb,var(--accent) 30%,var(--line));text-align:left}
