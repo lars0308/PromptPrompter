@@ -719,17 +719,27 @@
 
   function updateAccountUi(){
     if(!el.accountBtn) return;
-    // Wer angemeldet ist, hat am Eingangstor nichts mehr verloren.
+    // Wer angemeldet ist, sieht kein Anmeldeformular mehr.
     //
-    // Geschlossen wurde es bisher an jeder Anmeldestelle einzeln - im Formular, im
-    // Auth-Ereignis, nach dem Laden der Cloud-Daten. Drei Wege, und wenn einer nicht durchlief
-    // (eine langsame Antwort, eine Bestätigung per Mail, ein Login aus einem anderen Tab), blieb
-    // das Tor über der fertig angemeldeten App stehen. Es hängt jetzt nicht mehr an den Wegen
-    // dorthin, sondern am Zustand: angemeldet heißt zu.
-    if(cloudReady()&&el.accountDialog?.classList.contains('guest-gate')){
-      el.accountDialog.classList.remove('guest-gate');
-      try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}
-      if(el.accountDialog.open)el.accountDialog.close();
+    // Geschlossen wurde bisher an jeder Anmeldestelle einzeln - im Formular, im Auth-Ereignis,
+    // nach dem Laden der Cloud-Daten - und jedes Mal nur `#accountDialog`. Das Formular wandert
+    // aber zwischen zwei Fenstern: die Einstiegsseite hängt es in ihr eigenes `#gateLoginDialog`
+    // um. Lag es dort, schloss der Aufruf das falsche Fenster, und man stand nach erfolgreicher
+    // Anmeldung weiter vor der Eingabemaske - mit „Angemeldet." darunter.
+    //
+    // Die Regel hängt deshalb nicht mehr an einem Fenster und nicht am Weg dorthin, sondern am
+    // Zustand: ist jemand angemeldet, geht jedes Fenster zu, das gerade das Anmeldeformular
+    // zeigt. Die Kontoansicht desselben Dialogs bleibt offen - wer sein Profil aufruft, will es
+    // sehen.
+    if(cloudReady()){
+      const zeigtAnmeldung=el.accountLoggedOut&&!el.accountLoggedOut.hidden;
+      if(el.accountDialog?.classList.contains('guest-gate')){
+        el.accountDialog.classList.remove('guest-gate');
+        try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}
+      }
+      if(zeigtAnmeldung)for(const fenster of [el.accountDialog,document.getElementById('gateLoginDialog')]){
+        if(fenster?.open)try{fenster.close()}catch{}
+      }
     }
     if(el.signOutBtn)el.signOutBtn.hidden=!state.cloud.user;
     if(el.subscriptionMenuBtn)el.subscriptionMenuBtn.hidden=!cloudReady();

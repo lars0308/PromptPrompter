@@ -2132,8 +2132,16 @@ test('the entry gate has exactly two ways out, and both are deliberate',async()=
   assert.match(app,/el\.guestContinueBtn\.addEventListener\("click",startGuestRun\)/,'the free run asks first');
   assert.match(app,/async function startGuestRun\(\)/);
   assert.match(app,/stimmst du den Nutzungsbedingungen zu und bestätigst, die Datenschutzerklärung gelesen zu haben/);
-  // Angemeldet heisst zu - unabhaengig davon, ueber welchen Weg die Anmeldung kam.
-  assert.match(app,/if\(cloudReady\(\)&&el\.accountDialog\?\.classList\.contains\('guest-gate'\)\)\{/);
+  // Angemeldet heisst zu - unabhaengig davon, ueber welchen Weg die Anmeldung kam UND in welchem
+  // der beiden Fenster das Formular gerade haengt. Die Einstiegsseite haengt es in ihr eigenes
+  // #gateLoginDialog um; wer nur #accountDialog schloss, schloss dann das falsche.
+  assert.match(app,/const zeigtAnmeldung=el\.accountLoggedOut&&!el\.accountLoggedOut\.hidden;/);
+  assert.match(app,/for\(const fenster of \[el\.accountDialog,document\.getElementById\('gateLoginDialog'\)\]\)/);
+  // Die Kontoansicht desselben Dialogs bleibt offen - wer sein Profil aufruft, will es sehen.
+  assert.match(app,/if\(zeigtAnmeldung\)for\(const fenster of/);
+  // Und das Formular muss zurueck an seinen Platz, auch wenn app.js das Fenster geschlossen hat.
+  const gate=await text('entry-gate-ui.js');
+  assert.match(gate,/if\(angemeldet&&\$\('\.gate-login-body \.auth-layout'\)\)\{closeLogin\(\);return\}/);
 });
 
 // „Admin-Daten werden geladen…“ stand still, bis jemand die Seite neu lud — und mit der

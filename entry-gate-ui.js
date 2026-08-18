@@ -395,11 +395,20 @@
   // Ist die Anmeldung durch, gehoert das Fenster zu - und das Formular zurueck an seinen Platz,
   // damit app.js es wie gewohnt zwischen angemeldet und abgemeldet umschalten kann.
   function closeLoginWhenSignedIn(){
+    const angemeldet=Boolean(window.SiteBriefCloud?.user);
+    // Das Formular gehoert zurueck an seinen Platz, sobald jemand angemeldet ist - auch dann,
+    // wenn dieses Fenster gar nicht mehr offen ist.
+    //
+    // Frueher stand die Pruefung auf den eigenen Dialog ganz vorn und sprang bei geschlossenem
+    // Fenster sofort heraus. Schliesst aber app.js das Fenster (was es beim Anmelden tut), bleibt
+    // das Formular in einem Fenster liegen, das niemand mehr sieht - und app.js schaltet danach
+    // ein Element zwischen angemeldet und abgemeldet um, das gar nicht mehr an seinem Platz haengt.
+    if(angemeldet&&$('.gate-login-body .auth-layout')){closeLogin();return}
     if(!$('#gateLoginDialog')?.open)return;
     // Sobald die Anmeldung durch ist - erkennbar am Konto oder am laufenden Ladeschirm -
     // gehoert das Fenster zu. Bei einem Fehlversuch bleibt es stehen, sonst waere die
     // Fehlermeldung im selben Moment weg, in dem sie erscheint.
-    if(window.SiteBriefCloud?.user||document.documentElement.classList.contains('prompt-workflow-loading'))closeLogin();
+    if(angemeldet||document.documentElement.classList.contains('prompt-workflow-loading'))closeLogin();
   }
   function settle(){ensureGateActions();syncBuehne();watchPricing();syncTierChips();resetExpansion();guardGateReturn();closeLoginWhenSignedIn()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
