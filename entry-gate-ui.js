@@ -77,7 +77,7 @@
       +'<div class="prompt-command-top">'
       +'<button type="button" class="prompt-mode-button" tabindex="-1">'+SHOT_ICONS.website+'<span>Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button>'
       +'</div>'
-      +'<textarea class="prompt-command-input" rows="5" readonly tabindex="-1" placeholder=""></textarea>'
+      +'<textarea class="prompt-command-input" rows="5" readonly tabindex="-1" aria-label="Beispiel: so sieht die Konsole nach dem Einstieg aus" placeholder=""></textarea>'
       +'<button type="button" class="prompt-command-submit" tabindex="-1">'+SHOT_ICONS.send+'</button>'
       +'<footer class="prompt-command-meta">'
       +'<button type="button" class="prompt-attach-button" tabindex="-1">+</button>'
