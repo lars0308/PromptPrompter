@@ -60,20 +60,15 @@ zusammen mit ihrem Stil-Abschnitt zurück — deshalb prüfen viele Tests JS und
 
 ## Offene Arbeit, in der Reihenfolge, die ich empfehle
 
-### 1. Der Ladeschirm bei KI-Arbeit (ausdrücklicher Wunsch, noch offen)
+### 1. Der Ladeschirm bei KI-Arbeit — erledigt
 
-**Anforderung wörtlich:** „jede Seite, wo etwas von der KI verarbeitet wird, bekommt den
-Ladebildschirm, und der soll direkt nach dem Weiter-Klicken auftauchen — egal ob geführt oder
-Auto-Modus."
+Er hängt jetzt an der Anfrage statt an einzelnen Aufrufstellen: `promptai-loading-v2.js`
+kennt in `AI_TASKS` die vier Aktionen, bei denen jemand wartet (`review`, `concepts`,
+`master-prompt`, `website`), und legt für die Dauer des `fetch` den Vollbildschirm darüber.
+Wer eine weitere wartende Aktion einführt, trägt sie dort ein — sonst nirgends.
 
-Heute erscheint er nicht überall und nicht sofort. Betroffen sind die Schritte, die
-`/api/generate` bzw. `/api/models` aufrufen. Vorhandenes Werkzeug: `window.PromptAiLoading`
-aus `promptai-loading-v2.js` mit `render(host,{lines,duration})` und `complete(host)`.
-Muster, das schon funktioniert: `free-prompt-ui.js` startet die Anzeige **vor** dem `fetch`
-und beendet sie im `finally`. Genauso für die Ablaufschritte umsetzen.
-
-Zusammenhängend damit gemeldet: **die Rückfragen erscheinen erst nach 30–40 Sekunden und
-poppen dann unangekündigt auf.** Die Wartezeit gehört sichtbar gemacht, nicht versteckt.
+Nicht in der Liste, mit Absicht: `intake` und `revision-brief` (setzen selbst einen Schirm),
+`free-prompt` (eigene Anzeige im Ergebnisfenster), `sandbox-build`, Kontingent-Abfragen.
 
 ### 2. Ablauf „Selbst einstellen" umbauen (vom Nutzer bestätigt)
 
