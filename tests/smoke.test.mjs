@@ -118,7 +118,12 @@ test('legal texts cover uploaded references and registration names what is agree
   assert.match(legal,/kind==='terms'\)\{title\.textContent='Nutzungsbedingungen'/);
   assert.match(legal,/function ensureAuthConsent\(\)/);
   assert.match(legal,/Mit „Neues Konto“ stimmst du den <button type="button" class="link-btn" id="authTermsLink">Nutzungsbedingungen<\/button> zu/);
-  assert.match(legal,/id='menuTermsBtn'/,'the terms page must be reachable outside the sign-up form too');
+  assert.match(legal,/\['Nutzungsbedingungen','terms','menuTermsBtn'\]/,'the terms page must be reachable outside the sign-up form too');
+  // Menü und Einstiegsseite teilen sich eine Liste - sonst fehlen auf der einen Seite Texte,
+  // die auf der anderen stehen, genau wie vorher.
+  assert.match(legal,/const LEGAL_ENTRIES=\[/);
+  assert.match(legal,/for\(const \[label,kind,id\] of LEGAL_ENTRIES\)row\.appendChild\(legalButton\(label,kind,id\)\)/,'the menu row is built from the shared list');
+  assert.match(legal,/for\(const \[label,kind\] of LEGAL_ENTRIES\)row\.appendChild\(legalButton\(label,kind\)\)/,'the gate row is built from the same list');
 });
 test('hiding the topbar upgrade button on mobile does not hit every upgrade button',async()=>{
   const src=await text('unified-ui-v1.js');
@@ -1388,6 +1393,51 @@ test('the login gate offers three plan tiles with their contents',async()=>{
   // Zwei Stufen, damit auf flachen Bildschirmen lieber Text als eine Kachel verschwindet.
   assert.match(css,/@media\(max-height:790px\)\{\.gate-plan-points li:nth-child\(3\)\{display:none\}\}/);
   assert.match(css,/@media\(max-height:710px\)[\s\S]{0,120}\.gate-plan-pick>small\{display:none\}/);
+});
+
+// Das Bild neben den Tarifkacheln war ein Nachbau mit eigenen Klassen und eigenen Maßen - es
+// konnte gar nicht anders, als mit der Zeit neben der echten Konsole zu liegen. Jetzt sind es
+// dieselben Bausteine; was hier gepruft wird, ist genau das: keine Nachbau-Klassen mehr, keine
+// zweite id, und der Vorschlagstext laeuft langsamer als auf der Startseite.
+test('the console next to the plan tiles is the real one, not a lookalike',async()=>{
+  const gate=await text('entry-gate-ui.js');
+  for(const cls of ['gate-shot-bar','gate-shot-body','gate-shot-mode','gate-shot-text','gate-shot-caret','gate-shot-foot'])
+    assert.doesNotMatch(gate,new RegExp(cls),`${cls} belonged to the hand-built mock`);
+  for(const cls of ['prompt-command-panel','prompt-command-top','prompt-mode-button','prompt-command-input','prompt-command-submit','prompt-command-meta','prompt-setup-line','prompt-attach-button'])
+    assert.match(gate,new RegExp(cls),`the mock must reuse ${cls} from the home console`);
+  // Zwei Konsolen mit denselben ids waeren die naechste Fehlersuche - die Startseiten-Skripte
+  // suchen ueber das Dokument.
+  assert.doesNotMatch(gate,/id="promptCommand|id="promptMode|id="promptSetup/,'the picture must not carry the console ids');
+  assert.match(gate,/shot\.setAttribute\('inert',''\)/,'a picture takes no clicks and no focus');
+  assert.match(gate,/const SHOT_INTERVAL=9600/,'the suggestion stands longer here than on the home screen (7200)');
+  assert.match(gate,/field\.classList\.add\('is-hint-fading'\)/,'the same fade the home console uses');
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  // Die Farbtoken der Konsole haengen an html.prompt-home-surface, und die Klasse traegt die
+  // Seite auf der Einstiegsseite nicht - ohne eigene Token stuende die Konsole ohne Grund da.
+  assert.match(css,/\.gate-shot\{\s*--home-panel:#111923/,'the gate carries the console colour tokens itself');
+  assert.match(css,/html\[data-theme="dark"\] \.gate-shot\{\s*--home-panel:#121b25/);
+});
+
+// Wer noch kein Konto hat, sieht nur die Anmeldeseite - dort muss alles stehen, was vor dem
+// Loslegen und vor einem Kauf zu sagen ist: alle Rechtstexte erreichbar, die Cookie-Auswahl
+// aenderbar, ein Wort dazu, wohin die Eingaben im Gastlauf gehen, und was der Preis bedeutet.
+test('the login page is complete on the legal side, not just Impressum and Datenschutz',async()=>{
+  const legal=await text('legal-pages.js'),gate=await text('entry-gate-ui.js');
+  for(const label of ['Impressum','Datenschutz','Nutzungsbedingungen','Widerruf','Cookies'])
+    assert.match(legal,new RegExp(`\\['${label}'`),`${label} must be reachable from the gate footer`);
+  assert.match(legal,/function openCookieSettings\(\)/,'a given consent must be as easy to take back as it was to give');
+  assert.match(legal,/window\.PromptAiLegalPages=\{openLegal,openCookieSettings\}/);
+  assert.match(legal,/if\(value!=='all'&&previous==='all'&&document\.getElementById\('vercelInsights'\)\)location\.reload\(\)/,'withdrawal has to actually take effect');
+  assert.doesNotMatch(legal,/indem du im Browser die gespeicherte Auswahl löschst/,'that was not an equally easy withdrawal');
+  assert.match(legal,/<h3>2a\. Testen ohne Konto<\/h3>/,'the guest run needs its own paragraph');
+  assert.match(gate,/Eingaben gehen an KI-Anbieter/,'the page says where the input goes before anyone starts');
+  assert.match(gate,/Preise pro Monat, monatlich kündbar, ohne USt\. \(§ 19 UStG\)/,'prices need their terms next to them');
+  // Die allgemeine Knopfregel gibt jedem Knopf 44px Mindesthoehe - im Fliesstext wurde der
+  // zweizeilige Hinweis dadurch 88px hoch und schob die dritte Tarifkachel aus dem Bild.
+  const css2=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  assert.match(css2,/\.gate-plan-note \.link-btn\{display:inline!important;min-height:0!important/);
+  assert.match(gate,/data-gate-legal="withdrawal"/);
+  assert.match(gate,/PromptAiLegalPages\?\.openLegal\?\.\(button\.dataset\.gateLegal\)/,'one source for the texts, not a second copy');
 });
 
 // Die 15-Prozent-Marke gab es schon, sie sagte aber nur "wird knapp". Ab jetzt kommt an derselben

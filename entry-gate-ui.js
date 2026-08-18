@@ -23,6 +23,14 @@
     {head:'Dokumentationsseite für ein eigenes Werkzeug.',rest:' Einstieg, Referenz, Beispiele. Durchsuchbar, dunkles Schema.'}
   ];
 
+  // Dieselben drei Zeichnungen, die die Konsole auf der Startseite trägt (promptai-home-final.js).
+  // Sie stehen hier ein zweites Mal, weil die Einstiegsseite geladen wird, bevor die Startseite
+  // überhaupt gebaut ist - eine gemeinsame Quelle hätte eine Ladereihenfolge erzwungen.
+  const SHOT_ICONS={
+    website:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.8 12h16.4M12 3.5c2.2 2.4 3.4 5.2 3.4 8.5S14.2 18.1 12 20.5C9.8 18.1 8.6 15.3 8.6 12S9.8 5.9 12 3.5Z"/></svg>',
+    send:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg>',
+    gear:'<svg class="prompt-setup-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.2v2M12 17.8v2M4.2 12h2M17.8 12h2M6.5 6.5l1.4 1.4M16.1 16.1l1.4 1.4M17.5 6.5l-1.4 1.4M7.9 16.1l-1.4 1.4"/></svg>'
+  };
 
   function ensureGateActions(){
     const hero=$('#accountLoggedOut .auth-hero');if(!hero||$('#gateActions'))return;
@@ -34,7 +42,9 @@
 
     const box=document.createElement('div');box.id='gateActions';
     box.innerHTML=''
-      +'<div class="gate-cta"><p class="gate-guest-note">Kostenlos testen läuft ohne Konto: drei vollständige Durchläufe, danach jederzeit upgradebar.</p></div>'
+      // Hier stand "Kostenlos testen läuft ohne Konto: drei vollständige Durchläufe" - doppelt,
+      // die Kostenlos-Kachel darunter sagt dasselbe. Der Platz gehört jetzt der Pflichtangabe
+      // unter den Kacheln, die sonst unter die Fensterkante rutscht.
       +'<div class="gate-plan-list" aria-label="Tarif wählen">'
       +'<button type="button" class="gate-plan-pick" data-gate-plan="free">'
       +'<span class="gate-plan-head"><strong>Kostenlos</strong><b>0 €</b></span>'
@@ -48,16 +58,33 @@
       +'<span class="gate-plan-head"><strong>Ultimate</strong><b id="gateUltimateTier">Ultimate</b></span>'
       +'<small>Website-Probelauf, GitHub, eigene KI und volle Kontrolle.</small>'
       +'<ul class="gate-plan-points"><li>500 Prompts und 100 Website-Projekte</li><li>Fünf Richtungen, Probelauf und GitHub</li><li>Zwei eigene KI-Verbindungen inklusive</li></ul></button>'
-      +'</div>';
+      +'</div>'
+      // Was vor dem ersten Klick gesagt sein muss, steht in einer Zeile unter den Kacheln: wohin
+      // die Eingaben gehen (der Gastlauf startet ohne Konto und damit ohne Anmeldeformular, in
+      // dem sonst die Zustimmung steht), was der Preis daneben bedeutet, und welche Texte gelten.
+      // Bewusst knapp - drei Tarifkacheln ohne Scrollen lassen keinen Absatz zu.
+      +'<p class="gate-plan-note">Preise pro Monat, monatlich kündbar, ohne USt. (§ 19 UStG). Eingaben gehen an KI-Anbieter. Es gelten <button type="button" class="link-btn" data-gate-legal="terms">Nutzungsbedingungen</button>, <button type="button" class="link-btn" data-gate-legal="privacy">Datenschutz</button> und <button type="button" class="link-btn" data-gate-legal="withdrawal">Widerruf</button>.</p>';
     hero.insertAdjacentElement('afterend',box);
 
     // Das Produkt zeigen statt es zu beschreiben - dieselbe Konsole, die nach dem Einstieg kommt.
+    // Nicht mehr nachgebaut, sondern eins zu eins: dieselben Bausteine und Klassen wie die echte
+    // Konsole auf der Startseite, nur ohne Funktion (inert, kein Tabstopp, keine ids - sonst
+    // fänden die Startseiten-Skripte zwei Konsolen). Ändert sich die Konsole, ändert sich das
+    // Bild mit, statt langsam daneben zu liegen.
     const shot=document.createElement('div');shot.className='gate-shot';
-    shot.innerHTML='<div class="gate-shot-bar"><i></i><i></i><i></i><span>COMMAND / 01</span></div>'
-      +'<div class="gate-shot-body">'
-      +'<span class="gate-shot-mode">Internetseite erstellen</span>'
-      +'<p class="gate-shot-text"><b></b><span class="gate-shot-rest"></span><span class="gate-shot-caret"></span></p>'
-      +'<div class="gate-shot-foot"><span>Mit Rückfragen</span><span>·</span><span>3 Richtungen</span><b>Master-Prompt</b></div>'
+    shot.setAttribute('aria-hidden','true');shot.setAttribute('inert','');
+    shot.innerHTML='<div class="prompt-command-panel">'
+      +'<div class="prompt-command-top">'
+      +'<button type="button" class="prompt-mode-button" tabindex="-1">'+SHOT_ICONS.website+'<span>Internetseite erstellen</span><i class="mode-chevron" aria-hidden="true"></i></button>'
+      +'</div>'
+      +'<textarea class="prompt-command-input" rows="5" readonly tabindex="-1" placeholder=""></textarea>'
+      +'<button type="button" class="prompt-command-submit" tabindex="-1">'+SHOT_ICONS.send+'</button>'
+      +'<footer class="prompt-command-meta">'
+      +'<button type="button" class="prompt-attach-button" tabindex="-1">+</button>'
+      +'<button type="button" class="prompt-setup-line" tabindex="-1">'+SHOT_ICONS.gear+'<span>Claude Code · Mit Rückfragen</span><i class="mode-chevron" aria-hidden="true"></i></button>'
+      +'<span class="gate-shot-quota">3 Richtungen · Master-Prompt</span>'
+      +'<span class="prompt-plan-chip"><b>Free</b></span>'
+      +'</footer>'
       +'</div>';
     box.insertAdjacentElement('afterend',shot);
 
@@ -74,22 +101,29 @@
     $('#gateSignInPick',top).addEventListener('click',reveal);
     $('#gateGuestBtn',top).addEventListener('click',()=>$('#guestContinueBtn')?.click());
     box.querySelectorAll('[data-gate-plan]').forEach(button=>button.addEventListener('click',()=>pickGatePlan(button.dataset.gatePlan)));
+    // Die Rechtstexte liegen in legal-pages.js; hier wird nur geöffnet, damit es genau eine
+    // Fassung gibt und nicht eine zweite, die irgendwann veraltet.
+    box.querySelectorAll('[data-gate-legal]').forEach(button=>button.addEventListener('click',()=>window.PromptAiLegalPages?.openLegal?.(button.dataset.gateLegal)));
   }
 
   // Der Satz im Bild wechselt, damit die Reihe an Fällen sichtbar wird statt eines einzigen.
-  // Ein Ausblenden dazwischen, sonst springt der Text hart um.
+  // Genau wie auf der Startseite: der Vorschlag steht im Platzhalter, blendet aus, wechselt im
+  // unsichtbaren Moment und blendet wieder ein (CSS-Regel .prompt-command-input.is-hint-fading).
+  // Er steht dabei länger als die Startseite - hier liest man ihn zum ersten Mal, ohne zu wissen,
+  // was das Feld überhaupt tut, und ein Satz, der beim Lesen umspringt, wirkt hektisch.
+  const SHOT_INTERVAL=9600,SHOT_FADE=520;
   function rotateShot(shot){
-    const head=shot.querySelector('.gate-shot-text b'),rest=shot.querySelector('.gate-shot-rest'),text=shot.querySelector('.gate-shot-text');
-    if(!head||!rest||shot.__rotating)return;
+    const field=shot.querySelector('.prompt-command-input');
+    if(!field||shot.__rotating)return;
     shot.__rotating=true;
     let index=Math.floor(Math.random()*EXAMPLES.length);
-    const paint=()=>{const item=EXAMPLES[index%EXAMPLES.length];head.textContent=item.head;rest.textContent=item.rest};
+    const paint=()=>{const item=EXAMPLES[index%EXAMPLES.length];field.placeholder=`z. B. ${item.head}${item.rest}`};
     paint();
     setInterval(()=>{
       if(!shot.isConnected)return;
-      text.style.transition='opacity .28s ease';text.style.opacity='0';
-      setTimeout(()=>{index++;paint();text.style.opacity='1'},300);
-    },3600);
+      field.classList.add('is-hint-fading');
+      setTimeout(()=>{index++;paint();field.classList.remove('is-hint-fading')},SHOT_FADE);
+    },SHOT_INTERVAL);
   }
 
   // The price labels in the plans dialog are the single place live Stripe pricing is written to

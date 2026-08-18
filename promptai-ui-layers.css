@@ -34,26 +34,28 @@
       /* Ein Bild der Sache selbst statt einer Behauptung darüber: die Konsole, wie sie nach dem
          Einstieg aussieht, mit dem Satz darin, den man dort tatsächlich schreibt. Kein Screenshot -
          dieselben Bausteine wie die echte Oberfläche, damit sie nicht veraltet. */
+      /* Der Rahmen ist nur noch Halterung: die Konsole darin bringt Rand, Grund und Schatten
+         selbst mit, weil es dieselben Bausteine sind wie auf der Startseite. Vorher stand hier
+         ein Nachbau mit eigenen Maßen - der lag mit jeder Änderung an der echten Konsole ein
+         Stück weiter daneben. */
+      /* Die Farbtoken der Konsole hängen an html.prompt-home-surface, und diese Klasse trägt die
+         Seite erst, wenn die Startseite sichtbar ist. Auf der Einstiegsseite stünde die Konsole
+         sonst ohne Grund und ohne Blau da - deshalb führt der Rahmen die Token selbst. */
       .gate-shot{
-        position:relative;width:100%;max-width:520px;border-radius:20px;overflow:hidden;
-        border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));
-        background:#111b26;box-shadow:0 30px 80px rgba(10,20,30,.28);
+        --home-panel:#111923;--home-card:#fff;--home-line:#d9e1e8;--home-soft:#edf3f7;
+        --home-blue:#4b9bd2;--home-blue-deep:#246b9d;--home-orange:#ee7b22;
+        --home-ink:#121a24;--home-muted:#687583;
+        position:relative;width:100%;
+        /* Ein Bild, kein Bedienfeld: nichts daran lässt sich anklicken oder markieren. */
+        pointer-events:none;user-select:none;
       }
-      .gate-shot-bar{display:flex;align-items:center;gap:6px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
-      .gate-shot-bar i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16)}
-      .gate-shot-bar span{margin-left:auto;color:#61778a;font:800 7px/1 ui-monospace,monospace;letter-spacing:.16em}
-      .gate-shot-body{padding:18px 16px 16px}
-      .gate-shot-mode{
-        display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;margin-bottom:14px;
-        border:1px solid #425262;border-radius:10px;color:#edf6fd;font:750 11px/1 Arial,Helvetica,sans-serif;
+      html[data-theme="dark"] .gate-shot{
+        --home-panel:#121b25;--home-card:#101720;--home-line:#263442;--home-soft:#151f29;
+        --home-blue:#61b5ed;--home-blue-deep:#52a9e1;--home-orange:#ff923d;
+        --home-ink:#eef5fb;--home-muted:#93a3b2;
       }
-      .gate-shot-mode:before{content:"";width:13px;height:13px;border:1.6px solid var(--accent);border-radius:50%}
-      .gate-shot-text{color:#9fb4c6;font-size:12.5px;line-height:1.6;min-height:66px}
-      .gate-shot-text b{color:#edf6fd;font-weight:600}
-      .gate-shot-caret{display:inline-block;width:1.5px;height:13px;margin-left:2px;background:var(--accent);vertical-align:-2px;animation:gateCaret 1.05s steps(1) infinite}
-      @keyframes gateCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
-      .gate-shot-foot{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);color:#7d8fa3;font-size:9px}
-      .gate-shot-foot b{margin-left:auto;color:var(--accent);font-weight:800}
+      /* In das Feld wird hier nichts geschrieben - Rollbalken und Anfasser gehören nicht ins Bild. */
+      .gate-shot .prompt-command-input{resize:none;overflow:hidden;cursor:default}
       /* Die Reihe unter dem Einstieg: drei Belege, keine Werbezeilen. */
       .gate-proof{display:grid;gap:16px;width:100%;padding:0;margin:0;list-style:none}
       .gate-proof li{display:grid;gap:3px;padding:14px 0 0;border-top:2px solid color-mix(in srgb,var(--accent) 30%,var(--line));text-align:left}
@@ -72,6 +74,14 @@
       .gate-cta{display:grid;justify-items:stretch;gap:10px;width:100%}
       .gate-guest-btn{min-height:42px;padding:0 20px;border:1px solid var(--accent);border-radius:12px;background:var(--accent);color:#fff;font-size:13px;font-weight:800;box-shadow:0 12px 26px rgba(45,147,201,.22)}
       .gate-guest-note{margin:0;color:var(--muted);font-size:11px;text-align:left}
+      /* Was auf einer Seite stehen muss, auf der man ohne Konto losläuft und Preise sieht: wohin
+         die Eingaben gehen, was der Preis bedeutet, welche Texte gelten. Klein, aber lesbar - und
+         in einer Zeile, weil ein Absatz die dritte Tarifkachel unter die Fensterkante schöbe. */
+      .account-dialog .gate-plan-note{margin:clamp(3px,.5vh,6px) 0 0;color:var(--muted);font-size:clamp(10px,1.05vh,11px)!important;line-height:1.4;text-align:left}
+      /* Die Rechtstext-Verweise sind Wörter im Satz, keine Knöpfe: die allgemeine Regel gibt
+         jedem Knopf 44px Mindesthöhe, und damit wurde der zweizeilige Hinweis 88px hoch -
+         genug, um die dritte Tarifkachel aus dem Bild zu schieben. */
+      .account-dialog .gate-plan-note .link-btn{display:inline!important;min-height:0!important;height:auto!important;font-size:inherit!important;line-height:inherit;vertical-align:baseline}
       /* A short, honest "how it works" - not invented changelog copy, the same three steps the
          first-run intro dialog already uses once you're past the gate. */
       .gate-highlights{display:grid;gap:14px;width:100%;padding:0;margin:0;list-style:none}
@@ -143,7 +153,7 @@
              volle Breite, nur ein Rand zum Fensterrand, damit die Tarifkacheln wirklich links
              stehen und nicht mitten im Text. */
           max-width:none;width:100%;margin:0;
-          padding-inline:clamp(20px,3.4vw,64px);padding-top:clamp(24px,5vh,58px);
+          padding-inline:clamp(20px,3.4vw,64px);padding-top:clamp(22px,4.4vh,52px);
           /* Die einspaltige Regel oben setzt flex:1 und min-height:0 - beides bleibt sonst stehen
              und lässt den Kasten unter seine Inhaltshöhe schrumpfen, worauf die Belegreihe unter
              der Fußzeile herauslief. */
@@ -161,7 +171,7 @@
         .account-dialog.guest-gate:not(.gate-expanded) .auth-kicker{grid-column:1/-1;margin-top:clamp(10px,2.2vh,34px)}
         /* Der Satz unter der Ueberschrift sagt, fuer wen die App gemacht ist. Er teilt die Spalte
            mit der Ueberschrift, damit er nicht in eine 15-Zeichen-Kolonne neben dem Bild rutscht. */
-        .auth-lede{grid-column:1/-1;max-width:82ch;margin:16px 0 0;color:var(--muted);font-size:clamp(13px,1.55vw,16px);line-height:1.6}
+        .auth-lede{grid-column:1/-1;max-width:82ch;margin:clamp(10px,1.6vh,16px) 0 0;color:var(--muted);font-size:clamp(13px,1.55vw,16px);line-height:1.6}
         .account-dialog.guest-gate:not(.gate-expanded) .auth-hero h1{grid-column:1/-1;max-width:none;text-wrap:balance}
         .account-dialog.guest-gate:not(.gate-expanded) #gateActions{
           grid-area:actions;justify-items:stretch;max-width:min(560px,42vw);width:100%;
@@ -201,6 +211,11 @@
         .gate-proof{gap:20px!important;margin-top:26px!important}
         .gate-proof li{padding-top:16px!important}
         .gate-shot{margin-top:18px!important}
+        /* Die Startseite ordnet die Fußleiste der Konsole auf dem Telefon über feste Rasterplätze,
+           die an ids hängen. Das Bild trägt bewusst keine ids - sonst gäbe es jede id zweimal -,
+           also stünden seine vier Teile in einem Raster ohne zugewiesene Plätze durcheinander. */
+        .gate-shot .prompt-command-meta{display:flex!important;flex-wrap:wrap!important;row-gap:9px!important;column-gap:11px!important}
+        .gate-shot .gate-shot-quota,.gate-shot .prompt-plan-chip{padding-left:0!important;border-left:0!important}
       }
 
 /* ===== legal-pages.js · #legalPagesStyles ===== */

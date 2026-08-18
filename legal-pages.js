@@ -38,6 +38,8 @@
     <p>Objekt- und Reparaturservice Battermann<br>Inhaber: Lars Battermann<br>Südstraße 25, 31698 Lindhorst, Deutschland<br>E-Mail: <a href="mailto:service.battermann@gmx.de">service.battermann@gmx.de</a></p>
     <h3>2. Übersicht der Verarbeitungen</h3>
     <p>Prompt.ai verarbeitet Daten, die du beim Anlegen eines Kontos, beim Erstellen von Projekten und Prompts sowie bei einem Abo-Abschluss angibst. Dazu zählen insbesondere E-Mail-Adresse, Konto- und Nutzungsdaten sowie die von dir eingegebenen Projektinhalte.</p>
+    <h3>2a. Testen ohne Konto</h3>
+    <p>Du kannst Prompt.ai ohne Konto ausprobieren. Dabei legen wir kein Nutzerkonto an und speichern keine E-Mail-Adresse; dein Arbeitsstand und die Zahl der verbrauchten Durchläufe bleiben lokal in deinem Browser (localStorage). Was du eingibst, wird für die Erstellung des Ergebnisses trotzdem an die unter Ziffer 8 genannten KI-Anbieter übermittelt, und beim Aufruf fallen die unter Ziffer 3 genannten technischen Zugriffsdaten an. Rechtsgrundlage ist die Durchführung der von dir angeforderten Leistung (Art. 6 Abs. 1 lit. b DSGVO). Löschst du die Browserdaten, ist der Teststand weg — wir können ihn nicht wiederherstellen, weil er bei uns nie lag.</p>
     <h3>3. Hosting</h3>
     <p>Diese Anwendung wird über Vercel (Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA) gehostet. Beim Aufruf werden technisch notwendige Zugriffsdaten verarbeitet (IP-Adresse, Zeitpunkt, aufgerufene Adresse, Browser- und Geräteangaben). Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren und stabilen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Mit Vercel besteht ein Auftragsverarbeitungsvertrag; die Übermittlung in die USA ist auf die EU-Standardvertragsklauseln gestützt.</p>
     <h3>4. Konten, Authentifizierung &amp; Datenbank</h3>
@@ -47,7 +49,7 @@
     <h3>6. Cookies &amp; lokale Speicherung</h3>
     <p>Für Anmeldung, Sitzung und Einstellungen (z.&nbsp;B. Dunkelmodus) nutzen wir technisch notwendige Cookies bzw. lokale Speicherung (localStorage/sessionStorage). Rechtsgrundlage ist § 25 Abs. 2 Nr. 2 TDDDG in Verbindung mit Art. 6 Abs. 1 lit. f DSGVO. Sie werden ohne Einwilligung gesetzt, weil die Anwendung ohne sie nicht funktioniert.</p>
     <h3>7. Reichweitenmessung</h3>
-    <p>Wenn du im Cookie-Hinweis ausdrücklich zustimmst, laden wir Vercel Web Analytics (Vercel Inc.). Der Dienst misst Seitenaufrufe und grobe Herkunftsangaben, setzt dafür keine Cookies und legt keine geräteübergreifende Kennung an; die IP-Adresse wird nur gekürzt und nicht dauerhaft gespeichert. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG), die du jederzeit widerrufen kannst, indem du im Browser die gespeicherte Auswahl löschst. Wählst du „Nur notwendige“, wird das Skript gar nicht erst geladen. Weitere Analyse- oder Marketingdienste — etwa Google Analytics, Meta Pixel, Hotjar oder PostHog — setzen wir nicht ein.</p>
+    <p>Wenn du im Cookie-Hinweis ausdrücklich zustimmst, laden wir Vercel Web Analytics (Vercel Inc.). Der Dienst misst Seitenaufrufe und grobe Herkunftsangaben, setzt dafür keine Cookies und legt keine geräteübergreifende Kennung an; die IP-Adresse wird nur gekürzt und nicht dauerhaft gespeichert. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG), die du jederzeit über den Punkt „Cookies“ im Menü und unten auf der Anmeldeseite widerrufen kannst — dort lässt sich die Auswahl mit einem Klick ändern. Wählst du „Nur notwendige“, wird das Skript gar nicht erst geladen. Weitere Analyse- oder Marketingdienste — etwa Google Analytics, Meta Pixel, Hotjar oder PostHog — setzen wir nicht ein.</p>
     <h3>8. KI-Verarbeitung deiner Eingaben</h3>
     <p>Deine Projektangaben, Referenztexte, hochgeladenen Bilder/PDFs und ausgewählten Antworten werden zur Erstellung von Prompts, Vorschauen und Bildvorschauen an angebundene KI-Anbieter übermittelt. Je nach Funktion und Tarif können das sein: Vercel AI Gateway, OpenAI, Google (Gemini), Cloudflare Workers AI, Anthropic (Claude), Alibaba (Qwen) und Black Forest Labs (FLUX). Die Verbindungen stellen wir zentral bereit; welcher Anbieter eine Anfrage bearbeitet, entscheidet Prompt.ai anhand deines Tarifs. Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO), denn ohne diese Übermittlung lässt sich der gebuchte Dienst nicht erbringen. Mit den Anbietern bestehen Auftragsverarbeitungsverträge; Übermittlungen in Drittländer sind auf die EU-Standardvertragsklauseln gestützt. Die Anbieter speichern Anfragen nach eigenen Angaben nur kurzzeitig zur Missbrauchskontrolle und verwenden sie nicht zum Training ihrer Modelle. Gib deshalb bitte keine besonderen Kategorien personenbezogener Daten (Art. 9 DSGVO) und keine fremden Zugangsdaten in deine Projektbeschreibung ein.</p>
     <h3>9. GitHub-Verbindung</h3>
@@ -120,24 +122,30 @@
     if(!dialog.open)dialog.showModal();
   }
 
+  // Ein Eintrag, eine Beschriftung, ein Ziel - dieselbe Liste für das Menü und für die
+  // Einstiegsseite. Vorher standen auf der Einstiegsseite nur zwei der fünf Texte; wer noch kein
+  // Konto hat, kam an Nutzungsbedingungen, Widerruf und die Cookie-Auswahl gar nicht heran.
+  const LEGAL_ENTRIES=[
+    ['Impressum','imprint','menuImprintBtn'],
+    ['Datenschutz','privacy','menuPrivacyBtn'],
+    ['Nutzungsbedingungen','terms','menuTermsBtn'],
+    ['Widerruf','withdrawal','menuWithdrawalBtn'],
+    ['Cookies','cookies','menuCookiesBtn']
+  ];
+  function legalButton(label,kind,id){
+    const button=document.createElement('button');
+    button.type='button';button.className='text-btn';button.textContent=label;
+    if(id)button.id=id;
+    button.addEventListener('click',()=>{kind==='cookies'?openCookieSettings():openLegal(kind)});
+    return button;
+  }
+
   function ensureMenuLinks(){
     const menu=$('#topbarMenu');if(!menu||$('#menuLegalRow'))return;
     const row=document.createElement('div');
     row.className='menu-legal-row';
     row.id='menuLegalRow';
-    const imprint=document.createElement('button');
-    imprint.type='button';imprint.className='text-btn';imprint.id='menuImprintBtn';imprint.textContent='Impressum';
-    imprint.addEventListener('click',()=>openLegal('imprint'));
-    const privacy=document.createElement('button');
-    privacy.type='button';privacy.className='text-btn';privacy.id='menuPrivacyBtn';privacy.textContent='Datenschutz';
-    privacy.addEventListener('click',()=>openLegal('privacy'));
-    const terms=document.createElement('button');
-    terms.type='button';terms.className='text-btn';terms.id='menuTermsBtn';terms.textContent='Nutzungsbedingungen';
-    terms.addEventListener('click',()=>openLegal('terms'));
-    const withdrawal=document.createElement('button');
-    withdrawal.type='button';withdrawal.className='text-btn';withdrawal.id='menuWithdrawalBtn';withdrawal.textContent='Widerruf';
-    withdrawal.addEventListener('click',()=>openLegal('withdrawal'));
-    row.appendChild(imprint);row.appendChild(privacy);row.appendChild(terms);row.appendChild(withdrawal);
+    for(const [label,kind,id] of LEGAL_ENTRIES)row.appendChild(legalButton(label,kind,id));
     menu.appendChild(row);
   }
 
@@ -158,13 +166,7 @@
     const row=document.createElement('div');
     row.className='gate-legal-row';
     row.id='gateLegalRow';
-    const imprint=document.createElement('button');
-    imprint.type='button';imprint.className='text-btn';imprint.textContent='Impressum';
-    imprint.addEventListener('click',()=>openLegal('imprint'));
-    const privacy=document.createElement('button');
-    privacy.type='button';privacy.className='text-btn';privacy.textContent='Datenschutz';
-    privacy.addEventListener('click',()=>openLegal('privacy'));
-    row.appendChild(imprint);row.appendChild(privacy);
+    for(const [label,kind] of LEGAL_ENTRIES)row.appendChild(legalButton(label,kind));
     body.appendChild(row);
   }
 
@@ -173,17 +175,45 @@
     if(link&&!link.__legalBound){link.__legalBound=true;link.addEventListener('click',()=>openLegal('privacy'))}
   }
 
+  // Eine Einwilligung muss so leicht zurückzunehmen sein, wie sie gegeben wurde. Bisher stand im
+  // Datenschutztext nur, man solle die gespeicherte Auswahl im Browser löschen - das ist keine
+  // gleich leichte Rücknahme. Der Hinweis lässt sich jetzt jederzeit erneut öffnen.
+  function bindCookieBanner(banner){
+    if(banner.__legalBound)return;
+    banner.__legalBound=true;
+    const essential=$('#cookieBannerEssentialBtn'),accept=$('#cookieBannerAcceptBtn'),settingsBtn=$('#cookieBannerSettingsBtn'),settings=$('#cookieBannerSettings');
+    const dismiss=value=>{
+      let previous=null;try{previous=localStorage.getItem(CONSENT_KEY)}catch{}
+      try{localStorage.setItem(CONSENT_KEY,value)}catch{}
+      if(banner.open)banner.close();
+      settleConsent(value);
+      // Zurückgenommene Zustimmung muss auch wirken: das Messskript lässt sich nicht wieder
+      // entladen, also wird die Seite einmal neu geholt. Nur beim echten Widerruf, nicht bei
+      // jeder Auswahl.
+      if(value!=='all'&&previous==='all'&&document.getElementById('vercelInsights'))location.reload();
+    };
+    if(essential)essential.addEventListener('click',()=>dismiss('essential'));
+    if(accept)accept.addEventListener('click',()=>dismiss('all'));
+    if(settingsBtn)settingsBtn.addEventListener('click',()=>{const open=settings.hidden;settings.hidden=!open;settingsBtn.textContent=open?'Einstellungen ausblenden':'Einstellungen';essential.textContent=open?'Auswahl speichern':'Nur notwendige'});
+  }
+  function openCookieSettings(){
+    const banner=$('#cookieBanner');
+    if(!banner){openLegal('privacy');return}
+    bindCookieBannerLink();bindCookieBanner(banner);
+    // Beim erneuten Öffnen gleich die Auswahl zeigen - wer den Punkt anklickt, will genau die
+    // ändern und nicht noch einen Knopf suchen.
+    const settingsBtn=$('#cookieBannerSettingsBtn'),settings=$('#cookieBannerSettings');
+    if(settings&&settings.hidden&&settingsBtn)settingsBtn.click();
+    if(!banner.open)banner.showModal();
+  }
+
   function initCookieBanner(){
     let consent=null;
     try{consent=localStorage.getItem(CONSENT_KEY)}catch{}
     const banner=$('#cookieBanner');if(!banner){settleConsent(consent||'essential');return}
     bindCookieBannerLink();
+    bindCookieBanner(banner);
     if(consent){settleConsent(consent);return}
-    const essential=$('#cookieBannerEssentialBtn'),accept=$('#cookieBannerAcceptBtn'),settingsBtn=$('#cookieBannerSettingsBtn'),settings=$('#cookieBannerSettings');
-    const dismiss=value=>{try{localStorage.setItem(CONSENT_KEY,value)}catch{}if(banner.open)banner.close();settleConsent(value)};
-    if(essential&&!essential.__legalBound){essential.__legalBound=true;essential.addEventListener('click',()=>dismiss('essential'))}
-    if(accept&&!accept.__legalBound){accept.__legalBound=true;accept.addEventListener('click',()=>dismiss('all'))}
-    if(settingsBtn&&!settingsBtn.__legalBound){settingsBtn.__legalBound=true;settingsBtn.addEventListener('click',()=>{const open=settings.hidden;settings.hidden=!open;settingsBtn.textContent=open?'Einstellungen ausblenden':'Einstellungen';essential.textContent=open?'Auswahl speichern':'Nur notwendige'})}
     if(!banner.open)banner.showModal();
   }
 
@@ -194,7 +224,7 @@
     initCookieBanner();
   }
 
-  window.PromptAiLegalPages={openLegal};
+  window.PromptAiLegalPages={openLegal,openCookieSettings};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
   else init();
 })();
