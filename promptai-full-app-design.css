@@ -1077,7 +1077,11 @@ html.prompt-full-redesign[data-theme="dark"] .prompt-command-panel:focus-within{
 html.prompt-full-redesign[data-theme="dark"] :is(#upgradeBtn,#upgradeMenuBtn){
   background:color-mix(in srgb,var(--orange) 82%,#000)!important;
   border-color:color-mix(in srgb,var(--orange) 82%,#000)!important;
+  /* Weiß auf diesem Orange sind 3,3:1 und damit zu blass. Dunkle Schrift auf demselben
+     Orange sind 5,8:1 - das Signal bleibt, der Text wird lesbar. */
+  color:#15100b!important;
 }
+html.prompt-full-redesign[data-theme="dark"] :is(#upgradeBtn,#upgradeMenuBtn) *{color:inherit!important}
 
 /* ═══ Korrekturen aus dem Gerätetest ═══════════════════════════════════════ */
 
@@ -1106,7 +1110,16 @@ html.prompt-full-redesign :is(.prompt-command-meta,.prompt-command-top,.prompt-m
 html.prompt-full-redesign .prompt-mode-button{border-color:rgba(255,255,255,.14)!important}
 
 /* 3) Das Blau der Bildmarke führt die Konsole. */
-html.prompt-full-redesign{--logo-blue:#2d93c9;--logo-blue-deep:#124f7c;--caret:#ff8a34}
+/* Zwei Blau, ein Ton: --logo-blue ist die Fläche (Absendeknopf, Punkte, Ränder),
+   --logo-blue-text ist dieselbe Farbe als Schrift. Auf dem hellen Papierton kommt das
+   Logoblau als Text nur auf 2,8:1 und ist damit zu blass zum Lesen; als Fläche mit weißer
+   Schrift darauf stimmt es. Im Dunkelmodus liegt derselbe Ton auf dunklem Grund und ist
+   dort schon deutlich genug - deshalb bleiben beide Werte dort gleich. */
+html.prompt-full-redesign{--logo-blue:#2d93c9;--logo-blue-deep:#124f7c;--logo-blue-text:#216994;--caret:#ff8a34}
+/* Die Konsole ist in beiden Modi dunkel. Was auf ihr steht, braucht das hellere Logoblau -
+   dort wäre der dunklere Ton der falsche Weg. --logo-blue-text gilt deshalb nur für Schrift
+   auf hellem Grund: Kicker, Systemzeile, fertige Prompts. */
+html.prompt-full-redesign[data-theme="dark"]{--logo-blue-text:var(--logo-blue)}
 html.prompt-full-redesign .prompt-command-submit{background:var(--logo-blue)!important}
 html.prompt-full-redesign .prompt-command-submit:hover:not(:disabled){background:#3aa6de!important}
 html.prompt-full-redesign .prompt-command-panel:focus-within{border-color:color-mix(in srgb,var(--logo-blue) 58%,#000)!important}
@@ -1375,7 +1388,9 @@ html.prompt-full-redesign .prompt-command-submit svg{width:22px!important;height
    Dunkelmodus vorbehalten - auf Weiß käme er nur auf 2,7:1 und wäre unlesbar. */
 html.prompt-full-redesign.prompt-home-surface:not([data-theme="dark"]){
   --home-ink:var(--navy);
-  --home-muted:#5d6e83;
+  /* Eine Spur dunkler als der ursprüngliche Ton: auf dem Papierton lag der bei 4,3:1 und
+     damit knapp unter dem Wert, ab dem normaler Text als lesbar gilt. Jetzt 4,7:1. */
+  --home-muted:#58687c;
 }
 html[data-theme="dark"].prompt-full-redesign.prompt-home-surface{
   --home-muted:var(--mist);
@@ -1427,7 +1442,7 @@ html.prompt-full-redesign :is(
   .prompt-process-kicker,#promptWorkflowLoader .kicker
 ){
   display:block!important;
-  color:var(--logo-blue)!important;
+  color:var(--logo-blue-text)!important;
   font:850 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace!important;
   letter-spacing:.15em!important;
   text-transform:uppercase!important;
@@ -1478,7 +1493,7 @@ html.prompt-full-redesign :is(#projectDescription,#simpleIntakeText,#freePromptD
 /* Fertige Prompts liest man, statt sie zu schreiben: dieselbe Fläche, aber das
    Logoblau als Schrift, wie im Eingabefeld der Startseite. */
 html.prompt-full-redesign :is(#freePromptOutput,.master-prompt){
-  color:var(--logo-blue)!important;-webkit-text-fill-color:var(--logo-blue);
+  color:var(--logo-blue-text)!important;-webkit-text-fill-color:var(--logo-blue-text);
 }
 /* Die Zeichenzahl unter dem Feld gehört zur Konsole, nicht zum Formular. */
 html.prompt-full-redesign .field-large>small{
@@ -1599,7 +1614,7 @@ html.prompt-full-redesign .prompt-mode-option[aria-checked="true"] svg{color:var
    Schrift gelegt. Schrift und Farbe bekommt sie hier trotzdem gleich. */
 html.prompt-full-redesign .prompt-system-line{
   display:flex!important;align-items:center!important;gap:9px!important;
-  color:var(--logo-blue)!important;
+  color:var(--logo-blue-text)!important;
   font:850 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace!important;
   letter-spacing:.15em!important;text-transform:uppercase!important;
 }
@@ -2152,3 +2167,32 @@ html.prompt-full-redesign.prompt-home-surface .topbar #topbarMenuToggle{
   width:44px!important;height:44px!important;min-height:44px!important;
 }
 html.prompt-full-redesign.prompt-home-surface .prompt-latest .prompt-latest-action{min-height:44px!important}
+
+/* ------------------------------------------------------------------
+   Lesbarkeit: gemessene Kontraste unter 4,5:1 angehoben
+   ------------------------------------------------------------------
+   Punkt 53 aus docs/TESTAUFTRAG.md ("Wo ist Text nicht lesbar?"). Gemessen mit
+   tests/pruefung/bedienung.mjs, das für jeden sichtbaren Text die Farbe gegen den
+   dahinterliegenden Untergrund rechnet. Vier Stellen lagen unter dem Wert, ab dem normaler
+   Text als lesbar gilt. Geändert sind ausschließlich Farbwerte - keine Größen, keine
+   Abstände, keine Schrift. Die Töne bleiben dieselben, sie werden nur dunkler.
+
+   Der Dunkelmodus war überall in Ordnung und bleibt deshalb unangetastet. */
+
+/* Grauer Nebentext, hell: 3,9:1 auf dem Papierton -> 4,7:1. */
+html.prompt-full-redesign:not([data-theme="dark"]){--muted:#5b6874}
+
+/* Die kleinen Großbuchstaben-Zeilen ("PROMPT.AI", "Workspace bereit") standen in einem hellen
+   Blau auf hellem Grund: 2,8:1 -> 5,0:1. Das erledigt --logo-blue-text weiter oben, gemeinsam
+   für alle Stellen, an denen das Logoblau Schrift ist statt Fläche. */
+
+/* Weiße Schrift auf Orange: 2,8:1 -> 5,0:1. */
+html.prompt-full-redesign:not([data-theme="dark"]) :is(.upgrade-btn,#upgradeBtn,#upgradeMenuBtn){
+  background:#b45309!important;border-color:#b45309!important;color:#fff!important;
+}
+
+/* Weiße Schrift auf dem Signalblau der Hauptknöpfe: 3,9:1 -> 5,5:1. Der Ton ist der bereits
+   vorhandene tiefere Blauwert der Marke. */
+html.prompt-full-redesign :is(.solid-btn,button.solid-btn):not(.upgrade-btn):not(.danger-btn):not(.danger){
+  background:#106fa4!important;border-color:#106fa4!important;color:#fff!important;
+}

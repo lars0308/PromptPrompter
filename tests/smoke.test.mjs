@@ -1721,3 +1721,38 @@ test('the top-up offers itself once the quota drops under fifteen percent',async
   assert.match(src,/\$\('#buySingleReviewBtn'\)\?\.click\(\)/);
   assert.match(src,/setAttribute\('aria-label','Monatsvorrat auffüllen'\)/,'the dialog needs a name');
 });
+
+// Die Zurück-Taste des Browsers ist auf einer einzigen Seite sonst immer "raus aus der App".
+test('the browser back button closes what is open instead of leaving the app',async()=>{
+  const src=await text('browser-zurueck.js'),boot=await text('admin-console.js'),sw=await readFile(path.join(root,'sw.js'),'utf8');
+  assert.match(boot,/browser-zurueck\.js/,'die Datei muss beim Start mitgeladen werden');
+  assert.match(sw,/\/browser-zurueck\.js/,'und offline mitkommen');
+  // Reihenfolge: erst offene Fenster, dann das Menue, dann ein Schritt zurueck, zuletzt die
+  // Startseite. Erst wenn nichts davon zutrifft, darf der Browser die Seite verlassen.
+  const fenster=src.indexOf('offeneFenster()'),menu=src.indexOf('offenesMenue()'),schritt=src.indexOf('schrittZurueck()'),heim=src.indexOf('#brandHome');
+  assert.ok(fenster>=0&&menu>fenster&&schritt>menu&&heim>schritt);
+  // Cookie-Einwilligung und Wartungsmeldung sind bewusst nicht wegklickbar.
+  assert.match(src,/UNANTASTBAR='#cookieBanner,#maintenanceDialog'/);
+  assert.match(src,/filter\(d=>!d\.matches\(UNANTASTBAR\)\)/);
+  // Waehrend eine KI-Anfrage laeuft, bleibt der Ladeschirm stehen.
+  assert.match(src,/#promptAiTaskLoader'\)\)\{setzen\(\);return\}/);
+  // Der Merkpunkt zeigt auf dieselbe Adresse - es wird nichts umgeleitet.
+  assert.match(src,/history\.pushState\(\{\[MARKE\]:true\},'',location\.href\)/);
+});
+
+// Punkt 53 des Testauftrags: gemessene Kontraste. Die Werte stehen in
+// tests/pruefung/bedienung.mjs unter Beweis; hier haelt der Test die Entscheidung fest.
+test('blue as text gets its own darker token, blue as a surface keeps the logo tone',async()=>{
+  const css=await readFile(path.join(root,'promptai-full-app-design.css'),'utf8');
+  assert.match(css,/--logo-blue:#2d93c9;--logo-blue-deep:#124f7c;--logo-blue-text:#216994/);
+  assert.match(css,/html\.prompt-full-redesign\[data-theme="dark"\]\{--logo-blue-text:var\(--logo-blue\)\}/);
+  // Die Konsole ist in beiden Modi dunkel: dort bleibt das hellere Blau stehen.
+  assert.match(css,/\.prompt-command-meta b\{color:var\(--logo-blue\)!important\}/);
+  assert.doesNotMatch(css,/\.prompt-command-meta b\{color:var\(--logo-blue-text\)/);
+  // Weisse Schrift auf Orange und auf dem Signalblau lag unter 4,5:1.
+  assert.match(css,/--muted:#5b6874/);
+  assert.match(css,/--home-muted:#58687c/);
+  assert.match(css,/background:#b45309!important;border-color:#b45309!important/);
+  assert.match(css,/background:#106fa4!important;border-color:#106fa4!important/);
+  assert.match(css,/color:#15100b!important;/,'im Dunkelmodus traegt der Kaufknopf dunkle Schrift');
+});
