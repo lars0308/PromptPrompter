@@ -420,6 +420,9 @@ html[data-clean-project-flow="1"] #promptBriefHandoff,
       html.prompt-workflow-loading #guidedCleanHead{visibility:hidden!important}
       #promptWorkflowLoader{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
       #promptWorkflowLoader.is-leaving{opacity:0;pointer-events:none}
+      /* Solange dieser Schirm laeuft, hat der Startbildschirm mit dem grossen Logo nichts zu
+         suchen - sonst blitzt er zwischen Anmeldung und Arbeitsflaeche einmal auf. */
+      html.prompt-workflow-loading #promptAppBoot{display:none!important}
       /* Closing blink, shared with the boot and handoff screens: the headline snaps to full and
          flashes blue once before the screen leaves. */
       #promptWorkflowLoader.is-complete strong{animation:promptFillFlash .42s ease-out var(--prompt-flash-count,1)}
@@ -1275,7 +1278,18 @@ html.prompt-home-surface{--home-bg:#f4f7fa;--home-card:#fff;--home-panel:#111923
       .prompt-setup-sheet[data-setup-view="agent"] [data-setup-pane="agent"],
       .prompt-setup-sheet[data-setup-view="flow"] [data-setup-pane="flow"],
       .prompt-setup-sheet[data-setup-view="template"] [data-setup-pane="template"],
-      .prompt-setup-sheet[data-setup-view="skills"] [data-setup-pane="skills"]{display:block}
+      .prompt-setup-sheet[data-setup-view="skills"] [data-setup-pane="skills"],
+      .prompt-setup-sheet[data-setup-view="output"] [data-setup-pane="output"],
+      .prompt-setup-sheet[data-setup-view="tool"] [data-setup-pane="tool"]{display:block}
+      /* Bereiche, die zur Arbeitsart nicht passen, sind ausgeblendet - beim freien Prompt gibt es
+         weder Vorlage noch Skills noch Rueckfragen. hidden allein reicht nicht, weil die Regeln
+         oben display setzen. */
+      .prompt-setup-tab[hidden],.prompt-setup-panes>.prompt-setup-section[hidden]{display:none!important}
+      /* Die zwei Listen des freien Prompts sehen aus wie die uebrigen Auswahllisten. */
+      #promptOutputMenu,#promptToolMenu{display:grid;gap:6px}
+      #promptOutputMenu button,#promptToolMenu button{display:flex;align-items:center;gap:9px;width:100%;min-height:44px;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:transparent;color:var(--ink);font-size:13px;text-align:left;cursor:pointer}
+      #promptOutputMenu button:hover,#promptToolMenu button:hover{border-color:color-mix(in srgb,#278bc2 45%,var(--line))}
+      #promptOutputMenu button[aria-checked="true"],#promptToolMenu button[aria-checked="true"]{border-color:color-mix(in srgb,#278bc2 60%,var(--line));background:color-mix(in srgb,#278bc2 12%,transparent);font-weight:700}
       .prompt-setup-back{display:none;align-items:center;gap:7px;padding:8px 13px;min-height:44px;border:1px solid var(--line);border-radius:11px;background:transparent;color:var(--ink);font-size:13px;font-weight:600;cursor:pointer}
       @media(max-width:860px){
         .prompt-setup-grid{grid-template-columns:minmax(0,1fr);gap:0}
@@ -1286,7 +1300,14 @@ html.prompt-home-surface{--home-bg:#f4f7fa;--home-card:#fff;--home-panel:#111923
         .prompt-setup-sheet[data-setup-view="agent"] .prompt-setup-rail,
         .prompt-setup-sheet[data-setup-view="flow"] .prompt-setup-rail,
         .prompt-setup-sheet[data-setup-view="template"] .prompt-setup-rail,
-        .prompt-setup-sheet[data-setup-view="skills"] .prompt-setup-rail{display:none}
+        .prompt-setup-sheet[data-setup-view="skills"] .prompt-setup-rail,
+        .prompt-setup-sheet[data-setup-view="output"] .prompt-setup-rail,
+        .prompt-setup-sheet[data-setup-view="tool"] .prompt-setup-rail{display:none}
+        /* Auf dem Telefon nahm das Blatt die ganze Seite ein - bei vier Zeilen blieb darunter eine
+           handhohe dunkle Flaeche stehen, bei zweien noch mehr. Es ist jetzt so hoch wie sein
+           Inhalt und sitzt unten, wo der Daumen ist. */
+        #promptSetupSheet{top:auto!important;bottom:0!important;height:fit-content!important;max-height:86dvh!important;border-radius:22px 22px 0 0!important}
+        #promptSetupSheet .prompt-picker-frame{height:auto!important;max-height:86dvh!important}
         .prompt-setup-back:not([hidden]){display:inline-flex}
       }
       .prompt-setup-grid .prompt-setup-section{border-bottom:1px solid rgba(255,255,255,.07)}
@@ -1375,6 +1396,31 @@ html.prompt-home-surface{--home-bg:#f4f7fa;--home-card:#fff;--home-panel:#111923
       @media(max-width:390px){html.prompt-home-surface .topbar #upgradeBtn{font-size:0!important}html.prompt-home-surface .topbar #upgradeBtn:after{content:"Pro";font-size:10px}.prompt-command-meta span:nth-child(2){display:none}.prompt-command-meta span+span{padding-left:0;border-left:0}}
 
 /* ===== promptai-nav-drawer.js · #promptNavDrawerStyles ===== */
+/* Der Support-Punkt oeffnet sein eigenes Fenster - dasselbe Formular wie im Profil, nur ohne
+   den Umweg ueber Profil aufmachen, Abschnitt aufklappen, hinscrollen. */
+.support-dialog{
+  width:min(620px,calc(100vw - 32px));max-width:min(620px,calc(100vw - 32px));
+  height:fit-content!important;max-height:min(88dvh,880px);margin:auto;padding:0;
+  border:1px solid var(--line);border-radius:20px;background:var(--paper);color:var(--ink);
+  box-shadow:0 40px 120px rgba(8,14,22,.35);overflow:hidden;
+}
+.support-dialog::backdrop{background:rgba(8,14,22,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.support-dialog-frame{display:flex;flex-direction:column;max-height:min(88dvh,880px)}
+.support-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:20px 22px 4px}
+.support-dialog-head span{display:block;color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.13em}
+.support-dialog-head h2{margin:6px 0 0;font-size:clamp(21px,3.2vw,27px);letter-spacing:-.03em}
+.support-dialog-close{display:grid;place-items:center;width:42px;height:42px;min-width:42px;min-height:42px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink);font:700 21px/1 Arial,Helvetica,sans-serif;cursor:pointer}
+.support-dialog-close:hover{border-color:var(--accent);color:var(--accent)}
+.support-dialog-body{padding:6px 22px 22px;overflow-y:auto}
+/* Im eigenen Fenster braucht der Abschnitt weder Rahmen noch Aufklapp-Kopf. */
+#supportDialog .account-support-card{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important}
+#supportDialog .account-support-card > .account-section-head{display:none!important}
+#supportDialog .account-support-card .settings-chevron{display:none!important}
+@media(max-width:560px){
+  .support-dialog{width:100vw;max-width:none;height:100dvh!important;max-height:none;border-radius:0;border:0}
+  .support-dialog-frame{max-height:none;height:100%}
+}
+
 /* Die Schublade liegt ueber der Kopfzeile - damit lag sie auch ueber ihrem eigenen Knopf,
          und ein zweiter Klick darauf kam nie an. Zu ging sie dann nur mit Esc oder ueber den
          Vorhang, obwohl jeder zuerst denselben Knopf noch einmal drueckt. Der Knopf liegt jetzt

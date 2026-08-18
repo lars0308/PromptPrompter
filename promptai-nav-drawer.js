@@ -31,30 +31,49 @@
     if(/bibliothek|projekt/i.test(text))return 20;   // Projekte, Projektstände
     return 50;
   }
-  // Support lag als vierter Block unten im Profil, wo ihn niemand sucht. Er wird ein eigener
-  // Menüpunkt - und zwar derselbe Abschnitt, nicht eine zweite Kopie des Formulars: der Eintrag
-  // öffnet das Profil und klappt den vorhandenen Support-Block auf.
+  // Support lag als vierter Block unten im Profil, wo ihn niemand sucht. Er ist ein eigener
+  // Menuepunkt - und oeffnet jetzt direkt sein eigenes Fenster, statt erst das Profil aufzumachen,
+  // dort einen eingeklappten Abschnitt aufzuklappen und hinzuscrollen. Das Formular selbst bleibt
+  // dasselbe: es wandert in das Fenster und beim Schliessen wieder zurueck ins Profil. Eine zweite
+  // Kopie waere die, die irgendwann veraltet.
+  function ensureSupportDialog(){
+    let dialog=$('#supportDialog');if(dialog)return dialog;
+    dialog=document.createElement('dialog');
+    dialog.id='supportDialog';dialog.className='support-dialog prompt-own-style';
+    dialog.setAttribute('aria-label','Support-Anfrage');
+    dialog.innerHTML='<div class="support-dialog-frame">'
+      +'<header class="support-dialog-head"><div><span>PROMPT.AI</span><h2>Support-Anfrage</h2></div>'
+      +'<button type="button" class="support-dialog-close" aria-label="Schließen">×</button></header>'
+      +'<div class="support-dialog-body"></div></div>';
+    document.body.appendChild(dialog);
+    $('.support-dialog-close',dialog).addEventListener('click',closeSupport);
+    dialog.addEventListener('cancel',event=>{event.preventDefault();closeSupport()});
+    dialog.addEventListener('click',event=>{if(event.target===dialog)closeSupport()});
+    return dialog;
+  }
+  function openSupport(){
+    const card=document.querySelector('.account-support-card');
+    if(!card){$('#accountBtn')?.click();return}
+    const dialog=ensureSupportDialog(),body=$('.support-dialog-body',dialog);
+    if(card.parentElement!==body)body.appendChild(card);
+    // Der Abschnitt ist im Profil eingeklappt - im eigenen Fenster waere das sinnlos.
+    card.classList.add('is-open');card.removeAttribute('data-collapsed');
+    window.PromptAiSupport?.refresh?.();
+    try{if(!dialog.open)dialog.showModal()}catch{}
+    setTimeout(()=>document.querySelector('#supportSubject')?.focus({preventScroll:true}),90);
+  }
+  function closeSupport(){
+    const dialog=$('#supportDialog');if(!dialog)return;
+    const card=$('.support-dialog-body .account-support-card',dialog),host=$('#accountLoggedIn');
+    if(card&&host)host.appendChild(card);
+    if(dialog.open)try{dialog.close()}catch{}
+  }
   function supportEntry(menu){
     if($('#menuSupportBtn',menu))return;
     const account=$('#accountBtn');if(!account)return;
     const button=document.createElement('button');
     button.type='button';button.className='text-btn';button.id='menuSupportBtn';button.textContent='Support';
-    button.addEventListener('click',()=>{
-      close();
-      setTimeout(()=>{
-        $('#accountBtn')?.click();
-        setTimeout(()=>{
-          const card=document.querySelector('.account-support-card');if(!card)return;
-          // Beim Oeffnen gleich die eigenen Anfragen samt Antwort nachladen.
-          window.PromptAiSupport?.refresh?.();
-          // Der Block ist eingeklappt (collapseSections) - erst öffnen, dann hinscrollen.
-          const head=card.querySelector('.account-section-head, :scope > div:first-child');
-          if(card.dataset.collapsed==='1'||card.classList.contains('is-collapsed'))head?.click();
-          card.scrollIntoView({behavior:'smooth',block:'center'});
-          document.querySelector('#supportSubject')?.focus({preventScroll:true});
-        },260);
-      },80);
-    });
+    button.addEventListener('click',()=>{close();setTimeout(openSupport,80)});
     menu.appendChild(button);
   }
 
@@ -82,20 +101,13 @@
       button.replaceChild(span,node);
     }
   }
-  // Die Schublade legt sich ueber die ganze rechte Seite - also auch ueber ihren eigenen Knopf.
-  // Ein zweiter Klick darauf landet deshalb auf der Schublade und tut nichts, und auf dem Telefon
-  // gibt es kein Esc. Sie bekommt darum ein eigenes Kreuz, genau dort, wo der Knopf war.
-  function ensureCloseButton(menu){
-    if($('#promptDrawerClose',menu))return;
-    const button=document.createElement('button');
-    button.type='button';button.id='promptDrawerClose';button.className='prompt-drawer-close';
-    button.setAttribute('aria-label','Menü schließen');button.textContent='×';
-    button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();close()});
-    menu.prepend(button);
-  }
+  // Das Kreuz ist wieder weg: ein Klick neben die Schublade schliesst sie ohnehin, und der
+  // Knopf oben rechts tut es auch (der Handler dafuer sitzt in bind()). Ein zusaetzliches Kreuz
+  // war ein dritter Weg fuer dieselbe Sache - und der einzige, der Platz in der Liste brauchte.
+  function removeCloseButton(menu){$('#promptDrawerClose',menu)?.remove()}
   function shell(){
     const menu=$('#topbarMenu');if(!menu)return false;
-    ensureCloseButton(menu);
+    removeCloseButton(menu);
     wrapAccountLabel();
     // Die zwei fehlenden Arbeitswege: sie klicken den echten Knopf der Startseite, damit
     // Tarifsperre und Ablauf dort bleiben, wo sie schon geprüft werden.
@@ -185,6 +197,6 @@
   function init(){shell();watch();bind();
     window.addEventListener('promptai:support-open',event=>supportDot(Number(event.detail?.open)>0));
     let n=0;const t=setInterval(()=>{shell();if(++n>12)clearInterval(t)},400)}
-  window.PromptAiNavDrawer={close};
+  window.PromptAiNavDrawer={close,openSupport};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

@@ -594,6 +594,32 @@ test('the drawer close button stays a 44px square and every entry is the same he
   assert.match(css,/html\.prompt-full-redesign #topbarMenu>button:not\(#accountBtn\)\{min-height:44px!important\}/);
 });
 
+// Der Support-Punkt fuehrte ueber das Profil: oeffnen, eingeklappten Abschnitt aufklappen,
+// hinscrollen. Er oeffnet jetzt direkt sein eigenes Fenster - mit demselben Formular, das dafuer
+// hinein- und beim Schliessen wieder zurueckwandert.
+test('the support entry opens its own window instead of a detour through the profile',async()=>{
+  const drawer=await text('promptai-nav-drawer.js');
+  assert.match(drawer,/function ensureSupportDialog\(\)\{/);
+  assert.match(drawer,/dialog\.id='supportDialog'/);
+  assert.match(drawer,/button\.addEventListener\('click',\(\)=>\{close\(\);setTimeout\(openSupport,80\)\}\)/);
+  assert.doesNotMatch(drawer,/card\.scrollIntoView/,'the scroll detour is gone');
+  assert.match(drawer,/if\(card&&host\)host\.appendChild\(card\)/,'and the form goes back into the profile');
+  // Die eigenen Anfragen samt Antwort werden beim Oeffnen nachgeladen.
+  assert.match(drawer,/window\.PromptAiSupport\?\.refresh\?\.\(\)/);
+});
+
+// Nach der geglueckten Anmeldung lief erst das Aufraeumen der Anmeldeseite - in dieser Luecke
+// blitzte der Startbildschirm mit dem grossen Logo auf.
+test('signing in goes straight to the loading screen, with no logo splash in between',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/signIn\(email,password\)\);\/\/ Der Ladeschirm kommt sofort/,'the loader starts before the cleanup');
+  assert.doesNotMatch(app,/closeAccountGate\(\);window\.PromptAiTransitionLoader\?\.show\('login'\)/,'that was the late call');
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  assert.match(css,/html\.prompt-workflow-loading #promptAppBoot\{display:none!important\}/);
+  const gate=await text('entry-gate-ui.js');
+  assert.match(gate,/classList\.contains\('prompt-workflow-loading'\)\)closeLogin\(\)/,'and the login window closes with it');
+});
+
 // Auf der Einstiegsseite klappte "Anmelden" das Formular unter den Tarifkacheln auf - man landete
 // unterhalb der Seite und musste dorthin scrollen. Ein Anmeldefenster ist ein Fenster.
 test('the entry gate opens the login as a popup with a close button, not as a section below',async()=>{
@@ -1500,7 +1526,17 @@ test('the settings sheet shows one area at a time',async()=>{
     assert.match(src,new RegExp(`data-setup-tab="${tab}"`),`the ${tab} tab is missing`);
     assert.match(src,new RegExp(`data-setup-pane="${tab}"`),`the ${tab} pane is missing`);
   }
-  assert.match(src,/setupView\(narrow\(\)\?'':'agent'\)/,'mobile opens on the overview, desktop on an area');
+  // Welche Bereiche zur Wahl stehen, haengt an der Arbeitsart - beim freien Prompt gibt es
+  // weder Vorlage noch Skills noch Rueckfragen, dafuer Ausgabetyp und Ziel-Tool.
+  for(const tab of ['output','tool']){
+    assert.match(src,new RegExp(`data-setup-tab="${tab}"`),`the ${tab} tab is missing`);
+    assert.match(src,new RegExp(`data-setup-pane="${tab}"`),`the ${tab} pane is missing`);
+  }
+  assert.match(src,/const SETUP_SCOPE=\{free:\['output','tool'\]/);
+  assert.match(src,/setupView\(narrow\(\)\?'':setupScope\(\)\[0\]\)/,'mobile opens on the overview, desktop on the first area that fits the mode');
+  // Die zwei Listen kommen aus den vorhandenen Auswahlfeldern des freien Prompts.
+  assert.match(src,/buildFreeMenu\('promptOutputMenu','#freePromptCategory'/);
+  assert.match(src,/buildFreeMenu\('promptToolMenu','#freePromptTool'\)/);
   assert.match(src,/promptSetupBack/,'the way back to the overview is missing');
   // $$ gibt es in dieser Datei nicht - ein Aufruf davon wirft und bricht den Klick-Handler ab,
   // womit sich das Fenster gar nicht mehr oeffnet.

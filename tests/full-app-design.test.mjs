@@ -709,13 +709,12 @@ test('every footer link actually opens something',async()=>{
 
 test('the drawer can be closed again, on every device',async()=>{
   const drawer=await read('promptai-nav-drawer.js');
-  // Die Schublade legt sich über die ganze rechte Seite - also auch über ihren eigenen Knopf.
-  // Ein zweiter Klick landete auf der Schublade, und auf dem Telefon gibt es kein Esc.
-  assert.match(drawer,/function ensureCloseButton\(menu\)\{/);
-  assert.match(drawer,/id='promptDrawerClose'/);
-  // Zwei ids, weil die Menue-Regel bei gleicher Spezifitaet und !important sonst gewinnt und
-  // das Kreuz zu einem Balken ueber die ganze Menuebreite macht.
-  assert.match(drawer,/#topbarMenu>#promptDrawerClose\{/);
+  // Das eigene Kreuz ist wieder weg: der Knopf oben rechts schliesst (der Handler dafuer sitzt
+  // in bind(), obwohl die Schublade ueber ihm liegt), und jeder Klick daneben ebenfalls. Ein
+  // drittes Kreuz war ein dritter Weg fuer dieselbe Sache und brauchte Platz in der Liste.
+  assert.match(drawer,/function removeCloseButton\(menu\)\{/);
+  assert.doesNotMatch(drawer,/function ensureCloseButton\(/);
+  assert.match(drawer,/if\(e\.target\.closest\?\.\('#topbarMenuToggle'\)\)\{e\.preventDefault\(\)/,'der eigene Knopf schliesst wieder');
   // Und jeder Klick daneben schließt - egal wie der Vorhang gerade heißt.
   assert.match(drawer,/if\(e\.target\.closest\?\.\('#topbarMenu'\)\)return;/);
   assert.doesNotMatch(drawer,/if\(e\.target\.closest\?\.\('\.topbar-menu-backdrop'\)\)close\(\)/,'der Vorhang heißt nicht überall gleich');
