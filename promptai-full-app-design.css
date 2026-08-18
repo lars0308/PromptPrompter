@@ -464,6 +464,10 @@ html.prompt-full-redesign .prompt-completion-flash>div::before{
 }
 html.prompt-full-redesign .prompt-process-title{font-family:Inter,ui-sans-serif,sans-serif!important;font-weight:740!important;letter-spacing:-.05em!important}
 html.prompt-full-redesign .prompt-process-line{padding:10px 0;border-bottom:1px solid var(--line);font-size:14px!important}
+/* Die blaue Fuellschicht liegt absolut ueber der Zeile (inset:0) und begann deshalb am oberen
+   Rand des Innenabstands - der Text darunter aber erst zehn Pixel tiefer. Man las jede Zeile
+   doppelt, blau leicht versetzt ueber weiss. Sie uebernimmt den Innenabstand der Zeile. */
+html.prompt-full-redesign .prompt-process-line>.prompt-process-fill{padding:inherit}
 html.prompt-full-redesign .prompt-process-line:last-child{border-bottom:0}
 html.prompt-full-redesign .prompt-process-fill{color:var(--accent)!important}
 html.prompt-full-redesign .prompt-process-lines.complete .prompt-process-fill,

@@ -144,4 +144,6 @@
   document.addEventListener('DOMContentLoaded',()=>{init();publicContent();$('#offerCta').addEventListener('click',()=>{$('#plansDialog')?.showModal();fadeOffer(true)});$('#offerClose').addEventListener('click',()=>fadeOffer(true))});
 })();
 
-(()=>{const load=()=>{if(document.querySelector('script[data-admin-ai-ui]'))return;const s=document.createElement('script');s.src='./admin-ai-ui.js?v=20260814-1';s.defer=true;s.dataset.adminAiUi='1';document.head.appendChild(s)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load()})();
+// Hier stand ein Nachlader, der admin-ai-ui.js bei jedem Aufruf mitgeholt hat - auch fuer Gaeste,
+// die den Verwaltungsbereich nie sehen. Dieselbe Datei laedt adminExtras() in admin-console.js
+// beim Klick auf "Verwaltung", zusammen mit den uebrigen Verwaltungsdateien. Ein Weg genuegt.

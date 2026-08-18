@@ -19,7 +19,11 @@ test('workflow separates revision and built project tools',async()=>{const src=a
 test('access boot loads final polish after all common UI layers',async()=>{const src=await text('admin-console.js'),fast=src.indexOf('cloud-fast-bundle.js'),stability=src.indexOf('stability-ui.js'),subscription=src.indexOf('subscription-ui.js'),ux=src.indexOf('ux-stability-fix.js'),final=src.indexOf('ui-polish-final.js'),touch=src.indexOf('ui-final-touch.js');assert.ok(fast>=0&&fast<stability);assert.ok(subscription>=0&&subscription<ux&&ux<final&&final<touch);assert.doesNotMatch(src,/owner-access\.js/);for(const file of ['home-entry-ui.js','streamlined-project-flow.js','guided-clean-ui.js','unified-ui-v1.js','trial-fix-ui.js','subscription-ui.js','ux-stability-fix.js','ui-polish-final.js','ui-final-touch.js'])assert.match(src,new RegExp(file.replace('.','\\.')))});
 test('home starts with website and free prompt, while Free locks secondary tools and skips internal dev-phase jargon',async()=>{const src=await text('home-entry-ui.js');assert.match(src,/Internetseite erstellen/);assert.match(src,/Freier Prompt/);assert.match(src,/Alles andere: Text, Bild, Video, Musik, PowerPoint, Code und mehr/);for(const id of ['workspaceRevisionBtn','workspaceBuildSiteBtn','workspacePreviewBtn','workspaceLastProjectBtn','workspaceLibraryBtn'])assert.ok(src.includes(id));assert.match(src,/home-plan-locked/);assert.doesNotMatch(src,/Feature-Freeze/)});
 test('simple entry comes before detailed website and free-prompt flows',async()=>{const src=await text('home-entry-ui.js');assert.match(src,/Beschreib deine Internetseite/);assert.match(src,/Was möchtest du mit KI machen/);assert.match(src,/startFromBrief/);assert.match(src,/freePromptDescription/)});
-test('mobile UX fix removes duplicate intake and keeps feedback before preview',async()=>{const src=await text('ux-stability-fix.js');assert.match(src,/text\.length>=20/);assert.match(src,/SIMPLE_START_KEY/);assert.match(src,/skipDuplicateDescription/);assert.match(src,/FLOW_ORDER=\['beschreibung','referenzen','rueckmeldung','vorschau'/);assert.match(src,/Weiter zur Vorschau/)});
+test('mobile UX fix removes duplicate intake and keeps feedback before preview',async()=>{const src=await text('ux-stability-fix.js');assert.match(src,/text\.length>=20/);assert.match(src,/SIMPLE_START_KEY/);assert.match(src,/skipDuplicateDescription/);// 'referenzen' faellt aus der sichtbaren Reihe: Link, Bild und PDF haengt man am Textfeld der
+  // Startseite an, und Adressen aus der Beschreibung wandern automatisch in die Liste.
+  assert.match(src,/FLOW_ORDER=\['beschreibung','rueckmeldung','vorschau'/);
+  assert.match(src,/function skipReferenceStep\(\)\{/);
+  assert.match(src,/currentStep\(\)!==2\|\|currentMode\(\)==='expert'\)return;/,'in "Selbst einstellen" bleibt jeder Schritt sichtbar');assert.match(src,/Weiter zur Vorschau/)});
 test('the references-step next-button label has exactly one owner (transition-polish CSS), not a JS text race',async()=>{const ux=await text('ux-stability-fix.js'),polish=await text('transition-polish.js');assert.doesNotMatch(ux,/prompt-review-transition/);assert.doesNotMatch(ux,/flowTransitionCompact/);assert.match(polish,/#stepReferences \.next-btn:before/);assert.match(polish,/content:'Rückmeldung prüfen'/)});
 test('mobile menu is structured and dark mode only gets a quick top button',async()=>{const src=await text('ux-stability-fix.js');for(const token of ['menuLibrariesBtn','Projekte','Einstellungen','Abmelden','menuThemeQuick'])assert.ok(src.includes(token),token);assert.match(src,/#themeToggleBtn\{display:none!important\}/);assert.match(src,/topbar-menu #resetBtn\{display:none!important\}/);assert.doesNotMatch(src,/setText\(upgrade,'Upgraden'\)/);assert.doesNotMatch(src,/setText\(profile,window\.SiteBriefCloud/,'account button Anmelden/Profil text is owned solely by app.js updateAccountUi() to avoid two scripts racing on the same label')});
 test('upgrade CTA names the next tier in blue and the menu entry keeps its own dynamic label',async()=>{const app=await text('app.js'),fix=await text('ux-stability-fix.js');assert.match(app,/Upgrade auf <span class="upgrade-target">\$\{nextTier\}<\/span>/);assert.match(app,/state\.plan==='pro'\?'Ultimate':'Pro'/);assert.match(app,/el\.upgradeMenuBtn\.hidden=state\.plan==='ultimate'\|\|state\.isAdmin/);assert.match(fix,/\.upgrade-target\{color:var\(--ui-blue,var\(--accent,#1689c7\)\)!important\}/)});
@@ -592,6 +596,41 @@ test('the drawer close button stays a 44px square and every entry is the same he
   const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
   assert.match(css,/html\.prompt-full-redesign #topbarMenu>#promptDrawerClose\{/,'two ids settle the specificity fight');
   assert.match(css,/html\.prompt-full-redesign #topbarMenu>button:not\(#accountBtn\)\{min-height:44px!important\}/);
+});
+
+// Verwaltungsdateien gehoeren zur Verwaltung. admin-console-core.js laedt jeder mit (es traegt
+// die Ankuendigungen fuer alle), aber admin-ai-ui.js hing an einem eigenen Nachlader am Ende
+// dieser Datei und kam bei jedem Aufruf mit - auch bei Gaesten. system-ai-studio.js stand sogar
+// zweimal in der Ladeliste: einmal fuer alle, einmal beim Klick auf Verwaltung.
+test('admin files load with the admin area, not with every visit',async()=>{
+  const loader=await text('admin-console.js'),core=await text('admin-console-core.js'),sw=await text('sw.js');
+  assert.doesNotMatch(loader,/CRITICAL_SCRIPTS=\[[^\]]*system-ai-studio/,'the studio is admin-only');
+  assert.match(loader,/async function adminExtras\(\)[\s\S]{0,200}system-ai-studio\.js/,'it loads on the admin click');
+  assert.doesNotMatch(core,/script\[data-admin-ai-ui\]/,'the second loader for admin-ai-ui is gone');
+  for(const file of ['/admin-ai-ui.js','/admin-prompts-ui.js','/admin-tokens-ui.js','/system-ai-studio.js'])
+    assert.ok(!sw.includes(file),`${file} must not be precached for everyone`);
+});
+
+// Die blaue Fuellschicht der Ladeanimation liegt absolut ueber ihrer Zeile und begann am oberen
+// Rand des Innenabstands - der Text darunter erst zehn Pixel tiefer. Jede Zeile stand doppelt.
+test('the loading animation does not print every line twice',async()=>{
+  const css=await readFile(path.join(root,'promptai-full-app-design.css'),'utf8');
+  assert.match(css,/html\.prompt-full-redesign \.prompt-process-line>\.prompt-process-fill\{padding:inherit\}/);
+  const layers=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  // Und die Ueberschrift stand einmal im Fensterkopf und einmal im Kasten darunter. Zwei ids,
+  // weil die Marken-Regel im Design-Layer eine id in ihrem :is(...) fuehrt.
+  assert.match(layers,/#freePromptResultDialog #freePromptResultWorking>\.prompt-process-kicker/);
+});
+
+// Link, Screenshot und PDF haengt man am Textfeld der Startseite an - die Referenzen-Seite fragte
+// dasselbe ein zweites Mal ab.
+test('the references step is skipped in the guided flows, but kept in expert',async()=>{
+  const src=await text('ux-stability-fix.js');
+  assert.match(src,/function skipReferenceStep\(\)\{/);
+  assert.match(src,/currentStep\(\)!==2\|\|currentMode\(\)==='expert'\)return;/);
+  // Der Schritt bleibt im Dokument - an ihm haengen Felder, Grenzen und die Nutzlast.
+  assert.doesNotMatch(src,/stepReferences[^\n]{0,40}remove\(\)/);
+  assert.match(src,/const REFS_SETTLE_MS=900,REFS_RETRY_MS=900,REFS_GIVE_UP_MS=15000;/,'one click is not enough while the handoff still steers');
 });
 
 // Der Support-Punkt fuehrte ueber das Profil: oeffnen, eingeklappten Abschnitt aufklappen,

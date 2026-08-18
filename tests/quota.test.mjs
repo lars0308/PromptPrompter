@@ -73,7 +73,9 @@ test('everything about tokens lives in one admin area: consumption, plan budgets
   assert.match(ui,/action:'set-token-bonus'/);
   assert.match(ui,/SPARMODUS/,'an account running on the cheapest AI is visible as such');
   assert.match(loader,/\.\/admin-tokens-ui\.js\?v=\d{8}-\d+/);
-  assert.ok(sw.includes('/admin-tokens-ui.js'));
+  // Nicht mehr im Vorrat des Service Workers: Verwaltungsdateien laedt nur, wer die Verwaltung
+  // oeffnet. Sie stehen dafuer in adminExtras() - genau eine Zeile darueber geprueft.
+  assert.ok(!sw.includes('/admin-tokens-ui.js'),'admin files are not precached for everyone');
   // The budgets have exactly one owner now, so saving the countable quotas cannot reset them.
   assert.doesNotMatch(html,/quotaFreeMonthlyTokens|quotaProMonthlyTokens|quotaUltimateMonthlyTokens/);
   assert.match(core,/monthly_tokens:Math\.max\(0,Number\(stored\.monthly_tokens\)\|\|0\)/);
