@@ -37,9 +37,14 @@ test('master prompt transition is a short intentional handoff',async()=>{
   const src=await text('workflow-cleanup.js');
   assert.match(src,/const MASTER_TITEL='Dein Master-Prompt entsteht'/);
   // Der Master-Prompt entsteht in zwei Zuegen (zusammensetzen, dann von der KI ausschreiben).
-  // Beide hatten frueher ihre eigene Anzeige - der Schirm blitzte auf, war weg, kam wieder. Sie
-  // melden sich jetzt beim gemeinsamen Ladeschirm an, mit derselben Ueberschrift.
-  assert.match(src,/const ZUSAMMENBAU='master-zusammenbau',KI_LAUF='master-ki'/);
+  // Den Ladeschirm bekommt nur der erste: bis er durch ist, steht nichts da. Nach ihm liegt ein
+  // vollstaendiger Auftrag im Feld, und den hinter einem Vollbildschirm wegzusperren laesst
+  // zwanzig Sekunden lang auf etwas warten, das man laengst kopieren koennte.
+  assert.match(src,/const ZUSAMMENBAU='master-zusammenbau';/);
+  assert.doesNotMatch(src,/KI_LAUF/,'the rewrite no longer takes the screen');
+  assert.match(src,/note\.className='master-ai-note'/,'it says what it does in a line next to the prompt');
+  assert.match(src,/meta\.insertAdjacentElement\('afterend',note\)/,'beside #promptMeta, whose innerHTML is rewritten');
+  assert.match(src,/der Auftrag unten ist bereits vollständig und kann kopiert werden/);
   assert.doesNotMatch(src,/master-generation-spinner/,'keine eigene Anzeige mehr mitten in der Schrittseite');
   assert.doesNotMatch(src,/classList\.add\('master-generating'\)/);
   assert.match(src,/const MASTER_MAX_WAIT=8000;/,'the overlay must always be released after a bounded wait');
@@ -991,10 +996,10 @@ test('every loading screen ends the same way: full fill, blinking, then gone - a
   assert.match(handoff,/if\(document\.querySelector\('#promptWorkflowLoader,#promptAiTaskLoader'\)\)\{leave\(box\);return\}/);
   const design=await text('promptai-full-app-design.css');
   assert.match(design,/body:has\(#promptWorkflowLoader\) :is\(#promptAiTaskLoader,#promptBriefHandoff\)/);
-  // Der Master-Prompt hat keine eigene Anzeige mehr: er meldet sich beim gemeinsamen Ladeschirm
-  // an und wieder ab, und der endet fuer alle gleich.
+  // Das Zusammensetzen meldet sich beim gemeinsamen Ladeschirm an und wieder ab; das Ausformulieren
+  // danach nimmt den Schirm nicht mehr - der Auftrag steht zu dem Zeitpunkt schon vollstaendig da.
   assert.match(cleanup,/window\.PromptAiLoading\?\.endTask\?\.\(ZUSAMMENBAU\)/);
-  assert.match(cleanup,/window\.PromptAiLoading\?\.endTask\?\.\(KI_LAUF\)/);
+  assert.doesNotMatch(cleanup,/beginTask\?\.\(KI_LAUF/,'a finished prompt is never locked behind a full screen');
   // Ueberlappende Arbeiten teilen sich einen Schirm, statt jede ihren eigenen aufzuziehen.
   const v2b=await text('promptai-loading-v2.js');
   assert.match(v2b,/const laufende=\[\];/);
@@ -2025,4 +2030,23 @@ test('the free plan reaches its own projects in the library',async()=>{
   assert.match(app,/function switchLibraryTab\(tab\)\{\s*if\(tab!=="projects"&&!planRules\(\)\.modules\)/,'the gate sits on the three building-block tabs');
   assert.match(app,/if\(el\.openLibraryBtn\)el\.openLibraryBtn\.hidden=false;/,'and the way in stays visible');
   assert.doesNotMatch(app,/button\.hidden=!rules\.modules\)/,'nothing hides the library wholesale any more');
+});
+
+// Vor den Rückfragen lagen dreißig bis vierzig Sekunden. Acht Unterlagen mal fünfzigtausend
+// Zeichen plus sechzehn Zusammenfassungen mal sechstausend sind rund eine halbe Million Zeichen,
+// die vor jeder Antwort erst gelesen werden — für die Frage, was im Briefing fehlt.
+test('each task carries only as much source text as it needs',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/const DOC_CHARS=\{review:8000,concepts:20000,full:50000\}/);
+  assert.match(app,/const REF_CHARS=\{review:1200,concepts:3000,full:Infinity\}/);
+  assert.match(app,/function documentPayload\(scope='full'\)/);
+  assert.match(app,/function referencePayload\(scope='full'\)/);
+  // Die Prüfung bekommt den Anfang, das Entwerfen mehr, der Blueprint fürs ZIP alles.
+  assert.match(app,/action:"review",[^\n]*references:referencePayload\("review"\),documents:documentPayload\("review"\)/);
+  assert.match(app,/action:"concepts",[^\n]*references:referencePayload\("concepts"\),documents:documentPayload\("concepts"\)/);
+  assert.match(app,/references:\{websites:referencePayload\(\),[^\n]*documents:documentPayload\(\)\}/,'the blueprint in the ZIP keeps the full text');
+  // Gekürzt heißt gekennzeichnet: die KI muss wissen, dass da noch mehr liegt.
+  assert.match(app,/\[Gekürzt: die Unterlage hat \$\{text\.length\.toLocaleString\('de-DE'\)\} Zeichen/);
+  // Rückfragen entstehen aus Text und Fakten, nicht aus Stilbildern.
+  assert.match(app,/action:"review",[^\n]*images:aiReferenceImages\(2\)/);
 });

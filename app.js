@@ -1262,8 +1262,38 @@
     return {aiClarifications:state.settings.aiClarifications,maxQuestions:Number(state.settings.maxQuestions)||4,criticalBehavior:state.settings.criticalBehavior,askMissing:state.settings.askMissing,askConflict:state.settings.askConflict,askInfeasible:state.settings.askInfeasible,suggestAlternatives:state.settings.suggestAlternatives,legalRegion:state.settings.legalRegion,checks:{...state.settings.checks},noInventLegal:state.settings.noInventLegal,finalChecklist:state.settings.finalChecklist};
   }
 
-  function referencePayload(){const map=new Map();for(const item of [...usableSources(),...state.urls]){if(!item?.url)continue;const old=map.get(item.url)||{};map.set(item.url,{url:item.url,kind:state.sourceUrls.includes(item)?'project-source':'design-reference',title:item.title||old.title||'',summary:item.summary||old.summary||'',aspects:item.aspects||old.aspects||['Inhalte','Struktur'],note:item.like||'',dislike:item.dislike||''})}return [...map.values()].slice(0,16)}
-  function documentPayload(){return state.documents.map(item=>({name:item.name,type:item.type,text:String(item.text||'').slice(0,50000),pages:item.pages||0,aspects:item.aspects||[],note:item.like||'',dislike:item.dislike||''})).slice(0,8)}
+  // Dieselbe Rechnung wie bei den Unterlagen: sechzehn ausgelesene Seiten mit je bis zu
+  // sechstausend Zeichen Zusammenfassung sind knapp hunderttausend Zeichen. Für die Frage, was im
+  // Briefing fehlt, genügt der Anfang jeder Zusammenfassung - die gesicherten Fakten stehen
+  // ohnehin vollständig im Master-Prompt.
+  const REF_CHARS={review:1200,concepts:3000,full:Infinity};
+  function referencePayload(scope='full'){
+    const limit=REF_CHARS[scope]??REF_CHARS.full;
+    const kurz=value=>{const text=String(value||'');return Number.isFinite(limit)&&text.length>limit?`${text.slice(0,limit)}…`:text};
+    const map=new Map();
+    for(const item of [...usableSources(),...state.urls]){
+      if(!item?.url)continue;
+      const old=map.get(item.url)||{};
+      map.set(item.url,{url:item.url,kind:state.sourceUrls.includes(item)?'project-source':'design-reference',title:item.title||old.title||'',summary:kurz(item.summary||old.summary||''),aspects:item.aspects||old.aspects||['Inhalte','Struktur'],note:item.like||'',dislike:item.dislike||''});
+    }
+    return [...map.values()].slice(0,16);
+  }
+  // Wie viel Text einer Unterlage mitreist, haengt an der Aufgabe.
+  //
+  // Acht Unterlagen mal fuenfzigtausend Zeichen sind vierhunderttausend Zeichen - rund
+  // hunderttausend Token, die vor jeder Antwort erst gelesen werden. Genau das war die Wartezeit
+  // vor den Rueckfragen. Fuer die Frage „was fehlt, was widerspricht sich“ genuegt der Anfang
+  // jeder Unterlage; die vollstaendigen Inhalte gehen ohnehin ueber attachmentPromptBlock() in
+  // den Master-Prompt und damit an die bauende KI, wo sie gebraucht werden.
+  const DOC_CHARS={review:8000,concepts:20000,full:50000};
+  function documentPayload(scope='full'){
+    const limit=DOC_CHARS[scope]??DOC_CHARS.full;
+    return state.documents.map(item=>{
+      const text=String(item.text||'');
+      const kurz=text.slice(0,limit);
+      return {name:item.name,type:item.type,text:kurz.length<text.length?`${kurz}\n\n[Gekürzt: die Unterlage hat ${text.length.toLocaleString('de-DE')} Zeichen. Der vollständige Text liegt dem Auftrag bei.]`:kurz,pages:item.pages||0,aspects:item.aspects||[],note:item.like||'',dislike:item.dislike||''};
+    }).slice(0,8);
+  }
   function aiReferenceImages(limit=5){const out=state.images.filter(x=>x.dataUrl).map(x=>({name:x.name,dataUrl:x.dataUrl,aspects:x.aspects,note:x.like,dislike:x.dislike}));for(const doc of state.documents)for(let i=0;i<(doc.pageImages||[]).length;i++)out.push({name:`${doc.name} – Seite ${i+1}`,dataUrl:doc.pageImages[i],aspects:doc.aspects,note:doc.like||'Unterlageninhalt und visuelle Struktur berücksichtigen',dislike:doc.dislike||''});return out.slice(0,limit)}
 
   function allProfiles(){
@@ -1611,7 +1641,7 @@
         if(usesCredit){state.reviewCredits=await window.SiteBriefCloud.useReviewCredit();publishReviewCredits()}review=localProjectReview(usesCredit);
       }
       else{
-        const payload={action:"review",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),settings:settingsForApi(),template:selectedTemplate()||{},modules:selectedModules(),clarifications:state.clarifications};
+        const payload={action:"review",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload("review"),documents:documentPayload("review"),images:aiReferenceImages(2),settings:settingsForApi(),template:selectedTemplate()||{},modules:selectedModules(),clarifications:state.clarifications};
         const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:90000});const data=await res.json();if(!res.ok)throw new Error(data.error||"Projektprüfung fehlgeschlagen");review=data;
       }
       review.questions=Array.isArray(review.questions)?review.questions.slice(0,state.settings.maxQuestions):[];review.warnings=Array.isArray(review.warnings)?review.warnings:[];review.blockers=Array.isArray(review.blockers)?review.blockers:[];review.assumptions=Array.isArray(review.assumptions)?review.assumptions:[];review.situations=Array.isArray(review.situations)?review.situations.filter(x=>String(x||'').trim()).slice(0,3):[];review.differentiation=String(review.differentiation||'').trim();
@@ -2127,7 +2157,7 @@
       try{
         if(!cloudReady()||state.engine === "local") concepts=localConcepts(count);
         else{
-          const payload={action:"concepts",count,regenerate,baseConcept:regenerate?conceptForExport(selectedConcept()):null,engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
+          const payload={action:"concepts",count,regenerate,baseConcept:regenerate?conceptForExport(selectedConcept()):null,engine:state.engine,model:el.generatorModel.value.trim(),project:project(),references:referencePayload("concepts"),documents:documentPayload("concepts"),images:aiReferenceImages(4),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
           const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:120000,cancelToken:previewCancel?.signal}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"Generator-Anfrage fehlgeschlagen"); concepts=(data.concepts||[]).slice(0,count).map(normalizedConcept);
           if(concepts.length<count) concepts=[...concepts,...localConcepts(count-concepts.length)];
         }
@@ -2173,7 +2203,7 @@
     // bleiben deutlich unter der Grenze des Servers.
     const IMAGE_TIMEOUT_MS=150000;
     const askForImage=async concept=>{
-      const payload={action:"preview-image",...previewDesignPayload(),project:project(),concept:conceptForExport(concept),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
+      const payload={action:"preview-image",...previewDesignPayload(),project:project(),concept:conceptForExport(concept),references:referencePayload("review").slice(0,6),documents:documentPayload("review").slice(0,4),images:aiReferenceImages(3)};
       const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),timeoutMs:IMAGE_TIMEOUT_MS,cancelToken:previewCancel?.signal});
       const data=await res.json();
       if(!res.ok){const err=new Error(data.error||"Bildvorschau fehlgeschlagen");err.status=res.status;throw err}
@@ -2255,7 +2285,7 @@
     if(!cloudReady()||!planRules().aiPreviews){el.generationStatus.className="generation-status notice";el.generationStatus.textContent=`Für ein neues KI-Bild muss mindestens einer der Provider (Gemini, Cloudflare oder eigene Keys) unter Einstellungen → KI-Verbindungen verbunden sein.`;return;}
     c._imageBusy=true;renderConcepts();if(lightboxConceptId===c.id)openPreviewLightbox(c);
     try{
-      const payload={action:"preview-image",...previewDesignPayload(),project:project(),concept:conceptForExport(c),references:referencePayload().slice(0,6),documents:documentPayload().slice(0,4),images:aiReferenceImages(3)};
+      const payload={action:"preview-image",...previewDesignPayload(),project:project(),concept:conceptForExport(c),references:referencePayload("review").slice(0,6),documents:documentPayload("review").slice(0,4),images:aiReferenceImages(3)};
       const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Bildvorschau fehlgeschlagen");
       c.previewImage=data.imageDataUrl||c.previewImage;
       el.generationStatus.className="generation-status";el.generationStatus.textContent=`Neues Bild für „${c.name}“ erstellt.`;
@@ -2308,7 +2338,7 @@
       let refined;
       try{
         if(state.engine!=="local"){
-          const payload={action:"refine",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),concept:conceptForExport(c),refinement:instruction,references:referencePayload(),documents:documentPayload(),images:aiReferenceImages(5),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
+          const payload={action:"refine",engine:state.engine,model:el.generatorModel.value.trim(),project:project(),concept:conceptForExport(c),refinement:instruction,references:referencePayload("concepts"),documents:documentPayload("concepts"),images:aiReferenceImages(4),controls:controls(),template:selectedTemplate()||{},modules:selectedModules(),settings:settingsForApi(),clarifications:state.clarifications,projectReview:state.projectReview||{}};
           const res=await sitebriefApiFetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw new Error(data.error||"Refinement failed");refined=normalizedConcept(data.concept||data.concepts?.[0],0);refined.id=c.id;
         }else refined=localRefine(c,instruction);
       }catch{refined=localRefine(c,instruction)}

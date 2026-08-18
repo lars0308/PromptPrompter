@@ -2574,3 +2574,22 @@ html.prompt-full-redesign .gate-shot-result::after{
   background:color-mix(in srgb,var(--accent) 7%,var(--surface));
 }
 .welcome-project-card.is-picked span{color:var(--accent)}
+
+/* Der Master-Prompt steht nach dem Zusammensetzen vollständig da. Dass die KI ihn danach noch
+   ausformuliert, ist eine Verbesserung und kein Hindernis - es gehört als Zeile daneben, nicht
+   als Vollbildschirm davor. */
+.master-ai-note{
+  display:flex;align-items:center;gap:9px;
+  margin:10px 0 0;padding:9px 13px;
+  border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));
+  border-radius:10px;
+  background:color-mix(in srgb,var(--accent) 6%,var(--surface));
+  color:var(--muted);font-size:12px;line-height:1.45;
+}
+.master-ai-note::before{
+  content:'';flex:0 0 auto;width:9px;height:9px;border-radius:50%;
+  background:var(--accent);
+  animation:masterAiPulse 1.4s ease-in-out infinite;
+}
+@keyframes masterAiPulse{0%,100%{opacity:.35}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.master-ai-note::before{animation:none;opacity:.8}}

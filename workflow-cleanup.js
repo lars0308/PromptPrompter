@@ -58,15 +58,32 @@
     masterTimer=setTimeout(check,120);
   }
   // Der Master-Prompt entsteht in zwei Zuegen: erst wird das Material zusammengesetzt (das geht
-  // sofort), dann schreibt die KI daraus den fertigen Text. Beide hatten frueher ihre eigene
-  // Anzeige - erst blitzte die eine auf und war weg, dann kam die andere. Beide melden sich jetzt
-  // beim gemeinsamen Ladeschirm an; der bleibt vom ersten bis zum letzten Zug stehen.
-  const ZUSAMMENBAU='master-zusammenbau',KI_LAUF='master-ki';
+  // sofort), dann schreibt die KI daraus den fertigen Text.
+  //
+  // Der erste Zug bekommt den Ladeschirm - bis er durch ist, steht nichts da. Der zweite nicht
+  // mehr. Nach dem Zusammensetzen liegt ein vollstaendiger, benutzbarer Auftrag im Feld; ihn
+  // hinter einem Vollbildschirm wegzusperren, waehrend die KI ihn nur noch schoener schreibt,
+  // laesst zwanzig Sekunden lang etwas warten, das man laengst kopieren koennte. Wer in der Zeit
+  // schon kopiert, hat den vollstaendigen Auftrag - nur eben den zusammengesetzten.
+  //
+  // Sichtbar bleibt der zweite Zug trotzdem: als Zeile ueber dem Feld, die sagt, was noch laeuft.
+  const ZUSAMMENBAU='master-zusammenbau';
   const MASTER_TITEL='Dein Master-Prompt entsteht';
   function masterAiOverlay(state){
     const step=$('#stepPrompt');if(!step||!step.classList.contains('active')||!ablaufSichtbar())return;
-    if(state==='start'){window.PromptAiLoading?.beginTask?.(KI_LAUF,{title:MASTER_TITEL,kind:'build'});return}
-    window.PromptAiLoading?.endTask?.(KI_LAUF);
+    const meta=$('#promptMeta');if(!meta)return;
+    let note=$('#masterAiNote');
+    if(state==='start'){
+      if(!note){
+        note=document.createElement('p');note.id='masterAiNote';note.className='master-ai-note';
+        // Neben #promptMeta, nicht darin: updateMasterPrompt() schreibt dessen innerHTML neu und
+        // haette die Zeile im selben Moment wieder entfernt, in dem sie entsteht.
+        meta.insertAdjacentElement('afterend',note);
+      }
+      note.textContent='Wird noch ausformuliert – der Auftrag unten ist bereits vollständig und kann kopiert werden.';
+      return;
+    }
+    note?.remove();
   }
   function settle(){clean();previews();previewPage()}
   function init(){settle();masterLoader();observer=new MutationObserver(()=>{clearTimeout(observer._t);observer._t=setTimeout(settle,60)});observer.observe(document.body,{childList:true});setTimeout(()=>observer?.disconnect(),5000);window.addEventListener('promptai:access',()=>setTimeout(settle,0));window.addEventListener('promptai:system-ai-ready',previews);window.addEventListener('promptai:master-ai',event=>masterAiOverlay(event.detail?.state))}
