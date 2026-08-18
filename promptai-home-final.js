@@ -505,7 +505,10 @@
   // Welcher Tarif den Ablauf tatsächlich freischaltet - dieselbe Reihenfolge wie PLAN_RULES.modes
   // in app.js (free: guided, pro: +auto, ultimate: +expert). Vorher stand pauschal "ab Pro" an
   // jedem gesperrten Eintrag, also auch an "Selbst einstellen", das es erst ab Ultimate gibt.
-  const FLOW_TIER={guided:'ab Pro',auto:'ab Pro',expert:'ab Ultimate'};
+  // "Mit Rueckfragen" ist in Free enthalten - genau das sagt auch die Auswahl beim Projektstart.
+  // Hier stand trotzdem "ab Pro" am Eintrag. Sichtbar wurde es nur nicht, weil das Schild an
+  // der Sperre haengt und dieser Eintrag nie gesperrt ist; falsch war es trotzdem.
+  const FLOW_TIER={guided:'',auto:'ab Pro',expert:'ab Ultimate'};
   function syncFlowUi(){
     const menu=$('#promptFlowMenu');if(!menu)return;
     let mode=flowMode();
@@ -570,9 +573,15 @@
     const access=window.PromptAiAccess||{};
     return !access.isAdmin&&(access.plan||'free')==='free';
   }
+  // Welcher Tarif noetig ist, steht am Eintrag selbst - vorher stand "PRO" fest in der
+  // Stilregel. Solange nur Ueberarbeiten und Pruefen gesperrt sind, ist das dasselbe; beim
+  // naechsten Eintrag ab Ultimate waere es eine falsche Auskunft gewesen.
+  const MODE_TIER={revision:'PRO',check:'PRO'};
   function syncModeMenuLocks(home){
     home.querySelectorAll('[data-command-mode]').forEach(option=>{
-      option.dataset.locked=commandModeLocked(option.dataset.commandMode)?'1':'0';
+      const mode=option.dataset.commandMode;
+      option.dataset.locked=commandModeLocked(mode)?'1':'0';
+      option.dataset.tier=MODE_TIER[mode]||'PRO';
     });
   }
   function selectMode(mode){const home=ensureHome();if(!home)return;

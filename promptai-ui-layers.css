@@ -1168,7 +1168,7 @@ html.prompt-home-surface{--home-bg:#f4f7fa;--home-card:#fff;--home-panel:#111923
       .prompt-mode-menu[hidden]{display:none!important}
       .prompt-mode-option{position:relative;display:grid;width:100%;grid-template-columns:32px 1fr;align-items:center;gap:8px;min-height:52px;padding:8px 11px;border:0;border-radius:10px;background:transparent;color:inherit;text-align:left;font:700 13px/1.2 Arial,Helvetica,sans-serif;cursor:pointer}
       .prompt-mode-option:hover,.prompt-mode-option[aria-checked="true"]{background:#e8f3fa;color:#174f76}
-      .prompt-mode-option[data-locked="1"]:after{content:"PRO";position:absolute;right:11px;top:9px;padding:3px 7px;border-radius:999px;background:color-mix(in srgb,var(--home-orange,#e9781f) 16%,transparent);color:var(--home-orange,#e9781f);font-size:8px;font-weight:900;letter-spacing:.09em}
+      .prompt-mode-option[data-locked="1"]:after{content:attr(data-tier);position:absolute;right:11px;top:9px;padding:3px 7px;border-radius:999px;background:color-mix(in srgb,var(--home-orange,#e9781f) 16%,transparent);color:var(--home-orange,#e9781f);font-size:8px;font-weight:900;letter-spacing:.09em}
       .prompt-mode-option small{display:block;margin-top:4px;color:#71808d;font-size:9px;font-weight:550}
       .prompt-command-input{display:block;width:100%;min-height:185px;padding:30px 76px 24px 24px;border:0;outline:0;resize:vertical;background:transparent;color:#f2f7fb;font:500 clamp(17px,2.3vw,21px)/1.55 Arial,Helvetica,sans-serif;caret-color:var(--home-orange)}
       .prompt-command-input::placeholder{color:#71808e}

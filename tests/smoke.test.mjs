@@ -543,6 +543,28 @@ test('the "Prompt genauer einstellen" free-prompt settings step is consolidated 
   // Kontext, sonst verschwaende ein sichtbar angehaengter Link still.
   assert.match(src,/category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:withReferences\(\$\('#freePromptDescription'\)\.value\),context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
 });
+// Aus dem Nachbar-Branch uebernommen, weil dort der Fehler stand, den ich hier nicht
+// nachstellen konnte: promptai:access feuert bei jeder Hintergrund-Synchronisation, und das
+// neu gebaute Markup oeffnete nur den aktiven Platz. Ein gerade von Hand aufgeklappter
+// API-Key-Platz fiel damit mitten im Eintragen wieder zu.
+test('an API key slot that was opened by hand stays open through a background sync',async()=>{
+  const src=await text('settings-connections-ui.js');
+  assert.match(src,/const openIndexes=new Set\(\$\$\('\.conn-slot\[open\]',box\)\.map\(node=>node\.dataset\.connSlot\)\);/);
+  assert.match(src,/\$\{isActive\|\|openIndexes\.has\(String\(index\)\)\?'open':''\}/);
+});
+
+// Welche zentrale KI antwortet, haengt am Tarif - die Profile tragen dafuer eine plans-Spalte.
+// Zwei Wege gaben sie nicht weiter, also galt dort immer der volle Pool.
+test('every central AI route passes the caller plan, so the profile plans column applies',async()=>{
+  const models=await text('api/models.js');
+  assert.match(models,/async function centralJson\(req,prompt,task,plan=''\)\{let rows=await listProfiles\(task,\{providers:\['gateway','openai','gemini'\],plan\}\)/);
+  assert.match(models,/centralJson\(req,prompt,'analysis',ent\.isAdmin\?'ultimate':String\(ent\.plan\|\|'free'\)\)/);
+  assert.match(models,/centralJson\(req,prompt,'learning',ent\.isAdmin\?'ultimate':String\(ent\.plan\|\|'free'\)\)/);
+  // Gegenprobe: die uebrigen Wege reichen den Tarif schon lange weiter.
+  const generate=await text('api/generate.js');
+  assert.match(generate,/listProfiles\(task,\{providers:\['gateway','openai','gemini'\],plan\}\)/);
+});
+
 // Eine pauschale Regel (button + button { margin-left: 8px }) traf jeden benachbarten Knopf -
 // auch untereinanderliegende. Auf der Anmeldeseite standen die drei Tarifkacheln dadurch
 // treppenfoermig versetzt: 74, 82, 82 Pixel.
