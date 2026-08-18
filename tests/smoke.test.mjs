@@ -616,10 +616,16 @@ test('admin files load with the admin area, not with every visit',async()=>{
 test('the loading animation does not print every line twice',async()=>{
   const css=await readFile(path.join(root,'promptai-full-app-design.css'),'utf8');
   assert.match(css,/html\.prompt-full-redesign \.prompt-process-line>\.prompt-process-fill\{padding:inherit\}/);
-  const layers=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
-  // Und die Ueberschrift stand einmal im Fensterkopf und einmal im Kasten darunter. Zwei ids,
-  // weil die Marken-Regel im Design-Layer eine id in ihrem :is(...) fuehrt.
-  assert.match(layers,/#freePromptResultDialog #freePromptResultWorking>\.prompt-process-kicker/);
+
+});
+
+// Der Zeilenkasten ist ebenfalls ein direktes div-Kind des Ladeschirms - ohne Ausnahme bekam er
+// dasselbe Zeichen davor wie der Kopf, und das Logo stand zweimal untereinander.
+test('the loading screen shows its logo once, not twice',async()=>{
+  const css=await readFile(path.join(root,'promptai-full-app-design.css'),'utf8');
+  assert.doesNotMatch(css,/\.prompt-handoff-loader>div::before/,'that selector also hit the lines box');
+  assert.match(css,/\.prompt-handoff-loader>div:not\(\.prompt-process-lines\)::before/);
+  assert.match(css,/\.master-generation-inner\):not\(\.prompt-process-lines\)::before/);
 });
 
 // Link, Screenshot und PDF haengt man am Textfeld der Startseite an - die Referenzen-Seite fragte
@@ -735,7 +741,7 @@ test('the loading screen is bound to the AI request itself, so no step can forge
   assert.match(src,/if\(aiWaits\+\+\)return;/);
   assert.match(src,/if\(aiWaits>0&&--aiWaits\)return;/);
   // Diese vier haben ihren eigenen Schirm bzw. lassen niemanden warten.
-  for(const action of ['intake','revision-brief','free-prompt','sandbox-build','quota-summary'])
+  for(const action of ['intake','revision-brief','sandbox-build','quota-summary'])
     assert.doesNotMatch(src,new RegExp(`'?${action}'?:\\{title:`),`${action} must not get a second screen`);
   // Haengt eine Anfrage, ohne je aufzuloesen, darf der Schirm nicht ewig stehen.
   assert.match(src,/aiWatchdog=setTimeout\(\(\)=>\{aiWaits=0;\$\('#promptAiTaskLoader'\)\?\.remove\(\)\},180000\)/);
@@ -754,9 +760,12 @@ test('the free prompt runs straight from the home console, without the questionn
   assert.match(home,/openFreeForm\(\);setTimeout\(\(\)=>fillFreeFields\(brief\),60\);/,'the questionnaire stays as the fallback');
   // Der Ladeschirm sitzt jetzt im Ergebnisfenster - im Fragebogen waere er unsichtbar, weil der
   // Fragebogen auf diesem Weg gar nicht mehr aufgeht.
-  assert.match(free,/id="freePromptResultWorking"/);
-  assert.match(free,/function workHost\(\)\{return directRun\?\$\('#freePromptResultWorking'\):\$\('#freePromptWorking'\)\}/);
-  assert.match(free,/\.free-prompt-result-dialog\.is-working \.free-prompt-output,\n\.free-prompt-result-dialog\.is-working \.free-prompt-actions\{display:none\}/,'an empty output box during the wait is a claim, not a result');
+  // Der Ladeschirm ist derselbe wie ueberall: der freie Prompt hatte zwei eigene Anzeigen, die
+  // an derselben Stelle unterschiedlich aussahen, je nachdem welchen Weg man genommen hatte.
+  const loader=await text('promptai-loading-v2.js');
+  assert.match(loader,/'free-prompt':\{title:'Dein Prompt entsteht',kind:'freeprompt'/);
+  assert.match(loader,/if\(kind==='freeprompt'\)return \[/,'die vier Zeilen ziehen mit um');
+  assert.doesNotMatch(free,/freePromptResultWorking|freePromptWorking|startWorking/,'keine eigene Arbeitsanzeige mehr');
   // Angehaengte Links, Bilder und Dateien standen im Prompt bisher nirgends.
   assert.match(free,/function attachedReferences\(\)/);
   for(const list of ['#urlReferences','#imageReferences','#documentReferences'])assert.ok(free.includes(list),list);
@@ -1441,11 +1450,15 @@ test('the mode handoff falls back to the keys a project start actually writes',a
 });
 
 // Der Aufruf an die KI dauert lange; die Anzeige muss vorher stehen, nicht danach.
-test('the free prompt starts its working animation before the request',async()=>{
-  const src=await text('free-prompt-ui.js');
-  assert.match(src,/startWorking\(desc\.length\);/);
-  assert.ok(src.indexOf('startWorking(desc.length);')<src.indexOf("fetch('/api/generate'"),'the animation has to start before the fetch');
-  assert.match(src,/finally\{stopWorking\(\)/);
+// Frueher hatte der freie Prompt seine eigene Arbeitsanzeige, die vor dem fetch startete. Jetzt
+// haengt der Ladeschirm an der Anfrage selbst - fuer jede KI-Wartezeit derselbe, und damit
+// zwangslaeufig vor der Antwort da.
+test('the free prompt waits behind the same loading screen as every other AI call',async()=>{
+  const src=await text('free-prompt-ui.js'),loader=await text('promptai-loading-v2.js');
+  assert.doesNotMatch(src,/startWorking|stopWorking|freePromptWorking/);
+  assert.match(loader,/'free-prompt':\{title:'Dein Prompt entsteht',kind:'freeprompt',done:'Prompt ist bereit'\}/);
+  // Und das Ergebnisfenster geht erst mit dem fertigen Prompt auf, nicht schon davor.
+  assert.doesNotMatch(src,/markWorking/);
 });
 
 test('workflow AI intake and refinement show a full loading surface before their requests',async()=>{

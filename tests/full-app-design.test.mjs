@@ -238,7 +238,9 @@ test('the mark stands free on every ground it appears on',async()=>{
   // is the only thing identifying the surface.
   // Auf den Ladeflächen steht sie frei, ohne Plättchen - und in ihrer hellen Fassung,
   // weil diese Flächen in beiden Modi dunkel sind.
-  assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\)::before\{[\s\S]{0,200}sitebrief-logo-trace-light\.svg/);
+  // :not(.prompt-process-lines), weil der Zeilenkasten ebenfalls ein direktes div-Kind ist -
+  // sonst stand das Zeichen zweimal untereinander auf demselben Schirm.
+  assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\):not\(\.prompt-process-lines\)::before\{[\s\S]{0,200}sitebrief-logo-trace-light\.svg/);
 });
 
 test('the mode list belongs to the console: dark, and shown whole',async()=>{

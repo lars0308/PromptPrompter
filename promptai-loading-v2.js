@@ -32,6 +32,14 @@
       'Datenschutz, Sicherheit, Barrierefreiheit und Performance werden mitgedacht.',
       'Die nächsten sinnvollen Schritte werden vorbereitet.'
     ];
+    // Der freie Prompt hatte diese vier Zeilen frueher in seiner eigenen Anzeige stehen; sie
+    // ziehen mit um, damit der Ladeschirm dort weiter sagt, was gerade passiert.
+    if(kind==='freeprompt')return [
+      'Deine Beschreibung wird eingeordnet.',
+      'Ausgabetyp und Ziel-KI werden berücksichtigt.',
+      'Aufbau, Regeln und Beispiele werden gesetzt.',
+      'Der fertige Prompt wird zusammengestellt.'
+    ];
     if(kind==='build')return [
       'Briefing, Referenzen und gewählte Richtung werden zusammengeführt.',
       'Struktur, Inhalte und technische Vorgaben werden umgesetzt.',
@@ -82,13 +90,16 @@
   //
   // Bewusst nicht in der Liste: 'intake' und 'revision-brief' (mode-flow-ui.js bzw. app.js
   // setzen dort schon selbst einen Schirm - zwei übereinander wären schlimmer als keiner),
-  // 'free-prompt' (eigene Anzeige im Ergebnisfenster), 'sandbox-build' (eigener Schirm) und
+  // 'sandbox-build' (eigener Schirm) und
   // die Kontingent-Abfragen, die niemanden warten lassen.
   const AI_TASKS={
     review:{title:'Deine Angaben werden geprüft',kind:'review',done:'Rückfragen sind bereit'},
     concepts:{title:'Die Richtungen werden entworfen',kind:'preview',done:'Vorschau ist bereit'},
     'master-prompt':{title:'Dein Master-Prompt entsteht',kind:'build',done:'Master-Prompt ist bereit'},
-    website:{title:'Dein Projekt wird gebaut',kind:'build',done:'Projekt ist bereit'}
+    website:{title:'Dein Projekt wird gebaut',kind:'build',done:'Projekt ist bereit'},
+    // Frueher hatte der freie Prompt zwei eigene Arbeitsanzeigen - eine im Fragebogen, eine im
+    // Ergebnisfenster. Jetzt ist es derselbe Schirm wie bei jeder anderen KI-Wartezeit.
+    'free-prompt':{title:'Dein Prompt entsteht',kind:'freeprompt',done:'Prompt ist bereit'}
   };
   const WAIT_KEY='promptai-ai-wait';
   let aiWaits=0,aiWatchdog=0,aiTask=null;

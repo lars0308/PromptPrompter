@@ -453,8 +453,11 @@ html.prompt-full-redesign #promptAiThinkingStage{
 }
 html.prompt-full-redesign .prompt-handoff-loader>div,
 html.prompt-full-redesign .prompt-completion-flash>div{position:relative;padding:32px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-soft)}
-html.prompt-full-redesign .prompt-handoff-loader>div::before,
-html.prompt-full-redesign .prompt-completion-flash>div::before{
+/* :not(.prompt-process-lines): der Zeilenkasten ist ebenfalls ein direktes div-Kind des
+   Schirms - ohne diese Ausnahme bekam er dasselbe Zeichen davor, und das Logo stand zweimal
+   untereinander auf jedem Ladeschirm. */
+html.prompt-full-redesign .prompt-handoff-loader>div:not(.prompt-process-lines)::before,
+html.prompt-full-redesign .prompt-completion-flash>div:not(.prompt-process-lines)::before{
   content:"";
   display:block;
   width:52px;
@@ -1523,11 +1526,11 @@ html.prompt-full-redesign :is(.streamline-working-inner,.master-generation-inner
 /* Als content:url() statt als Hintergrundbild: eine Grafik im Hintergrund bleibt in
    Chrome stehen, ein ersetztes Bild läuft. Deshalb bewegt sich der blaue Balken im
    Zeichen hier genauso wie auf dem Startbildschirm. */
-html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner)::before{
+html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner):not(.prompt-process-lines)::before{
   content:url("./sitebrief-logo-trace-light.svg?v=7");
   display:block;width:52px;height:52px;margin:0 auto 20px;
 }
-html.prompt-full-redesign :is(.prompt-handoff-loader>div,.prompt-completion-flash>div)::before{
+html.prompt-full-redesign :is(.prompt-handoff-loader>div,.prompt-completion-flash>div):not(.prompt-process-lines)::before{
   content:url("./sitebrief-logo-trace-light.svg?v=7")!important;background:none!important;
 }
 /* Auf dunklem Grund braucht der Fortschritt im Wort einen hellen Rest, sonst
@@ -1979,7 +1982,7 @@ html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
   html.prompt-full-redesign .topbar .brand-copy strong{font-size:21px!important}
   /* Auf dem Ladeschirm ist die Marke das einzige Bild - 52px war eine Briefmarke
      auf einer 1500px breiten Fläche. */
-  html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner)::before{
+  html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner):not(.prompt-process-lines)::before{
     width:104px!important;height:104px!important;margin-bottom:28px!important;
   }
   html.prompt-full-redesign #promptAppBoot img,

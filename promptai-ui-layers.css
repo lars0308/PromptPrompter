@@ -510,19 +510,9 @@ body>#welcomeIntroDialog.welcome-intro-dialog.splash-only{position:fixed!importa
 @media(max-width:520px){.topup-offer-actions{flex-direction:column}.topup-offer-actions button{width:100%}}
 
 /* ===== free-prompt-ui.js · #freePromptStyles ===== */
-/* Der direkte Weg vom Textfeld der Startseite: erst der Ladeschirm, dann an derselben Stelle
-   der fertige Prompt. Solange gearbeitet wird, ist ein leeres Ausgabefeld mit zwei Knoepfen
-   darunter nur eine Behauptung - es kommt erst mit dem Ergebnis. */
-.free-prompt-result-dialog.is-working .free-prompt-output,
-.free-prompt-result-dialog.is-working .free-prompt-actions{display:none}
-.free-prompt-result-dialog.is-working #freePromptResultWorking{flex:1 1 auto}
-/* Die Ueberschrift steht schon im Fensterkopf ("Dein Prompt entsteht") - der Kasten darunter
-   sagte dasselbe noch einmal mit anderen Worten. */
-/* Zwei ids und !important: die Marken-Regel im Design-Layer erzwingt jede Vorzeile mit
-   display:block!important, und ihr :is(...) enthaelt eine id (#promptWorkflowLoader) - damit
-   zaehlt die ganze Liste als id-Selektor und schlaegt eine Regel mit nur einer id. */
-#freePromptResultDialog #freePromptResultWorking>.prompt-process-kicker,
-#freePromptResultDialog #freePromptResultWorking>.prompt-process-title{display:none!important}
+/* Der Ladeschirm des freien Prompts ist derselbe wie ueberall sonst (promptai-loading-v2.js).
+   Die beiden eigenen Anzeigen in Fragebogen und Ergebnisfenster sind deshalb weg; das
+   Ergebnisfenster oeffnet erst mit dem fertigen Prompt. */
 #freePromptResultError:not([hidden]){margin:0 0 14px}
 .free-prompt-working{margin:0 0 16px;padding:18px 16px;border:1px solid color-mix(in srgb,#278bc2 30%,var(--line));border-radius:14px;background:color-mix(in srgb,#278bc2 5%,var(--surface))}.free-prompt-working .prompt-process-kicker{display:block;color:#278bc2;font-size:9px;font-weight:900;letter-spacing:.13em}.free-prompt-working .prompt-process-title{display:block;margin:6px 0 12px;font-size:clamp(17px,2.6vw,21px);letter-spacing:-.02em;color:var(--ink)}
 .free-prompt-entry{position:relative;border-color:color-mix(in srgb,var(--upgrade,#e9781f) 55%,var(--line))!important}.free-prompt-entry:after{content:'FREE + PRO';position:absolute;right:13px;top:10px;font-size:7px;font-weight:900;letter-spacing:.1em;color:var(--upgrade,#e9781f)}
