@@ -551,7 +551,7 @@ test('buttons line up because spacing lives in the container, not on the element
   assert.doesNotMatch(touch,/button \+ button,/,'the blanket margin rule staggered every stacked button');
   assert.doesNotMatch(touch,/margin-left: 8px/);
   // Ein Kaestchen auf 44x44 aufgeblasen ist ein blauer Klotz neben seiner Beschriftung.
-  assert.match(touch,/input\[type="checkbox"\],\ninput\[type="radio"\] \{\n  width: 18px;/);
+  assert.match(touch,/input\[type="checkbox"\],\ninput\[type="radio"\] \{\n  width: 15px;/);
   assert.match(touch,/label:has\(> input\[type="checkbox"\]\)/,'the 44px belong to the row, which is what you tap');
 });
 
@@ -581,6 +581,11 @@ test('the account dialog is a popup once it is not the entry gate',async()=>{
   assert.match(css,/#accountDialog:not\(\.guest-gate\) :is\(\.auth-hero,\.gate-top,\.gate-shot,\.gate-proof,#gateActions,#gateLegalRow\)\{display:none!important\}/,'the gate parts belong to the gate');
   // Und sonst nichts: kein Tarifvergleich, kein Willkommensspruch - nur die Anmeldung.
   assert.match(css,/#accountDialog:not\(\.guest-gate\) \.auth-access-card\{display:none!important\}/);
+  // Kein Fenster im Fenster: das Formular trug einen eigenen Rahmen mit Rand, Grund und Schatten.
+  assert.match(css,/#accountDialog:not\(\.guest-gate\) \.auth-form-card\{border:0!important;background:transparent!important/);
+  // Und das Fenster ist so hoch wie sein Inhalt, statt sich auf die volle erlaubte Hoehe zu strecken.
+  assert.match(css,/#accountDialog:not\(\.guest-gate\) \.dialog-frame\{flex:0 0 auto!important;height:auto!important\}/);
+  assert.match(css,/#accountDialog \.remember-login\{background:transparent!important/,'the checkbox sat in a white pill');
   const app=await text('app.js');
   assert.match(app,/if\(!el\.accountDialog\.classList\.contains\("guest-gate"\)&&!state\.cloud\.user\)\{if\(el\.accountDialogKicker\)el\.accountDialogKicker\.textContent="KONTO";/,'the gate headline must not stand over a bare login form');
   // Auf dem Telefon bleibt die volle Flaeche richtig.

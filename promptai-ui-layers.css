@@ -243,6 +243,17 @@
    Einstiegsseite und des Tarif-Fensters. Hier will jemand sich anmelden, sonst nichts. */
 #accountDialog:not(.guest-gate) .auth-access-card{display:none!important}
 #accountDialog:not(.guest-gate) .auth-layout{display:block!important;max-width:520px;margin:0 auto!important}
+/* Kein Fenster im Fenster: das Formular trug einen eigenen Rahmen mit Rand, Grund und
+   Schatten - im Popup sass damit eine Karte in einer Karte. Der Rahmen ist das Fenster,
+   das Formular steht direkt darin. */
+#accountDialog:not(.guest-gate) .auth-form-card{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
+#accountDialog:not(.guest-gate) .account-body{padding-top:6px!important;padding-bottom:22px!important}
+/* Das Fenster soll so hoch sein wie sein Inhalt. Der Rahmen streckte sich ueber die volle
+   erlaubte Hoehe, und unter dem Formular stand ein Drittel leere Flaeche. */
+#accountDialog:not(.guest-gate) .dialog-frame{flex:0 0 auto!important;height:auto!important}
+/* Die Zeile "E-Mail merken" bekam von der allgemeinen Feldregel Grund und Rundung - der
+   Haken sass damit in einer weissen Pille neben seiner Beschriftung. */
+#accountDialog .remember-login{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 @media(max-width:820px){
   /* Auf dem Telefon ist die volle Flaeche richtig - dort ist ein 760px-Kasten ohnehin die Seite. */
   #accountDialog:not(.guest-gate){width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important}

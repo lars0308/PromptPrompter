@@ -29,10 +29,10 @@ a[role="button"],
    ist ohnehin das, was man antippt. */
 input[type="checkbox"],
 input[type="radio"] {
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
-  min-height: 18px;
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  min-height: 15px;
   cursor: pointer;
 }
 label:has(> input[type="checkbox"]),
