@@ -2184,3 +2184,45 @@ test('the admin console asks for the data it is allowed to see',async()=>{
   // Ohne Sitzung im Kopf prüft der Server niemanden und weist ab.
   assert.match(routing,/authHeaders\?\.\(\)/,'the request must carry the session');
 });
+
+// Die Tarif-Vorlage ist der einzige Ort, an dem festgeschrieben steht, welche KI für welchen Tarif
+// arbeitet. Sie von Hand zu verstellen ist erlaubt - aber die Leiter darf nicht kippen: teurer
+// Tarif, mindestens gleich starkes Modell.
+const RANG={schnell:1,leicht:2,mittel:3,stark:4,spitze:5};
+function tarifVorlage(src){
+  const von=src.indexOf('const MODELL_WAHL='),bis=src.indexOf('];',src.indexOf('const VORLAGE='))+2;
+  assert.ok(von>=0&&bis>1,'the template block must stay findable');
+  return new Function(`${src.slice(von,bis)}\nreturn {MODELL_WAHL,VORLAGE,ALLE_TARIFE,ALLE_TEXTAUFGABEN}`)();
+}
+const stufe=(VORLAGE,task,plan)=>Math.max(0,...VORLAGE.filter(x=>x.tasks.includes(task)&&x.plans.includes(plan)&&x.priority<100).map(x=>RANG[x.slot]||0));
+test('the tariff template raises the model with the plan',async()=>{
+  const {MODELL_WAHL,VORLAGE,ALLE_TARIFE,ALLE_TEXTAUFGABEN}=tarifVorlage(await text('system-ai-studio.js'));
+  for(const eintrag of VORLAGE){
+    assert.ok(MODELL_WAHL[eintrag.slot],`${eintrag.label} names an unknown model slot`);
+    assert.ok(eintrag.tasks.length&&eintrag.plans.length,`${eintrag.label} must name tasks and plans`);
+    // Bilder haben eine eigene Kette mit Bildmodellen. Ein Textmodell dort legt die Vorschau lahm.
+    assert.ok(!eintrag.tasks.includes('image'),`${eintrag.label} must not claim the image task`);
+  }
+  // Keine Aufgabe darf in einem Tarif leer laufen - sonst antwortet nur noch die Voreinstellung.
+  for(const task of ALLE_TEXTAUFGABEN)for(const plan of ALLE_TARIFE)
+    assert.ok(VORLAGE.some(x=>x.tasks.includes(task)&&x.plans.includes(plan)),`${task} has nothing for ${plan}`);
+  // Der Master-Prompt ist das Erzeugnis: dort steigt die Stufe mit jedem Tarif wirklich an.
+  assert.ok(stufe(VORLAGE,'prompt','free')<stufe(VORLAGE,'prompt','pro'),'Pro must beat Free on the master prompt');
+  assert.ok(stufe(VORLAGE,'prompt','pro')<stufe(VORLAGE,'prompt','ultimate'),'Ultimate must beat Pro on the master prompt');
+  // Überall sonst darf eine Stufe gleich bleiben, wenn mehr nichts bringt - aber nie fallen.
+  for(const task of ALLE_TEXTAUFGABEN){
+    assert.ok(stufe(VORLAGE,task,'free')<=stufe(VORLAGE,task,'pro'),`${task} drops from Free to Pro`);
+    assert.ok(stufe(VORLAGE,task,'pro')<=stufe(VORLAGE,task,'ultimate'),`${task} drops from Pro to Ultimate`);
+  }
+  // Ohne markierte Sparwahl dreht api/generate.js bei leerem Budget die Kette um - und vorne steht
+  // dann der Notausgang, also das teuerste Modell.
+  const spar=VORLAGE.filter(x=>x.saver===true);
+  assert.equal(spar.length,1,'exactly one saver entry keeps the exhausted-budget order predictable');
+  for(const task of ALLE_TEXTAUFGABEN)assert.ok(spar[0].tasks.includes(task),`the saver entry must also cover ${task}`);
+  for(const plan of ALLE_TARIFE)assert.ok(spar[0].plans.includes(plan),`the saver entry must also cover ${plan}`);
+  assert.ok(RANG[spar[0].slot]<=RANG.leicht,'the saver entry must be one of the cheap models');
+  // Eine Modell-ID, die das Gateway nicht kennt, wäre ein Ausfall im Betrieb.
+  const studio=await text('system-ai-studio.js');
+  assert.match(studio,/passendesModell\(MODELL_WAHL\[eintrag\.slot\],verfuegbar\)/,'every ID is checked against the live list');
+  assert.match(studio,/action:'system-ai-models',provider:'gateway'/);
+});
