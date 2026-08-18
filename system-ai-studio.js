@@ -6,7 +6,24 @@
   let profiles=[],editId='',installed=false;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   async function headers(){try{return await window.SiteBriefCloud?.authHeaders?.()||{}}catch{return {}}}
-  async function request(options={}){const h=await headers(),response=await fetch('/api/config',{cache:'no-store',...options,headers:{'Content-Type':'application/json',...h,...(options.headers||{})}}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'System-KI konnte nicht geladen werden.');return data}
+  // Die hinterlegten System-KIs waren da - nur nicht in dieser Ansicht.
+  //
+  // /api/config liefert Routing, Anbieter und Profile aus Sicherheitsgründen nicht mehr öffentlich
+  // aus; wer sie sehen darf, fragt mit `?admin=true` und wird serverseitig geprüft. Diese Konsole
+  // fragte weiter ohne den Zusatz und bekam die öffentliche Antwort - eine ohne `systemAiProfiles`.
+  // Die Liste blieb leer, und jede Aufgabe meldete „Keine System-KI zugewiesen", obwohl in der
+  // Datenbank alle Einträge standen und der Server sie im Ablauf auch benutzte.
+  //
+  // Nur das Lesen braucht den Zusatz. Die schreibenden Aufrufe gehen als POST durch dieselbe
+  // Adresse und werden dort eigenständig auf Admin-Rechte geprüft.
+  async function request(options={}){
+    const h=await headers();
+    const url=options.method&&options.method!=='GET'?'/api/config':'/api/config?admin=true';
+    const response=await fetch(url,{cache:'no-store',...options,headers:{'Content-Type':'application/json',...h,...(options.headers||{})}});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'System-KI konnte nicht geladen werden.');
+    return data;
+  }
   function msg(text='',kind=''){const el=$('#systemAiStudioMessage');if(el){el.textContent=text;el.className=`admin-ai-message ${kind}`.trim()}}
   function formMsg(text='',kind=''){msg(text,kind);const el=$('#systemAiFormStatus');if(el){el.textContent=text;el.className=`system-ai-inline-status ${kind}`.trim()}}
   function styles(){if($('#systemAiStudioStyles'))return;const s=document.createElement('style');s.id='systemAiStudioStyles';s.textContent=`.system-ai-studio{margin-top:24px;padding-top:22px;border-top:1px solid var(--line)}.system-ai-studio-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.system-ai-studio-head p{margin:6px 0 0;color:var(--muted);max-width:760px;line-height:1.5}

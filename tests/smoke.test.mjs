@@ -2157,3 +2157,24 @@ test('the admin console gives up instead of waiting forever',async()=>{
   // Der Fehlerzweig muss erreichbar bleiben: ohne ihn bleibt die Ladezeile das letzte Wort.
   assert.match(src,/catch\(error\)\{if\(!quiet\)message\(error\.message,'error'\)\}/);
 });
+
+// Die hinterlegten System-KIs standen in der Datenbank und wurden im Ablauf auch benutzt — in der
+// Verwaltung meldete trotzdem jede Aufgabe „Keine System-KI zugewiesen".
+test('the admin console asks for the data it is allowed to see',async()=>{
+  // /api/config liefert Routing, Anbieter und Profile aus Sicherheitsgründen nur noch an
+  // `?admin=true` mit serverseitiger Prüfung. Der Client wurde beim Absichern nicht mitgezogen.
+  const api=await text('api/config.js');
+  assert.match(api,/req\.query\?\.admin==='true'/,'the admin branch is what carries the profiles');
+  assert.match(api,/systemAiProfiles:profiles/,'…and only that branch returns them');
+  const studio=await text('system-ai-studio.js');
+  assert.match(studio,/const url=options\.method&&options\.method!=='GET'\?'\/api\/config':'\/api\/config\?admin=true'/);
+  assert.match(studio,/profiles=data\.systemAiProfiles\|\|\[\]/,'and it reads them from that answer');
+  // Das Routing im Browser dient nur der Auswahl, die die Verwaltung sieht. Ohne Adminrecht
+  // bleibt die Liste leer — welche System-KI antwortet, entscheidet ohnehin der Server.
+  const routing=await text('system-ai-routing.js');
+  assert.match(routing,/const darfRouting=\(\)=>/);
+  assert.match(routing,/if\(!darfRouting\(\)\)\{profiles=\[\]/,'no pointless 403 for ordinary visitors');
+  assert.match(routing,/\/api\/config\?admin=true/);
+  // Ohne Sitzung im Kopf prüft der Server niemanden und weist ab.
+  assert.match(routing,/authHeaders\?\.\(\)/,'the request must carry the session');
+});

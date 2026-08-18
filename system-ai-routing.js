@@ -6,7 +6,24 @@
   function route(task){const rows=candidates(task),id=selected[task];return rows.find(x=>x.id===id)||rows[0]||null}
   function choose(task,id){if(id)selected[task]=id;else delete selected[task];try{localStorage.setItem('prompt-ai-system-ai-selection-v1',JSON.stringify(selected))}catch{}return route(task)}
   try{Object.assign(selected,JSON.parse(localStorage.getItem('prompt-ai-system-ai-selection-v1')||'{}'))}catch{}
-  async function refresh(){if(loading)return loading;loading=nativeFetch('/api/config',{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(data=>{profiles=Array.isArray(data.systemAiProfiles)?data.systemAiProfiles:[];window.PromptAiSystemAI={profiles,routeFor:route,candidatesFor:candidates,choose,selected,refresh};window.dispatchEvent(new CustomEvent('promptai:system-ai-ready',{detail:{profiles}}));return profiles}).catch(()=>profiles).finally(()=>{loading=null});return loading}
+  // Die Profilliste ist nicht mehr öffentlich - sie verriet Routing, Prioritäten und Fehlertexte.
+  // Wer sie sehen darf, fragt mit `?admin=true` und wird serverseitig geprüft. Für alle anderen
+  // bleibt sie leer, und das ist richtig: welche System-KI antwortet, entscheidet der Server,
+  // nicht der Browser. Gebraucht wird die Liste hier nur für die Auswahl, die ausschließlich die
+  // Verwaltung sieht.
+  const darfRouting=()=>{
+    try{
+      if(window.PromptAiAccess?.isAdmin)return true;
+      return Boolean(window.SiteBriefCloud?.user?.app_metadata?.isAdmin);
+    }catch{return false}
+  };
+  async function refresh(){if(loading)return loading;
+    if(!darfRouting()){profiles=[];window.PromptAiSystemAI={profiles,routeFor:route,candidatesFor:candidates,choose,selected,refresh};return Promise.resolve(profiles)}
+    // Ohne die Sitzung im Kopf der Anfrage prüft der Server nicht die Person, sondern niemanden -
+    // und weist ab.
+    loading=Promise.resolve(window.SiteBriefCloud?.authHeaders?.()).catch(()=>({}))
+      .then(h=>nativeFetch('/api/config?admin=true',{cache:'no-store',headers:{...(h||{})}}))
+      .then(r=>r.ok?r.json():{}).then(data=>{profiles=Array.isArray(data.systemAiProfiles)?data.systemAiProfiles:[];window.PromptAiSystemAI={profiles,routeFor:route,candidatesFor:candidates,choose,selected,refresh};window.dispatchEvent(new CustomEvent('promptai:system-ai-ready',{detail:{profiles}}));return profiles}).catch(()=>profiles).finally(()=>{loading=null});return loading}
   function shouldUseSystem(body){if(body?.useOwnApi===true)return false;return (document.documentElement.dataset.promptMode||'')!=='expert'}
   window.fetch=async function(input,init){try{const url=typeof input==='string'?input:input?.url||'',method=String(init?.method||input?.method||'GET').toUpperCase();if(method==='POST'&&/\/api\/generate(?:\?|$)/.test(url)&&typeof init?.body==='string'){const body=JSON.parse(init.body),action=String(body.action||'concepts');if(!['sandbox-build','preview-image','free-prompt'].includes(action)&&shouldUseSystem(body)){if(!profiles.length)await refresh();const task=taskFor(action),picked=route(task);if(picked){body.engine=picked.provider;body.model=picked.model;body.systemAiProfileId=picked.id;body.systemAiProfileLabel=picked.label;init={...init,body:JSON.stringify(body)}}}}}catch{}return nativeFetch(input,init)};
   window.addEventListener('promptai:system-ai-updated',refresh);window.addEventListener('promptai:access',()=>{if(!profiles.length)refresh()});refresh();
