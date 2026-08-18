@@ -267,9 +267,15 @@ test('the login page opens the tier comparison and gets the visitor back afterwa
   assert.match(gate,/data-gate-plan="pro"/);
   assert.match(gate,/data-gate-plan="ultimate"/);
   assert.match(gate,/function pickGatePlan\(plan\)/);
-  assert.match(gate,/#startUltimateCheckoutBtn/);
+  // Pro und Ultimate springen nicht mehr auf einen Kauf: die Kachel traegt drei Stichpunkte, die
+  // Tarifseite die ganze Liste. Ohne Konto war der Kauf ohnehin unmoeglich - der Aufruf landete
+  // bei showAccountGate(), also genau der Seite, auf der man schon stand, und nichts bewegte sich.
+  assert.match(gate,/if\(plan==='free'\)\{\$\('#guestContinueBtn'\)\?\.click\(\);return\}\s*openPlansFromGate\(plan\);/);
+  assert.doesNotMatch(gate,/#startUltimateCheckoutBtn|#startProCheckoutBtn/,'the gate must not start a checkout nobody can complete');
   assert.doesNotMatch(gate,/gateThemePick|Anderes Farbschema verwenden/);
-  assert.match(gate,/function openPlansFromGate\(\)/);
+  assert.match(gate,/function openPlansFromGate\(plan=''\)/);
+  // Und die Tarifseite oeffnet bei der Kachel, die angetippt wurde.
+  assert.match(gate,/#plansDialog \[data-plan-card="\$\{plan\}"\]/);
   assert.match(gate,/plans\.addEventListener\('close',\(\)=>\{const dialog=\$\('#accountDialog'\);if\(dialog&&!dialog\.open\)\{try\{dialog\.showModal\(\)\}catch\{\}\}\},\{once:true\}\)/,'closing the plans dialog must return to the login page');
   assert.doesNotMatch(gate,/\.gate-plans-pick:after\{content:"→"/,'the removed comparison card must not bring its arrow back');
   assert.doesNotMatch(fix,/\$\('#accountDialog'\)\?\.close\(\);setTimeout\(\(\)=>\$\('#plansDialog'\)\?\.showModal\(\)/,'the login page stays open underneath instead of being closed');

@@ -56,15 +56,24 @@ async function laufe(browser,breite,hoehe,label){
     pruefe(`${label}: die Frage nennt Nutzungsbedingungen und Datenschutz`,/Nutzungsbedingungen/.test(n.text)&&/Datenschutz/.test(n.text));
     await ctx.close();
   }
-  // Pro und Ultimate: ohne Konto gibt es keinen Kauf. Statt still nichts zu tun, führt die
-  // Kachel zur Anmeldung und merkt sich den Tarif.
+  // Pro und Ultimate: die Kachel trägt drei Stichpunkte, die Tarifseite die ganze Liste. Wer
+  // tippt, will erst sehen, was drin ist - und danach wieder hierher zurück.
   for(const plan of ['pro','ultimate']){
     const {p,ctx}=await seite(browser,breite,hoehe);
     const da=await tippe(p,plan);
-    const n=await p.evaluate(()=>({anmeldung:!!document.getElementById('gateLoginDialog')?.open,
-      hinweis:(document.getElementById('authMessage')?.textContent||'').trim()}));
-    pruefe(`${label}: „${plan}" führt zur Anmeldung statt ins Leere`,da&&n.anmeldung,JSON.stringify(n));
-    pruefe(`${label}: „${plan}" sagt, dass es danach weitergeht`,/dann geht es direkt weiter/.test(n.hinweis),n.hinweis);
+    const n=await p.evaluate(pl=>{
+      const karte=document.querySelector(`#plansDialog [data-plan-card="${pl}"]`);
+      return {tarife:!!document.getElementById('plansDialog')?.open,
+        karteDa:!!karte,
+        obenImBild:karte?Math.abs(karte.getBoundingClientRect().top)<innerHeight*0.6:false};
+    },plan);
+    pruefe(`${label}: „${plan}" öffnet die Tarifseite`,da&&n.tarife,JSON.stringify(n));
+    pruefe(`${label}: „${plan}" landet bei der angetippten Kachel`,n.karteDa&&n.obenImBild,JSON.stringify(n));
+    // Und das Schliessen führt zurück zur Einstiegsseite, nicht in die App.
+    await p.evaluate(()=>document.getElementById('plansDialog')?.close());
+    await p.waitForTimeout(700);
+    const zurueck=await p.evaluate(()=>!!document.getElementById('accountDialog')?.open);
+    pruefe(`${label}: nach dem Schliessen steht die Einstiegsseite wieder`,zurueck);
     await ctx.close();
   }
   // Das × am Anmeldefenster führt zurück zur Einstiegsseite - nicht in die App.

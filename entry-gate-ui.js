@@ -370,10 +370,16 @@
 
   // Opened from the login page, so closing the plans dialog has to land back on the login page
   // rather than on whatever sits behind it.
-  function openPlansFromGate(){
+  function openPlansFromGate(plan=''){
     const plans=$('#plansDialog');if(!plans)return;
     const account=$('#accountDialog'),wasOpen=Boolean(account?.open);
     if(!plans.open)plans.showModal();
+    // Kam der Klick von einer bestimmten Kachel, gehört die auch oben im Bild - sonst landet man
+    // auf der Tarifseite und sucht erst, worauf man gerade getippt hat.
+    if(plan)setTimeout(()=>{
+      const karte=$(`#plansDialog [data-plan-card="${plan}"]`);
+      if(karte)try{karte.scrollIntoView({block:'start',behavior:'smooth'})}catch{karte.scrollIntoView()}
+    },90);
     if(!wasOpen)return;
     plans.addEventListener('close',()=>{const dialog=$('#accountDialog');if(dialog&&!dialog.open){try{dialog.showModal()}catch{}}},{once:true});
   }
@@ -384,23 +390,16 @@
   // es keinen Checkout: der Aufruf ruft dann showAccountGate() - also genau die Seite, auf der man
   // schon steht. Sichtbar passierte nichts, und die Kachel wirkte tot.
   //
-  // Den richtigen Weg gibt es längst: pickAuthPlan() merkt sich den gewählten Tarif und schreibt
-  // ins Anmeldeformular „…dann geht es direkt weiter zu Pro". Genau die Knöpfe, die das auslösen,
-  // stehen im Formular - hier wird der passende gedrückt und das Formular dazu geöffnet, damit
-  // die Nachricht auch jemand liest. Wer schon angemeldet ist, geht direkt zum Kauf.
+  // Auf einen Kauf zu springen wäre auch der falsche Schritt: die Kachel hier trägt drei
+  // Stichpunkte, die Tarifseite trägt die vollständige Liste. Wer auf eine Kachel tippt, will
+  // erst sehen, was drin ist. Also öffnet sie die Tarifseite - und die bringt einen beim
+  // Schließen hierher zurück.
+  //
+  // Nur „Kostenlos" ist kein Vergleich, sondern ein Start: dort ist der Gastlauf gemeint, und der
+  // fragt vorher nach der Zustimmung.
   function pickGatePlan(plan){
     if(plan==='free'){$('#guestContinueBtn')?.click();return}
-    if(!window.SiteBriefCloud?.user){
-      openLogin();
-      // Erst nach dem Umzug des Formulars in das Anmeldefenster: sonst landet die Nachricht in
-      // einem Feld, das gerade den Platz wechselt.
-      setTimeout(()=>window.PromptAiAuthPlan?.pick?.(plan),60);
-      return;
-    }
-    const selector=plan==='ultimate'?'#startUltimateCheckoutBtn':'#startProCheckoutBtn';
-    const button=$(selector);
-    if(button){button.click();return}
-    openPlansFromGate();
+    openPlansFromGate(plan);
   }
 
   function resetExpansion(){
