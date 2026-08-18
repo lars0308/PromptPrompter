@@ -445,6 +445,48 @@
   // Nur dieser Weg ist eine Entscheidung: der Besucher geht bewusst ohne Konto weiter. Erst
   // damit hört die Anmeldeseite auf, beim nächsten Laden wiederzukommen.
   function closeAccountGate(){try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
+  // Ohne Konto gibt es keinen Haken beim Anlegen und keine Bestätigungsmail - der kostenlose Test
+  // ist der einzige Moment, in dem die Zustimmung überhaupt eingeholt werden kann. Sie steht
+  // deshalb hier, mit Ja und Nein, und die beiden Texte sind von hier aus erreichbar.
+  async function startGuestRun(){
+    const ok=await customConfirm('Du testest Prompt.ai ohne Konto: drei Durchläufe, gespeichert nur in diesem Browser. Mit „Kostenlos testen“ stimmst du den Nutzungsbedingungen zu und bestätigst, die Datenschutzerklärung gelesen zu haben.',{
+      title:'Kostenlos testen',kicker:'OHNE KONTO',confirmLabel:'Kostenlos testen',cancelLabel:'Abbrechen'
+    });
+    if(!ok)return;
+    closeAccountGate();
+  }
+  // Die Tarifkacheln sahen klickbar aus und waren es nicht.
+  //
+  // Sie waren einmal <details>/<summary> und zum Aufklappen gedacht; das Markup ist inzwischen
+  // <article>/<div>, das Stylesheet aber nicht mitgezogen. Übrig blieb ein `cursor:pointer` über
+  // einer Fläche, die auf nichts reagiert - und ein Zeigefinger, der nichts verspricht, ist eine
+  // kaputte Schaltfläche.
+  //
+  // Aufklappen braucht hier niemand: der Inhalt steht ohnehin vollständig da. Was man von einer
+  // Tarifkachel erwartet, ist, dass ein Klick den Tarif wählt. Genau das tut sie jetzt - sie löst
+  // ihren eigenen Knopf aus.
+  function bindPlanCards(){
+    for(const card of document.querySelectorAll('.plan-card')){
+      if(card.dataset.planBound==='1')continue;
+      const action=card.querySelector('.plan-card-buy');
+      if(!action)continue;
+      card.dataset.planBound='1';
+      card.addEventListener('click',event=>{
+        // Der Knopf selbst, Links und alles Bedienbare darin behalten ihren eigenen Klick.
+        if(event.target.closest('button,a,input,select,label'))return;
+        action.click();
+      });
+      // Tastatur: die Kachel ist eine Auswahl und muss auch ohne Maus erreichbar sein.
+      card.tabIndex=0;
+      card.setAttribute('role','group');
+      card.setAttribute('aria-label',`${card.querySelector('.plan-card-summary b')?.textContent||'Tarif'} auswählen`);
+      card.addEventListener('keydown',event=>{
+        if(event.key!=='Enter'&&event.key!==' ')return;
+        if(event.target!==card)return;
+        event.preventDefault();action.click();
+      });
+    }
+  }
   let pendingAuthPlan=null;
   function pickAuthPlan(plan){
     if(plan==="free"){pendingAuthPlan=null;closeAccountGate();return;}
@@ -677,6 +719,18 @@
 
   function updateAccountUi(){
     if(!el.accountBtn) return;
+    // Wer angemeldet ist, hat am Eingangstor nichts mehr verloren.
+    //
+    // Geschlossen wurde es bisher an jeder Anmeldestelle einzeln - im Formular, im
+    // Auth-Ereignis, nach dem Laden der Cloud-Daten. Drei Wege, und wenn einer nicht durchlief
+    // (eine langsame Antwort, eine Bestätigung per Mail, ein Login aus einem anderen Tab), blieb
+    // das Tor über der fertig angemeldeten App stehen. Es hängt jetzt nicht mehr an den Wegen
+    // dorthin, sondern am Zustand: angemeldet heißt zu.
+    if(cloudReady()&&el.accountDialog?.classList.contains('guest-gate')){
+      el.accountDialog.classList.remove('guest-gate');
+      try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}
+      if(el.accountDialog.open)el.accountDialog.close();
+    }
     if(el.signOutBtn)el.signOutBtn.hidden=!state.cloud.user;
     if(el.subscriptionMenuBtn)el.subscriptionMenuBtn.hidden=!cloudReady();
     if(!state.cloud.configured){ el.accountBtn.textContent="Cloud nicht verbunden"; setSyncState("Lokal"); return; }
@@ -3837,7 +3891,18 @@ ${agentMemoryDocument()}`;
     el.accountBtn.addEventListener("click",()=>{updateAccountUi();renderGuestLimit();// Aus der laufenden App heraus ist dieses Fenster nur die Anmeldung. Die Einstiegsseite
       // setzt Ueberschrift und Vorzeile auf ihren Willkommenstext - bleibt der stehen, verspricht
       // er ueber einem reinen Anmeldeformular etwas, das dort gar nicht mehr steht.
-      if(!el.accountDialog.classList.contains("guest-gate")&&!state.cloud.user){if(el.accountDialogKicker)el.accountDialogKicker.textContent="KONTO";if(el.accountDialogTitle)el.accountDialogTitle.textContent="Anmelden";}el.accountDialog.showModal()});el.signInBtn.addEventListener("click",()=>{if(authRegisterMode)setAuthMode(false);else signIn()});el.signUpBtn.addEventListener("click",()=>{if(authRegisterMode)signUp();else setAuthMode(true)});el.forgotPasswordBtn?.addEventListener('click',resetPassword);el.saveNewPasswordBtn?.addEventListener('click',saveNewPassword);el.guestContinueBtn.addEventListener("click",closeAccountGate);$$('.auth-plan-pick').forEach(button=>button.addEventListener('click',()=>pickAuthPlan(button.dataset.authPlanPick)));el.authViewAllPlansBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});// Diese drei hingen an el.* - dort waren sie aber nie eingetragen, also war jeder Klick ein
+      if(!el.accountDialog.classList.contains("guest-gate")&&!state.cloud.user){if(el.accountDialogKicker)el.accountDialogKicker.textContent="KONTO";if(el.accountDialogTitle)el.accountDialogTitle.textContent="Anmelden";}el.accountDialog.showModal()});el.signInBtn.addEventListener("click",()=>{if(authRegisterMode)setAuthMode(false);else signIn()});el.signUpBtn.addEventListener("click",()=>{if(authRegisterMode)signUp();else setAuthMode(true)});el.forgotPasswordBtn?.addEventListener('click',resetPassword);el.saveNewPasswordBtn?.addEventListener('click',saveNewPassword);el.guestContinueBtn.addEventListener("click",startGuestRun);
+    // Das × am Eingangstor liess still in die App - ohne Anmeldung und ohne dass jemand
+    // "kostenlos testen" gedrueckt haette. Wer nur ein Fenster zumacht, trifft damit keine
+    // Entscheidung; aus dem Tor fuehren genau zwei Wege, und beide muss man gehen wollen.
+    el.accountDialog.addEventListener("click",event=>{
+      if(!el.accountDialog.classList.contains("guest-gate"))return;
+      const schliessen=event.target.closest?.('.close-dialog');
+      if(!schliessen)return;
+      event.preventDefault();event.stopImmediatePropagation();
+      if(el.authMessage){el.authMessage.textContent='Melde dich an oder starte den kostenlosen Test — beides steht direkt hier.';el.authMessage.className='auth-message'}
+      el.guestContinueBtn?.focus();
+    },true);$$('.auth-plan-pick').forEach(button=>button.addEventListener('click',()=>pickAuthPlan(button.dataset.authPlanPick)));el.authViewAllPlansBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.signOutBtn.addEventListener("click",signOut);el.syncNowBtn.addEventListener("click",syncEverything);el.accountDialog.addEventListener("cancel",e=>{if(el.accountDialog.classList.contains("guest-gate"))e.preventDefault()});// Diese drei hingen an el.* - dort waren sie aber nie eingetragen, also war jeder Klick ein
     // stiller Fehlschlag: Impressum, Datenschutz und Cookies im Fuss taten nichts.
     document.getElementById('footerImpressumLink')?.addEventListener('click',e=>{e.preventDefault();window.PromptAiLegalPages?.openLegal('imprint')});
     document.getElementById('footerPrivacyLink')?.addEventListener('click',e=>{e.preventDefault();window.PromptAiLegalPages?.openLegal('privacy')});
@@ -3852,7 +3917,7 @@ ${agentMemoryDocument()}`;
     el.clarificationDialog.querySelector('.close-dialog')?.addEventListener("click",()=>{state.reviewDeferred=true;saveState();renderAiReviewCard();updateGuide();showWelcome()});
     el.saveTemplateBtn.addEventListener("click",()=>saveLibraryItem("template"));el.saveModuleBtn.addEventListener("click",()=>saveLibraryItem("module"));el.saveSkillBtn.addEventListener("click",()=>saveLibraryItem("skill"));el.cancelTemplateEditBtn.addEventListener("click",()=>clearLibraryEditor("template"));el.cancelModuleEditBtn.addEventListener("click",()=>clearLibraryEditor("module"));el.cancelSkillEditBtn.addEventListener("click",()=>clearLibraryEditor("skill"));
     el.exportLibraryBtn.addEventListener("click",exportLibrary);el.importLibraryBtn.addEventListener("click",()=>el.importLibraryInput.click());el.importLibraryInput.addEventListener("change",e=>importLibrary(e.target.files?.[0]));
-    document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));document.getElementById('startFreeBtn')?.addEventListener('click',()=>{el.plansDialog?.close();showWorkflow(1)});el.workspaceNewProjectBtn?.addEventListener('click',startFreshProject);el.workspaceLastProjectBtn?.addEventListener('click',openLastProject);el.upgradeBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.upgradeMenuBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.subscriptionMenuBtn?.addEventListener('click',()=>window.PromptAiSubscriptionOverview?.open?.());document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
+    document.getElementById('startWorkflowBtn')?.addEventListener('click',()=>showWorkflow(1));bindPlanCards();document.getElementById('startFreeBtn')?.addEventListener('click',()=>{el.plansDialog?.close();showWorkflow(1)});el.workspaceNewProjectBtn?.addEventListener('click',startFreshProject);el.workspaceLastProjectBtn?.addEventListener('click',openLastProject);el.upgradeBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.upgradeMenuBtn?.addEventListener('click',()=>el.plansDialog?.showModal());el.subscriptionMenuBtn?.addEventListener('click',()=>window.PromptAiSubscriptionOverview?.open?.());document.getElementById('welcomeAccountBtn')?.addEventListener('click',()=>el.accountBtn.click());document.querySelectorAll('[data-start-plan]').forEach(button=>button.addEventListener('click',()=>beginCheckout(button.dataset.startPlan)));
     [el.quickRevisionBtn,el.workspaceRevisionBtn].forEach(button=>button?.addEventListener('click',openQuickRevision));el.workspaceLibraryBtn?.addEventListener('click',()=>openLibrary('projects'));[el.quickRevisionProBlock,el.quickRevisionUltimateBlock].forEach(block=>block?.addEventListener('toggle',()=>{if(block.open&&block.classList.contains('locked')){block.open=false;el.quickRevisionDialog.close();el.plansDialog?.showModal()}}));
 el.openAgentBtn?.addEventListener('click',showAgentLaunch);el.closeAgentLaunchBtn?.addEventListener('click',()=>el.agentLaunchDialog.close());el.agentLaunchDialog?.addEventListener('cancel',event=>{event.preventDefault();el.agentLaunchDialog.close()});
     el.scanQuickRevisionBtn?.addEventListener('click',scanAndBuildQuickRevision);el.copyQuickRevisionBtn?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(el.quickRevisionPrompt.value);el.quickRevisionStatus.textContent='Auftrag kopiert.'}catch{el.quickRevisionStatus.textContent='Kopieren war nicht möglich.'}});el.downloadQuickRevisionBtn?.addEventListener('click',()=>downloadText('prompt-ai-website-ueberarbeiten.md',el.quickRevisionPrompt.value,'text/markdown'));el.saveQuickRevisionVariantBtn?.addEventListener('click',saveQuickRevisionVariant);el.quickRevisionVariantSelect?.addEventListener('change',()=>loadQuickRevisionVariant(el.quickRevisionVariantSelect.value));el.deleteQuickRevisionVariantBtn?.addEventListener('click',deleteQuickRevisionVariant);

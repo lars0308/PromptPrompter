@@ -2054,3 +2054,67 @@ test('each task carries only as much source text as it needs',async()=>{
   // Rückfragen entstehen aus Text und Fakten, nicht aus Stilbildern.
   assert.match(app,/action:"review",[^\n]*images:aiReferenceImages\(2\)/);
 });
+
+// Die Branchenliste wird ausgeführt, nicht gelesen: ob eine Einordnung greift, entscheidet die
+// Reihenfolge der Muster, und die sieht man dem Quelltext nicht an.
+test('specific trades are recognised before the general ones that contain their name',async()=>{
+  const {detectIndustry}=await import('../server/industry.js');
+  const faelle=[
+    ['bau mir eine website für einen entrümpelungsdienst','entsorgung'],
+    ['umzugsunternehmen in hannover','umzug'],
+    ['schlüsseldienst notdienst','sicherheit'],
+    ['winterdienst für gewerbeflächen','winterdienst'],
+    // „Hofladen“ trägt den „Laden“, „Kindergarten“ den „Garten“, „Küchenstudio“ die „Küche“ und
+    // ein Kfz-Sachverständiger das „Kfz“ - alle vier gingen vorher an die allgemeinere Branche.
+    ['hofladen mit eigenem gemüse','landwirtschaft'],
+    ['kindergarten mit waldkonzept','betreuung'],
+    ['küchenstudio und innenausbau','raum'],
+    ['sachverständiger für kfz-schäden','gutachten'],
+    ['bestattungsinstitut','bestattung'],
+    ['hochzeitsplanung und eventagentur','veranstaltung'],
+    ['zeitarbeit für pflegekräfte','personal'],
+    ['augenoptiker mit hörakustik','optik'],
+    ['systemhaus für it-support','it-service'],
+    // Und die alten dürfen dabei nicht verloren gehen.
+    ['textilpflege firma','reinigung'],['restaurant mit pizza','gastronomie'],
+    ['zahnarztpraxis','gesundheit'],['friseursalon','beauty']
+  ];
+  for(const [text,erwartet] of faelle)
+    assert.equal(detectIndustry(text,'Website','').key,erwartet,`"${text}" landete in der falschen Branche`);
+  // Jeder Schlüssel darf nur einmal vergeben sein - ein zweiter Eintrag mit demselben Namen wird
+  // nie erreicht, und seine Begriffe sind damit wirkungslos.
+  const src=await text('server/industry.js');
+  const keys=[...src.matchAll(/\{key:'([a-z-]+)'/g)].map(m=>m[1]);
+  assert.deepEqual(keys.filter((k,i)=>keys.indexOf(k)!==i),[],'a duplicate key can never be reached');
+  // Jede Branche trägt Bild, Seitenstruktur und Ton - sonst unterscheiden sich zwei Aufträge
+  // nur in der Überschrift.
+  const {default:mod}=await import('../server/industry.js').then(m=>({default:m}));
+  for(const key of keys.filter(k=>k!=='allgemein')){
+    const eintrag=mod.detectIndustry(key,'','');
+    assert.ok(eintrag.subject&&eintrag.sections&&eintrag.tone,`${key} is missing subject, sections or tone`);
+  }
+});
+
+// Die Tarifkacheln waren einmal <details>/<summary>; das Markup ist <article>/<div>, das
+// Stylesheet zog nicht mit. Uebrig blieb ein cursor:pointer ueber einer toten Flaeche.
+test('a plan card reacts to the click its cursor promises',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/function bindPlanCards\(\)/);
+  assert.match(app,/const action=card\.querySelector\('\.plan-card-buy'\)/,'the card triggers its own button');
+  assert.match(app,/if\(event\.target\.closest\('button,a,input,select,label'\)\)return/,'without swallowing the button itself');
+  assert.match(app,/card\.tabIndex=0/,'and it is reachable without a mouse');
+  assert.match(app,/bindPlanCards\(\);/,'…and actually wired up');
+});
+
+// Das × am Eingangstor liess still in die App - ohne Anmeldung und ohne dass jemand „kostenlos
+// testen“ gedrueckt haette.
+test('the entry gate has exactly two ways out, and both are deliberate',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/const schliessen=event\.target\.closest\?\.\('\.close-dialog'\)/);
+  assert.match(app,/if\(!el\.accountDialog\.classList\.contains\("guest-gate"\)\)return;/,'only the gate is sealed, not the ordinary account dialog');
+  assert.match(app,/el\.guestContinueBtn\.addEventListener\("click",startGuestRun\)/,'the free run asks first');
+  assert.match(app,/async function startGuestRun\(\)/);
+  assert.match(app,/stimmst du den Nutzungsbedingungen zu und bestätigst, die Datenschutzerklärung gelesen zu haben/);
+  // Angemeldet heisst zu - unabhaengig davon, ueber welchen Weg die Anmeldung kam.
+  assert.match(app,/if\(cloudReady\(\)&&el\.accountDialog\?\.classList\.contains\('guest-gate'\)\)\{/);
+});
