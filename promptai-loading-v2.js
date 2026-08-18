@@ -71,6 +71,66 @@
     finishLines(host);host.setAttribute('aria-busy','false');setTimeout(()=>{if(host.dataset.taskKey!==String(key||'generic'))return;host.remove();flashCompletion(title,lineSet(kind))},420)
   }
 
+  // "Jede Seite, auf der die KI etwas verarbeitet, bekommt den Ladeschirm - und zwar sofort nach
+  // dem Weiter-Klicken, egal ob geführt oder Auto-Modus."
+  //
+  // Der Schirm hängt deshalb nicht mehr an einzelnen Aufrufstellen - es sind neun in vier
+  // Dateien, und genau darum fehlte er mal hier, mal dort -, sondern an der Anfrage selbst:
+  // läuft ein KI-Aufruf, steht der Schirm; ist der letzte durch, geht er weg. Früher als der
+  // Aufruf kann er nicht kommen, denn der geht mit dem Klick raus. Das ist zugleich die Antwort
+  // auf die 30 bis 40 Sekunden vor den Rückfragen, die vorher wie ein Hänger aussahen.
+  //
+  // Bewusst nicht in der Liste: 'intake' und 'revision-brief' (mode-flow-ui.js bzw. app.js
+  // setzen dort schon selbst einen Schirm - zwei übereinander wären schlimmer als keiner),
+  // 'free-prompt' (eigene Anzeige im Ergebnisfenster), 'sandbox-build' (eigener Schirm) und
+  // die Kontingent-Abfragen, die niemanden warten lassen.
+  const AI_TASKS={
+    review:{title:'Deine Angaben werden geprüft',kind:'review',done:'Rückfragen sind bereit'},
+    concepts:{title:'Die Richtungen werden entworfen',kind:'preview',done:'Vorschau ist bereit'},
+    'master-prompt':{title:'Dein Master-Prompt entsteht',kind:'build',done:'Master-Prompt ist bereit'},
+    website:{title:'Dein Projekt wird gebaut',kind:'build',done:'Projekt ist bereit'}
+  };
+  const WAIT_KEY='promptai-ai-wait';
+  let aiWaits=0,aiWatchdog=0,aiTask=null;
+  function aiTaskFor(input,init){
+    try{
+      const url=String(typeof input==='string'?input:input?.url||'');
+      if(!/\/api\/(generate|models)(\?|$)/.test(url))return null;
+      if(typeof init?.body!=='string')return null;
+      return AI_TASKS[String(JSON.parse(init.body)?.action||'')]||null;
+    }catch{return null}
+  }
+  function beginWait(task){
+    aiTask=task;
+    if(aiWaits++)return;
+    beginTask(WAIT_KEY,{title:task.title,kind:task.kind,inputLength:inputLength()});
+    // Bleibt eine Anfrage haengen, ohne je aufzuloesen, darf der Schirm nicht ewig stehen.
+    // Die Aufrufe in app.js brechen selbst nach 60 bis 120 Sekunden ab; das hier ist das Netz
+    // darunter.
+    clearTimeout(aiWatchdog);
+    aiWatchdog=setTimeout(()=>{aiWaits=0;$('#promptAiTaskLoader')?.remove()},180000);
+  }
+  function endWait(){
+    if(aiWaits>0&&--aiWaits)return;
+    aiWaits=0;clearTimeout(aiWatchdog);
+    endTask(WAIT_KEY,{title:aiTask?.done||'Verarbeitung abgeschlossen',kind:aiTask?.kind||'generic'});
+  }
+  function wrapFetch(){
+    const native=window.fetch;
+    if(typeof native!=='function'||native.__promptAiWaitWrapped)return;
+    const wrapped=async(input,init)=>{
+      const task=aiTaskFor(input,init);
+      if(!task)return native(input,init);
+      beginWait(task);
+      try{return await native(input,init)}finally{endWait()}
+    };
+    wrapped.__promptAiWaitWrapped=true;
+    // Andere Ebenen haengen sich ebenfalls in fetch (usage-quota-ui.js zaehlt Kontingente mit);
+    // deren Kennzeichen wird mitgenommen, damit sie sich nicht ein zweites Mal davorsetzen.
+    if(native.__quotaWrapped)wrapped.__quotaWrapped=true;
+    window.fetch=wrapped;
+  }
+
   function inputLength(){return String($('#projectDescription')?.value||'').trim().length}
   function currentStep(){return Number($('.step-panel.active')?.dataset.stepPanel||0)}
   function workflowVisible(){return Boolean($('#workflowApp')&&!$('#workflowApp').hidden)}
@@ -153,6 +213,6 @@
     window.addEventListener('pageshow',schedule);window.addEventListener('promptai:access',schedule)
   }
   window.PromptAiLoading={render(host,options={}){return renderLines(host,options.lines||lineSet(options.kind||'generic'),options.duration||durationFor(options.inputLength||0))},complete:finishLines,flash:flashCompletion,beginTask,endTask,durationFor,lineSet};
-  function init(){bind();settle();let n=0;const timer=setInterval(()=>{settle();if(++n>30)clearInterval(timer)},160)}
+  function init(){wrapFetch();bind();settle();let n=0;const timer=setInterval(()=>{settle();if(++n>30)clearInterval(timer)},160)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init()
 })();

@@ -543,6 +543,28 @@ test('the "Prompt genauer einstellen" free-prompt settings step is consolidated 
   // Kontext, sonst verschwaende ein sichtbar angehaengter Link still.
   assert.match(src,/category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:withReferences\(\$\('#freePromptDescription'\)\.value\),context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
 });
+// "Jede Seite, wo etwas von der KI verarbeitet wird, bekommt den Ladebildschirm, und der soll
+// direkt nach dem Weiter-Klicken auftauchen - egal ob geführt oder Auto-Modus." Er haengt darum
+// an der Anfrage und nicht an einzelnen Aufrufstellen; frueher als der Aufruf kann er nicht
+// kommen, denn der geht mit dem Klick raus.
+test('the loading screen is bound to the AI request itself, so no step can forget it',async()=>{
+  const src=await text('promptai-loading-v2.js');
+  assert.match(src,/const AI_TASKS=\{/);
+  for(const action of ['review','concepts','master-prompt','website'])assert.ok(src.includes(`${/^[a-z]+$/.test(action)?action:`'${action}'`}:{title:`),`${action} needs a wait screen`);
+  assert.match(src,/wrapped\.__promptAiWaitWrapped=true;/);
+  assert.match(src,/function init\(\)\{wrapFetch\(\);/,'the wrapper has to be in place before the first request');
+  // Zwei Schirme uebereinander waeren schlimmer als keiner: parallele Aufrufe zaehlen nur mit.
+  assert.match(src,/if\(aiWaits\+\+\)return;/);
+  assert.match(src,/if\(aiWaits>0&&--aiWaits\)return;/);
+  // Diese vier haben ihren eigenen Schirm bzw. lassen niemanden warten.
+  for(const action of ['intake','revision-brief','free-prompt','sandbox-build','quota-summary'])
+    assert.doesNotMatch(src,new RegExp(`'?${action}'?:\\{title:`),`${action} must not get a second screen`);
+  // Haengt eine Anfrage, ohne je aufzuloesen, darf der Schirm nicht ewig stehen.
+  assert.match(src,/aiWatchdog=setTimeout\(\(\)=>\{aiWaits=0;\$\('#promptAiTaskLoader'\)\?\.remove\(\)\},180000\)/);
+  // usage-quota-ui.js haengt sich ebenfalls in fetch - die beiden duerfen sich nicht gegenseitig
+  // aushebeln.
+  assert.match(src,/if\(native\.__quotaWrapped\)wrapped\.__quotaWrapped=true;/);
+});
 // Der freie Prompt vom Textfeld der Startseite aus: ein Satz, ein Klick, Ladeschirm, fertiger
 // Prompt. Der Fragebogen dazwischen fragte Ausgabetyp, Ziel-KI und drei Zusatzfelder ab - beim
 // freien Prompt Beiwerk, das den Weg unterbrach.
