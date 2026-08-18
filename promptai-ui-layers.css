@@ -218,6 +218,29 @@
         .gate-shot .gate-shot-quota,.gate-shot .prompt-plan-chip{padding-left:0!important;border-left:0!important}
       }
 
+/* Vor der Anmeldung ist das Konto-Fenster die ganze Seite - so ist die Einstiegsseite gebaut.
+   Aus der laufenden App heraus ("Anmelden" im Menue) ist es aber ein Fenster und kein Seiten-
+   wechsel; es kam trotzdem als Vollbild, weil die Vollbreiten-Regel fuer alle Dialoge gilt.
+   Ohne guest-gate ist es wieder ein Popup - alle uebrigen Dialoge bleiben, wie sie sind. */
+#accountDialog:not(.guest-gate){
+  width:min(760px,calc(100vw - 40px))!important;max-width:min(760px,calc(100vw - 40px))!important;
+  height:auto!important;max-height:min(88dvh,880px)!important;margin:auto!important;
+}
+#accountDialog:not(.guest-gate) .dialog-frame{
+  width:100%!important;max-width:none!important;height:auto!important;max-height:min(88dvh,880px)!important;
+  border-radius:22px!important;overflow:hidden!important;
+}
+#accountDialog:not(.guest-gate) .account-body{overflow-y:auto!important}
+/* Die Einstiegsseite baut ihre Teile fest in dieses Fenster: Marke, Spruch, Tarifkacheln,
+   Konsolenbild, Belegreihe. Im Popup aus der App heraus haben sie nichts zu suchen - dort geht
+   es nur ums Anmelden, und die Ueberschrift des Fensters sagt das schon. */
+#accountDialog:not(.guest-gate) :is(.auth-hero,.gate-top,.gate-shot,.gate-proof,#gateActions,#gateLegalRow){display:none!important}
+@media(max-width:820px){
+  /* Auf dem Telefon ist die volle Flaeche richtig - dort ist ein 760px-Kasten ohnehin die Seite. */
+  #accountDialog:not(.guest-gate){width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important}
+  #accountDialog:not(.guest-gate) .dialog-frame{height:100%!important;max-height:none!important;border-radius:0!important}
+}
+
 /* ===== legal-pages.js · #legalPagesStyles ===== */
 .legal-body{padding:0 26px 26px;max-height:64vh;overflow-y:auto;font-size:12px;line-height:1.65;color:var(--ink)}
       .legal-body h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:20px 0 6px}

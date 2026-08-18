@@ -543,6 +543,16 @@ test('the "Prompt genauer einstellen" free-prompt settings step is consolidated 
   // Kontext, sonst verschwaende ein sichtbar angehaengter Link still.
   assert.match(src,/category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:withReferences\(\$\('#freePromptDescription'\)\.value\),context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
 });
+// Vor der Anmeldung ist das Konto-Fenster die ganze Seite. Aus der laufenden App heraus
+// ("Anmelden" im Menue) ist es ein Fenster - es kam aber ebenfalls als Vollbild, samt Spruch,
+// Tarifkacheln und Konsolenbild der Einstiegsseite darin.
+test('the account dialog is a popup once it is not the entry gate',async()=>{
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  assert.match(css,/#accountDialog:not\(\.guest-gate\)\{\s*width:min\(760px/);
+  assert.match(css,/#accountDialog:not\(\.guest-gate\) :is\(\.auth-hero,\.gate-top,\.gate-shot,\.gate-proof,#gateActions,#gateLegalRow\)\{display:none!important\}/,'the gate parts belong to the gate');
+  // Auf dem Telefon bleibt die volle Flaeche richtig.
+  assert.match(css,/@media\(max-width:820px\)\{\n  \/\* Auf dem Telefon[\s\S]{0,220}#accountDialog:not\(\.guest-gate\)\{width:100vw!important/);
+});
 // "Selbst einstellen" heisst: jeder Schritt bleibt sichtbar. Zwei Ebenen sprangen trotzdem ueber
 // Schritt 1 hinweg, sobald die Beschreibung von der Startseite kam - und nahmen damit Projektname,
 // Projektart, Hauptziel, Zielgruppe und den besonderen Wunsch ersatzlos weg, die die Startseite
