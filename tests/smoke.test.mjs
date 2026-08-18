@@ -909,12 +909,22 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   assert.doesNotMatch(css,/\.prompt-fill-progress\{[^}]*clip-path/,'clip-path cut ascenders and descenders in half');
 
   assert.match(css,/\.task-progress \.task-progress-track\{display:none\}/);
-  // Zwei Fassungen: wer noch kein Konto hat, hat auch keinen Arbeitsbereich, den man vorbereiten
-  // koennte - er landet auf der Startseite mit den Tarifen.
-  assert.match(html,/data-boot="konto">Arbeitsbereich wird vorbereitet<\/strong>/);
-  assert.match(html,/data-boot="gast">Aus Ideen wird ein klares Projekt<\/strong>/);
+  // Die Marke ist die Ueberschrift des Startbildschirms - sie ist es, die blau volllaeuft.
+  assert.match(html,/<strong class="prompt-fill-progress" style="--prompt-fill:6%">Prompt\.ai<\/strong>/);
+  // Darunter zwei Saetze: wer noch kein Konto hat, hat auch keinen Arbeitsbereich, den man
+  // vorbereiten koennte - er landet auf der Startseite mit den Tarifen.
+  assert.match(html,/data-boot="konto">Dein Arbeitsbereich wird vorbereitet\.<\/div>/);
+  assert.match(html,/data-boot="gast">Von einem Satz zum Prompt für deine KI\.<\/div>/);
   const themeBoot=await text('theme-init.js');
   assert.match(themeBoot,/if\(!angemeldet\)document\.documentElement\.classList\.add\('prompt-boot-gast'\)/);
+  // Fuellen, dann zweimal blinken - wie jeder andere Ladeschirm der App.
+  assert.match(themeBoot,/String\(Math\.max\(2,Math\.round\(wait\/FLASH_MS\)\)\)/);
+  assert.match(themeBoot,/this\.words\(node,pct\/100\)/,'auch hier laeuft die Fuellung Wort fuer Wort');
+  // Das Marken-Skript hat die Ueberschrift nach jedem Durchlauf neu geschrieben und die
+  // Fuellung damit weggeworfen.
+  const touch=await text('ui-final-touch.js');
+  assert.match(touch,/const brandAi=\(\)=>\{\$\$\('\.brand-copy strong,\.auth-brand strong,\.guided-clean-brand strong,\.simple-intake-brand strong'\)/,
+    'der Startbildschirm darf nicht mehr in der Liste stehen');
   assert.match(cleanup,/beginTask\?\.\(ZUSAMMENBAU,\{title:MASTER_TITEL,kind:'build'\}\)/,'der Master-Prompt nutzt den gemeinsamen Ladeschirm');
   assert.match(app,/box\?\.style\.setProperty\('--prompt-fill',`\$\{pct\}%`\);label\?\.classList\.add\('prompt-fill-progress'\)/,'inline task progress');
 });

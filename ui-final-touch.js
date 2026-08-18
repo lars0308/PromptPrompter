@@ -2,7 +2,11 @@
   'use strict';
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   const cleanAuth=()=>{const m=$('#authMessage');if(!m)return;const t=(m.textContent||'').trim();if(/invalid login credentials|invalid credentials|email or password|wrong password|user not found/i.test(t)&&t!=='E-Mail oder Passwort stimmt nicht.')m.textContent='E-Mail oder Passwort stimmt nicht.'};
-  const brandAi=()=>{$$('.brand-copy strong,.auth-brand strong,.guided-clean-brand strong,.simple-intake-brand strong,#promptAppBoot strong').forEach(el=>{if(el.dataset.brandAi==='1')return;if(el.textContent.trim()==='Prompt.ai'){el.innerHTML='Prompt<span class="brand-ai-suffix">.ai</span>';el.dataset.brandAi='1'}})};
+  // #promptAppBoot strong stand hier mit in der Liste. Die Ueberschrift des Startbildschirms ist
+  // aber inzwischen die Flaeche, die beim Laden blau volllaeuft - und dieses Skript hat sie nach
+  // jedem Durchlauf neu geschrieben und die Fuellung damit weggeworfen. Das blaue ".ai" waere
+  // dort ohnehin doppelt: das ganze Wort faerbt sich, waehrend die App startet.
+  const brandAi=()=>{$$('.brand-copy strong,.auth-brand strong,.guided-clean-brand strong,.simple-intake-brand strong').forEach(el=>{if(el.dataset.brandAi==='1')return;if(el.textContent.trim()==='Prompt.ai'){el.innerHTML='Prompt<span class="brand-ai-suffix">.ai</span>';el.dataset.brandAi='1'}})};
   const cleanFreeStatus=()=>{const m=$('#freePromptStatus');if(!m||!m.classList.contains('good'))return;const t=(m.textContent||'').trim();if(/Free-Basis-Prompt erstellt|Professioneller Prompt erstellt/i.test(t)&&t!=='Prompt erstellt.')m.textContent='Prompt erstellt.'};
   
   function syncMenuShield(){const menu=$('#topbarMenu'),shield=$('#promptFinalMenuBackdrop');if(!shield)return;const open=Boolean(menu?.classList.contains('open'));shield.classList.toggle('show',open);shield.setAttribute('aria-hidden',String(!open));const bar=$('.topbar');if(bar)shield.style.top=`${Math.round(bar.getBoundingClientRect().bottom)}px`}

@@ -66,6 +66,7 @@
       if(pct<previous)return;
       node.dataset.fillValue=String(pct);
       node.style.setProperty('--prompt-fill',pct.toFixed(1)+'%');
+      this.words(node,pct/100);
     },
     finish(node,done){
       const end=typeof done==='function'?done:()=>{};
@@ -75,10 +76,12 @@
       node.classList.remove('prompt-fill-sweep');
       node.classList.add('prompt-fill-progress','prompt-fill-complete');
       node.style.setProperty('--prompt-fill','100%');
+      this.words(node,1);
       const wait=this.tail(node.dataset.fillStart);
-      // The blink repeats for as long as the screen is held, instead of one flash and then silence.
-      node.style.setProperty('--prompt-flash-count',String(Math.max(1,Math.round(wait/FLASH_MS))));
-      setTimeout(end,wait);
+      // Mindestens zweimal blinken - genauso wie jeder andere Ladeschirm der App endet. Ein
+      // einzelnes Aufblitzen liest sich als Fehler, zwei als Abschluss.
+      node.style.setProperty('--prompt-flash-count',String(Math.max(2,Math.round(wait/FLASH_MS))));
+      setTimeout(end,Math.max(wait,FLASH_MS*2));
     },
     // Zeilenweise fuellen statt spaltenweise.
     //
