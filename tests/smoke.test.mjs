@@ -538,7 +538,29 @@ test('the "Prompt genauer einstellen" free-prompt settings step is consolidated 
   assert.match(src,/<span>Ziel, Zielgruppe &amp; Kontext<\/span><textarea id="freePromptContext"/);
   assert.match(src,/<span>Stil, Muss enthalten &amp; Vermeiden<\/span><textarea id="freePromptStyle"/);
   assert.match(src,/<span>Ausgabeformat, Sprache &amp; Grenzen<\/span><textarea id="freePromptFormat"/);
-  assert.match(src,/category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:\$\('#freePromptDescription'\)\.value,context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
+  // description laeuft durch withReferences(): was am Textfeld der Startseite haengt, steht auch
+  // im Prompt. Fuer Free leert der Server das Kontextfeld - deshalb die Beschreibung, nicht der
+  // Kontext, sonst verschwaende ein sichtbar angehaengter Link still.
+  assert.match(src,/category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:withReferences\(\$\('#freePromptDescription'\)\.value\),context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
+});
+// Der freie Prompt vom Textfeld der Startseite aus: ein Satz, ein Klick, Ladeschirm, fertiger
+// Prompt. Der Fragebogen dazwischen fragte Ausgabetyp, Ziel-KI und drei Zusatzfelder ab - beim
+// freien Prompt Beiwerk, das den Weg unterbrach.
+test('the free prompt runs straight from the home console, without the questionnaire in between',async()=>{
+  const free=await text('free-prompt-ui.js'),home=await text('home-entry-ui.js');
+  assert.match(free,/async function runDirect\(\)/);
+  assert.match(free,/window\.PromptAiFreePrompt=\{runDirect,ensure:ensureDialog\}/);
+  assert.match(home,/if\(fillFreeFields\(brief\)&&await window\.PromptAiFreePrompt\?\.runDirect\?\.\(\)\)return;/,'the console goes direct');
+  assert.match(home,/openFreeForm\(\);setTimeout\(\(\)=>fillFreeFields\(brief\),60\);/,'the questionnaire stays as the fallback');
+  // Der Ladeschirm sitzt jetzt im Ergebnisfenster - im Fragebogen waere er unsichtbar, weil der
+  // Fragebogen auf diesem Weg gar nicht mehr aufgeht.
+  assert.match(free,/id="freePromptResultWorking"/);
+  assert.match(free,/function workHost\(\)\{return directRun\?\$\('#freePromptResultWorking'\):\$\('#freePromptWorking'\)\}/);
+  assert.match(free,/\.free-prompt-result-dialog\.is-working \.free-prompt-output,\n\.free-prompt-result-dialog\.is-working \.free-prompt-actions\{display:none\}/,'an empty output box during the wait is a claim, not a result');
+  // Angehaengte Links, Bilder und Dateien standen im Prompt bisher nirgends.
+  assert.match(free,/function attachedReferences\(\)/);
+  for(const list of ['#urlReferences','#imageReferences','#documentReferences'])assert.ok(free.includes(list),list);
+  assert.match(free,/Angehängte Referenzen/);
 });
 test('opening the hamburger menu re-syncs plan UI from window.PromptAiAccess, so a stale Upgrade button can never survive a menu open even if a promptai:access event was missed',async()=>{
   const src=await text('app.js');
