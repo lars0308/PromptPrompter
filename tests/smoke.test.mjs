@@ -1952,15 +1952,19 @@ test('below the phone stage there are the plan tiles and nothing that explains A
 // Fragezeichen. Die bauende KI liest das als offenen Punkt statt als Vorgabe.
 test('answered questions reach the master prompt as statements, not as questions',async()=>{
   const app=await text('app.js');
-  assert.match(app,/function clarificationTopic\(question\)/);
+  assert.match(app,/function clarificationTopic\(question,answer\)/);
   assert.match(app,/function clarificationFact\(question,answer\)/);
-  assert.match(app,/return `\$\{clarificationTopic\(question\)\}: \$\{endSentence\(value\)\}`/,'topic from the question, value from the answer');
+  // Der eigentliche Fragesatz wiegt schwerer als die Begruendung davor: „…lassen sich Architektur
+  // und Gestaltungsrichtung nicht entwickeln. Welche Infos stellen Sie bereit?“ ist eine Frage
+  // nach der Quelle, auch wenn in der Begruendung „Leistungen“ steht.
+  assert.match(app,/const frage=text\.split\(\/\(\?<=\[\.!\?\]\)\\s\+\/\)\.filter\(s=>s\.includes\("\?"\)\)\.pop\(\)/);
+  assert.match(app,/if\(\/\^https\?:\\\/\\\/\|\^www\\\.\/i\.test\(String\(answer\|\|''\)\.trim\(\)\)\)return "Quelle"/,'a URL answer settles the topic');
+  assert.match(app,/return `\$\{topic\}: \$\{endSentence\(verbatim\?`„\$\{text\}“/,'topic from the question, value from the answer');
   assert.doesNotMatch(app,/Auf die Frage „\$\{x\.question\}“/,'the wording of the question no longer travels into the order');
-  assert.match(app,/const answerText=facts\.length\?facts\.map\(x=>`- \$\{x\}`\)/);
-  // Genau ein Fall braucht den Wortlaut: eine Pflichtfrage, die niemand beantwortet hat. Dort muss
-  // die KI erkennen, was sie nicht weiß und deshalb nicht erfinden darf.
-  assert.match(app,/Unbeantwortet geblieben \(nicht erfinden, sichtbar als offen führen\)/);
-  assert.match(app,/const unanswered=\(review\?\.questions\|\|\[\]\)\.filter\(q=>q\.required&&!answers\.some/);
+  // Genau ein Fall braucht den Wortlaut: eine Frage, die niemand beantwortet hat. Dort muss die
+  // KI erkennen, was sie nicht weiß und deshalb nicht erfinden darf.
+  assert.match(app,/Noch offen \(nicht erfinden, sichtbar als offen führen\)/);
+  assert.match(app,/const offen=stand\.questions\.filter\(q=>q\.state==='OPEN'\)/);
   // Und eine Handvoll Themen muss zuverlässig erkannt werden.
   for(const [pattern,label] of [[/zielgruppe/,'Zielgruppe'],[/öffnungszeit/,'Öffnungszeiten'],[/datenschutz/,'Rechtliches']])
     assert.ok(app.includes(`,"${label}"]`),`${label} is missing from the topic list (${pattern})`);

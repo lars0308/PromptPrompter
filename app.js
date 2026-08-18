@@ -494,6 +494,10 @@
   }
 
   function aiConnection(provider){ return state.aiConnections.find(x=>x.provider===provider)||null; }
+  // Ob die Ziel-KI das Projekt am Ende wirklich veröffentlichen kann. Der Master-Prompt verlangte
+  // bisher unabhängig davon eine erreichbare Vercel-URL - auch ohne hinterlegten Zugang, wo sie
+  // niemand liefern kann. Das machte aus einer fehlenden Berechtigung einen Fehlschlag.
+  function deployReachable(){return Boolean(cloudReady()&&(planRules().github||state.isAdmin)&&aiConnection('github'))}
   const AI_PROVIDER_IDS=['gateway','openai','gemini','cloudflare'];
   // The provider cards only exist once slots have been bought, so every lookup goes through the
   // DOM instead of a fixed element map.
@@ -1617,10 +1621,54 @@
   // Same ending as the full-screen loaders: full fill, one blue blink, then the box disappears.
   function finishTaskProgress(kind,text="Abgeschlossen"){clearInterval(progressTimers[kind]);setTaskProgress(kind,100,text);el[`${kind}ProgressText`]?.classList.add('prompt-fill-complete');setTimeout(()=>{if(el[`${kind}Progress`])el[`${kind}Progress`].hidden=true},1000);}
 
+  // Eine Adresse in einer Antwort ist eine Quelle, keine Zeichenkette.
+  //
+  // Die häufigste Rückfrage ist die nach der Firmenwebsite - und die Antwort darauf ist ein Link.
+  // Der wurde bisher als Text gespeichert und nie ausgelesen: der Auftrag trug danach die Adresse
+  // im Antworttext, führte aber weiterhin Telefon, E-Mail und Öffnungszeiten als „nicht
+  // gefunden“. Genau die stehen auf der Seite, die gerade genannt wurde.
+  //
+  // Jede Adresse aus einer Antwort wird deshalb als Projektquelle übernommen und ausgelesen -
+  // derselbe Weg, den das Feld „Website des Kunden“ nimmt.
+  const ANSWER_URL=/\bhttps?:\/\/[^\s<>"'()]+|(?:^|\s)(?:www\.)[^\s<>"'()]+\.[a-z]{2,}[^\s<>"'()]*/gi;
+  function urlsInAnswers(answers){
+    const found=[];
+    for(const item of answers||[]){
+      const text=String(item?.answer||'');
+      for(const match of text.match(ANSWER_URL)||[]){
+        const raw=match.trim().replace(/[.,;:)\]]+$/,'');
+        if(!raw)continue;
+        try{
+          const url=new URL(/^https?:\/\//i.test(raw)?raw:`https://${raw}`);
+          if(!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(url.hostname))continue;
+          if(!found.includes(url.href))found.push(url.href);
+        }catch{}
+      }
+    }
+    return found;
+  }
+  async function adoptAnswerSources(answers){
+    const known=new Set((state.sourceUrls||[]).map(x=>normalizedSourceUrl(x.url)));
+    const neu=urlsInAnswers(answers).filter(url=>!known.has(normalizedSourceUrl(url)));
+    if(!neu.length)return false;
+    for(const url of neu.slice(0,3)){
+      if(!el.clientWebsite)break;
+      el.clientWebsite.value=url;
+      // importClientWebsite() trägt die Quelle ein, liest sie aus und räumt das Feld wieder auf -
+      // dieselbe Prüfung und dieselbe Statusmeldung wie bei einer von Hand eingegebenen Adresse.
+      await importClientWebsite();
+    }
+    return true;
+  }
   function saveClarificationAnswers(){
     const questions=state.projectReview?.questions||[]; const rows=$$(".clarification-question",el.clarificationQuestions); const answers=[];
     for(const row of rows){const idx=rows.indexOf(row);const q=questions[idx];const ta=row.querySelector("textarea");if(q?.required && !ta.value.trim()){ta.reportValidity();return false}answers.push({id:q?.id||uid("answer"),question:q?.question||"",answer:ta.value.trim(),reason:q?.reason||""});}
-    state.clarifications=answers;state.reviewDeferred=false;saveState();if(state.mode!=="expert")el.clarificationDialog.close();renderAiReviewCard();updateGuide();offerAfterFreeRun();return true;
+    state.clarifications=answers;state.reviewDeferred=false;saveState();if(state.mode!=="expert")el.clarificationDialog.close();renderAiReviewCard();updateGuide();offerAfterFreeRun();
+    // Im Hintergrund: genannte Adressen übernehmen und auslesen. Der Ablauf wartet nicht darauf -
+    // die Fakten stehen dann eben eine Sekunde später, und bis dahin sagt der Auftrag ehrlich,
+    // dass die Auswertung aussteht, statt „nicht gefunden“ zu behaupten.
+    adoptAnswerSources(answers).then(neu=>{if(neu){renderAiReviewCard();updateGuide();saveState()}}).catch(()=>{});
+    return true;
   }
 
   async function runProjectReview(force=false){
@@ -2450,6 +2498,7 @@ Eigenständigkeit (${orig}/100): Diese Vorgaben beschreiben das Gerüst, nicht e
   // sich steht. Das Thema kommt aus einer festen Liste; nur wenn keiner der Begriffe vorkommt,
   // wird der eigentliche Fragesatz zurückgebaut.
   const CLARIFICATION_TOPICS=[
+    [/quelle|\blink\b|\burl\b|website des kunden|firmeninformation|welche infos/i,"Quelle"],
     [/zielgruppe|zielkund|privatkund|geschäftskund|endkund|\bb2b\b|\bb2c\b/i,"Zielgruppe"],
     [/öffnungszeit|sprechzeit|erreichbarkeit/i,"Öffnungszeiten"],
     [/preis|kosten|tarif|honorar/i,"Preise"],
@@ -2475,11 +2524,19 @@ Eigenständigkeit (${orig}/100): Diese Vorgaben beschreiben das Gerüst, nicht e
     [/frist|deadline|zeitplan|bis wann|termin für/i,"Zeitplan"],
     [/referenz|vorbild|orientier/i,"Referenzen"],
     [/bestehende website|relaunch|migration|altbestand/i,"Bestehende Website"],
-    [/quelle|\blink\b|\burl\b|website des kunden/i,"Quelle"]
   ];
-  function clarificationTopic(question){
+  function clarificationTopic(question,answer){
     const text=String(question||"").replace(/\s+/g," ").trim();
     if(!text)return "Festlegung";
+    // Eine Adresse als Antwort lässt keinen Zweifel: gefragt war nach der Quelle. Das schlägt
+    // jedes Stichwort im Fragetext.
+    if(/^https?:\/\/|^www\./i.test(String(answer||'').trim()))return "Quelle";
+    // Der eigentliche Fragesatz wiegt schwerer als die Begründung davor. „…lassen sich Architektur
+    // und Gestaltungsrichtung nicht entwickeln. Welche Infos stellen Sie bereit?“ ist eine Frage
+    // nach der Quelle - das Wort „Leistungen“ steht nur in der Begründung und hat die Einordnung
+    // vorher an sich gezogen.
+    const frage=text.split(/(?<=[.!?])\s+/).filter(s=>s.includes("?")).pop();
+    if(frage)for(const [pattern,label] of CLARIFICATION_TOPICS)if(pattern.test(frage))return label;
     for(const [pattern,label] of CLARIFICATION_TOPICS)if(pattern.test(text))return label;
     // Kein bekanntes Thema: den letzten Fragesatz nehmen - davor steht meist die Begründung -,
     // die Frageform abstreifen und als Sachbegriff stehen lassen.
@@ -2488,29 +2545,183 @@ Eigenständigkeit (${orig}/100): Diese Vorgaben beschreiben das Gerüst, nicht e
     const core=last.replace(/^(welche[rsn]?|welches|was|wie|wer|wo|wann|warum|soll(en|te)?|sind|ist|gibt es|möchtest du|wünschst du)\s+/i,"").trim();
     return (core||last).replace(/[:,;]\s*$/,"").slice(0,60)||"Festlegung";
   }
+  // Eine Antwort wie „und telefon udn email“ ist keine Festlegung, sondern das Rohmaterial dafür.
+  // Wörtlich im Auftrag gelandet, steht dort ein halber Satz mit Tippfehler, den die bauende KI
+  // entweder ignoriert oder falsch deutet. Erkennbare Begriffe werden deshalb benannt und die
+  // Antwort als vollständige Aussage formuliert; nur was sich nicht einordnen lässt, bleibt im
+  // Wortlaut - dann aber sauber als Zitat gekennzeichnet.
+  const ANSWER_TERMS=[
+    [/tele(?:f|ph)o?n|telfon|fon\b|anruf|rückruf|ruecktruf/i,'Telefon'],
+    [/e-?ma[il]{1,2}l?|mail\b|emai\b/i,'E-Mail'],
+    [/whats-?app|whatsap/i,'WhatsApp'],
+    [/kontaktformular|formular/i,'Kontaktformular'],
+    [/rückrufbitte|rueckrufbitte|rückruf-?service/i,'Rückrufbitte'],
+    [/adresse|anschrift/i,'Anschrift'],
+    [/öffnungszeit|oeffnungszeit/i,'Öffnungszeiten'],
+    [/anfahrt|karte|maps/i,'Anfahrt'],
+    [/privat(?:kund)?/i,'Privatkunden'],
+    [/gewerb|geschäftskund|geschaeftskund|firmenkund|\bb2b\b/i,'Geschäftskunden'],
+    [/hotel/i,'Hotels'],[/restaurant|gastronom/i,'Gastronomie'],[/wäscherei|waescherei/i,'Wäschereien']
+  ];
+  const ANSWER_UNKNOWN=/^(weiß nicht|weiss nicht|keine ahnung|unklar|noch offen|später|spaeter|egal|k\.?a\.?|tbd|unbekannt)$/i;
+  const ANSWER_SKIP=/später klären|spaeter klaeren|ohne diese angabe|später entscheiden|erstmal weiter|zunächst weiter/i;
+  // Was ein Thema als Antwort bedeutet, wenn nur Stichworte kommen.
+  const TOPIC_PHRASING={
+    Kontakt:list=>`Als Kontaktwege sind ${list} vorgesehen und gehören sichtbar auf die Seite`,
+    Zielgruppe:list=>`Angesprochen werden ${list}`,
+    Leistungen:list=>`Als Leistungen sind ${list} zu zeigen`,
+    Formulare:list=>`Vorgesehen sind ${list}`
+  };
+  function joinTerms(list){
+    if(list.length<=1)return list[0]||'';
+    return `${list.slice(0,-1).join(', ')} und ${list[list.length-1]}`;
+  }
+  // Umgeschrieben wird nur eine Stichwortliste, nie eine formulierte Antwort.
+  //
+  // Die Unterscheidung liegt nicht in der Wortzahl - „und telefon udn email“ hat genauso viele
+  // Wörter wie „Beide Zielgruppen mit Schwerpunkten“. Sie liegt darin, ob die Antwort im
+  // Wesentlichen aus wiedererkannten Begriffen besteht. Trifft das zu und ist sie kurz, ist es
+  // eine Aufzählung und wird zu einem Satz; sonst steht sie schon als Aussage da.
+  const WORDS=text=>text.split(/\s+/).filter(Boolean);
+  function normalizedAnswer(topic,answer){
+    const raw=String(answer||'').replace(/\s+/g,' ').trim();
+    if(!raw)return {state:'OPEN',text:''};
+    if(ANSWER_UNKNOWN.test(raw)||ANSWER_SKIP.test(raw))return {state:'BLOCKED',text:raw};
+    // Eine Adresse ist ihre eigene Aussage und wird nicht umschrieben.
+    if(/^https?:\/\/|^www\./i.test(raw))return {state:'RESOLVED',text:raw,url:raw};
+    const terms=[];
+    for(const [pattern,label] of ANSWER_TERMS)if(pattern.test(raw)&&!terms.includes(label))terms.push(label);
+    const kurz=WORDS(raw).length<=7;
+    if(terms.length&&kurz){
+      const phrase=TOPIC_PHRASING[topic];
+      return {state:'RESOLVED',text:phrase?phrase(joinTerms(terms)):joinTerms(terms),terms};
+    }
+    // Kein erkannter Begriff und zu kurz für eine Aussage: das ist ein Fragment, das nur der
+    // Auftraggeber deuten kann. Es geht als Zitat durch, gekennzeichnet als solches.
+    if(!terms.length&&WORDS(raw).length<=3)return {state:'RESOLVED',text:raw,verbatim:true};
+    return {state:'RESOLVED',text:raw};
+  }
   function clarificationFact(question,answer){
-    const value=String(answer||"").replace(/\s+/g," ").trim();
-    if(!value)return "";
-    return `${clarificationTopic(question)}: ${endSentence(value)}`;
+    const topic=clarificationTopic(question,answer);
+    const {text,verbatim}=normalizedAnswer(topic,answer);
+    if(!text)return "";
+    return `${topic}: ${endSentence(verbatim?`„${text}“ (Angabe des Auftraggebers, wörtlich übernommen)`:text)}`;
+  }
+
+  // Der aufgelöste Projektstand.
+  //
+  // Die Prüfung schreibt einmal auf, was fehlt - Link, Zielgruppe, Designrichtung. Danach wird
+  // geantwortet, eine Quelle kommt dazu, eine Richtung wird gewählt. Der Befund von vorhin blieb
+  // aber unverändert stehen und wanderte so in den fertigen Auftrag: „Der Link fehlt“ direkt neben
+  // der Adresse, die inzwischen ausgelesen ist. Für die bauende KI ist das ein Widerspruch, und
+  // sie löst ihn irgendwie auf - meist zugunsten des zuerst Gelesenen.
+  //
+  // Diese Funktion führt den Befund und das, was seither passiert ist, zusammen. Jede Frage und
+  // jeder Hinweis bekommt einen Stand: RESOLVED (beantwortet oder inzwischen gegenstandslos),
+  // BLOCKED (bewusst offen gelassen) oder OPEN. In den Auftrag geht nur, was nicht RESOLVED ist.
+  const RESOLVERS=[
+    // Ein fehlender Link ist erledigt, sobald irgendeine Quelle vorliegt - egal ob sie aus dem
+    // Formular oder aus einer Antwort kam.
+    {match:/link|url|quelle|website|internetseite|homepage|firmeninformation|unternehmensdaten/i,
+     done:()=>state.sourceUrls.length>0,
+     why:()=>`${state.sourceUrls.length===1?'Die Quelle liegt vor':'Die Quellen liegen vor'}: ${state.sourceUrls.map(x=>x.url).slice(0,3).join(', ')}`},
+    {match:/zielgruppe|zielkund|privatkund|geschäftskund|\bb2b\b|\bb2c\b/i,
+     done:()=>Boolean(projectAudience()),
+     why:()=>`Zielgruppe steht fest: ${projectAudience()}`},
+    {match:/designrichtung|gestaltungsrichtung|stil|richtung|entwurf|layout/i,
+     done:()=>Boolean(selectedConcept()),
+     why:()=>`Richtung gewählt: ${selectedConcept()?.name||''}`},
+    {match:/projektname|name des projekts|firmenname|auftraggeber/i,
+     done:()=>Boolean(project().client?.name||project().name),
+     why:()=>`Auftraggeber steht fest: ${project().client?.name||project().name}`},
+    {match:/telefon|e-?mail|kontakt|anschrift|adresse/i,
+     done:()=>{const f=verifiedFacts();return f.phone.length>0||f.mail.length>0||f.street.length>0},
+     why:()=>'Kontaktangaben sind inzwischen aus den Quellen belegt'},
+    {match:/öffnungszeit|sprechzeit/i,
+     done:()=>verifiedFacts().hours.length>0,
+     why:()=>'Öffnungszeiten sind inzwischen aus den Quellen belegt'}
+  ];
+  // Eine Antwort zum selben Thema erledigt den Hinweis ebenfalls - das ist der häufigste Fall und
+  // braucht keine eigene Regel.
+  function answeredTopics(){
+    const topics=new Set();
+    for(const item of state.clarifications||[]){
+      const topic=clarificationTopic(item.question,item.answer);
+      const {state:status}=normalizedAnswer(topic,item.answer);
+      if(status==='RESOLVED')topics.add(topic);
+    }
+    return topics;
+  }
+  function resolutionFor(text){
+    const value=String(text||'');
+    if(!value.trim())return null;
+    for(const rule of RESOLVERS){
+      if(!rule.match.test(value))continue;
+      try{if(rule.done())return rule.why()}catch{}
+    }
+    const topic=clarificationTopic(value);
+    return answeredTopics().has(topic)?`In der Abstimmung festgelegt (${topic})`:null;
+  }
+  function projectStandpoint(){
+    const review=state.projectReview||{};
+    const antworten=new Map((state.clarifications||[]).map(x=>[x.question,x]));
+    const fragen=(review.questions||[]).map(q=>{
+      const gespeichert=antworten.get(q.question);
+      const thema=clarificationTopic(q.question,gespeichert?.answer);
+      const {state:status,text}=normalizedAnswer(thema,gespeichert?.answer);
+      // Auch ohne Antwort kann sich eine Frage erledigt haben: die Quelle wurde inzwischen
+      // nachgetragen, die Richtung gewählt.
+      const inzwischen=status==='OPEN'?resolutionFor(q.question):null;
+      return {
+        question:String(q.question||''),
+        topic:thema,
+        required:Boolean(q.required),
+        answer:text,
+        state:inzwischen?'RESOLVED':status,
+        resolvedBy:inzwischen||''
+      };
+    });
+    const einordnen=(list,kind)=>(list||[]).map(item=>{
+      const message=String(item.message||item.area||'');
+      const erledigt=resolutionFor(`${item.area||''} ${message}`);
+      return {kind,area:String(item.area||''),message,alternative:String(item.alternative||''),state:erledigt?'RESOLVED':(kind==='blocker'?'BLOCKED':'OPEN'),resolvedBy:erledigt||''};
+    });
+    return {
+      questions:fragen,
+      notes:[...einordnen(review.warnings,'warning'),...einordnen(review.blockers,'blocker')],
+      facts:factStatus()
+    };
   }
   function clarificationPromptBlock(){
-    const answers=state.clarifications.filter(x=>x.answer?.trim());
-    const review=state.projectReview;
-    const facts=answers.map(x=>clarificationFact(x.question,x.answer)).filter(Boolean);
-    const answerText=facts.length?facts.map(x=>`- ${x}`).join("\n"):"Keine zusätzlichen Festlegungen aus der Prüfung.";
-    // Eine Pflichtfrage ohne Antwort ist der eine Fall, in dem der Wortlaut gebraucht wird: hier
-    // muss die KI erkennen, was sie gerade nicht weiß und deshalb nicht erfinden darf.
-    const unanswered=(review?.questions||[]).filter(q=>q.required&&!answers.some(a=>a.question===q.question));
-    const openText=unanswered.length?`\n\nUnbeantwortet geblieben (nicht erfinden, sichtbar als offen führen):\n${unanswered.map(q=>`- ${String(q.question||"").replace(/\s+/g," ").trim()}`).join("\n")}`:"";
-    const warnings=review?.warnings?.length?review.warnings.map(x=>`- ${x.area||"Hinweis"}: ${x.message||""}`).join("\n"):"Keine gespeicherten Hinweise.";
-    const blockers=review?.blockers?.length?review.blockers.map(x=>`- ${x.message||""}${x.alternative?` | mögliche Alternative: ${x.alternative}`:""}`).join("\n"):"Keine gespeicherten Blocker.";
-    return `Festgelegt in der Abstimmung:\n${answerText}${openText}\n\nHinweise:\n${warnings}\n\nKritische Punkte:\n${blockers}`;
+    const stand=projectStandpoint();
+    const festgelegt=stand.questions.filter(q=>q.state==='RESOLVED'&&q.answer).map(q=>clarificationFact(q.question,q.answer)).filter(Boolean);
+    const offen=stand.questions.filter(q=>q.state==='OPEN');
+    const blockiert=stand.questions.filter(q=>q.state==='BLOCKED');
+    const hinweise=stand.notes.filter(n=>n.state!=='RESOLVED');
+    const teile=[];
+    teile.push(`Festgelegt in der Abstimmung:\n${festgelegt.length?festgelegt.map(x=>`- ${x}`).join('\n'):'Keine zusätzlichen Festlegungen aus der Prüfung.'}`);
+    // Nur was wirklich noch offen ist. Beantwortete Fragen und Hinweise, die sich seither erledigt
+    // haben, stehen hier nicht mehr - sonst widerspricht der Auftrag sich selbst.
+    if(offen.length)teile.push(`Noch offen (nicht erfinden, sichtbar als offen führen):\n${offen.map(q=>`- ${q.topic}: ${q.question.replace(/\s+/g,' ').trim()}`).join('\n')}`);
+    if(blockiert.length)teile.push(`Bewusst offen gelassen (der Auftraggeber hat entschieden, ohne diese Angabe weiterzuarbeiten):\n${blockiert.map(q=>`- ${q.topic}`).join('\n')}`);
+    const warnungen=hinweise.filter(n=>n.kind==='warning');
+    const blocker=hinweise.filter(n=>n.kind==='blocker');
+    if(warnungen.length)teile.push(`Hinweise:\n${warnungen.map(n=>`- ${n.area||'Hinweis'}: ${n.message}`).join('\n')}`);
+    if(blocker.length)teile.push(`Kritische Punkte:\n${blocker.map(n=>`- ${n.message}${n.alternative?` | mögliche Alternative: ${n.alternative}`:''}`).join('\n')}`);
+    if(!offen.length&&!blockiert.length&&!hinweise.length)teile.push('Aus der Prüfung ist nichts offen geblieben.');
+    return teile.join('\n\n');
   }
 
   function outputTargetPromptBlock(){
     const common="Liefere eine vollständige, lokal startbare Umsetzung. Dokumentiere Befehle, Umgebungsvariablen und Einrichtung knapp im README. Keine Secrets oder API-Keys im Frontend oder Repository.";
     const targets={
-      "next-vercel":"Ergebnis: produktionsreifes Next.js-Projekt mit TypeScript, sauber für GitHub vorbereitet und auf Vercel deploybar. Nutze App Router, sofern kein bestehendes Projekt dagegen spricht. Prüfe den Production Build, konfiguriere benötigte Environment Variables und liefere bzw. prüfe eine öffentlich erreichbare Vercel-URL.",
+      // Ein Deployment verlangen, für das die Zugangsdaten fehlen, heißt eine Aufgabe stellen, die
+      // niemand erfüllen kann - die Ziel-KI probiert es, scheitert am fehlenden Token und meldet
+      // am Ende einen Fehlschlag für etwas, das gar nicht ihre Aufgabe war. Ohne hinterlegten
+      // Zugang wird deshalb nur bis zur Startlinie gearbeitet und der letzte Schritt beschrieben.
+      "next-vercel":deployReachable()
+        ? "Ergebnis: produktionsreifes Next.js-Projekt mit TypeScript, sauber für GitHub vorbereitet und auf Vercel deploybar. Nutze App Router, sofern kein bestehendes Projekt dagegen spricht. Prüfe den Production Build, konfiguriere benötigte Environment Variables und liefere bzw. prüfe eine öffentlich erreichbare Vercel-URL."
+        : "Ergebnis: produktionsreifes Next.js-Projekt mit TypeScript, vollständig deploybar vorbereitet. Nutze App Router, sofern kein bestehendes Projekt dagegen spricht. Prüfe den Production Build und lege alle nötigen Environment Variables als `.env.example` mit Erklärung an. Führe das Deployment NICHT selbst durch — für dieses Projekt liegt kein Vercel- oder GitHub-Zugang vor. Beschreibe stattdessen am Ende in drei bis fünf Schritten, was zum Livegang noch zu tun ist (Repository anlegen, mit Vercel verbinden, Variablen setzen, Domain zuweisen). Melde das Fehlen des Zugangs nicht als Fehler.",
       "next-only":"Ergebnis: vollständiges Next.js-Projekt mit TypeScript. Es muss mit npm install und npm run dev lokal starten und einen fehlerfreien Production Build erzeugen. Kein Deployment ohne ausdrücklichen Auftrag.",
       html:"Ergebnis: statische Website aus semantischem HTML, modernem CSS und sparsamem Vanilla JavaScript. Keine Build-Pipeline und kein Framework, sofern nicht zwingend nötig. Alle Dateien müssen direkt auf einem statischen Webspace funktionieren.",
       react:"Ergebnis: React-Projekt mit Vite und TypeScript. Komponenten nur dort aufteilen, wo echte Wiederverwendung oder Zuständigkeit besteht. Projekt lokal startbar und als statischer Build auslieferbar.",
@@ -2601,23 +2812,41 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   // Linked files are imported and parsed on the references step, so the same URL can be either an
   // open point or a real source depending on whether the text made it in.
   const documentRead=url=>state.documents.some(item=>item.sourceUrl===url&&String(item.text||'').length>=120);
-  function factLine(label,entries,missingHint){
+  // „Nicht in den Quellen gefunden“ ist eine Aussage über eine Suche, die stattgefunden hat.
+  // Steht die Auswertung der Quelle noch aus - weil die Adresse gerade erst aus einer Antwort
+  // dazukam -, ist derselbe Satz schlicht falsch: es hat noch niemand nachgesehen. Beides
+  // auseinanderzuhalten ist der Unterschied zwischen „gibt es nicht“ und „weiß ich noch nicht“.
+  // Ob „nicht gefunden“ überhaupt eine Aussage ist, hängt daran, ob schon jemand nachgesehen hat.
+  function factStatus(){
+    const quellen=state.sourceUrls||[];
+    if(!quellen.length)return {state:'NO_SOURCE',pending:[]};
+    // Ausgelesen heißt: es liegen Seiten mit Text vor. Eine Adresse, die gerade erst aus einer
+    // Antwort dazukam, hat das noch nicht - dann steht die Auswertung aus, und „nicht gefunden“
+    // wäre schlicht falsch.
+    const pending=quellen.filter(source=>!(source.pages||[]).some(page=>String(page.summary||'').length>=120));
+    return {state:pending.length===quellen.length?'PENDING':pending.length?'PARTIAL':'ANALYSED',pending:pending.map(x=>x.url)};
+  }
+  function factLine(label,entries,missingHint,status){
     const list=(entries||[]).slice(0,4);
-    if(!list.length)return `- ${label}: nicht in den Quellen gefunden — ${missingHint}`;
-    return `- ${label}: ${list.map(item=>`${item.value}${item.url?` (Quelle: ${item.url})`:''}`).join(' · ')}`;
+    if(list.length)return `- ${label}: ${list.map(item=>`${item.value}${item.url?` (Quelle: ${item.url})`:''}`).join(' · ')}`;
+    const stand=status||factStatus();
+    if(stand.state==='NO_SOURCE')return `- ${label}: keine Quelle hinterlegt, daher nicht belegt — ${missingHint}`;
+    if(stand.state==='PENDING')return `- ${label}: die hinterlegte Quelle ist noch nicht ausgewertet — als offen führen, nicht als „nicht vorhanden“ behandeln und nicht erfinden.`;
+    if(stand.state==='PARTIAL')return `- ${label}: in den bereits ausgewerteten Quellen nicht gefunden; ${stand.pending.length} Quelle${stand.pending.length===1?'':'n'} steht noch aus — als offen führen, nicht erfinden.`;
+    return `- ${label}: nicht in den Quellen gefunden — ${missingHint}`;
   }
   function verifiedFactsBlock(){
-    const facts=verifiedFacts(),cityFallback=addressFromDescription();
+    const facts=verifiedFacts(),cityFallback=addressFromDescription(),status=factStatus();
     const city=facts.city.length?facts.city:(cityFallback?[{value:cityFallback,url:'Projektbeschreibung'}]:[]);
     const lines=[
-      factLine('Telefon',facts.phone,'nicht erfinden, als offenen Punkt kennzeichnen.'),
-      factLine('E-Mail',facts.mail,'nicht erfinden, als offenen Punkt kennzeichnen.'),
-      factLine('Straße',facts.street,'nicht erfinden, als offenen Punkt kennzeichnen.'),
-      factLine('PLZ / Ort',city,'nicht erfinden, als offenen Punkt kennzeichnen.'),
-      factLine('Öffnungszeiten',facts.hours,'keine Zeiten erfinden; die Sektion entweder weglassen oder sichtbar als offen markieren.'),
-      facts.since?`- Bestehend seit: ${facts.since}`:'- Bestehend seit: nicht in den Quellen gefunden — keine Jahreszahl erfinden.',
-      factLine('Profile in sozialen Netzwerken',facts.social,'keine Profile erfinden oder verlinken.'),
-      factLine('Vorhandene Rechtsseiten',facts.legal,'Impressum und Datenschutz als offene Punkte kennzeichnen, keine Pflichttexte erzeugen.')
+      factLine('Telefon',facts.phone,'nicht erfinden, als offenen Punkt kennzeichnen.',status),
+      factLine('E-Mail',facts.mail,'nicht erfinden, als offenen Punkt kennzeichnen.',status),
+      factLine('Straße',facts.street,'nicht erfinden, als offenen Punkt kennzeichnen.',status),
+      factLine('PLZ / Ort',city,'nicht erfinden, als offenen Punkt kennzeichnen.',status),
+      factLine('Öffnungszeiten',facts.hours,'keine Zeiten erfinden; die Sektion entweder weglassen oder sichtbar als offen markieren.',status),
+      facts.since?`- Bestehend seit: ${facts.since}`:factLine('Bestehend seit',[],'keine Jahreszahl erfinden.',status),
+      factLine('Profile in sozialen Netzwerken',facts.social,'keine Profile erfinden oder verlinken.',status),
+      factLine('Vorhandene Rechtsseiten',facts.legal,'Impressum und Datenschutz als offene Punkte kennzeichnen, keine Pflichttexte erzeugen.',status)
     ];
     const documents=facts.documents.filter(item=>!documentRead(item.value)).slice(0,6);
     const documentBlock=documents.length
@@ -2772,7 +3001,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   // 4. Was noch fehlt. Steht heute verteilt in den offenen Punkten der Seitenstruktur -
   //    als eine Liste am Ende ist es das, was der Auftraggeber tatsaechlich liefern muss.
   function contentNeedsBlock(){
-    const pages=siteStructure(),facts=verifiedFacts();
+    const pages=siteStructure(),facts=verifiedFacts(),status=factStatus();
     const bedarf=[];
     if(!facts.phone.length)bedarf.push('Telefonnummer');
     if(!facts.mail.length)bedarf.push('E-Mail-Adresse');
@@ -2785,7 +3014,13 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     }
     const liste=[...new Set(bedarf)].slice(0,12);
     if(!liste.length)return '';
-    return `\n## NOCH ZU LIEFERN\nDiese Angaben fehlen in den Quellen. Sie dürfen nicht erfunden werden. Gib sie am Ende deines Ergebnisses als Liste aus, damit der Auftraggeber sie nachreichen kann.\n${liste.map(x=>`- ${x}`).join('\n')}\n`;
+    // Solange eine hinterlegte Quelle noch nicht ausgewertet ist, ist diese Liste eine Vermutung
+    // und keine Bestellung. Sie als „fehlt“ auszugeben, würde den Auftraggeber nach Angaben
+    // fragen, die auf seiner eigenen Seite stehen.
+    const vorbehalt=status.state==='PENDING'||status.state==='PARTIAL'
+      ? `\n\nVorbehalt: ${status.pending.length} hinterlegte Quelle${status.pending.length===1?'':'n'} ${status.pending.length===1?'ist':'sind'} noch nicht ausgewertet (${status.pending.slice(0,3).join(', ')}). Prüfe zuerst dort, bevor du eine dieser Angaben als fehlend meldest.`
+      : '';
+    return `\n## NOCH ZU LIEFERN\nDiese Angaben sind in den ausgewerteten Quellen nicht belegt. Sie dürfen nicht erfunden werden. Gib sie am Ende deines Ergebnisses als Liste aus, damit der Auftraggeber sie nachreichen kann.\n${liste.map(x=>`- ${x}`).join('\n')}${vorbehalt}\n`;
   }
 
   // 5. Was die Pruefung im Hintergrund schon herausgefunden hat. "Zielgruppe: Familien" steuert
@@ -2863,7 +3098,50 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
   const XML_ORDER=["role","context","task","rules","definition_of_done"];
   const XML_LEGEND="Die Gliederung steckt in Tags: <role> ist die Haltung, <context> beschreibt das Projekt, <task> sagt, was zu tun ist, <rules> ist verbindlich, <definition_of_done> beschreibt den fertigen Zustand.";
   const CLOSING_LINE="Beginne jetzt mit der Umsetzung auf Basis dieses Briefings.";
+  // Der letzte Blick, bevor der Auftrag hinausgeht.
+  //
+  // Die einzelnen Abschnitte entstehen unabhängig voneinander: die Fakten aus den Quellen, die
+  // offenen Punkte aus der Prüfung, die Bedarfsliste aus beidem. Jeder für sich kann stimmen und
+  // trotzdem dem Nachbarn widersprechen - „Quelle fehlt“ neben einer ausgelesenen Adresse,
+  // „Zielgruppe unklar“ neben einer festgelegten Zielgruppe. Für die bauende KI ist das kein
+  // Detail: sie muss sich entscheiden, welcher Satz gilt, und trifft die Wahl ohne uns.
+  //
+  // Diese Prüfung läuft über den fertigen Text und vergleicht ihn mit dem, was der Projektstand
+  // wirklich hergibt. Gefundene Widersprüche werden nicht stillschweigend geglättet - sie stehen
+  // als eigener Abschnitt im Auftrag, mit der Auflösung dahinter. Ein stiller Eingriff wäre die
+  // schlechtere Wahl: er würde denselben Fehler beim nächsten Mal nur unsichtbar machen.
+  const CONSISTENCY_CHECKS=[
+    {name:'Quelle',
+     stale:/(?:link|quelle|url|website)[^.\n]{0,40}(?:fehlt|nicht (?:angegeben|hinterlegt|vorhanden))|kein[e]? (?:quelle|website|link)[^.\n]{0,30}(?:hinterlegt|angegeben|vorhanden)/i,
+     holds:()=>state.sourceUrls.length>0,
+     truth:()=>`${state.sourceUrls.length===1?'Eine Quelle liegt vor':`${state.sourceUrls.length} Quellen liegen vor`}: ${state.sourceUrls.map(x=>x.url).slice(0,3).join(', ')}.`},
+    {name:'Zielgruppe',
+     stale:/zielgruppe[^.\n]{0,40}(?:fehlt|nicht (?:definiert|festgelegt|angegeben)|unklar|offen)/i,
+     holds:()=>Boolean(projectAudience()),
+     truth:()=>`Die Zielgruppe steht fest: ${projectAudience()}.`},
+    {name:'Designrichtung',
+     stale:/(?:designrichtung|gestaltungsrichtung|richtung)[^.\n]{0,40}(?:fehlt|nicht (?:gewählt|ausgewählt|festgelegt)|unklar|ungeklärt|offen)/i,
+     holds:()=>Boolean(selectedConcept()),
+     truth:()=>`Die Richtung „${selectedConcept()?.name||''}“ ist ausgewählt.`},
+    {name:'Auftraggeber',
+     stale:/(?:auftraggeber|firmenname|kunde)[^.\n]{0,30}(?:fehlt|nicht angegeben|unbekannt)/i,
+     holds:()=>Boolean(project().client?.name),
+     truth:()=>`Der Auftraggeber ist ${project().client.name}.`}
+  ];
+  function consistencyBlock(text){
+    const gefunden=[];
+    for(const check of CONSISTENCY_CHECKS){
+      let gilt=false;
+      try{gilt=check.holds()}catch{}
+      if(!gilt||!check.stale.test(text))continue;
+      gefunden.push(`- ${check.name}: Der Auftrag enthält an einer Stelle noch die ältere Aussage, dass hier etwas fehle. Es gilt der neuere Stand — ${check.truth()}`);
+    }
+    if(!gefunden.length)return '';
+    return `\n## WIDERSPRUCHSAUFLÖSUNG\nDiese Punkte wurden im Ablauf nachgetragen, nachdem der erste Befund geschrieben war. Wo sich beide Fassungen im Text begegnen, gilt ausnahmslos die hier genannte:\n${gefunden.join('\n')}\n`;
+  }
   function agentDocument(text,agent){
+    const geprueft=consistencyBlock(text);
+    if(geprueft)text=text.replace(/\nBeginne jetzt mit der Umsetzung/,`${geprueft}\nBeginne jetzt mit der Umsetzung`);
     if(agent!=="claude")return text;
     const parts=text.replace(CLOSING_LINE,"").trimEnd().split(/\n(?=## )/);
     const head=(parts.shift()||"").trim();

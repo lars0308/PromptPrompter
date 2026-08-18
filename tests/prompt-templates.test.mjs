@@ -657,3 +657,103 @@ test('die Verwaltung zeigt, welcher Preis wirklich aus Stripe kommt',async()=>{
   assert.match(core,/nicht aus Stripe/);
   assert.match(css,/\.admin-price-origin\.is-stale\{/,'ein Fehlschlag muss auch aussehen wie einer');
 });
+
+// Der Projektstand wird ausgeführt, nicht nur im Quelltext gesucht: die Auflösung ist Logik, und
+// Logik prüft man, indem man sie laufen lässt.
+async function standHarness(){
+  const src=await text('app.js');
+  const cut=(a,b)=>{const i=src.indexOf(a),j=src.indexOf(b,i);assert.ok(i>=0&&j>i,`marker missing: ${a}`);return src.slice(i,j)};
+  const body=`
+let state={sourceUrls:[],documents:[],clarifications:[],projectReview:{},settings:{checks:{}},concepts:[],selectedConceptId:''};
+let PROJECT={};
+function project(){return PROJECT}
+function projectAudience(){return PROJECT.audience||''}
+function selectedConcept(){return state.concepts.find(c=>c.id===state.selectedConceptId)||null}
+function endSentence(t){const v=String(t||'').trim();return !v?'':(/[.!?:]$/.test(v)?v:v+'.')}
+`
+  +cut('  const UNUSABLE_SOURCE=','  const usableSources=')
+  +'  const usableSources=()=>state.sourceUrls.filter(sourceUsable);\n'
+  +cut('  const CLARIFICATION_TOPICS=','\n  function outputTargetPromptBlock')
+  +cut('  const FACT_MAIL=','\n  // Which pages get built')
+  +cut('  const CONSISTENCY_CHECKS=','  function agentDocument(')
+  +`return {set:(s,p)=>{state={...state,...s};PROJECT=p||{}},clarificationPromptBlock,verifiedFactsBlock,factStatus,consistencyBlock,projectStandpoint,normalizedAnswer,clarificationTopic,clarificationFact};`;
+  return new Function(body)();
+}
+
+test('an answered question stops being an open point, and a stale warning stops being repeated',async()=>{
+  const api=await standHarness();
+  const frage='Der Auftrag verweist auf einen Link für Firmeninformationen – dieser Link fehlt in den Referenz-URLs. Ohne konkrete Infos zu Leistungen, Größe und Region lassen sich Architektur und Gestaltungsrichtung nicht seriös entwickeln. Welche Infos stellen Sie bereit?';
+  const review={questions:[{question:frage,required:true}],warnings:[{area:'Quelle',message:'Es ist keine Website des Auftraggebers hinterlegt.'}],blockers:[]};
+  const seite={url:'https://www.textilpflege-schubert.de',summary:'Textilpflege Schubert waescht seit 1998 fuer Hotels. Tel.: +49 5721 4455 E-Mail: info@textilpflege-schubert.de Oeffnungszeiten: Mo-Fr 08:00-18:00 Uhr.'};
+
+  // Vorher: nichts beantwortet, keine Quelle - die Frage ist offen und der Hinweis gilt.
+  api.set({projectReview:review,clarifications:[],sourceUrls:[]},{});
+  let block=api.clarificationPromptBlock();
+  assert.match(block,/Noch offen/,'the unanswered question is listed');
+  assert.match(block,/keine Website des Auftraggebers hinterlegt/,'and so is the warning');
+
+  // Nachher: beantwortet und Quelle ausgelesen - beides muss verschwinden.
+  api.set({projectReview:review,
+    clarifications:[{question:frage,answer:'https://www.textilpflege-schubert.de'}],
+    sourceUrls:[{url:'https://www.textilpflege-schubert.de',pages:[seite],links:[]}]},{});
+  block=api.clarificationPromptBlock();
+  assert.doesNotMatch(block,/Noch offen/,'an answered question is no longer open');
+  assert.doesNotMatch(block,/keine Website des Auftraggebers hinterlegt/,'a warning the answer resolved is gone');
+  assert.match(block,/- Quelle: https:\/\/www\.textilpflege-schubert\.de/,'it became a statement instead');
+});
+
+test('a question is only settled when its answer settles it',async()=>{
+  const api=await standHarness();
+  const review={questions:[{question:'Welche Zielgruppe soll angesprochen werden?',required:true}],warnings:[],blockers:[]};
+  // „weiß nicht“ ist keine Festlegung - es ist eine bewusste Entscheidung, ohne weiterzuarbeiten.
+  api.set({projectReview:review,clarifications:[{question:review.questions[0].question,answer:'weiß nicht'}],sourceUrls:[]},{});
+  const stand=api.projectStandpoint();
+  assert.equal(stand.questions[0].state,'BLOCKED');
+  assert.match(api.clarificationPromptBlock(),/Bewusst offen gelassen/);
+  // Und eine echte Antwort löst sie auf.
+  api.set({projectReview:review,clarifications:[{question:review.questions[0].question,answer:'Privat- und Geschäftskunden'}],sourceUrls:[]},{});
+  assert.equal(api.projectStandpoint().questions[0].state,'RESOLVED');
+});
+
+test('a fact is only "not found" once somebody has actually looked',async()=>{
+  const api=await standHarness();
+  // Keine Quelle: es gibt nichts zu durchsuchen.
+  api.set({sourceUrls:[],documents:[],clarifications:[]},{});
+  assert.equal(api.factStatus().state,'NO_SOURCE');
+  assert.match(api.verifiedFactsBlock(),/- Telefon: keine Quelle hinterlegt/);
+  // Quelle genannt, aber noch nicht ausgelesen - „nicht gefunden“ wäre schlicht falsch.
+  api.set({sourceUrls:[{url:'https://neu.de',pages:[]}],documents:[],clarifications:[]},{});
+  assert.equal(api.factStatus().state,'PENDING');
+  const block=api.verifiedFactsBlock();
+  assert.match(block,/- Telefon: die hinterlegte Quelle ist noch nicht ausgewertet/);
+  assert.doesNotMatch(block,/- Telefon: nicht in den Quellen gefunden/,'never claim a search that did not happen');
+  // Ausgelesen und wirklich nichts drin: jetzt ist die Aussage berechtigt.
+  api.set({sourceUrls:[{url:'https://neu.de',pages:[{url:'https://neu.de',summary:'x'.repeat(300)}]}],documents:[],clarifications:[]},{});
+  assert.equal(api.factStatus().state,'ANALYSED');
+  assert.match(api.verifiedFactsBlock(),/- Telefon: nicht in den Quellen gefunden/);
+});
+
+test('raw keyword answers become statements, formulated ones stay as they are',async()=>{
+  const api=await standHarness();
+  assert.equal(api.clarificationFact('Welche Kontaktwege sollen auf der Seite stehen?','und telefon udn email'),
+    'Kontakt: Als Kontaktwege sind Telefon und E-Mail vorgesehen und gehören sichtbar auf die Seite.');
+  assert.equal(api.clarificationFact('Welche Zielgruppe?','Beide Zielgruppen mit separaten Schwerpunkten auf der Website'),
+    'Zielgruppe: Beide Zielgruppen mit separaten Schwerpunkten auf der Website.');
+  // Eine Adresse bleibt eine Adresse und wird nie umschrieben.
+  assert.match(api.clarificationFact('Welche Infos stellen Sie bereit?','https://www.textilpflege-schubert.de'),
+    /^Quelle: https:\/\/www\.textilpflege-schubert\.de\.$/);
+});
+
+test('the final pass names a contradiction instead of leaving both versions standing',async()=>{
+  const api=await standHarness();
+  api.set({sourceUrls:[{url:'https://kunde.de',pages:[{url:'https://kunde.de',summary:'x'.repeat(300)}]}],
+    concepts:[{id:'c1',name:'Ruhig und klar'}],selectedConceptId:'c1',clarifications:[],documents:[]},
+    {audience:'Privat- und Geschäftskunden',client:{name:'Kunde GmbH'}});
+  const block=api.consistencyBlock('Der Link fehlt in den Referenz-URLs. Die Zielgruppe ist nicht definiert. Die Designrichtung ist noch ungeklärt.');
+  assert.match(block,/## WIDERSPRUCHSAUFLÖSUNG/);
+  assert.match(block,/Quelle:.*Eine Quelle liegt vor: https:\/\/kunde\.de/);
+  assert.match(block,/Zielgruppe:.*Privat- und Geschäftskunden/);
+  assert.match(block,/Designrichtung:.*„Ruhig und klar“ ist ausgewählt/);
+  // Ohne Widerspruch bleibt der Abschnitt weg - er ist kein Standardtext.
+  assert.equal(api.consistencyBlock('Alles ist geklärt und nichts fehlt.'),'');
+});
