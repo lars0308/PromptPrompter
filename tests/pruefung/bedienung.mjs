@@ -39,7 +39,11 @@ async function newPage(browser, width, height, scale = 1) {
 // Gast-Einstieg: der Knopf auf der Tarifseite schaltet die App frei, ohne ein Konto anzulegen.
 async function enterAsGuest(page) {
   await page.click('#gateGuestBtn').catch(() => {});
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(2200);
+  // Beim ersten Einstieg steht die Einführung als eigenes Fenster darüber und schluckt jeden
+  // Klick auf die Konsole - beim echten Besuch klickt man sie weg, hier also auch.
+  await page.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => { try { d.close() } catch { d.removeAttribute('open') } }));
+  await page.waitForTimeout(400);
   return page.evaluate(() => !!document.querySelector('#promptCommandInput'));
 }
 
@@ -319,6 +323,66 @@ async function zurueckTaste(browser) {
   await page.context().close();
 }
 
+// Punkt 12 und 43 des Testauftrags: was passiert bei einer Eingabe, die zu wenig hergibt, und
+// was passiert, wenn die drei Gast-Durchläufe aufgebraucht sind.
+async function duenneEingabe(browser) {
+  // Jede Eingabe bekommt eine frische Seite: der Hinweis wird beim Tippen wieder geleert, und
+  // ein Versuch nach dem anderen auf derselben Seite misst dann den vorigen mit.
+  for (const [breite, hoehe, geraet] of [[1280, 860, 'Desktop'], [390, 844, 'Handy']]) {
+    for (const [was, eingabe] of [['nichts', ''], ['ein Wort', 'Shop']]) {
+      const page = await newPage(browser, breite, hoehe);
+      await enterAsGuest(page);
+      if (eingabe) await page.fill('#promptCommandInput', eingabe).catch(() => {});
+      await page.click('#promptCommandSubmit').catch(() => {});
+      await page.waitForTimeout(1000);
+      const stand = await page.evaluate(() => {
+        const el = document.querySelector('#promptCommandError');
+        return {
+          hinweis: el?.textContent.trim() || '',
+          sichtbar: el?.checkVisibility?.({ checkVisibilityCSS: true }) || false,
+          gestartet: !document.querySelector('#workflowApp')?.hidden
+        };
+      });
+      check(
+        `${geraet}: bei ${was} im Feld steht ein sichtbarer Hinweis, statt dass nichts passiert`,
+        stand.hinweis.length > 0 && stand.sichtbar && !stand.gestartet,
+        `Hinweis "${stand.hinweis}", sichtbar ${stand.sichtbar}, Ablauf gestartet ${stand.gestartet}`
+      );
+      await page.context().close();
+    }
+  }
+}
+
+async function gastKontingent(browser) {
+  const page = await newPage(browser, 1280, 860);
+  // Drei verbrauchte Durchläufe eintragen, dann die App öffnen.
+  await page.evaluate(() => { try { localStorage.setItem('sitebrief-v6-guest-runs', '3') } catch {} });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(2500);
+  await enterAsGuest(page);
+
+  const stand = await page.evaluate(() => {
+    const note = document.querySelector('#guestLimitNote');
+    return {
+      text: note?.textContent.trim() || '',
+      sichtbar: note?.checkVisibility?.({ checkVisibilityCSS: true }) || false,
+      zaehler: document.querySelector('#promptHomeMeta')?.textContent.trim() || ''
+    };
+  });
+  check(
+    'Nach drei Gast-Durchläufen sagt die App, dass Schluss ist',
+    /verbraucht|aufgebraucht|Konto/i.test(stand.text) || /0\s*\/\s*3|0 von 3/.test(stand.zaehler),
+    `Hinweis: "${stand.text}", Zähler: "${stand.zaehler}"`
+  );
+  check(
+    'Der Hinweis nennt den Weg weiter (Konto anlegen), statt nur zu sperren',
+    /Konto/i.test(stand.text),
+    `Hinweis: "${stand.text}"`
+  );
+
+  await page.context().close();
+}
+
 // Kontrast nach WCAG: das Verhältnis zwischen Textfarbe und dem, was dahinter liegt. Ab 4,5
 // gilt normaler Text als lesbar, großer Text ab 3.
 function kontrast(vorne, hinten) {
@@ -397,7 +461,9 @@ for (const [titel, lauf] of [
   ['Sehr langer Text (55)', langerText],
   ['Doppelklicks (18, 57)', doppelklick],
   ['Zurück-Taste (6)', zurueckTaste],
-  ['Hell und Dunkel (53)', hellDunkel]
+  ['Hell und Dunkel (53)', hellDunkel],
+  ['Dünne Eingaben (12)', duenneEingabe],
+  ['Gast-Kontingent (43)', gastKontingent]
 ]) {
   console.log(`\n--- ${titel}`);
   try { await lauf(browser); }

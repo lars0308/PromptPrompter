@@ -1503,63 +1503,77 @@ html.prompt-full-redesign .field-large>small{
 
 /* ---- 3. Die Ladeschirme bekommen den Rahmen der Konsole ------------------- */
 /* Der Ablauf bleibt, wie er ist: Fortschritt läuft durch das Wort, am Ende ein
-   einmaliges Aufblinken. Nur der Kasten drumherum ist jetzt derselbe wie auf
-   der Startseite - dunkel in beiden Modi, mit der Bildmarke darüber. */
-/* Kein Kasten mehr: der Ladeschirm ist die Fläche, nicht eine Karte darauf. Die
-   Fläche selbst ist in beiden Modi dunkel - deshalb konnte der Rahmen weg, ohne
-   dass die helle Schrift ihren Grund verliert. */
+   einmaliges Aufblinken. Der Ladeschirm ist die Fläche, nicht eine Karte darauf.
+
+   Die Fläche war bisher in beiden Modi dunkel. Das hiess: wer im Hellmodus arbeitet,
+   bekam mitten im Ablauf einen schwarzen Bildschirm - und beim naechsten Schritt
+   wieder einen hellen. Jetzt folgt der Ladeschirm dem eingestellten Modus wie jede
+   andere Flaeche auch. Alle Farben haengen an diesen sechs Werten; unten steht nur
+   noch, welcher wohin gehoert. */
+html.prompt-full-redesign{
+  --loader-bg:var(--paper);
+  --loader-ink:var(--ink);
+  --loader-soft:var(--muted);
+  --loader-line:var(--line);
+  --loader-rest:color-mix(in srgb,var(--ink) 22%,transparent);
+  --loader-logo:url("./sitebrief-logo-trace.svg?v=7");
+}
+html.prompt-full-redesign[data-theme="dark"]{
+  --loader-bg:#0f151d;
+  --loader-ink:#eef6fb;
+  --loader-soft:#cfdce7;
+  --loader-line:rgba(255,255,255,.09);
+  --loader-rest:rgba(233,243,250,.28);
+  --loader-logo:url("./sitebrief-logo-trace-light.svg?v=7");
+}
 html.prompt-full-redesign :is(#promptWorkflowLoader,.prompt-handoff-loader,.prompt-completion-flash,#promptAiThinkingStage){
-  background:#0f151d!important;
-  color:#eef6fb!important;
+  background:var(--loader-bg)!important;
+  color:var(--loader-ink)!important;
 }
 html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,#promptAiThinkingStage>div){
   width:min(560px,100%)!important;
   padding:32px 26px!important;
   border:0!important;
   background:transparent!important;
-  color:#eef6fb!important;
+  color:var(--loader-ink)!important;
   box-shadow:none!important;
 }
-/* Die beiden Arbeitsflächen mitten in einer Schrittseite sind kein Vollbild: sie
-   brauchen ihren eigenen dunklen Grund, sonst steht helle Schrift auf hellem
-   Papier - genau das war im Hellmodus bei "Briefing wird verstanden" der Fall. */
+/* Die beiden Arbeitsflaechen mitten in einer Schrittseite sind kein Vollbild. Sie
+   tragen denselben Grund wie der Vollbild-Ladeschirm, damit ein Ablauf nicht
+   zwischen hell und dunkel springt. */
 html.prompt-full-redesign :is(.streamline-working-inner,.master-generation-inner){
   width:min(560px,100%)!important;
   margin:0 auto!important;
   padding:var(--sp-7) var(--sp-6)!important;
   border:0!important;
   border-radius:var(--r-lg)!important;
-  background:#111923!important;
-  color:#eef6fb!important;
+  background:var(--loader-bg)!important;
+  color:var(--loader-ink)!important;
   box-shadow:none!important;
 }
-html.prompt-full-redesign :is(.streamline-working-inner,.master-generation-inner) :is(strong,h1,h2){color:#f2f8fd!important}
-html.prompt-full-redesign :is(.streamline-working-inner,.master-generation-inner) :is(p,small,span:not(.prompt-process-fill)){color:var(--mist)!important}
-/* Ohne Plättchen: die Marke steht frei. Die Ladeflächen sind in beiden Modi dunkel,
-   also trägt sie dort ihre helle Fassung - dasselbe Zeichen, heller Körper, gleiches
-   Blau. Ein Filter hätte auch das Blau umgefärbt. */
-/* Als content:url() statt als Hintergrundbild: eine Grafik im Hintergrund bleibt in
-   Chrome stehen, ein ersetztes Bild läuft. Deshalb bewegt sich der blaue Balken im
-   Zeichen hier genauso wie auf dem Startbildschirm. */
+html.prompt-full-redesign :is(.streamline-working-inner,.master-generation-inner) :is(strong,h1,h2){color:var(--loader-ink)!important}
+html.prompt-full-redesign :is(.streamline-working-inner,.master-generation-inner) :is(p,small,span:not(.prompt-process-fill)){color:var(--loader-soft)!important}
+/* Ohne Plaettchen: die Marke steht frei, im Hellmodus in ihrer dunklen Fassung, im
+   Dunkelmodus in ihrer hellen. Als content:url() statt als Hintergrundbild - eine
+   Grafik im Hintergrund bleibt in Chrome stehen, ein ersetztes Bild laeuft. */
 html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner):not(.prompt-process-lines)::before{
-  content:url("./sitebrief-logo-trace-light.svg?v=7");
+  content:var(--loader-logo);
   display:block;width:52px;height:52px;margin:0 auto 20px;
 }
 html.prompt-full-redesign :is(.prompt-handoff-loader>div,.prompt-completion-flash>div):not(.prompt-process-lines)::before{
-  content:url("./sitebrief-logo-trace-light.svg?v=7")!important;background:none!important;
+  content:var(--loader-logo)!important;background:none!important;
 }
-/* Auf dunklem Grund braucht der Fortschritt im Wort einen hellen Rest, sonst
-   verschwindet der noch nicht gefüllte Teil. Der Füllstand selbst kommt
-   unverändert aus --prompt-fill. */
-html.prompt-full-redesign #promptWorkflowLoader strong{
-  background-image:linear-gradient(90deg,var(--logo-blue) 0 var(--prompt-fill,0%),rgba(233,243,250,.28) var(--prompt-fill,0%) 100%)!important;
+/* Der noch nicht gefuellte Teil des Wortes braucht einen Rest, der sich vom Grund
+   abhebt - hell auf dunkel, dunkel auf hell. */
+html.prompt-full-redesign :is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff,#promptModeHandoff) strong{
+  background-image:linear-gradient(90deg,var(--logo-blue) 0 var(--prompt-fill,0%),var(--loader-rest) var(--prompt-fill,0%) 100%)!important;
   font-size:clamp(28px,7vw,40px)!important;letter-spacing:-.05em!important;
 }
-html.prompt-full-redesign .prompt-loader-sentence{color:#cfdce7!important;font-weight:600!important}
+html.prompt-full-redesign .prompt-loader-sentence{color:var(--loader-soft)!important;font-weight:600!important}
 html.prompt-full-redesign :is(.prompt-handoff-loader,.prompt-completion-flash,#promptAiThinkingStage) .prompt-process-line{
-  border-bottom-color:rgba(255,255,255,.09)!important;color:#cfdce7!important;
+  border-bottom-color:var(--loader-line)!important;color:var(--loader-soft)!important;
 }
-html.prompt-full-redesign :is(.prompt-handoff-loader,.prompt-completion-flash) .prompt-process-title{color:#f2f8fd!important}
+html.prompt-full-redesign :is(.prompt-handoff-loader,.prompt-completion-flash) .prompt-process-title{color:var(--loader-ink)!important}
 html.prompt-full-redesign .prompt-loader-pulse i{background:var(--logo-blue)!important}
 /* Der Schließen-Knopf sitzt auf dem Grund, nicht auf der Karte. */
 html.prompt-full-redesign #promptWorkflowLoaderClose{
@@ -2190,9 +2204,82 @@ html.prompt-full-redesign:not([data-theme="dark"]){--muted:#5b6874}
 html.prompt-full-redesign:not([data-theme="dark"]) :is(.upgrade-btn,#upgradeBtn,#upgradeMenuBtn){
   background:#b45309!important;border-color:#b45309!important;color:#fff!important;
 }
+/* Der Tarifname im Knopf trug sein eigenes Blau. Auf Orange sind das 1,3:1 - im Menue war das
+   Wort praktisch nicht zu lesen. Innerhalb des Knopfes gilt die Schriftfarbe des Knopfes. */
+html.prompt-full-redesign :is(.upgrade-btn,#upgradeBtn,#upgradeMenuBtn) *{color:inherit!important}
 
 /* Weiße Schrift auf dem Signalblau der Hauptknöpfe: 3,9:1 -> 5,5:1. Der Ton ist der bereits
    vorhandene tiefere Blauwert der Marke. */
 html.prompt-full-redesign :is(.solid-btn,button.solid-btn):not(.upgrade-btn):not(.danger-btn):not(.danger){
   background:#106fa4!important;border-color:#106fa4!important;color:#fff!important;
+}
+
+/* ------------------------------------------------------------------
+   Ein Ladeschirm pro Uebergang
+   ------------------------------------------------------------------
+   Vier Stellen koennen einen Vollbild-Ladeschirm aufziehen: die Uebergabe von der
+   Startseite, der Ablaufschirm, der Schirm an der KI-Anfrage und die Briefing-
+   Uebernahme. Sie ueberschneiden sich zwangslaeufig - eine Anfrage geht raus,
+   waehrend die Uebergabe noch laeuft. Alle vier sehen gleich aus, aber zwei
+   uebereinander sind trotzdem zwei: der obere blendet auf, der untere blitzt
+   darunter hervor. Also gilt: wer zuerst steht, bleibt stehen; der spaetere
+   wartet, bis er allein ist, und uebernimmt dann ohne Schnitt. */
+body:has(#promptModeHandoff) :is(#promptAiTaskLoader,#promptBriefHandoff,#promptWorkflowLoader),
+body:has(#promptWorkflowLoader) :is(#promptAiTaskLoader,#promptBriefHandoff),
+body:has(#promptBriefHandoff) #promptAiTaskLoader{
+  display:none!important;
+}
+
+/* ------------------------------------------------------------------
+   Kreuze, Pfeile, Plus: gleiche Groesse, satter Strich, echte Mitte
+   ------------------------------------------------------------------
+   Das × und der ← sind Schriftzeichen, keine Symbole. Ein Schriftzeichen sitzt in
+   seiner Zeile, nicht in der Mitte des Knopfes: das × haengt oben, weil unter ihm
+   noch Platz fuer Unterlaengen freigehalten wird. Deshalb hier ueberall dieselbe
+   Behandlung - Raster mit place-items:center, line-height 1 und kein eigenes
+   padding, das die Mitte wieder verschiebt. Dazu ein satterer Strich, damit die
+   Zeichen auf beiden Untergruenden gleich stark aussehen. */
+html.prompt-full-redesign :is(
+  [data-close],.close-dialog,.lightbox-close,.offer-close,.announcement-close,
+  .gate-login-close,.support-dialog-close,.free-prompt-close,.simple-intake-close,
+  .project-mode-close,.project-preview-close,.history-close,.prompt-thinking-close,
+  #promptWorkflowLoaderClose,[data-sub-close],.prompt-setup-back,.dialog-back
+){
+  display:grid!important;
+  place-items:center!important;
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+  padding:0!important;
+  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Arial,sans-serif!important;
+  font-size:23px!important;
+  font-weight:600!important;
+  line-height:1!important;
+  text-align:center!important;
+  /* Der Strich der beiden Zeichen: dieselbe Farbe, nur einmal ueberzeichnet. Ohne das
+     wirkt das × auf hellem Grund deutlich duenner als der Pfeil daneben. */
+  -webkit-text-stroke:.6px currentColor;
+  text-stroke:.6px currentColor;
+}
+/* Der Pfeil traegt eine andere Grundlinie als das Kreuz und sass dadurch zwei Pixel
+   zu hoch. Ein Zeichen, das schon mittig ist, braucht keinen Ausgleich - der Pfeil
+   schon. */
+html.prompt-full-redesign :is(.prompt-setup-back,.dialog-back,[data-sub-close]){
+  font-size:21px!important;
+}
+html.prompt-full-redesign .prompt-setup-back>span{display:block;line-height:1}
+/* Das Zahnrad-Fenster fuehrt zurueck ueber den Pfeil allein - das Wort daneben hat den
+   Kopf des Fensters ueber zwei Zeilen gedrueckt. */
+html.prompt-full-redesign .prompt-setup-back{gap:0!important}
+
+/* Der Plus-Knopf stand mit seinem Rahmen fast an der Kante der Konsole. Kleiner
+   gefasst hat er wieder Luft nach allen Seiten; die Flaeche zum Antippen bleibt
+   durch das umgebende Feld gleich gross. */
+html.prompt-full-redesign .prompt-attach-button{
+  width:32px!important;height:32px!important;
+  min-width:32px!important;min-height:32px!important;
+  border-radius:9px!important;
+  font-size:17px!important;
+  line-height:1!important;
 }

@@ -503,9 +503,9 @@ test('the login/entry gate has no leftover small hint texts (accountIntro paragr
   assert.doesNotMatch(html,/Deine Projekte und Einstellungen werden direkt geladen\./);
   assert.doesNotMatch(app,/el\.accountIntro/);
 });
-test('the ".ai" suffix on the Prompt.ai wordmark is statically blue everywhere it ships in the HTML (topbar, boot screen, login gate), not only once a late-loading polish script runs',async()=>{
+test('the ".ai" suffix on the Prompt.ai wordmark is statically blue everywhere it ships in the HTML (topbar, login gate), not only once a late-loading polish script runs',async()=>{
   const html=await text('index.html'),css=await text('styles.css');
-  const spots=[/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT/,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><p class="prompt-fill-progress"[^>]*>Dein Arbeitsbereich wird vorbereitet\./,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><span>Aus Ideen wird ein klares Projekt/];
+  const spots=[/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><small>AUS IDEEN WIRD EIN KLARES PROJEKT/,/<strong data-brand-ai="1">Prompt<span class="brand-ai-suffix">\.ai<\/span><\/strong><span>Aus Ideen wird ein klares Projekt/];
   for(const pattern of spots)assert.match(html,pattern);
   assert.match(css,/\.auth-brand \.brand-ai-suffix\{color:var\(--accent\)\}/,'a plain .auth-brand span{color:muted} rule beats the single-class .brand-ai-suffix rule on specificity, so a targeted override is required');
 });
@@ -797,7 +797,7 @@ test('the review/preview loader and the free-prompt thinking loader never fill t
   }
   const transition=await text('transition-polish.js');
   assert.doesNotMatch(transition,/clip-path:/,'the review/preview loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
-  assert.match(transition,/#promptWorkflowLoader strong\{background-image:linear-gradient\(90deg/,'the headline itself carries the progress');
+  assert.match(transition,/#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff\) strong\{background-image:linear-gradient\(90deg/,'the headline itself carries the progress - on every loading screen, not just this one');
   assert.match(transition,/if\(box\.style\.getPropertyValue\('--prompt-fill'\)!==next\)box\.style\.setProperty\('--prompt-fill',next\);/,'only write on change - assigning inside its own observer loops');
   assert.match(transition,/@supports not \(background-clip:text\)/,'older engines keep the bar');
   const v1=await text('promptai-experience-v1.js');
@@ -898,7 +898,7 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   assert.doesNotMatch(css,/\.prompt-fill-progress\{[^}]*clip-path/,'clip-path cut ascenders and descenders in half');
   assert.match(css,/\.master-generation-track,#promptAppBoot \.boot-track\{display:none\}/);
   assert.match(css,/\.task-progress \.task-progress-track\{display:none\}/);
-  assert.match(html,/<p class="prompt-fill-progress" style="--prompt-fill:6%">Dein Arbeitsbereich wird vorbereitet\.<\/p>/,'boot screen status line - the wordmark itself stays untouched');
+  assert.match(html,/<strong class="prompt-fill-progress" style="--prompt-fill:6%">Arbeitsbereich wird vorbereitet<\/strong>/,'boot screen headline - same build as every other loading screen');
   assert.match(cleanup,/<strong class="prompt-fill-sweep">Dein Master-Prompt entsteht<\/strong>/,'master prompt screen');
   assert.match(app,/box\?\.style\.setProperty\('--prompt-fill',`\$\{pct\}%`\);label\?\.classList\.add\('prompt-fill-progress'\)/,'inline task progress');
 });
@@ -926,15 +926,23 @@ test('every loading screen ends the same way: full fill, blinking, then gone - a
   const transition=await text('transition-polish.js'),handoff=await text('mode-handoff-fix.js'),cleanup=await text('workflow-cleanup.js'),app=await text('app.js'),theme=await text('theme-init.js');
   // A screen that appears and disappears within 200ms reads as a glitch, so every one of them
   // stays for a shared minimum and keeps blinking until then.
-  assert.match(theme,/const MIN_VISIBLE_MS=FLASH_MS\?1600:0;/);
+  assert.match(theme,/const MIN_VISIBLE_MS=FLASH_MS\?2400:0;/);
   assert.match(theme,/return Math\.max\(FLASH_MS,MIN_VISIBLE_MS-elapsed\);/);
   assert.match(transition,/const wait=window\.PromptAiFill\?\.tail\?\.\(shownAt\)\?\?FLASH_MS;/);
   assert.match(handoff,/const wait=window\.PromptAiFill\?\.tail\?\.\(startedAt\)\?\?flash;/);
-  assert.match(transition,/#promptWorkflowLoader\.is-complete strong\{animation:promptFillFlash/);
+  assert.match(transition,/#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff\)\.is-complete strong\{animation:promptFillFlash/,'every loading screen blinks the same way');
   assert.match(transition,/if\(box\.classList\.contains\('is-complete'\)\)return;/,'sync() calls hide() repeatedly - restarting the blink would keep the screen up forever');
   assert.match(transition,/box\.classList\.remove\('is-leaving','is-complete'\)/,'resumed work cancels the blink');
   assert.match(handoff,/\.prompt-mode-handoff\.is-complete strong\{animation:promptFillFlash/);
   assert.match(handoff,/setTimeout\(\(\)=>leave\(box\),flash\?wait:0\)/);
+  for(const [name,src] of [['transition-polish.js',transition],['mode-handoff-fix.js',handoff]])
+    assert.match(src,/'--prompt-flash-count',String\(Math\.max\(2,/,`${name}: zweimal blinken, wie ueberall`);
+  const v2=await text('promptai-loading-v2.js');
+  assert.match(v2,/const FLASH_COUNT=2;/);
+  // Ein zweiter Schirm ueber dem ersten waeren zwei Ladebilder fuer einen Uebergang.
+  assert.match(handoff,/if\(document\.querySelector\('#promptWorkflowLoader,#promptAiTaskLoader'\)\)\{leave\(box\);return\}/);
+  const design=await text('promptai-full-app-design.css');
+  assert.match(design,/body:has\(#promptWorkflowLoader\) :is\(#promptAiTaskLoader,#promptBriefHandoff\)/);
   assert.match(cleanup,/window\.PromptAiFill\?\.finish\(\$\('#masterGeneration strong'\),\(\)=>step\.classList\.remove\('master-generating'\)\)/);
   assert.match(cleanup,/window\.PromptAiFill\?\.reset\(\$\('#masterGeneration strong'\)\)/,'the overlay can run again for the next project');
   assert.match(app,/el\[`\$\{kind\}ProgressText`\]\?\.classList\.add\('prompt-fill-complete'\)/,'inline task progress ends the same way');

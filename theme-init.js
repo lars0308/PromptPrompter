@@ -30,10 +30,10 @@
   // Lives in the first blocking script so the boot screen can report progress before anything
   // else is parsed.
   const FLASH_MS=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches?0:420}catch{return 420}})();
-  // A screen that appears and disappears within a few hundred milliseconds reads as a glitch, not
-  // as progress. Every loading screen therefore stays for at least this long; if the work took
-  // longer anyway, only the closing blink is added.
-  const MIN_VISIBLE_MS=FLASH_MS?1600:0;
+  // Ein Schirm, der in ein paar hundert Millisekunden kommt und geht, liest sich als Fehler, nicht
+  // als Fortschritt. Jeder Ladeschirm steht deshalb mindestens so lange. War die Arbeit ohnehin
+  // laenger, wird nichts gestreckt - dann kommt nur das Abschlussblinken dazu.
+  const MIN_VISIBLE_MS=FLASH_MS?2400:0;
   window.PromptAiFill={
     flashMs:FLASH_MS,
     minVisibleMs:MIN_VISIBLE_MS,

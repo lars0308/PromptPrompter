@@ -64,10 +64,14 @@
   function applyMode(data){const button=$(`.mode-switch button[data-mode="${data.mode}"]`);if(!button)return false;if(document.documentElement.classList.contains('prompt-access-pending'))return false;if(button.disabled||button.classList.contains('locked'))return false;if(!button.classList.contains('active'))button.click();document.documentElement.dataset.promptMode=data.mode;return button.classList.contains('active')}
 
   function release(box){active=false;clearTimeout(timer);clearInterval(sentenceTimer);stopTitleFillLoop(true);clear();document.documentElement.classList.remove('prompt-handoff-pending');
-    // Snap the headline to full, blink blue once, then fade the cover out.
+    // Steht schon der naechste Ladeschirm bereit, gehoert hierhin kein Abschluss: sonst blinkt
+    // dieser Schirm, blendet weg - und der naechste blendet sofort wieder auf. Das sind zwei
+    // Ladebilder fuer einen Uebergang. Also stillschweigend uebergeben.
+    if(document.querySelector('#promptWorkflowLoader,#promptAiTaskLoader')){leave(box);return}
+    // Ueberschrift auf voll, zweimal blau blinken, dann die Flaeche ausblenden.
     const flash=window.PromptAiFill?.flashMs??420;
     const wait=window.PromptAiFill?.tail?.(startedAt)??flash;
-    if(flash&&box){box.style.setProperty('--prompt-flash-count',String(Math.max(1,Math.round(wait/flash))));box.classList.add('is-complete')}
+    if(flash&&box){box.style.setProperty('--prompt-flash-count',String(Math.max(2,Math.round(wait/flash))));box.classList.add('is-complete')}
     setTimeout(()=>leave(box),flash?wait:0)}
   function leave(box){box?.classList.add('is-leaving');setTimeout(()=>{box?.remove();document.documentElement.classList.remove('prompt-mode-handoff-active','prompt-route-pending');window.dispatchEvent(new CustomEvent('promptai:mode-handoff-complete'))},250)}
   function finish(data){

@@ -216,11 +216,13 @@ test('the old start page never shows through, and the handoff loader gets to fin
   assert.match(css,/html\.prompt-full-redesign #welcomePage>\.welcome-workspace\{[\s\S]{0,200}clip-path:inset\(50%\)!important/);
   assert.doesNotMatch(css,/#welcomePage>\.welcome-workspace\{[\s\S]{0,200}display:none/);
   assert.match(css,/body:has\(#workflowApp:not\(\[hidden\]\)\) #welcomePage\{display:none!important\}/);
-  // The step advances after ~50ms, so the loader was gone before its first line had run.
+  // Der Uebergabeschirm ist derselbe wie jeder andere und endet auch so: fuellen, blinken, weg.
+  // Nichts an seiner Lebensdauer wird aus der Textlaenge gerechnet.
   const loader=await read('promptai-loading-v2.js');
-  assert.match(loader,/overlay\.dataset\.runFor=String\(runFor\)/);
+  assert.match(loader,/overlay\.innerHTML=LOADER_MARKUP/,'derselbe Aufbau wie alle anderen Ladeschirme');
   assert.match(loader,/overlay\.dataset\.closing!=='1'/,'and it must not schedule its exit twice');
-  assert.match(loader,/const rest=Math\.max\(0,Number\(overlay\.dataset\.startedAt/);
+  assert.match(loader,/finishScreen\(overlay,\(\)=>\{/);
+  assert.doesNotMatch(loader,/durationFor/,'nichts wird mehr aus der Textlaenge gerechnet');
   // Last project only appears once there is one; the meta line carries live numbers.
   assert.match(home,/if\(latest\)latest\.hidden=!title/);
   assert.match(home,/\$\{text\.length\} Zeichen · ≈\$\{total\} Token/);
@@ -240,7 +242,11 @@ test('the mark stands free on every ground it appears on',async()=>{
   // weil diese Flächen in beiden Modi dunkel sind.
   // :not(.prompt-process-lines), weil der Zeilenkasten ebenfalls ein direktes div-Kind ist -
   // sonst stand das Zeichen zweimal untereinander auf demselben Schirm.
-  assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\):not\(\.prompt-process-lines\)::before\{[\s\S]{0,200}sitebrief-logo-trace-light\.svg/);
+  // Die Ladeflaechen folgen dem eingestellten Modus, also folgt die Marke mit: --loader-logo
+  // traegt im Hellmodus die dunkle Fassung, im Dunkelmodus die helle.
+  assert.match(css,/\.prompt-completion-flash>div,\.master-generation-inner\):not\(\.prompt-process-lines\)::before\{[\s\S]{0,200}content:var\(--loader-logo\)/);
+  assert.match(css,/--loader-logo:url\("\.\/sitebrief-logo-trace\.svg\?v=7"\)/);
+  assert.match(css,/\[data-theme="dark"\]\{[\s\S]{0,400}--loader-logo:url\("\.\/sitebrief-logo-trace-light\.svg\?v=7"\)/);
 });
 
 test('the mode list belongs to the console: dark, and shown whole',async()=>{
@@ -306,7 +312,7 @@ test('the boot mark traces the blue once around the inside of the letter',async(
   // dark in both themes and always take the light one.
   assert.match(html,/id="promptAppBoot"[\s\S]{0,120}sitebrief-logo-trace\.svg/);
   assert.match(html,/\[data-theme="dark"\] #promptAppBoot img\{content:url\("\.\/sitebrief-logo-trace-light\.svg/);
-  assert.match(css,/::before\{[\s\S]{0,160}sitebrief-logo-trace-light\.svg/);
+  assert.match(css,/--loader-logo:url\("\.\/sitebrief-logo-trace-light\.svg\?v=7"\)/,'im Dunkelmodus die helle Fassung');
   assert.match(light,/fill="#eef5fb"/);
   for(const f of ['sitebrief-logo-trace.svg','sitebrief-logo-trace-light.svg'])assert.ok(sw.includes(f),f);
   // And the mark is back in the start page header, without a plate.
@@ -331,12 +337,15 @@ test('light mode is a calm grey and carries the mark faintly',async()=>{
   assert.match(css,/linear-gradient\(104deg,transparent calc\(38% - 1px\)/);
 });
 
-test('the handoff screen is a transition, not a progress bar for the whole brief',async()=>{
-  const loader=await read('promptai-loading-v2.js');
-  // durationFor() scales with the text and goes up to 11 seconds - tying the screen's
-  // lifetime to it turned a transition into a hang.
-  assert.match(loader,/const runFor=2800;/);
-  assert.match(loader,/durationFor\(length=0\)/,'the line timing itself stays as it was');
+test('kein Ladeschirm wird kuenstlich gestreckt oder aus der Textlaenge gerechnet',async()=>{
+  const loader=await read('promptai-loading-v2.js'),theme=await read('theme-init.js');
+  // Frueher rechnete durationFor() aus der Beschreibungslaenge eine Anzeigedauer von bis zu
+  // elf Sekunden aus - das war kein Fortschritt, sondern eine Behauptung. Jetzt haengt der
+  // Schirm an der Anfrage: er geht, sobald sie zurueck ist.
+  assert.doesNotMatch(loader,/durationFor/);
+  assert.doesNotMatch(loader,/inputLength/);
+  // Nur nach unten gibt es eine Grenze: schneller als lesbar wirkt wie ein Fehler.
+  assert.match(theme,/const MIN_VISIBLE_MS=FLASH_MS\?2400:0;/);
 });
 
 test('the references step reads as two purposes, not five equal blocks',async()=>{
@@ -355,14 +364,18 @@ test('the loading screen is the surface itself, and the step pages take the full
   const css=await read('promptai-full-app-design.css');
   // No card on the loader: the whole screen is dark in both themes, so the frame could go
   // without the light type losing its ground.
-  assert.match(css,/:is\(#promptWorkflowLoader,\.prompt-handoff-loader,\.prompt-completion-flash,#promptAiThinkingStage\)\{\s*background:#0f151d!important/);
+  // Der Grund folgt dem eingestellten Modus: wer hell arbeitet, bekommt keinen schwarzen
+  // Bildschirm mitten im Ablauf.
+  assert.match(css,/:is\(#promptWorkflowLoader,\.prompt-handoff-loader,\.prompt-completion-flash,#promptAiThinkingStage\)\{\s*background:var\(--loader-bg\)!important/);
+  assert.match(css,/--loader-bg:var\(--paper\)/);
+  assert.match(css,/\[data-theme="dark"\]\{[\s\S]{0,200}--loader-bg:#0f151d/);
   assert.match(css,/#promptAiThinkingStage>div\)\{[\s\S]{0,200}border:0!important;\s*background:transparent!important/);
   // Die beiden Arbeitsflächen mitten in einer Schrittseite sind kein Vollbild - ohne
   // eigenen dunklen Grund stand ihre helle Schrift im Hellmodus auf hellem Papier.
-  assert.match(css,/:is\(\.streamline-working-inner,\.master-generation-inner\)\{[\s\S]{0,240}background:#111923!important/);
+  assert.match(css,/:is\(\.streamline-working-inner,\.master-generation-inner\)\{[\s\S]{0,240}background:var\(--loader-bg\)!important/);
   // content:url() instead of a background image - a background graphic can be frozen,
   // a replaced image animates, so the blue bar moves here too.
-  assert.match(css,/::before\{\s*content:url\("\.\/sitebrief-logo-trace-light\.svg/);
+  assert.match(css,/::before\{\s*content:var\(--loader-logo\)/);
   // .workspace inset 20, the step card another 16 - content sat at 36 while the rest of
   // the app starts at 16, and the card floated with a visible edge.
   assert.match(css,/\.workspace\{padding-left:0!important;padding-right:0!important\}/);
@@ -426,7 +439,7 @@ test('the plus in the console feeds the real reference inputs instead of a secon
   // Datei: eigener Dialog, aber mit den Formaten des echten Feldes - und was durchkommt, geht
   // durch genau dieses Feld weiter. Geprüft wird vorher: Endung, Größe und ob der Inhalt zur
   // Endung passt, damit eine umbenannte Datei nicht als Text im Prompt landet.
-  assert.match(home,/input\.accept=target\.getAttribute\('accept'\)\|\|''/);
+  assert.match(home,/input\.accept=nurBilder\?'image\/\*':\(target\.getAttribute\('accept'\)\|\|''\)/,'Galerie und Dateiwahl teilen sich ein Feld');
   assert.match(home,/target\.files=box\.files;target\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/);
   assert.match(home,/attachNote\(files\.length===1\?'Datei wird geprüft …'/);
   assert.match(home,/const FILE_NAME=\/\\\.\(png\|jpe\?g\|webp\|pdf\|txt\|md\|csv\|json\)\$\/i/);

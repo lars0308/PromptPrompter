@@ -103,7 +103,7 @@
     // A screen that flickers past in 200ms reads as a glitch: it stays for the shared minimum and
     // blinks until then.
     const wait=window.PromptAiFill?.tail?.(shownAt)??FLASH_MS;
-    box.style.setProperty('--prompt-flash-count',String(Math.max(1,Math.round(wait/(FLASH_MS||420)))));
+    box.style.setProperty('--prompt-flash-count',String(Math.max(2,Math.round(wait/(FLASH_MS||420)))));
     box.classList.add('is-complete');flashTimer=setTimeout(()=>{flashTimer=0;box.classList.add('is-leaving');setTimeout(()=>{box.remove();shownAt=0},250)},wait)}
 
   function closeLateWorkflowUi(){const dialog=$('#clarificationDialog');if(dialog?.open){try{dialog.close('cancel')}catch{dialog.removeAttribute('open')}}$('#promptCompletionFlash')?.remove();document.documentElement.classList.remove('prompt-review-transition','prompt-clarification-exit')}

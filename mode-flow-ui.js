@@ -48,7 +48,7 @@
   }
 
   async function prepareIntake(){
-    if(currentMode()==='expert'||intakeBusy)return null;const project=projectPayload();if(project.description.length<20)return null;
+    if(currentMode()==='expert'||intakeBusy||beimVerlassen())return null;const project=projectPayload();if(project.description.length<20)return null;
     const signature=intakeSignature(),cached=savedIntake();if(cached?.signature===signature){applyIntake(cached.data);return cached.data}
     intakeBusy=true;setStatus('KI analysiert dein Briefing','Projektart, Ziel, Agent, Ausgabe, Regler und Richtungsumfang werden aus deinen Angaben abgeleitet.',true);
     window.PromptAiLoading?.beginTask?.('workflow-intake',{title:'Briefing wird verstanden',kind:'briefing',inputLength:project.description.length});
@@ -77,7 +77,13 @@
   // there indefinitely instead of advancing. Scheduling once and ignoring calls until it fires
   // guarantees route() still runs within ~120ms of the first change in a burst.
   function scheduleRoute(){if(autoTimer)return;autoTimer=setTimeout(()=>{autoTimer=0;route()},120)}
+  // Wer die Rueckfragen wegklickt, will heraus - nicht noch einmal von vorn. Der Ausstieg setzt
+  // diese Klasse, und solange sie steht, faehrt die Automatik nichts Neues an. Ohne das lief
+  // beim Abbrechen "Briefing wird verstanden" los, weil der Ablauf dabei ueber Schritt 3 kommt.
+  const beimVerlassen=()=>document.documentElement.classList.contains('prompt-clarification-exit');
+
   async function route(){
+    if(beimVerlassen())return;
     const mode=currentMode(),step=currentStep(),workflow=$('#workflowApp');if(!step||mode==='expert'||!workflow||workflow.hidden)return;
     if(step!==lastStep){lastStep=step;if(step===1)setStatus(mode==='auto'?'Beschreibe dein Projekt':'Erster Schritt: Projekt beschreiben',mode==='auto'?'Referenzen hängst du oben über das Plus an. Alles Weitere übernimmt Prompt.ai.':'Referenzen hängst du oben über das Plus an; technische Entscheidungen werden für dich vorbereitet.',false);if(step===2)setStatus('Referenzen werden übernommen','Was du beim Start über das Plus angehängt hast, gilt bereits – ein eigener Schritt dafür entfällt.',true)}
     if(step===2){
