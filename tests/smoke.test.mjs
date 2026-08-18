@@ -1833,3 +1833,38 @@ test('a link added from the console says whether it is the customer site or a re
   assert.match(home,/if\(kind==='client'\)\{[\s\S]{0,400}\$\('#importClientWebsiteBtn'\)\?\.click\(\)/);
   assert.match(home,/const field=\$\('#referenceUrl'\);if\(field\)\{field\.value=url\.href;\$\('#addUrlBtn'\)\?\.click\(\)\}/);
 });
+
+// Die Startseite auf dem Handy: ein Bildschirm, eine Sache. Auf dem Desktop bleibt alles, wie
+// es war - die Stuecke wandern beim Wechsel der Breite zurueck an ihren Platz.
+test('on a phone the landing page is one screen: the console playing what it does, two ways in, an arrow',async()=>{
+  const gate=await text('entry-gate-ui.js'),css=await readFile(path.join(root,'promptai-full-app-design.css'),'utf8');
+  assert.match(gate,/const SCHMAL='\(max-width:820px\)'/);
+  assert.match(gate,/function syncBuehne\(\)/);
+  // Marke, Konsole und die beiden Knoepfe wandern auf die Buehne - und wieder zurueck.
+  assert.match(gate,/\$\('\.gate-stage-brand',buehne\)\.appendChild\(marke\)/);
+  assert.match(gate,/\$\('\.gate-stage-slot',buehne\)\.appendChild\(shot\)/);
+  assert.match(gate,/if\(hero&&marke\)hero\.prepend\(marke\)/,'auf dem Desktop gehoert die Marke zurueck in den Kopf');
+  // Der Pfeil ist ein Hinweis, aber er fuehrt auch hin.
+  assert.match(gate,/class="gate-stage-more"/);
+  assert.match(gate,/scrollIntoView\(\{behavior:'smooth',block:'start'\}\)/);
+  assert.match(css,/@keyframes gateStageSink/);
+  assert.match(css,/prefers-reduced-motion:reduce\)\{\s*html\.prompt-full-redesign \.gate-stage-more\{animation:none!important/);
+  // Und die Buehne gibt es nur auf dem Telefon.
+  assert.match(css,/@media\(max-width:820px\)\{\s*html\.prompt-full-redesign \.gate-stage\{/);
+});
+
+// Die Konsole spielt vor, was sie tut: tippen, laden, Ergebnis - dann von vorn.
+test('the console on the landing page types, loads and shows a result instead of standing still',async()=>{
+  const gate=await text('entry-gate-ui.js');
+  assert.match(gate,/const VORFUEHRUNG=\[/);
+  assert.match(gate,/panel\.dataset\.phase='tippen'/);
+  assert.match(gate,/panel\.dataset\.phase='laden'/);
+  assert.match(gate,/panel\.dataset\.phase='fertig'/);
+  // Dieselbe Fuellung wie auf jedem Ladeschirm der App, Wort fuer Wort.
+  assert.match(gate,/window\.PromptAiFill\?\.words\?\.\(strong,anteil\)/);
+  // Der Rahmen der Konsole bleibt stehen: die Schichten decken nur das Textfeld ab.
+  assert.match(gate,/panel\.style\.setProperty\('--shot-top'/);
+  assert.match(gate,/panel\.style\.setProperty\('--shot-bottom'/);
+  // Wer Bewegung reduziert hat, bekommt das Ergebnis, keine Vorfuehrung.
+  assert.match(gate,/if\(reduziert\(\)\)\{[\s\S]{0,200}panel\.dataset\.phase='fertig';return/);
+});

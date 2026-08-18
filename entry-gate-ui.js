@@ -143,6 +143,158 @@
     if(dialog.open)try{dialog.close()}catch{}
   }
 
+  /* ===========================================================================
+     Die Startseite auf dem Handy
+
+     Auf dem Telefon stand bisher alles untereinander: eine vierzeilige Ueberschrift,
+     fuenf Zeilen Fliesstext, dann die Tarife. Bevor irgendetwas Konkretes im Bild war,
+     war der Bildschirm voll - und man las, was das Produkt behauptet, sah aber nie,
+     was es tut.
+
+     Der erste Bildschirm ist deshalb jetzt genau eine Sache: die Konsole, wie sie
+     nach dem Einstieg aussieht, und sie spielt vor, was passiert. Darunter die
+     beiden Wege hinein, darunter ein Pfeil, der zeigt, dass es weitergeht. Alles
+     Weitere - Ueberschrift, die drei Schritte, die Tarife - liegt eine Wischbewegung
+     tiefer.
+
+     Nur auf dem Handy. Auf dem Desktop ist Platz genug fuer alles nebeneinander,
+     dort bleibt es, wie es ist; die Stuecke wandern beim Wechsel der Bildschirm-
+     breite zurueck an ihren Platz.
+     =========================================================================== */
+  const SCHMAL='(max-width:820px)';
+  let buehneAktiv=false;
+
+  function ensureBuehne(){
+    const host=$('#accountLoggedOut');if(!host)return null;
+    let buehne=$('.gate-stage',host);
+    if(!buehne){
+      buehne=document.createElement('div');buehne.className='gate-stage';
+      buehne.innerHTML='<div class="gate-stage-brand"></div>'
+        +'<div class="gate-stage-slot"></div>'
+        +'<div class="gate-stage-actions"></div>'
+        // Der Pfeil ist kein Knopf: er zeigt nur, dass es weitergeht. Wer ihn antippt,
+        // soll trotzdem dorthin kommen - deshalb haengt unten ein Klick daran.
+        +'<button type="button" class="gate-stage-more" aria-label="Weiter nach unten">'
+        +'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'
+        +'</button>';
+      host.prepend(buehne);
+      $('.gate-stage-more',buehne).addEventListener('click',()=>{
+        ($('#gateActions',host)||$('.gate-proof',host))?.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    }
+    return buehne;
+  }
+
+  function syncBuehne(){
+    let schmal=false;try{schmal=matchMedia(SCHMAL).matches}catch{}
+    const host=$('#accountLoggedOut'),shot=$('.gate-shot',host||document),top=$('.gate-top',host||document);
+    if(!host||!shot||!top)return;
+    if(schmal===buehneAktiv&&schmal&&$('.gate-stage .gate-shot'))return;
+    buehneAktiv=schmal;
+    if(schmal){
+      const buehne=ensureBuehne();if(!buehne)return;
+      const marke=$('.auth-brand',host);
+      if(marke)$('.gate-stage-brand',buehne).appendChild(marke);
+      $('.gate-stage-slot',buehne).appendChild(shot);
+      $('.gate-stage-actions',buehne).appendChild(top);
+      startVorfuehrung(shot);
+    }else{
+      const hero=$('.auth-hero',host),plaene=$('#gateActions',host);
+      const marke=$('.gate-stage-brand .auth-brand',host);
+      if(hero&&marke)hero.prepend(marke);
+      if(hero&&top.parentElement!==hero)($('.auth-brand',hero)||hero).insertAdjacentElement('afterend',top);
+      if(plaene&&shot.parentElement!==host)plaene.insertAdjacentElement('afterend',shot);
+      stopVorfuehrung(shot);
+      $('.gate-stage',host)?.remove();
+    }
+  }
+
+  /* Die Vorfuehrung in der Konsole.
+
+     Drei Abschnitte im Wechsel, immer derselbe Kasten: es wird etwas eingetippt, der
+     Ladeschirm laeuft an, das Ergebnis steht da. Zusammen ist das der ganze Ablauf in
+     zwanzig Sekunden - ohne einen Satz darueber, dass es ihn gibt.
+
+     Der Kasten ist inert und aria-hidden: fuer die Bedienung und fuer Vorlesegeraete
+     existiert er nicht, er ist ein Bild. Bei "Bewegung reduzieren" steht einfach das
+     Ergebnis da. */
+  const VORFUEHRUNG=[
+    {tippt:'Bauernladen in der Nähe. Erntezeiten, was heute da ist, und wie man hinfindet.',
+     prompt:'ROLLE\nDu bist Senior-Webdesigner und Frontend-Konzeptioner.\n\nPROJEKT\nHofladen mit Direktverkauf. Hauptziel: Anfragen.\n\nUMSETZUNGSREIHENFOLGE\n1. Startseite — Einstieg\n2. Öffnungszeiten — trägt das Hauptziel\n3. Anfahrt\n\nGESICHERTE FAKTEN\n- Adresse: aus der Kundenseite gelesen\n- Öffnungszeiten: nicht belegt → offener Punkt'},
+    {tippt:'Kosmetikstudio in Bremen. Behandlungen mit Preisen, Termine online, ruhiger Auftritt.',
+     prompt:'ROLLE\nDu bist Senior-Webdesigner und Frontend-Konzeptioner.\n\nPROJEKT\nKosmetikstudio. Hauptziel: Termine.\n\nABNAHME JE SEITE\n- Behandlungen: jede Leistung trägt eine echte Bezeichnung\n- Termin: ohne Scrollen erreichbar\n\nNOCH ZU LIEFERN\n- Preisliste\n- Impressumsangaben'}
+  ];
+  const TIPP_MS=42,STEHEN_MS=1500,LADEN_MS=2600,ZEIGEN_MS=5200;
+
+  function reduziert(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}}
+  function stopVorfuehrung(shot){clearTimeout(shot.__demo);shot.__demo=0;shot.__laeuft=false}
+
+  function startVorfuehrung(shot){
+    if(shot.__laeuft)return;shot.__laeuft=true;
+    const panel=$('.prompt-command-panel',shot),feld=$('.prompt-command-input',shot);
+    if(!panel||!feld)return;
+    // Der Ladeschirm und das Ergebnis liegen als eigene Schichten ueber dem Feld, damit die
+    // Konsole drumherum stehen bleibt - der Rahmen wechselt nicht, nur sein Inhalt.
+    if(!$('.gate-shot-stage',panel)){
+      const laden=document.createElement('div');laden.className='gate-shot-stage gate-shot-loading';
+      laden.innerHTML='<span class="kicker">PROMPT.AI</span><strong>Dein Master-Prompt entsteht</strong><small></small>';
+      const fertig=document.createElement('pre');fertig.className='gate-shot-stage gate-shot-result';
+      panel.append(laden,fertig);
+    }
+    const laden=$('.gate-shot-loading',panel),fertig=$('.gate-shot-result',panel);
+    // Der Rahmen der Konsole soll waehrend der Vorfuehrung stehen bleiben: die beiden Schichten
+    // decken deshalb nur den Bereich des Textfeldes ab. Wo der anfaengt und aufhoert, sagt die
+    // Konsole selbst - so verrutscht nichts, wenn sich ihre Maße irgendwann aendern.
+    const vermessen=()=>{
+      const kasten=panel.getBoundingClientRect(),feldKasten=feld.getBoundingClientRect();
+      if(!kasten.height||!feldKasten.height)return;
+      panel.style.setProperty('--shot-top',`${Math.max(0,Math.round(feldKasten.top-kasten.top))}px`);
+      panel.style.setProperty('--shot-bottom',`${Math.max(0,Math.round(kasten.bottom-feldKasten.bottom))}px`);
+    };
+    vermessen();
+    try{new ResizeObserver(vermessen).observe(panel)}catch{}
+    const zeilen=['Beschreibung wird eingeordnet.','Seitenstruktur wird abgeleitet.','Gesicherte Fakten werden geprüft.','Offene Punkte werden benannt.'];
+
+    if(reduziert()){
+      feld.value=VORFUEHRUNG[0].tippt;fertig.textContent=VORFUEHRUNG[0].prompt;
+      panel.dataset.phase='fertig';return;
+    }
+
+    let runde=0;
+    const plan=(fn,ms)=>{shot.__demo=setTimeout(()=>{if(shot.isConnected&&shot.__laeuft)fn()},ms)};
+
+    const tippen=()=>{
+      const fall=VORFUEHRUNG[runde%VORFUEHRUNG.length];
+      panel.dataset.phase='tippen';feld.value='';laden.style.removeProperty('--prompt-fill');
+      let i=0;
+      const schlag=()=>{
+        if(!shot.isConnected||!shot.__laeuft)return;
+        feld.value=fall.tippt.slice(0,++i);
+        if(i<fall.tippt.length)shot.__demo=setTimeout(schlag,TIPP_MS);
+        else plan(laufen,STEHEN_MS);
+      };
+      schlag();
+    };
+    const laufen=()=>{
+      const fall=VORFUEHRUNG[runde%VORFUEHRUNG.length];
+      panel.dataset.phase='laden';
+      const strong=$('strong',laden),satz=$('small',laden);
+      window.PromptAiFill?.words?.(strong,0);
+      const start=performance.now();let z=0;satz.textContent=zeilen[0];
+      const tick=()=>{
+        if(!shot.isConnected||!shot.__laeuft||panel.dataset.phase!=='laden')return;
+        const anteil=Math.min(1,(performance.now()-start)/LADEN_MS);
+        window.PromptAiFill?.words?.(strong,anteil);
+        const soll=Math.min(zeilen.length-1,Math.floor(anteil*zeilen.length));
+        if(soll!==z){z=soll;satz.textContent=zeilen[z]}
+        if(anteil<1)requestAnimationFrame(tick);
+        else{fertig.textContent=fall.prompt;panel.dataset.phase='fertig';plan(()=>{runde++;tippen()},ZEIGEN_MS)}
+      };
+      requestAnimationFrame(tick);
+    };
+    tippen();
+  }
+
   // Der Satz im Bild wechselt, damit die Reihe an Fällen sichtbar wird statt eines einzigen.
   // Genau wie auf der Startseite: der Vorschlag steht im Platzhalter, blendet aus, wechselt im
   // unsichtbaren Moment und blendet wieder ein (CSS-Regel .prompt-command-input.is-hint-fading).
@@ -229,8 +381,8 @@
     // Fehlermeldung im selben Moment weg, in dem sie erscheint.
     if(window.SiteBriefCloud?.user||document.documentElement.classList.contains('prompt-workflow-loading'))closeLogin();
   }
-  function settle(){ensureGateActions();watchPricing();syncTierChips();resetExpansion();guardGateReturn();closeLoginWhenSignedIn()}
+  function settle(){ensureGateActions();syncBuehne();watchPricing();syncTierChips();resetExpansion();guardGateReturn();closeLoginWhenSignedIn()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
-  function init(){settle();new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});window.addEventListener('promptai:access',schedule);window.addEventListener('pageshow',schedule)}
+  function init(){settle();try{matchMedia(SCHMAL).addEventListener('change',()=>{buehneAktiv=!buehneAktiv;syncBuehne()})}catch{}new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','open']});window.addEventListener('promptai:access',schedule);window.addEventListener('pageshow',schedule)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

@@ -2363,3 +2363,100 @@ html.prompt-full-redesign .prompt-attach-kind button{
 html.prompt-full-redesign .prompt-attach-kind button[data-link-kind="client"]{
   border-color:#3f6f92!important;color:#9fd0f0!important;
 }
+
+/* ------------------------------------------------------------------
+   Startseite auf dem Handy: ein Bildschirm, eine Sache
+   ------------------------------------------------------------------
+   Der erste Bildschirm zeigt die Konsole und was sie tut, darunter die beiden
+   Wege hinein und einen Pfeil. Alles Weitere liegt eine Wischbewegung tiefer.
+   Nur hier - auf dem Desktop ist Platz genug fuer alles nebeneinander. */
+@media(max-width:820px){
+  html.prompt-full-redesign .gate-stage{
+    display:flex!important;flex-direction:column!important;
+    min-height:calc(100dvh - 26px)!important;
+    padding:0 0 var(--sp-4)!important;margin:0 0 var(--sp-7)!important;
+    gap:var(--sp-4)!important;
+  }
+  /* Marke oben, Konsole in der Mitte, die beiden Wege und der Pfeil unten. Die Konsole
+     nimmt den Platz dazwischen und steht darin mittig - so bleibt der Abstand gleich,
+     egal wie hoch das Geraet ist. */
+  html.prompt-full-redesign .gate-stage-slot{
+    flex:1 1 auto!important;display:flex!important;align-items:center!important;margin:0!important;
+  }
+  html.prompt-full-redesign .gate-stage .gate-shot{margin:0!important;width:100%!important}
+  /* Zwei gleich breite Wege nebeneinander: links zurueck ins Konto, rechts hinein. */
+  html.prompt-full-redesign .gate-stage-actions .gate-top{
+    display:grid!important;grid-template-columns:1fr 1fr!important;gap:var(--sp-3)!important;
+    margin:0!important;width:100%!important;
+  }
+  html.prompt-full-redesign .gate-stage-actions .gate-top>button{
+    width:100%!important;min-height:50px!important;margin:0!important;
+    border-radius:12px!important;font-size:15px!important;font-weight:750!important;
+  }
+  /* Der Pfeil ist ein Hinweis, kein Knopf: fast durchsichtig, und er sinkt langsam
+     nach unten, damit klar ist, wohin. Bei "Bewegung reduzieren" steht er still. */
+  html.prompt-full-redesign .gate-stage-more{
+    display:grid!important;place-items:center!important;
+    width:44px!important;height:44px!important;min-height:44px!important;
+    margin:var(--sp-2) auto 0!important;padding:0!important;
+    border:0!important;background:transparent!important;box-shadow:none!important;
+    color:var(--ink)!important;opacity:.34!important;
+    animation:gateStageSink 1.9s ease-in-out infinite!important;
+  }
+  html.prompt-full-redesign .gate-stage-more svg{
+    width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.1;
+    stroke-linecap:round;stroke-linejoin:round;
+  }
+  @keyframes gateStageSink{
+    0%,100%{transform:translateY(-3px);opacity:.22}
+    50%{transform:translateY(5px);opacity:.5}
+  }
+  @media(prefers-reduced-motion:reduce){
+    html.prompt-full-redesign .gate-stage-more{animation:none!important;opacity:.4!important}
+  }
+  /* Ueberschrift und Fliesstext kommen erst nach dem Wischen - auf dem ersten
+     Bildschirm nahmen sie den Platz weg, an dem das Produkt haette stehen sollen. */
+  html.prompt-full-redesign .gate-stage~.auth-hero{padding-top:0!important}
+}
+
+/* Die Vorfuehrung in der Konsole: drei Schichten in demselben Kasten. Sichtbar ist
+   immer genau eine - welche, steht in data-phase. */
+html.prompt-full-redesign .gate-shot .prompt-command-panel{position:relative!important}
+html.prompt-full-redesign .gate-shot-stage{
+  position:absolute!important;
+  inset:var(--shot-top,0) 0 var(--shot-bottom,0) 0!important;
+  display:none;flex-direction:column;justify-content:center;
+  padding:var(--sp-4) var(--sp-5)!important;margin:0!important;
+  background:var(--panel)!important;
+  text-align:center;
+}
+/* Die Marke steht auf dem ersten Bildschirm oben, wie in der App. */
+html.prompt-full-redesign .gate-stage-brand{flex:0 0 auto!important;margin:0!important;padding-top:var(--sp-2)!important}
+html.prompt-full-redesign .gate-stage-brand .auth-brand{margin:0!important}
+html.prompt-full-redesign .gate-shot .prompt-command-panel[data-phase="laden"] .gate-shot-loading,
+html.prompt-full-redesign .gate-shot .prompt-command-panel[data-phase="fertig"] .gate-shot-result{display:flex!important}
+html.prompt-full-redesign .gate-shot-loading .kicker{
+  display:block;color:var(--logo-blue)!important;font:850 9px/1 ui-monospace,Menlo,monospace!important;
+  letter-spacing:.14em!important;
+}
+html.prompt-full-redesign .gate-shot-loading strong{
+  display:block;margin:var(--sp-3) 0 var(--sp-3)!important;
+  font-size:clamp(21px,5.6vw,27px)!important;line-height:1.16!important;letter-spacing:-.04em!important;
+  color:rgba(233,243,250,.26)!important;
+}
+html.prompt-full-redesign .gate-shot-loading small{
+  display:block;color:#9fb4c7!important;font-size:12.5px!important;line-height:1.45!important;
+}
+/* Der fertige Prompt: die Schrift der Konsole, links ausgerichtet, oben angesetzt -
+   man soll sehen, dass es ein Dokument ist, nicht ein Satz. */
+html.prompt-full-redesign .gate-shot-result{
+  justify-content:flex-start!important;text-align:left!important;
+  overflow:hidden!important;
+  font:600 10.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace!important;
+  color:#8fb8d6!important;white-space:pre-wrap!important;
+}
+/* Am unteren Rand laeuft der Text aus, statt hart abgeschnitten zu werden. */
+html.prompt-full-redesign .gate-shot-result::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:56px;
+  background:linear-gradient(to top,var(--panel),transparent);
+}
