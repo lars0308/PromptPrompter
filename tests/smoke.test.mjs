@@ -1473,6 +1473,27 @@ test('the login gate offers three plan tiles with their contents',async()=>{
   assert.match(css,/@media\(max-height:710px\)[\s\S]{0,120}\.gate-plan-pick>small\{display:none\}/);
 });
 
+// Die Konsole bekommt ihre Einstellungen dorthin, wo man sie sucht: als Zahnrad oben rechts.
+// Dort sass vorher die Marke "COMMAND / 01" - ein Schriftzug hinter einem Knopf ist keine Zierde,
+// sondern eine Ueberlappung, also faellt sie weg. Absenden und Plus werden kleiner, damit sie
+// nicht gegen die Kanten der Flaeche druecken.
+test('the console carries its settings as a gear top right, not as a line in the footer',async()=>{
+  const home=await text('promptai-home-final.js'),css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  // Das Zahnrad steht in der Kopfzeile, nicht mehr in der Fussleiste.
+  assert.match(home,/<\/div>(<button type="button" class="prompt-setup-line" id="promptSetupButton")/,'the gear sits in .prompt-command-top now');
+  assert.doesNotMatch(home,/<footer class="prompt-command-meta">[\s\S]{0,400}prompt-setup-line/,'it must not sit in the footer any more');
+  // Der eingestellte Stand stand als Satz daneben - jetzt im Titel, damit er nicht verlorengeht.
+  assert.match(home,/Settings für diesen Auftrag: \$\{text\}/);
+  assert.doesNotMatch(css,/content:"COMMAND \/ 01"/,'the label sat exactly where the gear is now');
+  assert.match(css,/\.prompt-setup-line\{display:grid;place-items:center;width:44px;height:44px/);
+  assert.match(css,/\.prompt-setup-line>span,\.prompt-setup-line>\.mode-chevron\{display:none!important\}/);
+  assert.match(css,/\.prompt-command-submit\{position:absolute;right:21px;bottom:69px;display:grid;width:46px;height:46px/,'the enter key is a touch smaller');
+  assert.match(css,/\.prompt-attach-button\{display:grid;place-items:center;width:38px;height:38px/,'so is the plus, so its frame stops crowding the edges');
+  assert.match(css,/\.prompt-command-top\{position:relative;display:flex;align-items:center;justify-content:space-between/);
+  // Das Bild auf der Anmeldeseite bleibt eins zu eins.
+  const gate=await text('entry-gate-ui.js');
+  assert.match(gate,/<button type="button" class="prompt-setup-line" tabindex="-1">'\+SHOT_ICONS\.gear\+'<\/button>'\s*\+'<\/div>'/,'the mock moves the gear along');
+});
 // Das Bild neben den Tarifkacheln war ein Nachbau mit eigenen Klassen und eigenen Maßen - es
 // konnte gar nicht anders, als mit der Zeit neben der echten Konsole zu liegen. Jetzt sind es
 // dieselben Bausteine; was hier gepruft wird, ist genau das: keine Nachbau-Klassen mehr, keine
