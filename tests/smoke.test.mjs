@@ -1886,4 +1886,10 @@ test('below the phone stage there are the plan tiles and nothing that explains A
   assert.match(gate,/replace\(new RegExp\(`\^\$\{label\}\\\\s\+`,'i'\),''\)/);
   // Fuenf Rechtslinks passen nicht in eine Zeile eines Telefons.
   assert.match(css,/#gateLegalRow\)\{[\s\S]{0,200}flex-wrap:wrap!important/);
+  // Die Konsole nimmt den Platz, der uebrig ist - keine feste Zahl, die auf einem Geraet zu
+  // klein und auf dem naechsten zu gross waere.
+  assert.match(css,/\.gate-stage-slot \.prompt-command-panel\{[\s\S]{0,140}height:100%!important/);
+  assert.match(css,/\.gate-stage-slot \.prompt-command-input\{\s*flex:1 1 auto!important/);
+  // Und darunter steht in drei Woertern, was man am Ende in der Hand haelt.
+  assert.match(gate,/<li>Master-Prompt<\/li><li>Seitenstruktur<\/li><li>CLAUDE\.md &middot; AGENTS\.md<\/li>/);
 });

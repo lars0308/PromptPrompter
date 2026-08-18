@@ -177,6 +177,11 @@
         +'<p>Ein Satz rein — fertiger Auftrag raus.</p>'
         +'</div>'
         +'<div class="gate-stage-slot"></div>'
+        // Was am Ende herauskommt, in drei Woertern. Die Seite sagte bisher nirgends, was man
+        // eigentlich in der Hand haelt - und genau das ist der Unterschied zu "noch ein KI-Tool".
+        +'<ul class="gate-stage-output" aria-label="Das bekommst du">'
+        +'<li>Master-Prompt</li><li>Seitenstruktur</li><li>CLAUDE.md &middot; AGENTS.md</li>'
+        +'</ul>'
         +'<div class="gate-stage-actions"></div>'
         // Der Pfeil sagt, wohin er fuehrt. Ohne Beschriftung ist er nur eine Geste;
         // mit ihr weiss man vorher, was unten wartet.

@@ -2380,8 +2380,36 @@ html.prompt-full-redesign .prompt-attach-kind button[data-link-kind="client"]{
   /* Marke oben, Konsole in der Mitte, die beiden Wege und der Pfeil unten. Die Konsole
      nimmt den Platz dazwischen und steht darin mittig - so bleibt der Abstand gleich,
      egal wie hoch das Geraet ist. */
+  /* Die Konsole hatte feste 274 Pixel, waehrend darum herum 160 bis 330 leer blieben - sie
+     schwebte in der Mitte eines leeren Bildschirms. Sie ist das Argument dieser Seite, also
+     nimmt sie den Platz, der uebrig ist: genau so viel, wie zwischen dem Satz oben und den
+     Knoepfen unten frei bleibt. Kein Rechnen mit Bildschirmhoehen, keine feste Zahl, die auf
+     einem Geraet zu klein und auf dem naechsten zu gross waere. */
   html.prompt-full-redesign .gate-stage-slot{
-    flex:1 1 auto!important;display:flex!important;align-items:center!important;margin:0!important;
+    flex:1 1 auto!important;display:flex!important;align-items:stretch!important;
+    min-height:0!important;margin:0!important;
+  }
+  html.prompt-full-redesign .gate-stage-slot .gate-shot{width:100%!important;height:100%!important}
+  /* Der Kasten selbst ist ein Block mit absolut gesetztem Absendeknopf - als Spalte gelesen
+     bleibt der an seinem Platz, und nur das Textfeld dehnt sich. */
+  html.prompt-full-redesign .gate-stage-slot .prompt-command-panel{
+    display:flex!important;flex-direction:column!important;height:100%!important;
+  }
+  html.prompt-full-redesign .gate-stage-slot .prompt-command-input{
+    flex:1 1 auto!important;min-height:150px!important;
+  }
+  /* Drei Woerter statt eines Absatzes: das, was man am Ende in der Hand haelt. */
+  html.prompt-full-redesign .gate-stage-output{
+    flex:0 0 auto!important;
+    display:flex!important;flex-wrap:wrap!important;justify-content:center!important;
+    gap:6px 8px!important;margin:var(--sp-3) 0 0!important;padding:0!important;list-style:none!important;
+  }
+  html.prompt-full-redesign .gate-stage-output li{
+    padding:5px 10px!important;
+    border:1px solid var(--line)!important;border-radius:999px!important;
+    background:var(--surface)!important;color:var(--muted)!important;
+    font:700 11px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace!important;
+    letter-spacing:.01em!important;white-space:nowrap!important;
   }
   html.prompt-full-redesign .gate-stage .gate-shot{margin:0!important;width:100%!important}
   /* Zwei gleich breite Wege nebeneinander: links zurueck ins Konto, rechts hinein. */
