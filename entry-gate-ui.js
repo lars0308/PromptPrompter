@@ -46,15 +46,15 @@
       // die Kostenlos-Kachel darunter sagt dasselbe. Der Platz gehört jetzt der Pflichtangabe
       // unter den Kacheln, die sonst unter die Fensterkante rutscht.
       +'<div class="gate-plan-list" aria-label="Tarif wählen">'
-      +'<button type="button" class="gate-plan-pick" data-gate-plan="free">'
+      +'<button type="button" class="gate-plan-pick" data-gate-plan="free" data-gate-cta="Ohne Konto starten →">'
       +'<span class="gate-plan-head"><strong>Kostenlos</strong><b>0 €</b></span>'
       +'<small>Ohne Konto starten, drei vollständige Durchläufe.</small>'
       +'<ul class="gate-plan-points"><li>10 Prompts und 3 Website-Projekte im Monat</li><li>Drei Richtungen als HTML-Vorschau</li><li>Ein echter KI-Durchlauf im Monat</li></ul></button>'
-      +'<button type="button" class="gate-plan-pick is-featured" data-gate-plan="pro">'
+      +'<button type="button" class="gate-plan-pick is-featured" data-gate-plan="pro" data-gate-cta="Pro auswählen →">'
       +'<span class="gate-plan-head"><strong>Pro</strong><b id="gateProTier">Pro</b></span>'
       +'<small>Mehr Projekte, KI-Prüfung und Vorschauen für Kundenarbeit.</small>'
       +'<ul class="gate-plan-points"><li>100 Prompts und 25 Website-Projekte</li><li>KI-Bilder statt HTML, vier Richtungen</li><li>Ohne Rückfragen, KI-Prüfung ohne Monatsgrenze</li></ul></button>'
-      +'<button type="button" class="gate-plan-pick" data-gate-plan="ultimate">'
+      +'<button type="button" class="gate-plan-pick" data-gate-plan="ultimate" data-gate-cta="Ultimate auswählen →">'
       +'<span class="gate-plan-head"><strong>Ultimate</strong><b id="gateUltimateTier">Ultimate</b></span>'
       +'<small>Website-Probelauf, GitHub, eigene KI und volle Kontrolle.</small>'
       +'<ul class="gate-plan-points"><li>500 Prompts und 100 Website-Projekte</li><li>Fünf Richtungen, Probelauf und GitHub</li><li>Zwei eigene KI-Verbindungen inklusive</li></ul></button>'
@@ -170,11 +170,18 @@
     if(!buehne){
       buehne=document.createElement('div');buehne.className='gate-stage';
       buehne.innerHTML='<div class="gate-stage-brand"></div>'
+        // Ueberschrift und ein Satz - mehr nicht. Wer hier landet, soll in zwei Sekunden
+        // wissen, wofuer das gut ist; alles Weitere zeigt die Konsole darunter von selbst.
+        +'<div class="gate-stage-intro">'
+        +'<h2>Prompt.ai für deine KI</h2>'
+        +'<p>Ein Satz rein — fertiger Auftrag raus.</p>'
+        +'</div>'
         +'<div class="gate-stage-slot"></div>'
         +'<div class="gate-stage-actions"></div>'
-        // Der Pfeil ist kein Knopf: er zeigt nur, dass es weitergeht. Wer ihn antippt,
-        // soll trotzdem dorthin kommen - deshalb haengt unten ein Klick daran.
-        +'<button type="button" class="gate-stage-more" aria-label="Weiter nach unten">'
+        // Der Pfeil sagt, wohin er fuehrt. Ohne Beschriftung ist er nur eine Geste;
+        // mit ihr weiss man vorher, was unten wartet.
+        +'<button type="button" class="gate-stage-more">'
+        +'<span>Zu den Tarifen</span>'
         +'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'
         +'</button>';
       host.prepend(buehne);
@@ -321,7 +328,15 @@
   // because a characterData change is not a childList or attribute mutation.
   function syncTierChips(){
     const pro=$('#proPriceLabel')?.textContent?.trim(),ultimate=$('#ultimatePriceLabel')?.textContent?.trim();
-    const chip=(id,label,price)=>{const node=$(id);if(!node||!price)return;const text=`${label} ${price.replace(/\s*\/\s*Monat$/,'').trim()}`;if(node.textContent!==text)node.textContent=text};
+    // Der Tarifname steht schon als Ueberschrift der Kachel. Frueher wurde er hier noch einmal
+    // davorgesetzt - "Pro Pro 20,99 €" waere aufgefallen, "Pro 20,99 €" liest sich wie ein Preis
+    // und fiel deshalb monatelang nicht auf. Der Preis traegt jetzt nur den Preis; und falls die
+    // Beschriftung aus Stripe den Namen schon mitbringt, faellt er hier weg.
+    const chip=(id,label,price)=>{
+      const node=$(id);if(!node||!price)return;
+      const text=price.replace(/\s*\/\s*Monat$/,'').replace(new RegExp(`^${label}\\s+`,'i'),'').trim();
+      if(text&&node.textContent!==text)node.textContent=text;
+    };
     chip('#gateProTier','Pro',pro);chip('#gateUltimateTier','Ultimate',ultimate);
   }
   function watchPricing(){

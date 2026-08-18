@@ -1868,3 +1868,22 @@ test('the console on the landing page types, loads and shows a result instead of
   // Wer Bewegung reduziert hat, bekommt das Ergebnis, keine Vorfuehrung.
   assert.match(gate,/if\(reduziert\(\)\)\{[\s\S]{0,200}panel\.dataset\.phase='fertig';return/);
 });
+
+// Unterhalb der Buehne steht nur noch, was zu den Tarifen gehoert.
+test('below the phone stage there are the plan tiles and nothing that explains AI again',async()=>{
+  const gate=await text('entry-gate-ui.js'),css=await readFile(path.join(root,'promptai-full-app-design.css'),'utf8');
+  assert.match(gate,/<h2>Prompt\.ai für deine KI<\/h2>/);
+  assert.match(gate,/<p>Ein Satz rein — fertiger Auftrag raus\.<\/p>/);
+  assert.match(gate,/<span>Zu den Tarifen<\/span>/);
+  assert.match(css,/\.gate-stage-more\{[\s\S]{0,400}color:var\(--logo-blue\)!important/,'derselbe Blauton wie die Marke');
+  // Die drei Schritte erklaeren, was die Konsole eine Wischbewegung weiter oben vorfuehrt.
+  assert.match(css,/\.gate-stage~\.gate-proof\{display:none!important\}/);
+  // Und die Kacheln zeigen alle drei Zeilen und sagen, wohin sie fuehren.
+  assert.match(css,/\.gate-stage~#gateActions \.gate-plan-points li\{display:list-item!important\}/);
+  assert.match(css,/content:attr\(data-gate-cta\)/);
+  assert.match(gate,/data-gate-cta="Pro auswählen →"/);
+  // Der Tarifname stand doppelt: einmal als Ueberschrift, einmal im Preis.
+  assert.match(gate,/replace\(new RegExp\(`\^\$\{label\}\\\\s\+`,'i'\),''\)/);
+  // Fuenf Rechtslinks passen nicht in eine Zeile eines Telefons.
+  assert.match(css,/#gateLegalRow\)\{[\s\S]{0,200}flex-wrap:wrap!important/);
+});
