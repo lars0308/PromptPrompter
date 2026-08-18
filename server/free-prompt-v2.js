@@ -8,7 +8,20 @@ const {logUsage,tokenSink,addTokens}=require('./usage');
 const {primePromptTemplates,promptText,promptLines}=require('./prompt-templates');
 
 const MAX_BODY=120000;
-const PROVIDER_TIMEOUT_MS=35000;
+// 35 Sekunden waren zu knapp, und das kostete doppelt.
+//
+// Ein denkendes Modell braucht für diese Aufgabe regelmäßig länger - im Gateway-Protokoll liegt
+// die mittlere Dauer bei einer Minute, weil vor der ersten Zeile Ausgabe mehrere tausend
+// Reasoning-Tokens laufen. Der Abbruch nach 35 Sekunden erreichte den Anbieter nicht mehr: der
+// hatte schon gerechnet und stellte die volle Anfrage in Rechnung, während hier nichts ankam.
+// Bezahlt wurde also für Antworten, die niemand je gesehen hat - und weil der Aufruf als
+// gescheitert galt, lieferte der lokale Notbehelf die Beschreibung des Nutzers fast unverändert
+// zurück. Beide Beschwerden - „frisst mich auf“ und „übernimmt meine Eingabe 1:1“ - hatten
+// dieselbe Zeile als Ursache.
+//
+// Der Server darf 300 Sekunden rechnen (vercel.json). 120 liegen deutlich über der beobachteten
+// Dauer und immer noch weit unter dieser Grenze.
+const PROVIDER_TIMEOUT_MS=120000;
 async function fetchWithTimeout(url,options={},timeoutMs=PROVIDER_TIMEOUT_MS){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{return await fetch(url,{...options,signal:controller.signal})}
@@ -254,8 +267,18 @@ function localFallback(input,{advanced=false}={}){
   return `ROLLE\nDu bist ${role}. Arbeite fachlich, eigenständig und auf professionellem Niveau.\n\nAUFGABE\nErstelle ${input.categoryLabel} für ${tool}.\n\nPROFESSIONELL AUFBEREITETE BESCHREIBUNG\n${description}${extra?`\n\nWEITERE VERBINDLICHE ANGABEN\n${extra}`:''}\n\nPROMPT.AI GRUNDREGELN\n${asBullets(universalRules())}\n\nFACHREGELN FÜR DIESEN BEREICH\n${asBullets(categoryRules(input))}${syntax?`\n\nSCHREIBWEISE FÜR ${tool.toUpperCase()}\n- ${syntax}`:''}\n\nABSCHLUSS\nPrüfe intern Ziel, Angaben, Verbote, Sicherheit und Ausgabeformat. Gib danach ausschließlich das direkt nutzbare Ergebnis zurück.`;
 }
 function safeModel(value,fallback){const model=String(value||fallback||'').trim();return model&&model.length<190&&/^[a-zA-Z0-9@._:/-]+$/.test(model)?model:fallback}
+// Umformulieren ist keine Denkaufgabe.
+//
+// Im Gateway-Protokoll standen für diesen Aufruf regelmäßig acht- bis zehntausend
+// Reasoning-Tokens - vor der ersten Zeile Ausgabe. Das ist die Wartezeit, die in den Abbruch
+// lief, und es ist der Posten, der die Rechnung trägt: ein abgebrochener Lauf kostete das
+// Zwanzigfache eines erfolgreichen, weil das Nachdenken schon bezahlt war.
+//
+// Die Aufgabe verlangt kein Nachdenken: die Rohangaben stehen fest, die Regeln stehen im Prompt,
+// gefragt ist eine saubere Formulierung. Ein niedriger Denkaufwand ändert daran nichts - er
+// spart nur den Anlauf. Anbieter, die den Parameter nicht kennen, ignorieren ihn.
 async function gateway(key,model,prompt,tokens){
-  const response=await fetchWithTimeout('https://ai-gateway.vercel.sh/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'openai/gpt-5.4'),messages:[{role:'system',content:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'},{role:'user',content:prompt}],stream:false,providerOptions:{gateway:{caching:'auto'}}})});
+  const response=await fetchWithTimeout('https://ai-gateway.vercel.sh/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:safeModel(model,'openai/gpt-5.4'),messages:[{role:'system',content:'Du bist der Prompt.ai Master-Prompt-Architekt. Formuliere alle Rohangaben professionell neu, erfinde nichts und antworte ausschließlich mit dem finalen kopierbaren Prompt.'},{role:'user',content:prompt}],stream:false,reasoning_effort:'low',providerOptions:{gateway:{caching:'auto'}}})});
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(data.error?.message||data.message||'AI Gateway nicht verfügbar.'),{status:response.status});
   addTokens(tokens,data.usage);
   const value=data.choices?.[0]?.message?.content;return cleanFence(typeof value==='string'?value:Array.isArray(value)?value.map(x=>x.text||'').join(''):'');

@@ -7,8 +7,29 @@
   const state={data:null,isAdmin:false};
   const ui={};
 
+  // „Admin-Daten werden geladen…“ stand still, bis jemand die Seite neu lud.
+  //
+  // Der Aufruf hatte keine Zeitgrenze: bleibt die Antwort aus - ein hängender Server, ein
+  // abgerissenes Mobilfunknetz -, wartet fetch ohne Ende, das Promise löst nie auf, und weder der
+  // Erfolgs- noch der Fehlerzweig wird je erreicht. Sichtbar ist dann genau eine Zeile, die nichts
+  // mehr sagt. Und weil die übrigen Konsolen (KI-Anbieter, Prompts, Tokens) erst auf das Ereignis
+  // hin erscheinen, das nach dem Laden gefeuert wird, fehlten mit der Antwort auch ihre Reiter.
+  const API_TIMEOUT_MS=20000;
   async function api(url,options={}){
-    const headers=await window.SiteBriefCloud?.authHeaders?.()||{};const response=await fetch(url,{...options,headers:{'Content-Type':'application/json',...headers,...(options.headers||{})}}),data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Anfrage fehlgeschlagen.');return data;
+    const headers=await window.SiteBriefCloud?.authHeaders?.()||{};
+    const abbruch=new AbortController();
+    const uhr=setTimeout(()=>abbruch.abort(),API_TIMEOUT_MS);
+    let response;
+    try{
+      response=await fetch(url,{...options,signal:abbruch.signal,headers:{'Content-Type':'application/json',...headers,...(options.headers||{})}});
+    }catch(error){
+      throw new Error(error?.name==='AbortError'
+        ?'Die Verwaltung antwortet nicht (Zeitüberschreitung nach 20 Sekunden). Prüfe die Verbindung und lade erneut.'
+        :`Die Verwaltung ist nicht erreichbar: ${error?.message||'unbekannter Fehler'}`);
+    }finally{clearTimeout(uhr)}
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||`Anfrage fehlgeschlagen (${response.status}).`);
+    return data;
   }
   function message(text='',kind=''){ui.message.textContent=text;ui.message.className=`auth-message ${kind}`.trim()}
   // The long lists are folded away by default, so their summary carries the count - otherwise a

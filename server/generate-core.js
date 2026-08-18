@@ -7,7 +7,11 @@ const { learningBlock } = require('../server/learning-hints');
 const { authenticatedUser } = require('../server/supabase-user');
 const { readMemory, memoryPrompt } = require('../server/user-memory');
 const VARIANTS = ["split","poster","ledger","stacked","editorial","minimal"];
-const PROVIDER_TIMEOUT_MS = 35000;
+// 35 Sekunden lagen unter der tatsächlichen Dauer eines denkenden Modells - im Gateway-Protokoll
+// liegt die mittlere Antwortzeit bei einer Minute. Der Abbruch hier erreicht den Anbieter nicht
+// mehr: der hat gerechnet und stellt in Rechnung, hier kommt nichts an. Der Server darf 300
+// Sekunden (vercel.json); 120 liegen über der beobachteten Dauer und weit unter der Grenze.
+const PROVIDER_TIMEOUT_MS = 120000;
 async function fetchWithTimeout(url,options={},timeoutMs=PROVIDER_TIMEOUT_MS){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{return await fetch(url,{...options,signal:controller.signal})}

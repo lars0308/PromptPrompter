@@ -822,17 +822,34 @@ test('the review/preview loader and the free-prompt thinking loader never fill t
   assert.match(v1,/function applyTitleFill\(stage,progress\)\{const bar=\$\('\.prompt-thinking-bar i',stage\);if\(bar\)bar\.style\.width=`\$\{\(progress\*100\)\.toFixed\(2\)\}%`\}/);
 });
 test('every AI provider call in the review/questions and free-prompt chains has a bounded timeout so a hanging provider fails fast instead of stalling the whole fallback chain',async()=>{
+  // Die Grenze muss zwischen zwei Werten liegen, nicht auf einer bestimmten Zahl.
+  //
+  // Zu kurz ist teurer als gar keine Grenze: der Abbruch erreicht den Anbieter nicht mehr, der
+  // hat schon gerechnet und stellt in Rechnung — bezahlt wird eine Antwort, die nie ankam, und
+  // der Aufruf gilt trotzdem als gescheitert. Genau das war bei 35 Sekunden der Fall, während
+  // die gemessene mittlere Antwortzeit bei einer Minute lag. Zu lang ist ebenfalls falsch: über
+  // dem Server-Limit greift der Client-Timeout nie, und die Funktion wird hart abgeschnitten.
+  const config=JSON.parse(await readFile(path.join(root,'vercel.json'),'utf8'));
+  const serverLimit=config.functions['api/generate.js'].maxDuration*1000;
+  const grenze=quelle=>Number(/PROVIDER_TIMEOUT_MS\s*=\s*(\d+)/.exec(quelle)?.[1]||0);
   const core=await text('server/generate-core.js');
-  assert.match(core,/PROVIDER_TIMEOUT_MS\s*=\s*35000/);
+  const freePromptSrc=await text('server/free-prompt-v2.js');
+  for(const [name,quelle] of [['generate-core',core],['free-prompt-v2',freePromptSrc]]){
+    const ms=grenze(quelle);
+    assert.ok(ms>=90000,`${name}: ${ms}ms liegt unter der beobachteten Antwortzeit — ein Abbruch dort zahlt und liefert nichts`);
+    assert.ok(ms<serverLimit,`${name}: ${ms}ms erreicht oder überschreitet das Server-Limit von ${serverLimit}ms`);
+  }
   assert.match(core,/async function fetchWithTimeout\(/);
   assert.match(core,/AbortController/);
   assert.match(core,/await fetchWithTimeout\(["']https:\/\/api\.openai\.com\/v1\/responses["']/);
   assert.match(core,/await fetchWithTimeout\(["']https:\/\/ai-gateway\.vercel\.sh\/v1\/chat\/completions["']/);
   assert.match(core,/generativelanguage\.googleapis\.com[\s\S]{0,400}fetchWithTimeout|fetchWithTimeout\([\s\S]{0,200}generativelanguage\.googleapis\.com/);
   assert.match(core,/if\(firstError\?\.status===504\)throw firstError;/);
-  const freePrompt=await text('server/free-prompt-v2.js');
-  assert.match(freePrompt,/PROVIDER_TIMEOUT_MS\s*=\s*35000/);
+  const freePrompt=freePromptSrc;
   assert.match(freePrompt,/async function fetchWithTimeout\(/);
+  // Umformulieren ist keine Denkaufgabe: achttausend Reasoning-Tokens vor der ersten Zeile
+  // Ausgabe waren die Wartezeit, die in den Abbruch lief, und der Posten, der die Rechnung trug.
+  assert.match(freePrompt,/reasoning_effort:'low'/,'the rewrite call must not pay for deliberation it does not need');
   assert.match(freePrompt,/await fetchWithTimeout\(['"]https:\/\/ai-gateway\.vercel\.sh\/v1\/chat\/completions['"]/);
   assert.match(freePrompt,/await fetchWithTimeout\(['"]https:\/\/api\.openai\.com\/v1\/responses['"]/);
   assert.match(freePrompt,/fetchWithTimeout\(`https:\/\/generativelanguage\.googleapis\.com/);
@@ -2117,4 +2134,18 @@ test('the entry gate has exactly two ways out, and both are deliberate',async()=
   assert.match(app,/stimmst du den Nutzungsbedingungen zu und bestätigst, die Datenschutzerklärung gelesen zu haben/);
   // Angemeldet heisst zu - unabhaengig davon, ueber welchen Weg die Anmeldung kam.
   assert.match(app,/if\(cloudReady\(\)&&el\.accountDialog\?\.classList\.contains\('guest-gate'\)\)\{/);
+});
+
+// „Admin-Daten werden geladen…“ stand still, bis jemand die Seite neu lud — und mit der
+// ausbleibenden Antwort fehlten auch die Reiter, die erst auf das Lade-Ereignis hin erscheinen.
+test('the admin console gives up instead of waiting forever',async()=>{
+  const src=await text('admin-console-core.js');
+  assert.match(src,/const API_TIMEOUT_MS=20000;/);
+  assert.match(src,/const abbruch=new AbortController\(\)/);
+  assert.match(src,/signal:abbruch\.signal/,'the timeout must actually reach the request');
+  assert.match(src,/error\?\.name==='AbortError'/,'and a timeout must read as a timeout, not as a generic failure');
+  assert.match(src,/Die Verwaltung antwortet nicht \(Zeitüberschreitung nach 20 Sekunden\)/);
+  assert.match(src,/\}finally\{clearTimeout\(uhr\)\}/,'the clock is always cleared');
+  // Der Fehlerzweig muss erreichbar bleiben: ohne ihn bleibt die Ladezeile das letzte Wort.
+  assert.match(src,/catch\(error\)\{if\(!quiet\)message\(error\.message,'error'\)\}/);
 });
