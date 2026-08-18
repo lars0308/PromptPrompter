@@ -543,6 +543,35 @@ test('the "Prompt genauer einstellen" free-prompt settings step is consolidated 
   // Kontext, sonst verschwaende ein sichtbar angehaengter Link still.
   assert.match(src,/category:\$\('#freePromptCategory'\)\.value,customCategory:\$\('#freePromptCustomCategory'\)\.value,targetTool:\$\('#freePromptTool'\)\.value,customTool:\$\('#freePromptCustomTool'\)\.value,description:withReferences\(\$\('#freePromptDescription'\)\.value\),context:\$\('#freePromptContext'\)\?\.value\|\|'',style:\$\('#freePromptStyle'\)\?\.value\|\|'',outputFormat:\$\('#freePromptFormat'\)\?\.value\|\|''\}\}/);
 });
+// Eine pauschale Regel (button + button { margin-left: 8px }) traf jeden benachbarten Knopf -
+// auch untereinanderliegende. Auf der Anmeldeseite standen die drei Tarifkacheln dadurch
+// treppenfoermig versetzt: 74, 82, 82 Pixel.
+test('buttons line up because spacing lives in the container, not on the element',async()=>{
+  const touch=await readFile(path.join(root,'touch-targets.css'),'utf8');
+  assert.doesNotMatch(touch,/button \+ button,/,'the blanket margin rule staggered every stacked button');
+  assert.doesNotMatch(touch,/margin-left: 8px/);
+  // Ein Kaestchen auf 44x44 aufgeblasen ist ein blauer Klotz neben seiner Beschriftung.
+  assert.match(touch,/input\[type="checkbox"\],\ninput\[type="radio"\] \{\n  width: 18px;/);
+  assert.match(touch,/label:has\(> input\[type="checkbox"\]\)/,'the 44px belong to the row, which is what you tap');
+});
+
+// Die Anmeldeseite steht in zwei Spalten. Text und Kacheln begannen auf drei verschiedenen
+// Linien, und die Konsole rechts sass zwoelf Pixel hoeher als die erste Kachel daneben.
+test('the entry gate lines up: one left edge, console flush with the first tile',async()=>{
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  assert.match(css,/text-align:left;padding-left:0;padding-right:0;/,'the hero had 4px of its own padding');
+  assert.match(css,/gap:clamp\(8px,1\.2vh,14px\);margin:0;align-self:start;justify-self:start;[\s\S]{0,260}padding-top:0!important;/,'both columns start on the same line');
+});
+
+// Das Kreuz der Schublade verlor seine Breite gegen die Menue-Regel, die jedem Eintrag volle
+// Breite gibt - beide mit !important, und die spaetere gewinnt. Es war ein 318 Pixel breiter
+// Balken quer ueber dem ersten Eintrag.
+test('the drawer close button stays a 44px square and every entry is the same height',async()=>{
+  const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  assert.match(css,/html\.prompt-full-redesign #topbarMenu>#promptDrawerClose\{/,'two ids settle the specificity fight');
+  assert.match(css,/html\.prompt-full-redesign #topbarMenu>button:not\(#accountBtn\)\{min-height:44px!important\}/);
+});
+
 // Vor der Anmeldung ist das Konto-Fenster die ganze Seite. Aus der laufenden App heraus
 // ("Anmelden" im Menue) ist es ein Fenster - es kam aber ebenfalls als Vollbild, samt Spruch,
 // Tarifkacheln und Konsolenbild der Einstiegsseite darin.
@@ -550,6 +579,10 @@ test('the account dialog is a popup once it is not the entry gate',async()=>{
   const css=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
   assert.match(css,/#accountDialog:not\(\.guest-gate\)\{\s*width:min\(760px/);
   assert.match(css,/#accountDialog:not\(\.guest-gate\) :is\(\.auth-hero,\.gate-top,\.gate-shot,\.gate-proof,#gateActions,#gateLegalRow\)\{display:none!important\}/,'the gate parts belong to the gate');
+  // Und sonst nichts: kein Tarifvergleich, kein Willkommensspruch - nur die Anmeldung.
+  assert.match(css,/#accountDialog:not\(\.guest-gate\) \.auth-access-card\{display:none!important\}/);
+  const app=await text('app.js');
+  assert.match(app,/if\(!el\.accountDialog\.classList\.contains\("guest-gate"\)&&!state\.cloud\.user\)\{if\(el\.accountDialogKicker\)el\.accountDialogKicker\.textContent="KONTO";/,'the gate headline must not stand over a bare login form');
   // Auf dem Telefon bleibt die volle Flaeche richtig.
   assert.match(css,/@media\(max-width:820px\)\{\n  \/\* Auf dem Telefon[\s\S]{0,220}#accountDialog:not\(\.guest-gate\)\{width:100vw!important/);
 });

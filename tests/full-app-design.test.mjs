@@ -712,7 +712,9 @@ test('the drawer can be closed again, on every device',async()=>{
   // Ein zweiter Klick landete auf der Schublade, und auf dem Telefon gibt es kein Esc.
   assert.match(drawer,/function ensureCloseButton\(menu\)\{/);
   assert.match(drawer,/id='promptDrawerClose'/);
-  assert.match(drawer,/\.prompt-drawer-close\{/);
+  // Zwei ids, weil die Menue-Regel bei gleicher Spezifitaet und !important sonst gewinnt und
+  // das Kreuz zu einem Balken ueber die ganze Menuebreite macht.
+  assert.match(drawer,/#topbarMenu>#promptDrawerClose\{/);
   // Und jeder Klick daneben schließt - egal wie der Vorhang gerade heißt.
   assert.match(drawer,/if\(e\.target\.closest\?\.\('#topbarMenu'\)\)return;/);
   assert.doesNotMatch(drawer,/if\(e\.target\.closest\?\.\('\.topbar-menu-backdrop'\)\)close\(\)/,'der Vorhang heißt nicht überall gleich');
