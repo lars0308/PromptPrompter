@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="de" class="prompt-full-redesign">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ece9e1" />
+  <meta name="description" content="Prompt.ai für Cursor - Bessere Prompts für die Cursor IDE" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.prompt-ai.app/cursor" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.prompt-ai.app/cursor" />
+  <meta property="og:title" content="Prompt.ai für Cursor" />
+  <meta property="og:description" content="Strukturierte Prompts für die Cursor IDE — mehr Kontext, bessere Ergebnisse" />
+  <meta property="og:locale" content="de_DE" />
+  <meta property="og:site_name" content="Prompt.ai" />
+  <title>Prompt.ai für Cursor</title>
+  <script src="./theme-init.js?v=6"></script>
+  <link rel="stylesheet" href="./styles.css?v=20260816-4" />
+  <link rel="stylesheet" href="./touch-targets.css?v=1" />
+  <link rel="stylesheet" href="./promptai-ui-layers.css?v=20260817-2" />
+  <link rel="stylesheet" href="./promptai-full-app-design.css?v=20260817-15" />
+  <style>
+    .app-page-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .app-page-header {
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .app-page-header a {
+      color: var(--blue-text);
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+    .app-page-header a:hover {
+      text-decoration: underline;
+    }
+    .app-page-header h1 {
+      margin: 0 0 10px 0;
+      font-size: 36px;
+      font-weight: 800;
+    }
+    .app-page-header .tagline {
+      color: var(--muted);
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    .app-content {
+      line-height: 1.7;
+    }
+    .app-content h2 {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 40px;
+      margin-bottom: 16px;
+    }
+    .app-content h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+    .app-content p {
+      margin: 12px 0;
+      color: var(--ink);
+    }
+    .app-content ul {
+      margin: 16px 0;
+      padding-left: 24px;
+      list-style: disc;
+    }
+    .app-content ul li {
+      margin: 8px 0;
+      color: var(--ink);
+    }
+    .app-content a {
+      color: var(--blue-text);
+      text-decoration: underline;
+    }
+    .app-content a:hover {
+      text-decoration: underline;
+    }
+    .feature-box {
+      background: var(--surface);
+      border-left: 3px solid var(--blue);
+      padding: 16px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+    .cta-section {
+      margin-top: 40px;
+      padding: 24px;
+      background: var(--blue-deep);
+      color: #fff;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .cta-section h3 {
+      margin-top: 0;
+      color: #fff;
+    }
+    .cta-section p {
+      color: rgba(255,255,255,0.9);
+      margin: 0 0 16px 0;
+    }
+    .cta-section button {
+      background: #fff;
+      color: var(--blue-deep);
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .cta-section button:hover {
+      background: rgba(255,255,255,0.9);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-page-container">
+    <div class="app-page-header">
+      <a href="/">← Zur Startseite</a>
+      <h1>Prompt.ai für Cursor</h1>
+      <p class="tagline">Strukturierte Prompts für die Cursor IDE — mehr Kontext, bessere Ergebnisse</p>
+    </div>
+
+    <div class="app-content">
+      <h2>Cursor ist mächtig, aber Prompts sind oft ungenau</h2>
+      <p>Cursor kann fast alles. Aber wenn der Prompt zu vage ist oder Kontext fehlt, kommen trotzdem unvollständige oder unpassende Ergebnisse zurück. Du verbringst dann Zeit mit Nachfragen und Korrektionen, statt dass die IDE beim ersten Mal das Richtige macht.</p>
+
+      <p>Prompt.ai erstellt aus einer Projektidee einen strukturierten Prompt, den Cursor (und Claude) richtig versteht:</p>
+
+      <div class="feature-box">
+        <strong>Klare Anforderungen statt Gedankenlesen</strong>
+        <p style="margin: 8px 0 0 0;">Der Prompt beschreibt nicht nur „was", sondern „wie" — Stil, Constraints, Deliverables, alles dokumentiert.</p>
+      </div>
+
+      <div class="feature-box">
+        <strong>Vollständiger Kontext für bessere Vorschläge</strong>
+        <p style="margin: 8px 0 0 0;">Cursor nutzt @codebase und @files. Prompt.ai sammelt vorab, welche Dateien relevant sind und was Cursor über dein Projekt wissen muss.</p>
+      </div>
+
+      <div class="feature-box">
+        <strong>Seitenstruktur und Content-Plan</strong>
+        <p style="margin: 8px 0 0 0;">Nicht nur Code: Prompt.ai plant auch Architektur, Dateistruktur und was in jeder Datei sein sollte.</p>
+      </div>
+
+      <div class="feature-box">
+        <strong>Gesicherte Fakten statt erfundener Daten</strong>
+        <p style="margin: 8px 0 0 0;">Echte Website-Daten, echte Anforderungen — Cursor baut auf fundierten Informationen auf.</p>
+      </div>
+
+      <h2>Praktisches Beispiel</h2>
+      <p><strong>Du tippst:</strong><br>
+      „React-App für eine Zahnarztpraxis: Termin-Buchung, Patient-Verwaltung, einfaches Admin-Backend."</p>
+
+      <p><strong>Du bekommst:</strong></p>
+      <ul>
+        <li><strong>Master-Prompt</strong> — Tech-Stack (React, TypeScript, Tailwind), Anforderungen und Constraints</li>
+        <li><strong>Dateistruktur</strong> — welche Komponenten, welche Pages, welche API-Routes</li>
+        <li><strong>Integrationen</strong> — Kalender-API, Zahlungsabwicklung, Datensicherheit bei Patientendaten</li>
+        <li><strong>Echte Daten</strong> — realistische Sprechzeiten, Behandlungsarten und Preise</li>
+      </ul>
+
+      <p>Cursor hat dann alles, um die App von Grund auf fehlerfrei zu scaffolden.</p>
+
+      <h2>Das Ergebnis: Weniger Iterations-Zyklen</h2>
+      <ul>
+        <li><strong>Cursor versteht Kontext:</strong> Nicht nur „mach eine App", sondern „baue diese spezifische App mit diesen Anforderungen"</li>
+        <li><strong>Korrekte Architektur beim ersten Versuch:</strong> Dateistruktur, Komponenten-Hierarchie, API-Design stimmen</li>
+        <li><strong>Weniger Nachfragen:</strong> Offene Fragen sind vorher gestellt und beantwortet — nicht nachher</li>
+        <li><strong>Skalierbar:</strong> Wenn der Grundgerüst passt, kann Cursor weitere Features hinzufügen und Varianten bauen</li>
+      </ul>
+
+      <h2>Für wen ist das interessant?</h2>
+      <ul>
+        <li><strong>Entwickler mit Cursor:</strong> Die täglich Cursor nutzen und bessere Starts als schneller brauchen</li>
+        <li><strong>Freelancer:</strong> Die Projekte schneller delivern wollen — weniger Feedback-Schleifen</li>
+        <li><strong>Agenturen:</strong> Die ihre Cursor-Workflows standardisieren und dokumentieren wollen</li>
+        <li><strong>Teams:</strong> Die einen gemeinsamen Prompt-Standard für ihre Projektstart brauchen</li>
+      </ul>
+
+      <h2>So funktioniert es</h2>
+      <ol style="padding-left: 24px; list-style-type: decimal;">
+        <li><strong>Deine Projektidee</strong> — Typ, Tech-Stack, Anforderungen</li>
+        <li><strong>Kurz abstimmen</strong> — Prompt.ai stellt die Fragen, die sonst in E-Mails hin und her gehen</li>
+        <li><strong>Prompt kopieren oder exportieren</strong> — Direkt in Cursor einfügen oder als Datei speichern</li>
+      </ol>
+
+      <h2>Kosten</h2>
+      <ul>
+        <li><strong>Kostenlos:</strong> 3 Projekte im Monat, kein Konto nötig</li>
+        <li><strong>Pro (20,99 €):</strong> 25 Projekte, KI-Prüfung, Bildvorschauen</li>
+        <li><strong>Ultimate (54,99 €):</strong> Unbegrenzt, GitHub-Export, Expertenmodus</li>
+      </ul>
+
+      <div class="cta-section">
+        <h3>Probiere es kostenlos aus</h3>
+        <p>Erstelle bis zu 3 Prompts im Monat — ohne Konto, ohne Karte.</p>
+        <button onclick="window.location.href='/';">Zur Prompt.ai Startseite</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

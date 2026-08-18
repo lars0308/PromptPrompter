@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="de" class="prompt-full-redesign">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ece9e1" />
+  <meta name="description" content="Prompt.ai für GitHub Codex - Bessere Prompts für GitHub Codex" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.prompt-ai.app/codex" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.prompt-ai.app/codex" />
+  <meta property="og:title" content="Prompt.ai für GitHub Codex" />
+  <meta property="og:description" content="Strukturierte Prompts für GitHub Codex — genauere Ergebnisse beim ersten Versuch" />
+  <meta property="og:locale" content="de_DE" />
+  <meta property="og:site_name" content="Prompt.ai" />
+  <title>Prompt.ai für GitHub Codex</title>
+  <script src="./theme-init.js?v=6"></script>
+  <link rel="stylesheet" href="./styles.css?v=20260816-4" />
+  <link rel="stylesheet" href="./touch-targets.css?v=1" />
+  <link rel="stylesheet" href="./promptai-ui-layers.css?v=20260817-2" />
+  <link rel="stylesheet" href="./promptai-full-app-design.css?v=20260817-15" />
+  <style>
+    .app-page-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .app-page-header {
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .app-page-header a {
+      color: var(--blue-text);
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+    .app-page-header a:hover {
+      text-decoration: underline;
+    }
+    .app-page-header h1 {
+      margin: 0 0 10px 0;
+      font-size: 36px;
+      font-weight: 800;
+    }
+    .app-page-header .tagline {
+      color: var(--muted);
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    .app-content {
+      line-height: 1.7;
+    }
+    .app-content h2 {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 40px;
+      margin-bottom: 16px;
+    }
+    .app-content h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+    .app-content p {
+      margin: 12px 0;
+      color: var(--ink);
+    }
+    .app-content ul {
+      margin: 16px 0;
+      padding-left: 24px;
+      list-style: disc;
+    }
+    .app-content ul li {
+      margin: 8px 0;
+      color: var(--ink);
+    }
+    .app-content a {
+      color: var(--blue-text);
+      text-decoration: underline;
+    }
+    .app-content a:hover {
+      text-decoration: underline;
+    }
+    .feature-box {
+      background: var(--surface);
+      border-left: 3px solid var(--blue);
+      padding: 16px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+    .cta-section {
+      margin-top: 40px;
+      padding: 24px;
+      background: var(--blue-deep);
+      color: #fff;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .cta-section h3 {
+      margin-top: 0;
+      color: #fff;
+    }
+    .cta-section p {
+      color: rgba(255,255,255,0.9);
+      margin: 0 0 16px 0;
+    }
+    .cta-section button {
+      background: #fff;
+      color: var(--blue-deep);
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .cta-section button:hover {
+      background: rgba(255,255,255,0.9);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-page-container">
+    <div class="app-page-header">
+      <a href="/">← Zur Startseite</a>
+      <h1>Prompt.ai für GitHub Codex</h1>
+      <p class="tagline">Strukturierte Prompts für GitHub Codex — genauere Ergebnisse beim ersten Versuch</p>
+    </div>
+
+    <div class="app-content">
+      <h2>GitHub Codex braucht genaue Instructions</h2>
+      <p>Codex ist schnell, aber unscharfe Prompts erzeugen unpräzise Code. Der erste Entwurf stimmt oft nicht — Stil, Struktur, oder Anforderungen passen nicht ganz.</p>
+
+      <p>Prompt.ai baut aus deiner Idee einen klaren, strukturierten Prompt, den Codex beim ersten Mal richtig versteht:</p>
+
+      <div class="feature-box">
+        <strong>Genaue Anforderungen und Constraints</strong>
+        <p style="margin: 8px 0 0 0;">Statt „mach einen API" — „baue einen REST-API mit diesen Endpoints, diesem Fehler-Handling und dieser Authentifizierung"</p>
+      </div>
+
+      <div class="feature-box">
+        <strong>Code-Standards dokumentiert</strong>
+        <p style="margin: 8px 0 0 0;">Naming Conventions, Formatierung, Kommentar-Stil — Codex folgt den Regeln, nicht eigenen Varianten</p>
+      </div>
+
+      <div class="feature-box">
+        <strong>Vollständige Kontext-Information</strong>
+        <p style="margin: 8px 0 0 0;">Prompt.ai erfasst, was Codex über dein Project wissen muss — Dependencies, Bibliotheken, externe APIs</p>
+      </div>
+
+      <div class="feature-box">
+        <strong>Fehlerhafte Details werden vorher aussortiert</strong>
+        <p style="margin: 8px 0 0 0;">Echte Daten statt erfundener Beispiele — Codex arbeitet mit fundierten Informationen</p>
+      </div>
+
+      <h2>Praktisches Beispiel</h2>
+      <p><strong>Du brauchst:</strong><br>
+      „REST-API für ein Verwaltungssystem: Benutzer, Projekte, Zeiterfassung. Node.js, Express, PostgreSQL."</p>
+
+      <p><strong>Du bekommst:</strong></p>
+      <ul>
+        <li><strong>Klare Spezifikation</strong> — Endpoints, Request/Response Format, Error Codes</li>
+        <li><strong>Code-Standards</strong> — Middleware-Struktur, Logging, Validation</li>
+        <li><strong>Datenbankschema</strong> — Tabellen, Relationen, Indizes</li>
+        <li><strong>Security-Anforderungen</strong> — Auth, Rate Limiting, Input Validation</li>
+      </ul>
+
+      <p>Codex scaffoldet dann eine produktionsreife API — keine Kompromisse, keine Zurechtrichtungen nachher.</p>
+
+      <h2>Das Ergebnis: Schneller, sauberer Code</h2>
+      <ul>
+        <li><strong>Konsistente Qualität:</strong> Nicht „irgendwann passt's", sondern hochwertig vom Start</li>
+        <li><strong>Weniger Review-Zyklen:</strong> Der Code stimmt schon — weniger zu korrigieren</li>
+        <li><strong>Dokumentiert von Anfang an:</strong> Prompt ist die Dokumentation — wer den Code liest, versteht die Anforderung</li>
+        <li><strong>Erweiterbar:</strong> Neue Features bauen auf dieser soliden Grundlage auf</li>
+      </ul>
+
+      <h2>Für wen ist das interessant?</h2>
+      <ul>
+        <li><strong>Entwickler:</strong> Die Codex nutzen und schneller zum produktionsreifen Code kommen</li>
+        <li><strong>Backend-Teams:</strong> Die APIs, Services oder Datenbanken generieren wollen</li>
+        <li><strong>Startups:</strong> Die schnell prototypen und die Zeit von den Prompts, nicht dem Review vergeuden wollen</li>
+        <li><strong>Open-Source Maintainer:</strong> Die schneller Boilerplate-Code erzeugen wollen</li>
+      </ul>
+
+      <h2>So funktioniert es</h2>
+      <ol style="padding-left: 24px; list-style-type: decimal;">
+        <li><strong>Was brauchst du</strong> — Projekttyp, Tech-Stack, Anforderungen</li>
+        <li><strong>Prompt.ai fragt nach</strong> — Details, die sonst vergessen werden: Error Handling, Auth, Logging</li>
+        <li><strong>Fertig für Codex</strong> — Prompt kopieren und in GitHub Codex einfügen</li>
+      </ol>
+
+      <h2>Kosten</h2>
+      <ul>
+        <li><strong>Kostenlos:</strong> 3 Projekte im Monat, kein Konto nötig</li>
+        <li><strong>Pro (20,99 €):</strong> 25 Projekte, KI-Prüfung, Bildvorschauen</li>
+        <li><strong>Ultimate (54,99 €):</strong> Unbegrenzt, GitHub-Export, Expertenmodus</li>
+      </ul>
+
+      <div class="cta-section">
+        <h3>Probiere es kostenlos aus</h3>
+        <p>Erstelle bis zu 3 Prompts im Monat — ohne Konto, ohne Karte.</p>
+        <button onclick="window.location.href='/';">Zur Prompt.ai Startseite</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
