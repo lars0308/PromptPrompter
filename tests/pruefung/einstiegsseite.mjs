@@ -76,6 +76,38 @@ async function laufe(browser,breite,hoehe,label){
     pruefe(`${label}: nach dem Schliessen steht die Einstiegsseite wieder`,zurueck);
     await ctx.close();
   }
+  // Was das Werkzeug tut, muss man sehen können, ohne es erst zu benutzen.
+  {
+    const {p,ctx}=await seite(browser,breite,hoehe);
+    const n=await p.evaluate(()=>{
+      const hints=[...document.querySelectorAll('.gate-hint')].map(h=>({
+        text:h.textContent.trim(),
+        sichtbar:h.getBoundingClientRect().width>0&&getComputedStyle(h).display!=='none'
+      }));
+      const feld=document.querySelector('.gate-shot .prompt-command-input');
+      const rahmen=document.querySelector('#accountDialog.guest-gate>.dialog-frame');
+      const zahnrad=document.querySelector('.gate-shot .prompt-setup-icon path');
+      return {hints,
+        platzhalter:feld?.placeholder||'',
+        streifen:rahmen?/linear-gradient/.test(getComputedStyle(rahmen).backgroundImage):false,
+        // Ein Zahnrad hat einen gezackten Ring; das alte Zeichen waren acht einzelne Striche
+        // um einen Kreis - das liest sich als Sonne, nicht als Einstellung.
+        zahnrad:(zahnrad?.getAttribute('d')||'').startsWith('M19.4'),
+        schritte:document.querySelectorAll('.gate-proof-step').length,
+        ergebnisse:[...document.querySelectorAll('.gate-proof em')].map(e=>e.textContent.trim())};
+    });
+    pruefe(`${label}: der erste Satz im Feld erklärt, was hier passiert`,
+      /Beschreib dein Projekt/.test(n.platzhalter)&&/fertigen Auftrag/.test(n.platzhalter),n.platzhalter);
+    pruefe(`${label}: die Konsole trägt ein echtes Zahnrad, keine Sonne`,n.zahnrad);
+    pruefe(`${label}: der Grund trägt dieselben blauen Linien wie die App`,n.streifen);
+    pruefe(`${label}: die drei Schritte sind nummeriert und nennen ihr Ergebnis`,
+      n.schritte===3&&n.ergebnisse.length===3&&n.ergebnisse.every(x=>/^Ergebnis:/.test(x)),JSON.stringify(n.ergebnisse));
+    // Auf schmalen Geräten füllt die Konsole die Bühne - dort ist außerhalb kein Platz.
+    const erwartet=breite>820;
+    pruefe(`${label}: die Beschriftungen an der Konsole ${erwartet?'zeigen, was die Knöpfe tun':'treten zurück'}`,
+      n.hints.length===3&&n.hints.every(h=>h.sichtbar===erwartet),JSON.stringify(n.hints));
+    await ctx.close();
+  }
   // Das × am Anmeldefenster führt zurück zur Einstiegsseite - nicht in die App.
   {
     const {p,ctx}=await seite(browser,breite,hoehe);

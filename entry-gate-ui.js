@@ -29,7 +29,7 @@
   const SHOT_ICONS={
     website:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.8 12h16.4M12 3.5c2.2 2.4 3.4 5.2 3.4 8.5S14.2 18.1 12 20.5C9.8 18.1 8.6 15.3 8.6 12S9.8 5.9 12 3.5Z"/></svg>',
     send:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5.5a2.5 2.5 0 0 1-2.5 2.5H5"/><path d="m9 10-4 4 4 4"/></svg>',
-    gear:'<svg class="prompt-setup-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.2v2M12 17.8v2M4.2 12h2M17.8 12h2M6.5 6.5l1.4 1.4M16.1 16.1l1.4 1.4M17.5 6.5l-1.4 1.4M7.9 16.1l-1.4 1.4"/></svg>'
+    gear:'<svg class="prompt-setup-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 13.6a7.7 7.7 0 0 0 0-3.2l1.9-1.4-1.9-3.3-2.2.9a7.7 7.7 0 0 0-2.8-1.6L14.1 2h-3.8l-.3 2.4a7.7 7.7 0 0 0-2.8 1.6l-2.2-.9-1.9 3.3 1.9 1.4a7.7 7.7 0 0 0 0 3.2l-1.9 1.4 1.9 3.3 2.2-.9a7.7 7.7 0 0 0 2.8 1.6l.3 2.4h3.8l.3-2.4a7.7 7.7 0 0 0 2.8-1.6l2.2.9 1.9-3.3z"/></svg>'
   };
 
   function ensureGateActions(){
@@ -85,14 +85,31 @@
       +'<span class="gate-shot-quota">Claude Code · Mit Rückfragen · 3 Richtungen</span>'
       +'<span class="prompt-plan-chip"><b>Free</b></span>'
       +'</footer>'
+      // Drei Beschriftungen an der Konsole. Wer zum ersten Mal hier landet, sieht sonst ein
+      // Textfeld mit zwei Symbolen und muss raten, was davon was tut - und die Antwort steht
+      // ausgerechnet hinter den beiden Knöpfen, die am unscheinbarsten aussehen.
+      //
+      // Bewusst als feine Linie mit kleiner Schrift statt als dicker Pfeil: das hier ist die
+      // Anmeldeseite eines Werkzeugs, keine Verpackung. Die Beschriftungen liegen außerhalb der
+      // Konsole und zeigen mit einem kurzen Strich darauf, damit das Bild selbst unberührt
+      // bleibt - es ist ja dieselbe Konsole, die danach wirklich kommt.
+      +'<span class="gate-hint" data-hint="mode">Modus wählen</span>'
+      +'<span class="gate-hint" data-hint="setup">Ziel-KI und Ablauf</span>'
+      +'<span class="gate-hint" data-hint="attach">Links und Dateien – die KI liest sie aus</span>'
       +'</div>';
     box.insertAdjacentElement('afterend',shot);
 
     // Drei Belege statt drei Werbezeilen - dieselben Schritte, die die App danach wirklich geht.
     const proof=document.createElement('ul');proof.className='gate-proof';
-    proof.innerHTML='<li><strong>Beschreiben</strong><small>Ein paar Sätze reichen. Gibt es schon eine Seite, lesen wir sie aus und übernehmen die belegten Fakten. Prompt.ai fragt nach, wo die Antwort das Ergebnis wirklich ändert.</small></li>'
-      +'<li><strong>Richtung wählen</strong><small>Drei fertig gestaltete Vorschläge mit Farbwerten und Aufbau – die Entscheidung, die du sonst im Kundengespräch triffst.</small></li>'
-      +'<li><strong>In deiner KI weiterbauen</strong><small>Master-Prompt, Seitenstruktur, gesicherte Fakten und die passende Anweisungsdatei – <code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>GEMINI.md</code> oder Cursor-Rules. Direkt ins Projekt legen und loslegen.</small></li>';
+    proof.innerHTML='<li><span class="gate-proof-step">Schritt 1</span><strong>Beschreiben</strong>'
+      +'<small>Ein paar Sätze reichen. Gibt es schon eine Seite des Kunden, liest Prompt.ai sie aus und übernimmt daraus nur, was wirklich dort steht – Adresse, Öffnungszeiten, Leistungen. Was fehlt, wird nachgefragt statt erfunden.</small>'
+      +'<em>Ergebnis: ein Briefing, das keine Lücken versteckt.</em></li>'
+      +'<li><span class="gate-proof-step">Schritt 2</span><strong>Richtung wählen</strong>'
+      +'<small>Drei fertig gestaltete Vorschläge mit Farbwerten, Typografie und Aufbau – nicht drei Stichworte. Du triffst hier die Entscheidung, die sonst im Kundengespräch hängen bleibt, und siehst sofort, wie sie aussieht.</small>'
+      +'<em>Ergebnis: eine verbindliche Gestaltungsrichtung.</em></li>'
+      +'<li><span class="gate-proof-step">Schritt 3</span><strong>In deiner KI weiterbauen</strong>'
+      +'<small>Master-Prompt, Seitenstruktur, gesicherte Fakten und die Anweisungsdatei deiner Ziel-KI – <code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>GEMINI.md</code> oder Cursor-Rules. Kopieren oder als Paket herunterladen.</small>'
+      +'<em>Ergebnis: Claude Code baut beim ersten Mal das Richtige.</em></li>';
     shot.insertAdjacentElement('afterend',proof);
     rotateShot(shot);
     // Die beiden Kopfzeilen-Knöpfe liegen in .gate-top, die übrigen in #gateActions - deshalb
@@ -329,17 +346,23 @@
   // Er steht dabei länger als die Startseite - hier liest man ihn zum ersten Mal, ohne zu wissen,
   // was das Feld überhaupt tut, und ein Satz, der beim Lesen umspringt, wirkt hektisch.
   const SHOT_INTERVAL=9600,SHOT_FADE=520;
+  // Das Erste im Feld sagt, was hier passiert - nicht schon das dritte Beispiel.
+  //
+  // Die wechselnden Beispielsätze zeigen die Spannbreite, aber sie erklären nichts: wer zum ersten
+  // Mal hier steht, liest „Kundenprojekt: Dachdecker in Lindhorst" und weiß immer noch nicht, was
+  // daraus wird. Ein Satz voran beantwortet das, danach übernehmen die Beispiele.
+  const SHOT_INTRO='Beschreib dein Projekt in ein paar Sätzen – Prompt.ai macht daraus den fertigen Auftrag für deine KI.';
   function rotateShot(shot){
     const field=shot.querySelector('.prompt-command-input');
     if(!field||shot.__rotating)return;
     shot.__rotating=true;
     let index=Math.floor(Math.random()*EXAMPLES.length);
     const paint=()=>{const item=EXAMPLES[index%EXAMPLES.length];field.placeholder=`z. B. ${item.head}${item.rest}`};
-    paint();
+    field.placeholder=SHOT_INTRO;
     setInterval(()=>{
       if(!shot.isConnected)return;
       field.classList.add('is-hint-fading');
-      setTimeout(()=>{index++;paint();field.classList.remove('is-hint-fading')},SHOT_FADE);
+      setTimeout(()=>{paint();index++;field.classList.remove('is-hint-fading')},SHOT_FADE);
     },SHOT_INTERVAL);
   }
 
