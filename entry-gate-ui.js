@@ -141,6 +141,22 @@
     const layout=$('.gate-login-body .auth-layout',dialog),host=$('#accountLoggedOut');
     if(layout&&host)host.appendChild(layout);
     if(dialog.open)try{dialog.close()}catch{}
+    // Das × am Anmeldefenster hiess bisher: raus aus der App.
+    //
+    // Beim Öffnen wandert das Anmeldeformular aus der Einstiegsseite in dieses Fenster, und die
+    // Einstiegsseite darunter geht dabei zu. Schloss man das Anmeldefenster wieder, kam sie nicht
+    // von selbst zurück - dahinter lag die Startseite, und dort stand man plötzlich, ohne
+    // angemeldet zu sein und ohne je „kostenlos testen“ gedrückt zu haben.
+    //
+    // Wer ein Fenster zumacht, will dahin zurück, wo er herkam. Solange niemand angemeldet ist,
+    // ist das die Einstiegsseite.
+    if(window.SiteBriefCloud?.user)return;
+    const gate=$('#accountDialog');
+    if(!gate||gate.open)return;
+    gate.classList.add('guest-gate');
+    // Erst im nächsten Takt: ein dialog, das im selben Moment schliesst und wieder aufgeht,
+    // laesst der Browser gelegentlich ganz aus.
+    setTimeout(()=>{const d=$('#accountDialog');if(d&&!d.open&&!window.SiteBriefCloud?.user)try{d.showModal()}catch{}},0);
   }
 
   /* ===========================================================================
@@ -362,8 +378,25 @@
     plans.addEventListener('close',()=>{const dialog=$('#accountDialog');if(dialog&&!dialog.open){try{dialog.showModal()}catch{}}},{once:true});
   }
 
+  // Pro und Ultimate taten auf der Einstiegsseite nichts.
+  //
+  // Sie klickten den Kaufen-Knopf der Tarifseite, und der beginnt einen Checkout. Ohne Konto gibt
+  // es keinen Checkout: der Aufruf ruft dann showAccountGate() - also genau die Seite, auf der man
+  // schon steht. Sichtbar passierte nichts, und die Kachel wirkte tot.
+  //
+  // Den richtigen Weg gibt es längst: pickAuthPlan() merkt sich den gewählten Tarif und schreibt
+  // ins Anmeldeformular „…dann geht es direkt weiter zu Pro". Genau die Knöpfe, die das auslösen,
+  // stehen im Formular - hier wird der passende gedrückt und das Formular dazu geöffnet, damit
+  // die Nachricht auch jemand liest. Wer schon angemeldet ist, geht direkt zum Kauf.
   function pickGatePlan(plan){
     if(plan==='free'){$('#guestContinueBtn')?.click();return}
+    if(!window.SiteBriefCloud?.user){
+      openLogin();
+      // Erst nach dem Umzug des Formulars in das Anmeldefenster: sonst landet die Nachricht in
+      // einem Feld, das gerade den Platz wechselt.
+      setTimeout(()=>window.PromptAiAuthPlan?.pick?.(plan),60);
+      return;
+    }
     const selector=plan==='ultimate'?'#startUltimateCheckoutBtn':'#startProCheckoutBtn';
     const button=$(selector);
     if(button){button.click();return}

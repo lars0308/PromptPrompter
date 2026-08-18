@@ -495,6 +495,11 @@
     el.authMessage.textContent=`Lege zuerst ein Konto an oder melde dich an, dann geht es direkt weiter zu ${plan==="ultimate"?"Ultimate":"Pro"}.`;
     el.authMessage.className="auth-message";
   }
+  // Die Einstiegsseite baut ihre Tarifkacheln selbst und ersetzt dabei die Knöpfe aus dem
+  // Anmeldeformular - die konnte sie also nicht mehr anklicken, um denselben Weg zu gehen.
+  // Statt die Logik dort ein zweites Mal zu schreiben, ist sie von hier aus erreichbar: ein
+  // gemerkter Tarif, eine Nachricht im Formular, und nach der Anmeldung geht es direkt weiter.
+  window.PromptAiAuthPlan={pick:plan=>pickAuthPlan(plan)};
   async function continuePendingAuthPlan(){
     if(!pendingAuthPlan)return;
     const plan=pendingAuthPlan;pendingAuthPlan=null;
