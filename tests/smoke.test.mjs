@@ -911,6 +911,8 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   assert.match(css,/\.task-progress \.task-progress-track\{display:none\}/);
   // Die Marke ist die Ueberschrift des Startbildschirms - sie ist es, die blau volllaeuft.
   assert.match(html,/<strong class="prompt-fill-progress" style="--prompt-fill:6%">Prompt\.ai<\/strong>/);
+  // Kein Kicker mehr darueber: die Marke stand dort zweimal, einmal klein und einmal gross.
+  assert.doesNotMatch(html,/id="promptAppBoot"[\s\S]{0,200}<span class="kicker">/);
   // Darunter zwei Saetze: wer noch kein Konto hat, hat auch keinen Arbeitsbereich, den man
   // vorbereiten koennte - er landet auf der Startseite mit den Tarifen.
   assert.match(html,/data-boot="konto">Dein Arbeitsbereich wird vorbereitet\.<\/div>/);
@@ -925,6 +927,12 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   const touch=await text('ui-final-touch.js');
   assert.match(touch,/const brandAi=\(\)=>\{\$\$\('\.brand-copy strong,\.auth-brand strong,\.guided-clean-brand strong,\.simple-intake-brand strong'\)/,
     'der Startbildschirm darf nicht mehr in der Liste stehen');
+  // Die Endung der Wortmarke ist ein eigener Abschnitt der Fuellung und laeuft in der hellen
+  // Farbe voll - im Dunkelmodus Weiss, im Hellmodus das Marineblau der Schrift.
+  assert.match(themeBoot,/marke\?\[marke\[1\],marke\[2\]\]:\[teil\]/);
+  assert.match(themeBoot,/is-marken-endung/);
+  const layers=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
+  assert.match(layers,/\.prompt-fill-word\.is-marken-endung\{background-image:linear-gradient\(90deg,var\(--ink,#1e3a5f\)/);
   assert.match(cleanup,/beginTask\?\.\(ZUSAMMENBAU,\{title:MASTER_TITEL,kind:'build'\}\)/,'der Master-Prompt nutzt den gemeinsamen Ladeschirm');
   assert.match(app,/box\?\.style\.setProperty\('--prompt-fill',`\$\{pct\}%`\);label\?\.classList\.add\('prompt-fill-progress'\)/,'inline task progress');
 });

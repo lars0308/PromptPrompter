@@ -102,14 +102,21 @@
       if(!text)return;
       if(node.dataset.fillText!==text){
         node.dataset.fillText=text;
-        const teile=text.split(/(\s+)/);
+        // Die Wortmarke traegt zwei Farben: "Prompt" und die Endung ".ai". Damit die Endung
+        // eigenstaendig volllaufen kann, ist sie ein eigener Abschnitt - sonst waere sie nur
+        // das letzte Stueck desselben Verlaufs und haette zwangslaeufig dieselbe Farbe.
+        const teile=text.split(/(\s+)/).flatMap(teil=>{
+          const marke=/^(.*[^.\s])(\.ai)$/i.exec(teil);
+          return marke?[marke[1],marke[2]]:[teil];
+        });
         const laenge=teile.reduce((n,t)=>n+(/^\s+$/.test(t)?0:t.length),0)||1;
         let gelaufen=0;
         node.innerHTML=teile.map(teil=>{
           if(/^\s+$/.test(teil))return teil;
           const von=gelaufen/laenge;gelaufen+=teil.length;
           const bis=gelaufen/laenge;
-          return `<i class="prompt-fill-word" style="--von:${von};--bis:${bis}">${teil.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</i>`;
+          const endung=/^\.ai$/i.test(teil)?' is-marken-endung':'';
+          return `<i class="prompt-fill-word${endung}" style="--von:${von};--bis:${bis}">${teil.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</i>`;
         }).join('');
       }
       const p=Math.max(0,Math.min(1,Number(progress)||0));
