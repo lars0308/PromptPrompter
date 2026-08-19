@@ -42,7 +42,7 @@ class StylesheetLoader {
     nonCriticalSheets.forEach((sheet) => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `${sheet}?v=20260817-24`;
+      link.href = `${sheet}?v=20260819-25`;
       link.media = 'print';
       link.onload = () => {
         link.media = 'all';
@@ -67,7 +67,7 @@ class StylesheetLoader {
     if (themeName === 'dark') {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = `/styles-dark.css?v=20260817-24`;
+      link.href = `/styles-dark.css?v=20260819-25`;
       link.media = 'print';
       link.onload = () => {
         link.media = 'all';
@@ -84,21 +84,21 @@ class StylesheetLoader {
     // Mobile CSS
     const mobileLink = document.createElement('link');
     mobileLink.rel = 'stylesheet';
-    mobileLink.href = '/styles-mobile.css?v=20260817-24';
+    mobileLink.href = '/styles-mobile.css?v=20260819-25';
     mobileLink.media = '(max-width: 768px)';
     document.head.appendChild(mobileLink);
 
     // Tablet CSS
     const tabletLink = document.createElement('link');
     tabletLink.rel = 'stylesheet';
-    tabletLink.href = '/styles-tablet.css?v=20260817-24';
+    tabletLink.href = '/styles-tablet.css?v=20260819-25';
     tabletLink.media = '(min-width: 769px) and (max-width: 1024px)';
     document.head.appendChild(tabletLink);
 
     // Desktop CSS
     const desktopLink = document.createElement('link');
     desktopLink.rel = 'stylesheet';
-    desktopLink.href = '/styles-desktop.css?v=20260817-24';
+    desktopLink.href = '/styles-desktop.css?v=20260819-25';
     desktopLink.media = '(min-width: 1025px)';
     document.head.appendChild(desktopLink);
 

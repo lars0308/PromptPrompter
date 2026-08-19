@@ -85,10 +85,9 @@
   async function route(){
     if(beimVerlassen())return;
     const mode=currentMode(),step=currentStep(),workflow=$('#workflowApp');if(!step||mode==='expert'||!workflow||workflow.hidden)return;
-    if(step!==lastStep){lastStep=step;if(step===1)setStatus(mode==='auto'?'Beschreibe dein Projekt':'Erster Schritt: Projekt beschreiben',mode==='auto'?'Referenzen hängst du oben über das Plus an. Alles Weitere übernimmt Prompt.ai.':'Referenzen hängst du oben über das Plus an; technische Entscheidungen werden für dich vorbereitet.',false);if(step===2)setStatus('Referenzen werden übernommen','Was du beim Start über das Plus angehängt hast, gilt bereits – ein eigener Schritt dafür entfällt.',true)}
-    if(step===2){
-      const next=activeNext(2);if(next&&!next.disabled)setTimeout(()=>fireClick(next),120);return;
-    }
+    if(step!==lastStep){lastStep=step;if(step===1)setStatus(mode==='auto'?'Beschreibe dein Projekt':'Erster Schritt: Projekt beschreiben',mode==='auto'?'Referenzen hängst du oben über das Plus an. Alles Weitere übernimmt Prompt.ai.':'Referenzen hängst du oben über das Plus an; technische Entscheidungen werden für dich vorbereitet.',false)}
+    // Schritt 2 kommt hier nicht mehr an: goStep() in app.js faehrt die Referenzen-Seite ausserhalb
+    // von "Selbst einstellen" gar nicht erst an, statt sie hier weiterzuklicken.
     if(step===3){
       await prepareIntake();setStatus(mode==='auto'?'Projekt wird automatisch geprüft':'KI prüft, ob noch etwas Wichtiges fehlt',mode==='auto'?'Nur bei einem echten Blocker unterbricht Prompt.ai den Ablauf.':'Falls eine Antwort das Ergebnis wirklich verändert, bekommst du eine konkrete Frage.',true);
       const next=activeNext(3);if(next&&!next.disabled)setTimeout(()=>fireClick(next),120);return;

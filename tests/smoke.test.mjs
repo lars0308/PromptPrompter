@@ -23,8 +23,9 @@ test('simple entry comes before detailed website and free-prompt flows',async()=
 test('mobile UX fix removes duplicate intake and keeps feedback before preview',async()=>{const src=await text('ux-stability-fix.js');assert.match(src,/text\.length>=20/);assert.match(src,/SIMPLE_START_KEY/);assert.match(src,/skipDuplicateDescription/);// 'referenzen' faellt aus der sichtbaren Reihe: Link, Bild und PDF haengt man am Textfeld der
   // Startseite an, und Adressen aus der Beschreibung wandern automatisch in die Liste.
   assert.match(src,/FLOW_ORDER=\['beschreibung','rueckmeldung','vorschau'/);
-  assert.match(src,/function skipReferenceStep\(\)\{/);
-  assert.match(src,/currentStep\(\)!==2\|\|currentMode\(\)==='expert'\)return;/,'in "Selbst einstellen" bleibt jeder Schritt sichtbar');assert.match(src,/Weiter zur Vorschau/)});
+  // Der Sprung ueber die Referenzen-Seite haengt nicht mehr an einem Klick von hier aus.
+  assert.doesNotMatch(src,/function skipReferenceStep\(\)\{/);
+  assert.match(src,/Weiter zur Vorschau/)});
 test('the references-step next-button label has exactly one owner (transition-polish CSS), not a JS text race',async()=>{const ux=await text('ux-stability-fix.js'),polish=await text('transition-polish.js');assert.doesNotMatch(ux,/prompt-review-transition/);assert.doesNotMatch(ux,/flowTransitionCompact/);assert.match(polish,/#stepReferences \.next-btn:before/);assert.match(polish,/content:'Rückmeldung prüfen'/)});
 test('mobile menu is structured and dark mode only gets a quick top button',async()=>{const src=await text('ux-stability-fix.js');for(const token of ['menuLibrariesBtn','Projekte','Einstellungen','Abmelden','menuThemeQuick'])assert.ok(src.includes(token),token);assert.match(src,/#themeToggleBtn\{display:none!important\}/);assert.match(src,/topbar-menu #resetBtn\{display:none!important\}/);assert.doesNotMatch(src,/setText\(upgrade,'Upgraden'\)/);assert.doesNotMatch(src,/setText\(profile,window\.SiteBriefCloud/,'account button Anmelden/Profil text is owned solely by app.js updateAccountUi() to avoid two scripts racing on the same label')});
 test('upgrade CTA names the next tier in blue and the menu entry keeps its own dynamic label',async()=>{const app=await text('app.js'),fix=await text('ux-stability-fix.js');assert.match(app,/Upgrade auf <span class="upgrade-target">\$\{nextTier\}<\/span>/);assert.match(app,/state\.plan==='pro'\?'Ultimate':'Pro'/);assert.match(app,/el\.upgradeMenuBtn\.hidden=state\.plan==='ultimate'\|\|state\.isAdmin/);assert.match(fix,/\.upgrade-target\{color:var\(--ui-blue,var\(--accent,#1689c7\)\)!important\}/)});
@@ -655,12 +656,22 @@ test('the loading screen shows its logo once, not twice',async()=>{
 // Link, Screenshot und PDF haengt man am Textfeld der Startseite an - die Referenzen-Seite fragte
 // dasselbe ein zweites Mal ab.
 test('the references step is skipped in the guided flows, but kept in expert',async()=>{
-  const src=await text('ux-stability-fix.js');
-  assert.match(src,/function skipReferenceStep\(\)\{/);
-  assert.match(src,/currentStep\(\)!==2\|\|currentMode\(\)==='expert'\)return;/);
+  const app=await text('app.js'),ux=await text('ux-stability-fix.js'),flow=await text('mode-flow-ui.js'),html=await text('index.html');
+  // Der Sprung sitzt in goStep() - der einzigen Stelle, die ueber den sichtbaren Schritt
+  // entscheidet. Zwei Skripte haben ihn vorher weggeklickt, sobald er sichtbar wurde; blieb der
+  // Klick aus, stand die Seite doch da. Ein Klick kann verpuffen, dieser Zweig nicht.
+  assert.match(app,/const REFERENZ_SCHRITT=2;/);
+  assert.match(app,/if\(step===REFERENZ_SCHRITT&&state\.mode!=="expert"\)\{/);
+  assert.match(app,/const vorwaerts=step>=state\.currentStep;/,'zurueck fuehrt zur Beschreibung, vorwaerts zum Agenten');
+  assert.match(app,/return goStep\(vorwaerts\?REFERENZ_SCHRITT\+1:REFERENZ_SCHRITT-1,force\);/);
+  // Ohne diese Zeile haelt die Schrittsperre den Sprung von 1 auf 3 fuer einen Vorgriff.
+  assert.match(app,/state\.maxVisited=Math\.max\(state\.maxVisited,REFERENZ_SCHRITT\);/);
   // Der Schritt bleibt im Dokument - an ihm haengen Felder, Grenzen und die Nutzlast.
-  assert.doesNotMatch(src,/stepReferences[^\n]{0,40}remove\(\)/);
-  assert.match(src,/const REFS_SETTLE_MS=900,REFS_RETRY_MS=900,REFS_GIVE_UP_MS=15000;/,'one click is not enough while the handoff still steers');
+  assert.match(html,/data-step-panel="2" id="stepReferences"/);
+  assert.doesNotMatch(ux,/stepReferences[^\n]{0,40}remove\(\)/);
+  // Und die beiden alten Klick-Automatiken sind weg, damit sie sich nicht widersprechen.
+  assert.doesNotMatch(ux,/skipReferenceStep/);
+  assert.doesNotMatch(flow,/if\(step===2\)\{/);
 });
 
 // Der Support-Punkt fuehrte ueber das Profil: oeffnen, eingeklappten Abschnitt aufklappen,

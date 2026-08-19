@@ -1614,6 +1614,10 @@
     const title=$('#stepProject h1');if(title)title.textContent=expert?'Angaben zum Projekt':'Was soll entstehen?';
     const qKicker=questions?.querySelector('.section-kicker'),qTitle=questions?.querySelector('h1'),nav=$('.step-nav[data-step="5"] span'),next=$('#stepModules .next-btn');
     if(qKicker)qKicker.textContent=expert?'05 — RÜCKFRAGEN':'05 — KONZEPT';if(qTitle)qTitle.textContent=expert?'Offene Punkte bewusst klären.':'Alles in einem Briefing.';if(nav)nav.textContent=expert?'Rückfragen':'Konzept';if(next)next.innerHTML=expert?'Rückfragen prüfen <i>→</i>':'Konzept prüfen <i>→</i>';
+    // Ohne "Selbst einstellen" fuehrt dieser Knopf nicht mehr auf die Referenzen-Seite, sondern
+    // an ihr vorbei. Dann darf er auch nicht mehr behaupten, dorthin zu fuehren.
+    const weiter=$('#stepProject .next-btn');
+    if(weiter)weiter.innerHTML=expert?'Referenzen hinzufügen <i>→</i>':'Weiter <i>→</i>';
     placeClarifications();
   }
 
@@ -3890,8 +3894,25 @@ ${body||'## 1. Startseite\nPfad: /\nZweck: Einstieg.\nInhaltsquelle: keine Besta
     return true;
   }
 
+  // Die Referenzen-Seite fragt genau das ab, was am Textfeld der Startseite schon anhaengt
+  // (Plus-Knopf), und Adressen aus der Beschreibung landen ohnehin automatisch in der Liste.
+  // Bisher wurde sie weggeklickt: zwei Skripte warteten darauf, dass der Schritt sichtbar wird,
+  // und drueckten dann "Weiter". Blieb der Klick aus - kein Mutationsereignis, deaktivierter
+  // Knopf, abgelaufenes Zeitfenster - stand die Seite doch da. Jetzt wird sie gar nicht erst
+  // angefahren. Der Schritt bleibt im Dokument, denn an ihm haengen Felder, Grenzen und die
+  // Nutzlast fuer die KI; nur der Ablauf springt darueber hinweg. In "Selbst einstellen" bleibt
+  // er sichtbar - dort ist der Sinn, dass man jeden Schritt sieht.
+  const REFERENZ_SCHRITT=2;
   function goStep(step,force=false){
-    step=clamp(step,1,8);if(!force && state.mode!=="expert" && step>state.maxVisited+1)return;if(!validateStep(step))return;
+    step=clamp(step,1,8);
+    if(step===REFERENZ_SCHRITT&&state.mode!=="expert"){
+      const vorwaerts=step>=state.currentStep;
+      // Der uebersprungene Schritt gilt als besucht, sonst haelt die Schrittsperre unten den
+      // Sprung von 1 auf 3 fuer einen Vorgriff und tut nichts.
+      state.maxVisited=Math.max(state.maxVisited,REFERENZ_SCHRITT);
+      return goStep(vorwaerts?REFERENZ_SCHRITT+1:REFERENZ_SCHRITT-1,force);
+    }
+    if(!force && state.mode!=="expert" && step>state.maxVisited+1)return;if(!validateStep(step))return;
     // Ob wirklich ein Schritt gewechselt wurde, entscheidet weiter unten darueber, ob die Seite
     // nach oben springt. goStep() wird auch mit dem Schritt aufgerufen, auf dem man schon steht -
     // beim Wiederherstellen eines Projekts, beim Oeffnen des Ablaufs, aus dem Ablauf-Automaten.

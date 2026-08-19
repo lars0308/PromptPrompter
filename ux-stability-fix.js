@@ -92,29 +92,11 @@
   // entscheidet.
   function skipDuplicateDescription(){let simple=false;try{simple=sessionStorage.getItem(SIMPLE_START_KEY)==='1'}catch{}if(!simple||!workflowVisible()||currentStep()!==1)return;if(currentMode()==='expert')return;const description=$('#projectDescription')?.value.trim()||'';if(description.length<20)return;const panel=$('#stepProject');if(panel?.dataset.uxAutoForward==='1')return;panel.dataset.uxAutoForward='1';setTimeout(()=>{if(currentStep()===1)$('#stepProject .next-btn')?.click()},90)}
 
-  // Die Referenzen-Seite fragt Link, Screenshot und PDF ab - genau das haengt man aber schon auf
-  // der Startseite ans Textfeld (Plus-Knopf), und Adressen aus der Beschreibung wandern ohnehin
-  // automatisch in die Liste. Ein zweites Mal danach zu fragen ist ein Schritt ohne Inhalt.
-  // Der Schritt selbst bleibt bestehen - an ihm haengen Felder, Grenzen und die Nutzlast fuer die
-  // KI; er wird nur nicht mehr angezeigt. In "Selbst einstellen" bleibt er sichtbar, dort ist der
-  // Sinn, dass man jeden Schritt sieht.
-  // Nicht sofort: die Uebergabe von der Startseite steuert den Ablauf in den ersten Sekunden
-  // selbst auf Schritt 2, und ein Klick mitten hinein verpufft. Erst wenn der Schritt eine
-  // Sekunde ruhig steht, wird weitergeschaltet - und nur einmal.
-  const REFS_SETTLE_MS=900,REFS_RETRY_MS=900,REFS_GIVE_UP_MS=15000;
-  function skipReferenceStep(){
-    if(!workflowVisible()||currentStep()!==2||currentMode()==='expert')return;
-    const panel=$('#stepReferences');if(!panel)return;
-    const now=Date.now(),seen=Number(panel.dataset.uxRefsSeen||0);
-    if(!seen){panel.dataset.uxRefsSeen=String(now);return}
-    // Erst wenn der Schritt kurz ruhig steht - und dann in Abstaenden erneut, bis er wirklich
-    // weiterspringt. Ein einzelner Versuch verpufft, solange die Uebergabe noch selbst steuert.
-    if(now-seen<REFS_SETTLE_MS||now-seen>REFS_GIVE_UP_MS)return;
-    const last=Number(panel.dataset.uxRefsTried||0);
-    if(now-last<REFS_RETRY_MS)return;
-    panel.dataset.uxRefsTried=String(now);
-    $('#stepReferences .next-btn')?.click();
-  }
+  // Die Referenzen-Seite wurde hier frueher weggeklickt: warten, bis der Schritt sichtbar ruhig
+  // steht, dann "Weiter" druecken. Das hing an Zufaellen - einem Mutationsereignis, einem nicht
+  // deaktivierten Knopf, einem Zeitfenster von 15 Sekunden. Blieb einer davon aus, stand die
+  // Seite doch da. Der Sprung sitzt jetzt in goStep() in app.js, der einzigen Stelle, die ueber
+  // den Schritt entscheidet, und braucht hier nichts mehr.
 
   function cleanClarification(){
     const dialog=$('#clarificationDialog');if(!dialog)return;const head=$('.dialog-head>div',dialog);if(head){setText($('span',head),'RÜCKMELDUNG');setText($('h2',head),'Kurz abstimmen')}const warnings=$('#clarificationWarnings');if(warnings&&!warnings.hidden)warnings.hidden=true;
@@ -130,7 +112,7 @@
     const body=$('#subscriptionOverviewBody'),hero=$('.sub-hero h3',body||document);if(!body||!hero||hero.textContent.trim()!=='Pro'){$('#subProrationNote')?.remove();return}const actions=$('.sub-actions',body);if(!actions)return;setText($('[data-sub-portal="update"]',actions),'Auf Ultimate upgraden');let note=$('#subProrationNote');if(note)return;note=document.createElement('div');note.id='subProrationNote';note.className='sub-proration-note';note.innerHTML='<strong>Upgrade innerhalb der Laufzeit</strong>Beim Wechsel auf Ultimate berechnet Stripe jetzt nur die anteilige Differenz bis zum nächsten Abrechnungstermin. Ab der nächsten regulären Abrechnung gilt der normale Ultimate-Preis.';actions.insertAdjacentElement('beforebegin',note);
   }
 
-  function settle(){shortHome();shortModeChoice();shortIntake();cleanMenu();themeQuick();syncFlow();skipDuplicateDescription();skipReferenceStep();cleanClarification();sanitizeStatus();subscriptionProration()}
+  function settle(){shortHome();shortModeChoice();shortIntake();cleanMenu();themeQuick();syncFlow();skipDuplicateDescription();cleanClarification();sanitizeStatus();subscriptionProration()}
   function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,20)}
   function observe(){new MutationObserver(schedule).observe(document.body,{childList:true})}
   function bind(){document.addEventListener('click',validateSimpleIntake,true);document.addEventListener('click',event=>{if(event.target.closest?.('#workspaceNewProjectBtn')){try{sessionStorage.setItem(FRESH_WEBSITE_KEY,'1');sessionStorage.removeItem(PREVIEW_MANUAL_KEY)}catch{}}schedule()},true);$('#previewFormat')?.addEventListener('change',event=>{if(event.isTrusted)try{sessionStorage.setItem(PREVIEW_MANUAL_KEY,'1')}catch{}},true);window.addEventListener('promptai:access',schedule);window.addEventListener('sitebrief:admin',schedule);window.addEventListener('pageshow',schedule);window.SiteBriefCloud?.subscribe?.(schedule)}
