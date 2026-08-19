@@ -2998,13 +2998,13 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     // „Anfragen bekommen" ist ein Ziel, kein Formular. „Anmeldung mit E-Mail" ist ein Konto, kein
     // Kontaktformular. Beides zog frueher ein Formular in die Abnahme - eine Funktion, die niemand
     // bestellt hatte und die die bauende KI dann baut, samt Empfaenger und Einwilligung.
-    if(/\bformular\b|kontaktformular|anfrageformular|buchungsformular|newsletter/.test(text))teile.push('Formulare');
-    if(/\bkonto\b|\bkonten\b|benutzerkonto|anmeldung|registrierung|\blogin\b|passwort/.test(text))teile.push('Anmeldung und Konten');
-    if(/terminbuchung|online.{0,12}(?:buchen|reservieren)|buchungssystem|reservierungssystem/.test(text))teile.push('die Terminbuchung');
-    if(/sanity|wordpress|webflow|\bcms\b|redaktion|selbst pflegen|selber pflegen/.test(text))teile.push('CMS-Inhalte');
+    if(funktionGewuenscht(text,FUNKTION_FORMULAR))teile.push('Formulare');
+    if(funktionGewuenscht(text,FUNKTION_KONTO))teile.push('Anmeldung und Konten');
+    if(funktionGewuenscht(text,FUNKTION_BUCHUNG))teile.push('die Terminbuchung');
+    if(funktionGewuenscht(text,FUNKTION_CMS))teile.push('CMS-Inhalte');
     // Ohne Wortgrenze traf „karte" wieder mitten in „Speisekarte" - dieselbe Falle wie bei den
     // Antwortbegriffen.
-    if(/\banfahrt\b|\bmaps\b|\bkarte\b|\bstadtplan\b/.test(text))teile.push('die Kartendarstellung');
+    if(funktionGewuenscht(text,FUNKTION_KARTE))teile.push('die Kartendarstellung');
     return joinTerms(teile);
   }
   function cmsPromptBlock(){
@@ -3127,6 +3127,28 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   // Without this the builder decides the site map itself every time - the same briefing produced a
   // one-pager once and six pages the next time, and a page whose source was never read got filled
   // with invented content instead of being marked as open.
+  // „Ich möchte kein Kontaktformular" schaltete das Formular ein. „Kein CMS nötig" schaltete das
+  // CMS ein. Und „Kundenkonto" wurde gar nicht erkannt, weil \bkonto\b an einer deutschen
+  // Zusammensetzung scheitert - vor „konto" steht dort ein Wortzeichen, also keine Grenze.
+  //
+  // Zwei Fehler mit einer Ursache: gesucht wurde nach Wörtern statt nach Aussagen. Eine Funktion
+  // gilt jetzt erst dann als gewünscht, wenn ihr Wort vorkommt und davor keine Verneinung steht.
+  // Und die Muster enden auf dem Grundwort, damit Kundenkonto und Benutzerkonto mitzählen.
+  const VERNEINUNG=/\b(kein|keine|keinen|keiner|keines|nicht|ohne|nie|niemals|verzichte[nt]?|brauche[nt]?\s+kein\w*|will\s+kein\w*|möchte[nt]?\s+kein\w*|wollen\s+kein\w*)\b[^.!?;]{0,45}$/i;
+  const FUNKTION_FORMULAR=/kontaktformular|anfrageformular|buchungsformular|\bformular\b|newsletter/gi;
+  const FUNKTION_KONTO=/\w*konto\b|\w*konten\b|anmeldung|registrierung|\blogin\b|passwort/gi;
+  const FUNKTION_BUCHUNG=/terminbuchung|online.{0,14}(?:buchen|buchung|reservieren|reservierung)|buchungssystem|reservierungssystem/gi;
+  const FUNKTION_CMS=/sanity|wordpress|webflow|\bcms\b|redaktionssystem|selbst pflegen|selber pflegen/gi;
+  const FUNKTION_KARTE=/\banfahrt\b|\bmaps\b|\bkarte\b|\bstadtplan\b/gi;
+  function funktionGewuenscht(text,muster){
+    muster.lastIndex=0;
+    let treffer;
+    while((treffer=muster.exec(text))){
+      const davor=text.slice(Math.max(0,treffer.index-70),treffer.index);
+      if(!VERNEINUNG.test(davor))return true;
+    }
+    return false;
+  }
   // Eine Funktion darf nur dann in der Seitenliste stehen, wenn sie bestaetigt ist.
   //
   // Beim Kontakt stand fest „Telefon, E-Mail, Formular" - bestaetigt waren aber nur Telefon und
@@ -3138,11 +3160,14 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     const gesagt=[project().description,project().special,project().goal,
       ...(state.clarifications||[]).map(x=>x.answer||'')].filter(Boolean).join(' ').toLowerCase();
     const wege=[];
-    if(facts.phone.length||/\btelefon|\banruf|\brueckruf|\brückruf/.test(gesagt))wege.push('Telefon');
-    if(facts.mail.length||/\be-?mail\b|\bmail\b/.test(gesagt))wege.push('E-Mail');
-    if(/kontaktformular|anfrageformular|\bformular\b/.test(gesagt))wege.push('Formular');
-    if(/whats-?app/.test(gesagt))wege.push('WhatsApp');
-    if(/termin(?:buchung|vereinbarung)|online.{0,12}buchen|buchungssystem/.test(gesagt))wege.push('Terminbuchung');
+    // Dieselbe Verneinungsprüfung wie in der Abnahme: „ich möchte kein Kontaktformular" hat sonst
+    // ein Formular in die Seitenliste geschrieben - und damit in eine Datei, die als verbindlich
+    // gilt.
+    if(facts.phone.length||funktionGewuenscht(gesagt,/\btelefon\w*|\banruf\w*|\brückruf\w*|\brueckruf\w*/gi))wege.push('Telefon');
+    if(facts.mail.length||funktionGewuenscht(gesagt,/\be-?mail\b|\bmail\b/gi))wege.push('E-Mail');
+    if(funktionGewuenscht(gesagt,FUNKTION_FORMULAR))wege.push('Formular');
+    if(funktionGewuenscht(gesagt,/whats-?app/gi))wege.push('WhatsApp');
+    if(funktionGewuenscht(gesagt,FUNKTION_BUCHUNG))wege.push('Terminbuchung');
     return wege.length
       ? `${joinTerms(wege)} — keine weiteren Wege ergänzen, insbesondere kein Formular, das hier nicht steht`
       : 'noch kein Kontaktweg belegt — nichts erfinden, die Seite bleibt sichtbar offen';
