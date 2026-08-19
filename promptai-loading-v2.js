@@ -84,8 +84,14 @@
   const FILL_TAU=15000;
   // Das × traegt weiter die id aus transition-polish.js: flow-guards-ui.js haengt seine
   // Sicherheitsfrage daran, und die soll beim Zusammenlegen nicht verloren gehen.
+  // Die Marke traegt den blauen Strich, der einmal an der Innenkante des Buchstabens
+  // entlanglaeuft - dieselbe Datei wie auf dem Startschirm, die Animation ist in der SVG selbst
+  // eingebaut und braucht kein eigenes CSS. Wird auf jedem Ladeschirm gezeigt, klein genug, um
+  // nicht wieder das grosse Logo zu sein, das vorher als Startbild-Splash gemeldet wurde - das lag
+  // am maskable-Symbol im Manifest, nicht an dieser Marke.
   const LOADER_MARKUP='<button type="button" id="promptWorkflowLoaderClose" aria-label="Abbrechen">×</button>'
     +'<div>'
+    +'<img class="prompt-loader-mark" src="./sitebrief-logo-trace.svg?v=7" alt="" aria-hidden="true">'
     +'<span class="kicker">PROMPT.AI</span>'
     +'<strong></strong>'
     +'<div class="prompt-loader-sentence"></div>'

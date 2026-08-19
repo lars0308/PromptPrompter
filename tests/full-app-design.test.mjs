@@ -316,10 +316,13 @@ test('the boot mark traces the blue once around the inside of the letter',async(
   assert.match(trace,/prefers-reduced-motion:reduce/,'motion has to be calmable');
   // The start screen carries it in the theme that fits its ground; the loading surfaces are
   // dark in both themes and always take the light one.
-  // Der Startbildschirm traegt das Zeichen nicht mehr: es kam bei jedem Oeffnen in 104 Pixeln und
-  // war als grosses Logo im Weg. Die Ladeflaechen tragen es weiter, dort ist es klein und gehoert
-  // zur Sache. Die Spur-Fassungen bleiben also erhalten und werden weiter ausgeliefert.
-  assert.doesNotMatch(html,/id="promptAppBoot"[\s\S]{0,200}sitebrief-logo-trace\.svg/,'kein Zeichen mehr auf dem Startschirm');
+  // Ein grosses schwarzes Zeichen bei jedem Oeffnen wurde gemeldet - das war aber nicht diese
+  // Marke, sondern das maskable-Icon im Manifest ohne eigenen Sicherheitsrand: Android baut sich
+  // daraus einen eigenen, meist schwarzen Splash. Das Manifest fuehrt jetzt nur noch "any", die
+  // Marke hier bleibt bei ihren 52px stehen und ist zugleich auf jedem Ladeschirm zu sehen.
+  assert.match(html,/id="promptAppBoot"[\s\S]{0,200}sitebrief-logo-trace\.svg/,'die Marke steht wieder auf dem Startschirm');
+  const manifest=await read('manifest.webmanifest');
+  assert.doesNotMatch(manifest,/maskable/,'kein Sicherheitsrand definiert - das war der eigentliche Grund fuer den grossen Splash');
   assert.match(css,/--loader-logo:url\("\.\/sitebrief-logo-trace-light\.svg\?v=7"\)/,'im Dunkelmodus die helle Fassung');
   assert.match(light,/fill="#eef5fb"/);
   for(const f of ['sitebrief-logo-trace.svg','sitebrief-logo-trace-light.svg'])assert.ok(sw.includes(f),f);

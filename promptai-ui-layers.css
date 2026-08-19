@@ -361,7 +361,10 @@ html.prompt-mode-handoff-active,html.prompt-mode-handoff-active body{overflow:hi
       .prompt-mode-handoff.is-leaving{opacity:0;pointer-events:none}
       /* Closing blink, shared with the boot and workflow screens. */
       .prompt-mode-handoff.is-complete strong{animation:promptFillFlash .42s ease-out var(--prompt-flash-count,1)}
-      .prompt-mode-handoff>div{width:min(560px,100%);text-align:center}.prompt-mode-handoff .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}.prompt-mode-handoff strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,48px);line-height:1.14;letter-spacing:-.05em}
+      .prompt-mode-handoff>div{width:min(560px,100%);text-align:center}
+      .prompt-mode-handoff .prompt-loader-mark{display:block;width:44px;height:44px;margin:0 auto 6px;object-fit:contain}
+      html[data-theme="dark"] .prompt-mode-handoff .prompt-loader-mark{content:url("./sitebrief-logo-trace-light.svg?v=7")}
+      .prompt-mode-handoff .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}.prompt-mode-handoff strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,48px);font-weight:800;line-height:1.14;letter-spacing:-.02em}
       .prompt-mode-handoff-status{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}.prompt-mode-handoff-status.is-changing{opacity:0;transform:translateY(4px)}
       .prompt-mode-handoff-bar{display:none}
       /* The progress runs through the headline itself: a two-stop gradient clipped to the glyphs,
@@ -1079,10 +1082,15 @@ html[data-clean-project-flow="1"] body{background:#f3f5f6}
       #promptAiTaskLoader>div{width:min(560px,100%);text-align:center}
       #promptWorkflowLoaderClose{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--ui-line,var(--line));border-radius:50%;background:var(--ui-card,var(--surface));color:var(--ink);font:700 21px/1 Arial,sans-serif;box-shadow:none}
       #promptWorkflowLoaderClose:hover{background:var(--ui-soft,var(--surface-soft));border-color:color-mix(in srgb,var(--ui-blue,var(--accent)) 45%,var(--ui-line,var(--line)))}
+      /* Dieselbe Marke wie auf dem Startschirm, klein und zentriert ueber der Ueberschrift. Die
+         Animation liegt in der SVG selbst, hier steht nur die Groesse und die dunkle Fassung. */
+      #promptAiTaskLoader .prompt-loader-mark{display:block;width:44px;height:44px;margin:0 auto 6px;object-fit:contain}
+      html[data-theme="dark"] #promptAiTaskLoader .prompt-loader-mark{content:url("./sitebrief-logo-trace-light.svg?v=7")}
       #promptAiTaskLoader .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}
       /* line-height has to leave room for the descenders: with background-clip:text the glyphs are
-         painted inside the line box, and 1.02 cut the tails off g, p and j ("Briefing wird geprüft"). */
-      #promptAiTaskLoader strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,47px);line-height:1.14;letter-spacing:-.05em;color:var(--ui-blue,var(--accent,#1689c7))}
+         painted inside the line box, and 1.02 cut the tails off g, p and j ("Briefing wird geprüft").
+         Etwas breiter und dicker als vorher: weniger negative Laufweite, hoeheres Gewicht. */
+      #promptAiTaskLoader strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,47px);font-weight:800;line-height:1.14;letter-spacing:-.02em;color:var(--ui-blue,var(--accent,#1689c7))}
       .prompt-loader-sentence{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}
       .prompt-loader-sentence.is-changing{opacity:0;transform:translateY(4px)}
       /* Same treatment as the handoff screen: the progress runs through the headline itself. */

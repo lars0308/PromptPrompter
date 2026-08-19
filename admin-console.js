@@ -37,11 +37,13 @@
     if(!bootVisible)return;
     window.PromptAiFill?.set(document.querySelector('#promptAppBoot strong'),6+Math.max(0,Math.min(1,ratio))*88);
   }
+  // Ohne Mindestdauer verschwand der Startschirm auf einem schnellen Gerät manchmal, bevor
+  // "Hallo, willkommen bei Prompt.ai" ueberhaupt gelesen werden konnte - er ist die erste
+  // Begegnung mit der Marke und darf nicht wie ein Flackern wirken.
+  const BOOT_MIN_MS=1800;
   function releaseBootIntro(){
     if(!bootVisible)return;clearTimeout(bootReleaseTimer);const tick=()=>{const elapsed=Date.now()-bootStartedAt,ready=document.documentElement.classList.contains('prompt-home-ready')&&!document.documentElement.classList.contains('prompt-access-pending');
-      // No minimum showtime: when the app is ready the screen finishes right away. The only tail
-      // left is the completion blink, so a fast load leaves fast.
-      if(ready||elapsed>=5200){bootVisible=false;const boot=document.getElementById('promptAppBoot');window.PromptAiFill?.finish(boot?.querySelector('strong'),()=>{boot?.classList.add('is-leaving');setTimeout(()=>{document.documentElement.classList.remove('prompt-app-booting');boot?.classList.remove('is-leaving')},300)});return}
+      if((ready&&elapsed>=BOOT_MIN_MS)||elapsed>=5200){bootVisible=false;const boot=document.getElementById('promptAppBoot');window.PromptAiFill?.finish(boot?.querySelector('strong'),()=>{boot?.classList.add('is-leaving');setTimeout(()=>{document.documentElement.classList.remove('prompt-app-booting');boot?.classList.remove('is-leaving')},300)});return}
       bootReleaseTimer=setTimeout(tick,80)};tick()
   }
 

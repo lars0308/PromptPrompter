@@ -988,17 +988,18 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   assert.doesNotMatch(css,/\.prompt-fill-progress\{[^}]*clip-path/,'clip-path cut ascenders and descenders in half');
 
   assert.match(css,/\.task-progress \.task-progress-track\{display:none\}/);
-  // Der Startbildschirm traegt keine Marke mehr: Zeichen (104px) und Wortmarke (bis 47px) waren
-  // bei jedem Oeffnen ein grosses Logo, das niemand sehen wollte. Die Deckung bleibt - ohne sie
-  // blitzt die halbfertige Seite auf -, die Ueberschrift ist nur noch eine ruhige Zeile.
-  assert.match(html,/<strong class="prompt-fill-progress" style="--prompt-fill:6%">Einen Moment<\/strong>/);
-  assert.doesNotMatch(html,/id="promptAppBoot"[\s\S]{0,200}<img /,'kein Zeichen mehr auf dem Startschirm');
+  // Die Deckung bleibt - ohne sie blitzt die halbfertige Seite auf -, die Ueberschrift begruesst
+  // statt nur zu vertroesten. Das Zeichen selbst ist wieder da: das grosse schwarze Logo, das
+  // gemeldet wurde, kam vom maskable-Icon im Manifest (Android baut sich daraus einen eigenen
+  // Splash ohne Sicherheitsrand), nicht von dieser 52px-Marke.
+  assert.match(html,/<strong class="prompt-fill-progress" style="--prompt-fill:6%">Hallo, willkommen bei Prompt\.ai<\/strong>/);
+  assert.match(html,/id="promptAppBoot"[\s\S]{0,200}<img /,'die Marke steht wieder auf dem Startschirm');
   // Kein Kicker mehr darueber: die Marke stand dort zweimal, einmal klein und einmal gross.
   assert.doesNotMatch(html,/id="promptAppBoot"[\s\S]{0,200}<span class="kicker">/);
   // Darunter zwei Saetze: wer noch kein Konto hat, hat auch keinen Arbeitsbereich, den man
   // vorbereiten koennte - er landet auf der Startseite mit den Tarifen.
-  assert.match(html,/data-boot="konto">Dein Arbeitsbereich wird vorbereitet\.<\/div>/);
-  assert.match(html,/data-boot="gast">Von einem Satz zum Prompt für deine KI\.<\/div>/);
+  assert.match(html,/data-boot="konto">Dein Arbeitsbereich wird vorbereitet – einen Augenblick\.<\/div>/);
+  assert.match(html,/data-boot="gast">Von einem Satz zum Prompt für deine KI – einen Augenblick\.<\/div>/);
   const themeBoot=await text('theme-init.js');
   assert.match(themeBoot,/if\(!angemeldet\)document\.documentElement\.classList\.add\('prompt-boot-gast'\)/);
   // Fuellen, dann zweimal blinken - wie jeder andere Ladeschirm der App.
@@ -1030,8 +1031,11 @@ test('the boot screen fills with the load it really has, then blinks blue once b
   const boot=await text('admin-console.js'),theme=await text('theme-init.js'),css=await text('styles.css');
   assert.match(boot,/const CRITICAL_SCRIPTS=\[/,'progress can only be reported against a known list');
   assert.match(boot,/for\(const src of CRITICAL_SCRIPTS\)\{await \(src==='core'\?loadCore\(\):load\(src\)\);bootProgress\(\+\+ready\/CRITICAL_SCRIPTS\.length\)\}/,'every loaded script moves the fill');
-  assert.doesNotMatch(boot,/ready&&elapsed>=1050/,'a minimum showtime makes the screen a timer again');
-  assert.match(boot,/if\(ready\|\|elapsed>=5200\)/,'ready leaves immediately, the cap stays as a failsafe');
+  // Ohne Mindestdauer verschwand der Schirm auf einem schnellen Geraet manchmal, bevor "Hallo,
+  // willkommen bei Prompt.ai" gelesen werden konnte - eine Begruessung, kein Fortschrittsbalken,
+  // darf nicht wie ein Flackern wirken. 5200ms bleibt die Obergrenze, falls die App laenger braucht.
+  assert.match(boot,/const BOOT_MIN_MS=1800;/);
+  assert.match(boot,/if\(\(ready&&elapsed>=BOOT_MIN_MS\)\|\|elapsed>=5200\)/);
   assert.match(boot,/window\.PromptAiFill\?\.finish\(boot\?\.querySelector\('strong'\),\(\)=>\{boot\?\.classList\.add\('is-leaving'\)/,'the blink runs before the fade - auf der Ueberschrift, wie bei jedem anderen Ladeschirm');
   assert.match(theme,/window\.PromptAiFill=\{/,'shared driver ships in the first blocking script');
   assert.match(theme,/if\(pct<previous\)return/,'progress never walks backwards');
@@ -1173,7 +1177,8 @@ test('a loading screen always finishes its fill, and its headline is not clipped
   assert.match(loader,/if\(!button\|\|button\.dataset\.confirmed!=='1'\)return;/,'only the user may cut the blink short');
   assert.match(loader,/host\.dataset\.shownAt=String\(Date\.now\(\)\);/,'every screen gets the shared minimum showtime');
   // background-clip:text paints the glyphs inside the line box: 1.02 cut the tails off g and p.
-  for(const src of [loader,handoff])assert.match(src,/padding-bottom:\.06em;font-size:clamp\(31px,8vw,4[78]px\);line-height:1\.14/);
+  // font-weight sitzt jetzt dazwischen (etwas dicker, auf Wunsch) - die Zeilenhoehe bleibt gleich.
+  for(const src of [loader,handoff])assert.match(src,/padding-bottom:\.06em;font-size:clamp\(31px,8vw,4[78]px\);font-weight:800;line-height:1\.14/);
 });
 
 test('modules and skills reach the prompt in every mode, not only in the expert one',async()=>{
@@ -1681,8 +1686,43 @@ test('expert mode gives AI questions their own visible step and keeps the inheri
   assert.match(app,/function prepareExpertFlow\(\)/);
   assert.match(app,/qTitle\.textContent=expert\?'Offene Punkte bewusst klären\.'/);
   assert.match(app,/state\.mode==="expert"&&state\.currentStep===4&&next===5/);
-  assert.match(app,/if\(state\.mode!=="expert"\)el\.clarificationDialog\.showModal\(\)/);
+  // Ein zweiter Aufruf waehrend der Dialog schon offen stand, riss frueher eine Ausnahme, die
+  // niemand fing - jetzt wird nur geoeffnet, wenn er wirklich zu ist.
+  assert.match(app,/if\(state\.mode!=="expert"&&!el\.clarificationDialog\.open\)el\.clarificationDialog\.showModal\(\)/);
   assert.match(css,/prompt-expert-has-brief #stepProject>label\.field-large\{display:none/);
+});
+
+// Der Ablauf-Automat klickt "Weiter" auf Schritt 3 einmal, aber Mutationsereignisse und der
+// Automat selbst konnten frueher denselben Klick nachliefern, waehrend die erste Pruefung noch
+// unterwegs war (bis zu 90 Sekunden). Jeder Klick startete seinen eigenen Netzwerkaufruf, unge-
+// bremst - mehrere parallele Pruefungen desselben Projekts. Wer zuerst zurueckkam, konnte ohne
+// Rueckfragen weiterspringen, waehrend eine spaeter ankommende Antwort den Dialog erst auf einer
+// schon weitergesprungenen Seite aufriss: "keine Rueckfragen, direkt auf der Vorschauseite, nach
+// 'neu erstellen' ploetzlich doch die Rueckfragen" - genau das gemeldete Bild.
+test('a second clarification check while one is already running shares the same call instead of starting another',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/let reviewInFlight=null;/);
+  assert.match(app,/function runProjectReview\(force=false\)\{\s*if\(reviewInFlight\)return reviewInFlight;/);
+  assert.match(app,/reviewInFlight=runProjectReviewOnce\(force\)\.finally\(\(\)=>\{reviewInFlight=null\}\);/);
+  assert.match(app,/async function runProjectReviewOnce\(force=false\)\{/);
+  // Alle bisherigen Aufrufstellen bleiben unveraendert - sie rufen weiter dieselbe Funktion.
+  for(const stelle of [/const ready=await runProjectReview\(false\);/,/const ok=await runProjectReview\(false\);if\(!ok\)return;/,/await runProjectReview\(false\);/,/runProjectReview\(true\)/])
+    assert.match(app,stelle);
+});
+
+// Die Rueckfragen wurden ohne lesbaren Hintergrund gemeldet - durchsichtig, blaettert die Flaeche
+// dahinter blau durch. Grund: eine Pauschale in unified-ui-v1.js nimmt jedem Dialog Rand,
+// Hintergrund und Innenabstand ("body.prompt-unified-ui dialog:not(.prompt-own-style):..."), und
+// drei ihrer :not()-Ausnahmen sind selbst IDs. Jede ID in einem :not() zaehlt fuer die
+// Spezifitaet wie eine echte ID - macht diese eine Zeile spezifischer als jede gewoehnliche
+// #id-Regel anderswo im Haus, auch mit !important. #clarificationDialog{background:var(--paper)}
+// stand deshalb schon immer im Abseits, ganz gleich wie oft sie umgeschrieben wurde. Der Fluchtweg
+// existiert bereits (.prompt-own-style, "wer sein Aussehen selbst mitbringt") - die Rueckfragen
+// hatten ihn nur nie bekommen.
+test('the clarification dialog opts out of the generic dialog reset instead of losing the specificity fight',async()=>{
+  const html=await text('index.html'),css=await text('promptai-ui-layers.css');
+  assert.match(html,/<dialog id="clarificationDialog" class="library-dialog clarification-dialog prompt-own-style"/);
+  assert.match(css,/body\.prompt-unified-ui dialog:not\(\.prompt-own-style\):not\(#previewLightbox\):not\(#welcomeIntroDialog\):not\(#cookieBanner\)\{border:0!important;background:transparent!important/);
 });
 
 test('URLs written in the project description become reference links before leaving step one',async()=>{

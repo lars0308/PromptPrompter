@@ -1596,7 +1596,12 @@
     });
     el.clarificationIntro.textContent=(review.questions||[]).length?"Beantworte nur die Fragen unterhalb der Hinweise. Die farbigen Kästen sind automatische Prüfpunkte und verlangen keine Eingabe.":"Du musst hier nichts beantworten. Die Kästen sind automatische Prüfhilfen, die Prompt.ai später in Blueprint und Arbeitsauftrag übernimmt.";
     el.deferClarificationsBtn.hidden=state.settings.criticalBehavior==="block" && (review.blockers||[]).length>0;
-    if(state.mode!=="expert")el.clarificationDialog.showModal();
+    // Ein zweiter Aufruf, waehrend der Dialog schon offen steht, riss frueher eine Ausnahme
+    // ("already has an 'open' attribute"), die niemand fing - der Inhalt wurde zwar neu
+    // geschrieben, aber die native Modal-Schicht (::backdrop, Vollbild-Deckung) blieb dabei
+    // teils aus, und die Seite dahinter konnte durchscheinen. Jetzt wird nur neu geoeffnet, wenn
+    // er wirklich zu ist.
+    if(state.mode!=="expert"&&!el.clarificationDialog.open)el.clarificationDialog.showModal();
   }
 
   function placeClarifications(){
@@ -1760,7 +1765,20 @@
     return true;
   }
 
-  async function runProjectReview(force=false){
+  // Der Automatik-Ablauf hat den "Weiter"-Knopf auf Schritt 3 unter Umstaenden mehrfach geklickt,
+  // bevor die erste Pruefung zurueck war (Ablauf-Automat plus Mutationsereignisse). Jeder Klick
+  // startete seinen eigenen Aufruf, ungebremst - mehrere parallele Pruefungen desselben Projekts,
+  // von denen die zuletzt ankommende die anderen ueberschrieb. Wer schneller zurueckkam, konnte
+  // ohne Rueckfragen weiterspringen, waehrend eine spaetere Antwort den Dialog erst auf einer
+  // schon weitergesprungenen Seite aufriss. Ein laufender Aufruf wird jetzt geteilt statt
+  // verdoppelt: ein zweiter Aufruf waehrend der erste noch laeuft bekommt dasselbe Versprechen.
+  let reviewInFlight=null;
+  function runProjectReview(force=false){
+    if(reviewInFlight)return reviewInFlight;
+    reviewInFlight=runProjectReviewOnce(force).finally(()=>{reviewInFlight=null});
+    return reviewInFlight;
+  }
+  async function runProjectReviewOnce(force=false){
     if(!cloudReady())return true;
     if(!state.settings.aiClarifications && state.engine!=="local"){el.settingsDialog.showModal();populateSettingsDialog();return true;}
     const sig=projectSignature();
