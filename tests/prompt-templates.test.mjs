@@ -268,9 +268,13 @@ test('the finished master prompt is written by the AI along an editable template
   assert.match(app,/const kiAmWerk=!written&&\(masterAiRunning\|\|willMasterAiWrite\(\)\);/);
   assert.match(app,/if\(!kiAmWerk\)el\.masterPrompt\.value=written\|\|prompt;/);
   assert.match(app,/if\(!written\)writeMasterPromptWithAi\(prompt\);/);
-  assert.match(app,/const willMasterAiWrite=\(\)=>cloudReady\(\)&&!masterAiRunning&&masterAiSignature!==masterInputSignature\(\)/);
+  assert.match(app,/const willMasterAiWrite=\(\)=>masterSichtbar\(\)&&cloudReady\(\)&&!masterAiRunning&&masterAiSignature!==masterInputSignature\(\)/);
   assert.match(app,/if\(written\.length>=Math\.round\(assembled\.length\*0\.6\)\)/);
-  assert.match(app,/if\(!cloudReady\(\)\|\|masterAiRunning\)return;/,'without a cloud connection the assembled prompt stands');
+  // Ohne Cloud steht die zusammengesetzte Fassung - und ohne sichtbaren Ablauf laeuft die KI gar
+  // nicht erst los: beim Wiederherstellen eines Standes traegt #stepPrompt schon „active", waehrend
+  // der Ablauf noch hinter der Startseite liegt.
+  assert.match(app,/if\(!masterSichtbar\(\)\|\|!cloudReady\(\)\|\|masterAiRunning\)return;/);
+  assert.match(app,/const masterSichtbar=\(\)=>\{/);
   // Der ausformulierte Text gehoert zu einem Stand der Eingaben und wird gehalten. Sonst schrieb
   // jeder weitere updateMasterPrompt()-Aufruf die Rohfassung darueber und liess die KI erneut
   // laufen - sichtbar als endloser Wechsel aus Laden und Anzeigen.

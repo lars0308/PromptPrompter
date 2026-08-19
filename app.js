@@ -3704,11 +3704,25 @@ ${body||'## 1. Startseite\nPfad: /\nZweck: Einstieg.\nInhaltsquelle: keine Besta
     if(!response.ok)throw new Error(data.error||'Master-Prompt konnte nicht ausformuliert werden.');
     return String(data.prompt||'').trim();
   }
+  // Der Ablauf muss auch wirklich auf dem Bildschirm sein.
+  //
+  // Beim Wiederherstellen eines gespeicherten Standes läuft updateMasterPrompt() ebenfalls, und
+  // #stepPrompt trägt dabei schon „active" - der Ablauf liegt aber noch hinter der Startseite.
+  // Seit das Feld leer bleibt, solange die KI schreibt, war das sichtbar: direkt nach
+  // „Arbeitsbereich wird vorbereitet" kam „Dein Master-Prompt entsteht", für ein Projekt, das der
+  // Besucher gar nicht aufgerufen hatte. Und die KI lief dabei wirklich los - auf Rechnung.
+  //
+  // Solange der Ablauf nicht sichtbar ist, wird zusammengesetzt und angezeigt wie früher. Beim
+  // Betreten von Schritt 8 ruft goStep() updateMasterPrompt() erneut auf; dann greift der Stream.
+  const masterSichtbar=()=>{
+    const app=document.getElementById('workflowApp'),step=document.getElementById('stepPrompt');
+    return Boolean(app&&!app.hidden&&step&&step.classList.contains('active'));
+  };
   // Dieselbe Bedingung wie unten, aber vorher abfragbar: updateMasterPrompt muss wissen, ob es das
   // Feld füllen soll oder ob gleich geschrieben wird.
-  const willMasterAiWrite=()=>cloudReady()&&!masterAiRunning&&masterAiSignature!==masterInputSignature();
+  const willMasterAiWrite=()=>masterSichtbar()&&cloudReady()&&!masterAiRunning&&masterAiSignature!==masterInputSignature();
   async function writeMasterPromptWithAi(assembled){
-    if(!cloudReady()||masterAiRunning)return;
+    if(!masterSichtbar()||!cloudReady()||masterAiRunning)return;
     const signature=masterInputSignature();
     if(masterAiSignature===signature)return;
     masterAiRunning=true;

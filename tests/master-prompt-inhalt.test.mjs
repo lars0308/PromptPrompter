@@ -407,3 +407,19 @@ test('eine angesagte Telefonnummer gilt als gefunden, eine Jahreszahl nicht',asy
   const ohne=await bau({sourceUrls:[{url:'https://otte.de',title:'Otte',links:[],pages:[seite('Preise ab 1200 Euro pro Dach.')]}]});
   assert.match(ohne,/- Telefon: nicht in den Quellen gefunden/);
 });
+
+test('beim Wiederherstellen läuft die Master-KI nicht los',async()=>{
+  // #stepPrompt trägt „active" auch dann noch, wenn die App gerade erst startet und den letzten
+  // Stand wiederherstellt - der Ablauf liegt dabei hinter der Startseite. Seit das Feld leer
+  // bleibt, solange die KI schreibt, sah man das: direkt nach „Arbeitsbereich wird vorbereitet"
+  // kam „Dein Master-Prompt entsteht", für ein Projekt, das niemand aufgerufen hatte. Und die KI
+  // lief dabei wirklich los, auf Rechnung.
+  const app=await readFile(fileURLToPath(new URL('../app.js',import.meta.url)),'utf8');
+  assert.match(app,/const masterSichtbar=\(\)=>\{/);
+  assert.match(app,/return Boolean\(app&&!app\.hidden&&step&&step\.classList\.contains\('active'\)\)/,'sichtbar heißt: Ablauf offen und Schritt 8 aktiv');
+  // Beide Wege prüfen es: der, der entscheidet ob das Feld leer bleibt, und der, der die KI startet.
+  assert.match(app,/const willMasterAiWrite=\(\)=>masterSichtbar\(\)&&cloudReady\(\)/);
+  assert.match(app,/if\(!masterSichtbar\(\)\|\|!cloudReady\(\)\|\|masterAiRunning\)return;/);
+  // Ohne sichtbaren Ablauf bleibt es beim alten Verhalten: zusammensetzen, anzeigen, fertig.
+  assert.match(app,/if\(!kiAmWerk\)el\.masterPrompt\.value=written\|\|prompt;/);
+});
