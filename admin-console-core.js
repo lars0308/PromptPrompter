@@ -87,7 +87,40 @@
     if(tab){if(unseen)tab.dataset.adminDot='1';else delete tab.dataset.adminDot}
     window.dispatchEvent(new CustomEvent('promptai:support-open',{detail:{open:unseen}}));
   }
-  function render(){stats();usage();runs();userRows();support();announcements();offer();quota();maintenance();supportBadge()}
+  // Wer die Verwaltung oeffnet, will drei Dinge wissen: Laeuft alles? Was kostet der Tag? Ist etwas
+  // kaputt? Die Antworten lagen alle schon vor - verteilt ueber vier Reiter, jeder eine eigene
+  // Suche. Ganz oben stehen sie jetzt nebeneinander, und die meisten Besuche sind damit in fuenf
+  // Sekunden erledigt.
+  //
+  // Kein neuer Aufruf: alles kommt aus derselben Antwort wie der Rest, die KI-Kette aus der Liste,
+  // die die Verwaltung ohnehin geladen hat.
+  const heuteAb=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+  function lage(){
+    const wurzel=ui.stats?.parentElement;if(!wurzel)return;
+    let block=$('#adminLage');
+    if(!block){block=document.createElement('div');block.id='adminLage';block.className='admin-lage';wurzel.insertBefore(block,ui.stats)}
+    const ereignisse=state.data?.usage||[];
+    const grenze=heuteAb();
+    const heute=ereignisse.filter(x=>new Date(x.created_at||x.createdAt||0).getTime()>=grenze);
+    const fehler=heute.filter(x=>!x.success);
+    const letzter=ereignisse.find(x=>!x.success);
+    const tokens=heute.reduce((n,x)=>n+(Number(x.total_tokens||x.tokens||0)||0),0);
+    const offen=(state.data?.support||[]).filter(x=>String(x.status||'open')!=='closed').length;
+    const ki=(window.PromptAiSystemAI?.profiles||[]).filter(x=>x.enabled!==false);
+    const erreichbar=ki.filter(x=>x.lastTestOk===true).length,ungeprueft=ki.filter(x=>!x.lastTestAt).length;
+    const karte=(titel,wert,zusatz,zustand='')=>`<article class="admin-lage-karte${zustand?` is-${zustand}`:''}"><span>${esc(titel)}</span><strong>${esc(wert)}</strong><small>${esc(zusatz)}</small></article>`;
+    block.innerHTML=[
+      ki.length
+        ? karte('KI-Kette',`${erreichbar} von ${ki.length}`,ungeprueft?`${ungeprueft} noch nie getestet — „Alle testen" im KI-Reiter`:'alle geprüft und erreichbar',
+            ungeprueft?'warn':erreichbar===ki.length?'good':'bad')
+        : karte('KI-Kette','–','Liste noch nicht geladen'),
+      karte('Heute',`${heute.length} ${heute.length===1?'Aufruf':'Aufrufe'}`,tokens?`${tokens.toLocaleString('de-DE')} Tokens`:'noch keine Tokens gezählt'),
+      karte('Fehler heute',String(fehler.length),fehler.length?'siehe „Verarbeitungen" unten':'nichts fehlgeschlagen',fehler.length?'bad':'good'),
+      karte('Support',String(offen),offen?`${offen===1?'Anfrage wartet':'Anfragen warten'}`:'nichts offen',offen?'warn':'good'),
+      letzter?karte('Letzter Fehler',String(letzter.action||'Verarbeitung'),`${letzter.provider||'unbekannt'} · ${date(letzter.created_at||letzter.createdAt)}`,'bad'):''
+    ].filter(Boolean).join('');
+  }
+  function render(){lage();stats();usage();runs();userRows();support();announcements();offer();quota();maintenance();supportBadge()}
   async function load({quiet=false}={}){if(!quiet)message('Admin-Daten werden geladen…');try{state.data=await api('/api/admin-overview');render();
     // One request, several consoles: the prompt editor renders from the same payload.
     window.PromptAiAdminData=state.data;window.dispatchEvent(new CustomEvent('promptai:admin-data',{detail:state.data}));
@@ -101,6 +134,8 @@
     warmed=true;load({quiet:true});
   }
   async function action(payload,success){message('Änderung wird gespeichert…');try{await api('/api/admin-action',{method:'POST',body:JSON.stringify(payload)});message(success,'good');await load()}catch(error){message(error.message,'error')}}
+  window.addEventListener('promptai:system-ai-ready',()=>{try{lage()}catch{}});
+  window.addEventListener('promptai:system-ai-updated',()=>{setTimeout(()=>{try{lage()}catch{}},400)});
   function init(){
     Object.assign(ui,{button:$('#adminBtn'),dialog:$('#adminDialog'),message:$('#adminMessage'),stats:$('#adminStats'),usage:$('#adminUsage'),runs:$('#adminRuns'),users:$('#adminUsers'),search:$('#adminUserSearch'),support:$('#adminSupport'),announcements:$('#adminAnnouncements'),offerEnabled:$('#offerEnabled'),offerEyebrow:$('#adminOfferEyebrow'),offerTitle:$('#adminOfferTitle'),offerDescription:$('#adminOfferDescription'),offerCta:$('#adminOfferCta'),offerTrial:$('#adminOfferTrialDays'),offerDiscount:$('#adminOfferDiscount'),offerCoupon:$('#adminOfferCoupon'),offerEnds:$('#adminOfferEndsAt')});
     for(const plan of ['free','pro','ultimate'])for(const field of ['FreePrompts','WebsiteGenerations','AiPreviews'])ui[`quota${plan}${field}`]=$(`#quota${plan.replace(/^./,c=>c.toUpperCase())}${field}`);

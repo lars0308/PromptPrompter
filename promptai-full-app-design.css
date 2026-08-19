@@ -2697,3 +2697,23 @@ html.prompt-full-redesign #accountDialog.guest-gate>.dialog-frame{
       linear-gradient(104deg,transparent calc(63% - 1px),color-mix(in srgb,var(--accent) 12%,transparent) 63%,transparent calc(63% + 1px)) !important;
   }
 }
+
+/* ═══ Verwaltung: die Lage auf einen Blick ══════════════════════════════════════
+   Wer die Verwaltung oeffnet, will drei Dinge wissen: laeuft alles, was kostet der
+   Tag, ist etwas kaputt. Die Antworten lagen verteilt ueber vier Reiter. Hier stehen
+   sie nebeneinander, und die Farbe traegt die Aussage - gruen heisst in Ordnung,
+   orange heisst schau hin, rot heisst jetzt. */
+.admin-lage{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:0 0 14px}
+.admin-lage-karte{
+  display:grid;align-content:start;gap:3px;padding:12px 13px;
+  border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:12px;background:var(--surface-soft);
+}
+.admin-lage-karte>span{color:var(--muted);font-size:8.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.admin-lage-karte>strong{font-size:20px;letter-spacing:-.02em;line-height:1.15}
+.admin-lage-karte>small{color:var(--muted);font-size:11px;line-height:1.4}
+.admin-lage-karte.is-good{border-left-color:var(--good)}
+.admin-lage-karte.is-warn{border-left-color:var(--upgrade,#e9781f)}
+.admin-lage-karte.is-bad{border-left-color:var(--danger)}
+.admin-lage-karte.is-bad>strong{color:var(--danger)}
+@media(max-width:520px){.admin-lage{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-lage-karte>strong{font-size:17px}}
