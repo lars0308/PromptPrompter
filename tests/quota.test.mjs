@@ -23,7 +23,7 @@ test('monthly quotas match the public Free Pro and Ultimate allowances',async()=
   assert.match(server,/monthly_tokens:2500000\}/);
   assert.match(server,/monthly_tokens:6000000\}/);
   // Bilder und Rechenzeit tragen keine Tokens und zaehlen deshalb mit einem Gegenwert.
-  assert.match(server,/const UNIT_EQUIVALENT=Object\.freeze\(\{'preview-image':5000,'sandbox-build':10000\}\)/);
+  assert.match(server,/const UNIT_EQUIVALENT=Object\.freeze\(\{'preview-image':20000,'sandbox-build':10000\}\)/);
 });
 
 test('existing generate endpoint exposes and enforces quota actions without another serverless function',async()=>{
@@ -93,7 +93,7 @@ test('token budgets and the extra tokens of a single account are saved on their 
   assert.match(overview,/success=eq\.true&created_at=gte\./);
   assert.match(overview,/total_tokens,key_source,created_at/);
   assert.match(ui,/const budgetUnits=row=>row\?\.key_source==='account'\?0:/,'own-key calls must not move the cost brake');
-  assert.match(ui,/COST_EQUIVALENT=\{'preview-image':5000,'sandbox-build':10000\}/,'non-token costs must match the server');
+  assert.match(ui,/COST_EQUIVALENT=\{'preview-image':20000,'sandbox-build':10000\}/,'non-token costs must match the server');
 });
 
 test('administrators can test without being blocked while normal accounts are enforced',async()=>{

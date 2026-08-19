@@ -10,8 +10,8 @@
   const monthName=value=>value?new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(value)):'';
   const dayLabel=value=>new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',timeZone:'UTC'}).format(new Date(value));
   const PLANS=['free','pro','ultimate'],PLAN_LABEL={free:'Kostenlos',pro:'Pro',ultimate:'Ultimate'};
-  const ACTION_LABEL={concepts:'Konzepte & Vorschau-Texte','master-prompt':'Master-Prompt',review:'Projektprüfung',refine:'Nachschärfen',website:'Website-Generierung','revision-brief':'Änderungsauftrag','free-prompt':'Freier Prompt','preview-image':'Bildvorschau','sandbox-build':'Sandbox-Probelauf',generate:'Sonstige Verarbeitung'};
-  const COST_EQUIVALENT={'preview-image':5000,'sandbox-build':10000};
+  const ACTION_LABEL={concepts:'Konzepte & Vorschau-Texte','master-prompt':'Master-Prompt',review:'Projektprüfung',refine:'Nachschärfen',website:'Website-Generierung','revision-brief':'Änderungsauftrag','free-prompt':'Freier Prompt','preview-image':'Bildvorschau (Durchlauf)','preview-image-call':'Bildvorschau (einzelnes Bild)','sandbox-build':'Sandbox-Probelauf',generate:'Sonstige Verarbeitung'};
+  const COST_EQUIVALENT={'preview-image':20000,'sandbox-build':10000};
   const state={data:null,search:''};
 
   async function api(payload){

@@ -219,6 +219,10 @@ test('regenerating builds on the selected direction and is capped per plan',asyn
   assert.match(router,/try\{await consumePreviewRun\(req,keySource\)\}catch\{\}/);
   assert.match(quota,/async function consumePreviewRun\(req,keySource='system'\)/);
   assert.match(image,/let usage=\{action:'preview-image-call'/,'single images no longer count as a preview unit');
+  // Die Zuweisung im Anbieter-Durchlauf hat den Namen frueher wieder auf 'preview-image'
+  // zurueckgesetzt - damit buchte eine Vorschau-Runde jedes Bild zusaetzlich aufs Kontingent.
+  // Deshalb darf in dieser Datei ueberhaupt keine Aktion 'preview-image' ohne '-call' stehen.
+  assert.ok(!/action:'preview-image'/.test(image),'only the booked run may carry the counted action name');
 });
 
 test('own API keys are sold per slot: one bought slot, one stored provider key',async()=>{

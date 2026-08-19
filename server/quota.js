@@ -15,7 +15,9 @@ const PLAN_LIMITS=Object.freeze({
 });
 // Bilder und Rechenzeit haben keine Tokens. Damit sie trotzdem im selben Budget stehen, bekommen
 // sie einen festen Gegenwert - sonst waere ausgerechnet das Teuerste unsichtbar.
-const UNIT_EQUIVALENT=Object.freeze({'preview-image':5000,'sandbox-build':10000});
+// 'preview-image' ist die gebuchte Runde, nicht das einzelne Bild (die Einzelaufrufe laufen als
+// 'preview-image-call' und zaehlen nicht mit). Der Gegenwert deckt deshalb die ganze Runde ab.
+const UNIT_EQUIVALENT=Object.freeze({'preview-image':20000,'sandbox-build':10000});
 let limitsCache=null,limitsCacheAt=0;
 const LIMITS_CACHE_MS=30000;
 async function loadPlanLimits(){
