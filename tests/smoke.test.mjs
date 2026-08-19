@@ -1706,8 +1706,21 @@ test('a second clarification check while one is already running shares the same 
   assert.match(app,/reviewInFlight=runProjectReviewOnce\(force\)\.finally\(\(\)=>\{reviewInFlight=null\}\);/);
   assert.match(app,/async function runProjectReviewOnce\(force=false\)\{/);
   // Alle bisherigen Aufrufstellen bleiben unveraendert - sie rufen weiter dieselbe Funktion.
-  for(const stelle of [/const ready=await runProjectReview\(false\);/,/const ok=await runProjectReview\(false\);if\(!ok\)return;/,/await runProjectReview\(false\);/,/runProjectReview\(true\)/])
+  for(const stelle of [/try\{ready=await runProjectReview\(false\)\}/,/const ok=await runProjectReview\(false\);if\(!ok\)return;/,/await runProjectReview\(false\);/,/runProjectReview\(true\)/])
     assert.match(app,stelle);
+});
+
+// Der Ruf ab generateConcepts() lag als einziger ohne try/catch da - der umgebende try dort hat
+// kein eigenes catch, nur ein finally. Ein Fehlschlag der Pruefung (Netzwerk, KI nicht erreichbar,
+// eine Ausnahme beim erneuten Oeffnen des Dialogs mit zwischengespeicherten Fragen) lief damit
+// unbemerkt durch: der Ladeschirm ging (wrapFetch raeumt ihn unabhaengig auf), aber die Seite
+// blieb bei der statischen Ausgangsmeldung "Noch keine Vorschauen erzeugt." stehen - ohne
+// Fehlertext, ohne erkennbaren Unterschied zu "noch nie versucht". Gemeldet wurde genau das:
+// direkt nach dem Absenden landet man auf der leeren Vorschauseite, kein Rueckfragen-Fenster,
+// kein Hinweis.
+test('a failed clarification check inside generateConcepts surfaces an error instead of leaving the empty state behind',async()=>{
+  const app=await text('app.js');
+  assert.match(app,/let ready=true;\s*try\{ready=await runProjectReview\(false\)\}\s*catch\(err\)\{el\.generationStatus\.className="generation-status error";el\.generationStatus\.textContent=err\?\.message\|\|"Die Projektprüfung ist fehlgeschlagen\. Bitte versuch es erneut\.";return;\}/);
 });
 
 // Die Rueckfragen wurden ohne lesbaren Hintergrund gemeldet - durchsichtig, blaettert die Flaeche

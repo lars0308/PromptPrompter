@@ -2289,7 +2289,14 @@
       const freeAiRun=state.plan==="free" && !state.isAdmin && cloudReady() && budgetLeft();
       const paidReview=state.plan==="free" && !state.isAdmin && (state.reviewCredits>0 || freeAiRun);
       if((state.engine!=="local"||paidReview) && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
-        const ready=await runProjectReview(false);
+        // Ein Fehler hier blieb bisher unsichtbar: kein try/catch fing ihn, also lief die Funktion
+        // ohne jede Meldung aus, der Ladeschirm ging (sein eigenes finally in wrapFetch raeumt ihn
+        // unabhaengig auf) und die Seite stand wieder bei "Noch keine Vorschauen erzeugt." - als
+        // waere nie etwas versucht worden, obwohl die Pruefung wirklich lief und wirklich
+        // scheiterte. Jetzt bekommt ein Fehschlag hier dieselbe sichtbare Meldung wie jeder andere.
+        let ready=true;
+        try{ready=await runProjectReview(false)}
+        catch(err){el.generationStatus.className="generation-status error";el.generationStatus.textContent=err?.message||"Die Projektprüfung ist fehlgeschlagen. Bitte versuch es erneut.";return;}
         if(!ready){el.generationStatus.className="generation-status error";el.generationStatus.textContent="Bitte zuerst die offenen KI-Gegenfragen klären oder bewusst auf später verschieben.";return;}
       }
       const count=PREVIEW_COUNT; if(el.regenerateConceptsBtn)el.regenerateConceptsBtn.disabled=true; el.generationStatus.className="generation-status busy";
