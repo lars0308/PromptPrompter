@@ -23,9 +23,10 @@
   const copy={
     1:['INTERNETSEITE','Beschreib deine Internetseite.','Deine erste Beschreibung reicht. Prompt.ai übernimmt sie und fragt nur weiter, wenn eine Angabe das Ergebnis wirklich verändert.'],
     2:['REFERENZEN','Hast du Referenzen?','Optional: Link, Screenshot, PDF oder andere Unterlage hinzufügen.'],
-    3:['PROMPT.AI','Briefing wird verstanden','Prompt.ai übernimmt die wichtigen Angaben und bereitet die nächsten Entscheidungen im Hintergrund vor.'],
-    4:['PROMPT.AI','Passende Regeln werden gesetzt','Technik, Qualitätsregeln und sinnvolle Module werden im Hintergrund vorbereitet.'],
-    5:['PROMPT.AI','Vorschau wird vorbereitet','Beschreibung und Referenzen werden zu einer klaren Richtung zusammengeführt.'],
+    // 3 bis 5 fehlen mit Absicht: ueber diese Schritte laeuft der Ablauf automatisch hinweg,
+    // waehrend der Ladeschirm darueber steht. Ueberschriften wie "Briefing wird verstanden"
+    // blitzten dahinter auf und sagten dasselbe ein zweites Mal, nur in anderen Worten. Ohne
+    // Eintrag bleibt die Seite bei ihrer eigenen Ueberschrift und flackert nicht mit.
     6:['VORSCHAU','So könnte deine Internetseite aussehen.','Wähle die Richtung, die am besten passt. Du kannst sie danach noch gezielt verändern.'],
     7:['FEINSCHLIFF','Noch etwas ändern?','Sag in normalen Worten, was anders werden soll. Prompt.ai übernimmt die Änderung in die gewählte Richtung.'],
     8:['FERTIG','Dein Master-Prompt ist fertig.','Alle Angaben, Referenzen und Entscheidungen sind jetzt in einem klaren Auftrag zusammengeführt.']

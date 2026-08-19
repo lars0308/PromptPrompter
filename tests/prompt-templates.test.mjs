@@ -200,8 +200,11 @@ test('the preview step runs by itself: three directions for every plan, no count
   assert.match(app,/if\(step===6 && !state\.concepts\.length && !conceptsGenerating\) setTimeout\(\(\)=>generateConcepts\(\),100\);/);
   // The loading screen of the step before has to stay up until the directions are there.
   assert.match(app,/document\.body\.dataset\.previewGenerating='1';/);
-  assert.match(transition,/step===6&&document\.body\.dataset\.previewGenerating==='1'/);
-  assert.match(transition,/attributeFilter:\['class','hidden','open','style','data-preview-generating'\]/,'the flag has to be observed, or the loader never leaves');
+  // Der Schirm haengt an der Anfrage, nicht am Schritt: solange der Lauf laeuft, steht er, und
+  // die kleine Leiste hinter ihm bleibt still. Ein zweiter Fortschritt fuer denselben Lauf ist
+  // genau das Doppelte, das hier weg sollte.
+  assert.match(transition,/laden\(\)\?\.beginTask\?\.\(PREVIEW_KEY/);
+  assert.match(await text('promptai-loading-v2.js'),/html\.prompt-workflow-loading #previewProgress\{display:none!important\}/);
 });
 
 test('regenerating builds on the selected direction and is capped per plan',async()=>{
@@ -561,17 +564,17 @@ test('a fresh project cannot inherit the previous crawl, and the reset survives 
 });
 
 test('regenerating previews reuses the understood briefing and only makes new images',async()=>{
-  const app=await text('app.js'),loader=await text('transition-polish.js');
+  const app=await text('app.js'),loader=await text('promptai-loading-v2.js');
   assert.match(app,/const imagesOnly=regenerate&&state\.concepts\.length===count&&planRules\(\)\.aiPreviews&&cloudReady\(\);/);
   assert.match(app,/for\(const concept of state\.concepts\)concept\.previewImage="";/);
   assert.match(app,/\$\{count\} neue Bilder erstellt\./);
   // The full screen comes back for the new run instead of a small bar behind the page.
   assert.match(app,/window\.PromptAiTransitionLoader\?\.previewRun\?\.\(\);/);
-  assert.match(loader,/function showPreviewRun\(\)/);
+  assert.match(await text('transition-polish.js'),/function previewRun\(\)\{/);
   assert.match(loader,/html\.prompt-workflow-loading #previewProgress\{display:none!important\}/);
   // "Bild 2 von 3" and the bar have to say the same thing.
   assert.match(app,/ratio:done\/total,done:done>=total/);
-  assert.match(loader,/if\(typeof ratio==='number'&&Number\.isFinite\(ratio\)\)\{stopFillLoop\(\);applyFill/);
+  assert.match(loader,/if\(typeof ratio==='number'&&Number\.isFinite\(ratio\)\)\{\n\s*cancelAnimationFrame\(Number\(host\.dataset\.raf\|\|0\)\);host\.dataset\.raf='0';\n\s*applyFill/);
 });
 
 test('a prompt template can be chosen in every mode, not only on the skipped step',async()=>{

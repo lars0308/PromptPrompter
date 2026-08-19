@@ -216,21 +216,19 @@ test('the old start page never shows through, and the handoff loader gets to fin
   assert.match(css,/html\.prompt-full-redesign #welcomePage>\.welcome-workspace\{[\s\S]{0,200}clip-path:inset\(50%\)!important/);
   assert.doesNotMatch(css,/#welcomePage>\.welcome-workspace\{[\s\S]{0,200}display:none/);
   assert.match(css,/body:has\(#workflowApp:not\(\[hidden\]\)\) #welcomePage\{display:none!important\}/);
-  // Der Uebergabeschirm ist derselbe wie jeder andere und endet auch so: fuellen, blinken, weg.
-  // Nichts an seiner Lebensdauer wird aus der Textlaenge gerechnet.
+  // Die Uebergabe hat keinen eigenen Schirm mehr. Sie war ein zweites Element mit eigenem Titel
+  // und eigenem Abgang, direkt vor der ersten Anfrage - zwei Ladebilder fuer einen Weg. Jetzt
+  // ist sie eine Arbeit wie jede andere auf dem einen Schirm, unter demselben Titel.
   const loader=await read('promptai-loading-v2.js');
-  assert.match(loader,/overlay\.innerHTML=LOADER_MARKUP/,'derselbe Aufbau wie alle anderen Ladeschirme');
-  assert.match(loader,/overlay\.dataset\.closing!=='1'/,'and it must not schedule its exit twice');
-  assert.match(loader,/finishScreen\(overlay,fertig\)/);
+  assert.match(loader,/beginTask\(HANDOFF_KEY,\{title:TITEL_BRIEFING,kind:'briefing'\}\)/);
+  assert.match(loader,/handoffFertig=true;\n\s*endTask\(HANDOFF_KEY\);/,'and it must not schedule its exit twice');
   assert.doesNotMatch(loader,/durationFor/,'nichts wird mehr aus der Textlaenge gerechnet');
-  // Ein Vorgang, ein Schirm: laeuft schon eine Anfrage, geht die Uebergabe still - sonst blinkt
-  // sie aus, waehrend der naechste Schirm bereits steht, und das liest sich als zwei Ladebilder.
-  assert.match(loader,/if\(laufende\.length\)\{stopScreen\(overlay\);[\s\S]{0,80}overlay\.remove\(\)/,'no closing blink while a request is already up');
-  assert.match(loader,/function dropStepLoader\(\)/,'and the step-bound screen steps aside');
-  assert.match(loader,/dropStepLoader\(\);/);
+  assert.doesNotMatch(loader,/id='promptBriefHandoff'|getElementById\('promptBriefHandoff'\)|\$\('#promptBriefHandoff'\)/,'kein zweites Element mehr');
+  // Ein Vorgang, ein Schirm: laeuft schon eine Anfrage, gibt endTask() den Schirm nicht frei.
+  assert.match(loader,/if\(laufende\.length\)\{renderTask\(host\);return\}/,'no closing blink while a request is already up');
   const transition=await read('transition-polish.js');
-  assert.match(transition,/const foreignLoader=\(\)=>\$\('#promptAiTaskLoader'\)\|\|\$\('#promptBriefHandoff'\)/,'the step-bound screen knows the other two');
-  assert.match(transition,/if\(foreignLoader\(\)\)\{if\(\$\('#promptWorkflowLoader'\)\)hide\(true,true\);return\}/,'and yields immediately, without a blink');
+  assert.doesNotMatch(transition,/createElement\('section'\)/,'and nothing here builds a competing one');
+  assert.match(transition,/window\.PromptAiTransitionLoader=\{show:showLogin,hide:hideLogin,previewRun\}/,'it only reports its waits to the shared screen');
   // Last project only appears once there is one; the meta line carries live numbers.
   assert.match(home,/if\(latest\)latest\.hidden=!title/);
   assert.match(home,/\$\{text\.length\} Zeichen · ≈\$\{total\} Token/);
@@ -318,8 +316,10 @@ test('the boot mark traces the blue once around the inside of the letter',async(
   assert.match(trace,/prefers-reduced-motion:reduce/,'motion has to be calmable');
   // The start screen carries it in the theme that fits its ground; the loading surfaces are
   // dark in both themes and always take the light one.
-  assert.match(html,/id="promptAppBoot"[\s\S]{0,120}sitebrief-logo-trace\.svg/);
-  assert.match(html,/\[data-theme="dark"\] #promptAppBoot img\{content:url\("\.\/sitebrief-logo-trace-light\.svg/);
+  // Der Startbildschirm traegt das Zeichen nicht mehr: es kam bei jedem Oeffnen in 104 Pixeln und
+  // war als grosses Logo im Weg. Die Ladeflaechen tragen es weiter, dort ist es klein und gehoert
+  // zur Sache. Die Spur-Fassungen bleiben also erhalten und werden weiter ausgeliefert.
+  assert.doesNotMatch(html,/id="promptAppBoot"[\s\S]{0,200}sitebrief-logo-trace\.svg/,'kein Zeichen mehr auf dem Startschirm');
   assert.match(css,/--loader-logo:url\("\.\/sitebrief-logo-trace-light\.svg\?v=7"\)/,'im Dunkelmodus die helle Fassung');
   assert.match(light,/fill="#eef5fb"/);
   for(const f of ['sitebrief-logo-trace.svg','sitebrief-logo-trace-light.svg'])assert.ok(sw.includes(f),f);

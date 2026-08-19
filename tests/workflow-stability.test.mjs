@@ -29,21 +29,25 @@ test('workflow transition guard loads before legacy UI transition layers',async(
 });
 
 test('guided and auto flows expose only the unified loader',async()=>{
-  const src=await text('transition-polish.js');
-  for(const token of ['#promptBriefHandoff','#flowTransitionCompact','.streamline-working','#modeFlowPanel','#promptCompletionFlash'])assert.ok(src.includes(token),token);
-  assert.match(src,/#promptWorkflowLoader/);
+  // Die Ausblendliste der konkurrierenden Flaechen gehoert weiter zu transition-polish.js.
+  const alt=await text('transition-polish.js');
+  for(const token of ['#promptBriefHandoff','#flowTransitionCompact','.streamline-working','#modeFlowPanel','#promptCompletionFlash'])assert.ok(alt.includes(token),token);
+  // Der Schirm selbst gehoert promptai-loading-v2.js - und zwar allein.
+  const src=await text('promptai-loading-v2.js');
+  assert.match(src,/#promptAiTaskLoader/);
+  assert.doesNotMatch(alt,/document\.createElement\('section'\)/,'transition-polish.js baut keinen eigenen Schirm mehr');
   assert.match(src,/Angaben werden geprüft\./);
-  assert.match(src,/Offene Punkte werden erkannt\./);
+  assert.match(src,/Widersprüche werden gesucht\./);
   assert.match(src,/Rückfragen werden vorbereitet\./);
-  assert.match(src,/fillProgress/);
+  assert.match(src,/function startFill\(host\)/);
 });
 
 test('loader blue-fill tracks real elapsed time instead of a fixed guessed duration',async()=>{
-  const src=await text('transition-polish.js');
-  assert.match(src,/function fillProgress\(elapsed\)/);
+  const src=await text('promptai-loading-v2.js');
+  assert.match(src,/const elapsed=performance\.now\(\)-startedAt;/,'gemessen, nicht geraten');
   assert.match(src,/requestAnimationFrame/);
-  assert.match(src,/function startFillLoop\(\)/);
-  assert.match(src,/function stopFillLoop\(complete=false\)/);
+  assert.match(src,/function startFill\(host\)/);
+  assert.match(src,/function stopScreen\(host\)/);
   assert.doesNotMatch(src,/animation:promptSentenceFill/);
   assert.match(src,/\.prompt-loader-bar i\{/,'must render progress as a plain width-based bar, not a text-color clip-path fill (which rendered incompletely on letters with ascenders/descenders like g, t, f)');
 });

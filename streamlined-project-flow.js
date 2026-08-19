@@ -19,12 +19,11 @@
     api.__streamlined=true;
   }
 
+  // Die Schritte 3 bis 5 bekamen hier eigene Arbeitskaesten in die Seite gesetzt - mit denselben
+  // Texten, die auch der Ladeschirm zeigt. Der Ablauf laeuft ueber diese Schritte automatisch
+  // hinweg, also blitzten die Kaesten hinter dem Schirm auf: derselbe Satz zweimal, an zwei
+  // Orten. Der Schirm sagt es, die Seite dahinter muss es nicht wiederholen.
   function workingPanels(){
-    const copy={3:['Briefing wird verstanden','Prompt.ai liest deine Beschreibung und übernimmt Ort, Branche, Stil, Farben, Ziele und weitere konkrete Wünsche.'],4:['Passende Regeln werden gesetzt','Technik, Qualitätsregeln und sinnvolle Module werden im Hintergrund vorbereitet.'],5:['Vorschau wird vorbereitet','Deine Angaben und Referenzen werden zu einer klaren Gestaltungsrichtung zusammengeführt.']};
-    for(const [n,[title,text]] of Object.entries(copy)){
-      const panel=$(`[data-step-panel="${n}"]`);if(!panel||panel.querySelector('.streamline-working'))continue;
-      const box=document.createElement('div');box.className='streamline-working';box.innerHTML=`<div class="streamline-working-inner"><i></i><span>PROMPT.AI</span><strong>${title}</strong><small>${text}</small><b></b></div>`;panel.appendChild(box);
-    }
     const preview=$('#stepPreviews');if(preview&&!$('#streamlinePreviewNote')){const note=document.createElement('div');note.id='streamlinePreviewNote';note.className='streamline-preview-note';note.innerHTML='<strong>Auto bereitet die Vorschau selbst vor.</strong> Du bekommst trotzdem immer eine echte Vorschau zu sehen und entscheidest erst danach, ob sie übernommen wird.';const head=preview.querySelector('.preview-step-head');head?.insertAdjacentElement('afterend',note)}
   }
 

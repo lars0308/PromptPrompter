@@ -82,7 +82,10 @@
   const SENTENCE_MS=3240;
   const FLASH_COUNT=2;
   const FILL_TAU=15000;
-  const LOADER_MARKUP='<div>'
+  // Das × traegt weiter die id aus transition-polish.js: flow-guards-ui.js haengt seine
+  // Sicherheitsfrage daran, und die soll beim Zusammenlegen nicht verloren gehen.
+  const LOADER_MARKUP='<button type="button" id="promptWorkflowLoaderClose" aria-label="Abbrechen">×</button>'
+    +'<div>'
     +'<span class="kicker">PROMPT.AI</span>'
     +'<strong></strong>'
     +'<div class="prompt-loader-sentence"></div>'
@@ -128,6 +131,26 @@
   function stopScreen(host){
     clearInterval(Number(host.dataset.cycle||0));host.dataset.cycle='0';
     cancelAnimationFrame(Number(host.dataset.raf||0));host.dataset.raf='0';
+    clearTimeout(Number(host.dataset.recover||0));host.dataset.recover='0';
+  }
+  // Haengt eine Anfrage, stand der Schirm bisher bis zum Notausstieg und verschwand dann wortlos -
+  // der Nutzer sass auf einer leeren Seite und wusste nicht, was passiert war. Nach eineinhalb
+  // Minuten sagt der Schirm deshalb an Ort und Stelle, dass es laenger dauert, und zeigt den Weg
+  // hinaus. Er navigiert dabei nichts von selbst weg: das × bleibt die Entscheidung des Nutzers.
+  const LOADER_TIMEOUT_MS=95000;
+  function forceRecover(host){
+    if(!host?.isConnected)return;
+    clearInterval(Number(host.dataset.cycle||0));host.dataset.cycle='0';
+    cancelAnimationFrame(Number(host.dataset.raf||0));host.dataset.raf='0';
+    const pulse=$('.prompt-loader-pulse',host);if(pulse)pulse.hidden=true;
+    const kicker=$('.kicker',host);if(kicker)kicker.textContent='ZEITÜBERSCHREITUNG';
+    const strong=$('strong',host);
+    if(strong){strong.dataset.fillText='';strong.textContent='Das dauert länger als erwartet';window.PromptAiFill?.words?.(strong,1)}
+    screenSentence(host,'Tippe oben rechts auf ×, um zurückzukehren und es erneut zu versuchen. Dein Projekt bleibt dabei erhalten.',true);
+  }
+  function armRecover(host){
+    clearTimeout(Number(host.dataset.recover||0));
+    host.dataset.recover=String(setTimeout(()=>forceRecover(host),LOADER_TIMEOUT_MS));
   }
   // Fertig heisst: Ueberschrift voll, zweimal blau blinken, weg. Laenger als noetig steht der
   // Schirm nur, wenn die Arbeit schneller war als der gemeinsame Mindestmoment.
@@ -170,21 +193,11 @@
     const strong=$('strong',host);
     if(strong.dataset.fillText!==oben.title){strong.textContent=oben.title;window.PromptAiFill?.words?.(strong,0);startSentences(host,lineSet(oben.kind))}
   }
-  // transition-polish.js haelt einen zweiten Schirm, der am Schritt haengt statt an der Anfrage.
-  // Geht eine Anfrage raus, weiss dieser hier genauer, was laeuft - der andere geht auf der Stelle,
-  // ohne Abschlussblinken. Sonst stehen zwei Ladebilder fuer einen Vorgang uebereinander.
-  function dropStepLoader(){
-    const fremd=$('#promptWorkflowLoader');
-    if(!fremd)return;
-    fremd.remove();
-    document.documentElement.classList.remove('prompt-workflow-loading');
-  }
   function beginTask(key,{title='Prompt.ai arbeitet',kind='generic'}={}){
     const id=String(key||'generic');
     const vorhanden=laufende.findIndex(x=>x.key===id);
     if(vorhanden>=0)laufende.splice(vorhanden,1);
     laufende.push({key:id,title,kind});
-    dropStepLoader();
     let host=$('#promptAiTaskLoader');
     if(!host){
       host=document.createElement('section');host.id='promptAiTaskLoader';
@@ -192,7 +205,7 @@
       host.setAttribute('aria-live','polite');host.setAttribute('aria-busy','true');
       host.innerHTML=LOADER_MARKUP;document.body.appendChild(host);
       host.dataset.shownAt=String(Date.now());
-      startSentences(host,lineSet(kind));startFill(host);
+      startSentences(host,lineSet(kind));startFill(host);armRecover(host);
     }
     host.setAttribute('aria-busy','true');
     host.dataset.closing='0';host.classList.remove('is-complete','is-leaving');
@@ -225,14 +238,27 @@
   // setzen dort schon selbst einen Schirm - zwei übereinander wären schlimmer als keiner),
   // 'sandbox-build' (eigener Schirm) und
   // die Kontingent-Abfragen, die niemanden warten lassen.
+  // Der Weg hat drei Wartezeiten, und der Nutzer soll genau drei Schirme sehen:
+  //
+  //   Beschreibung + Enter  ->  TITEL_BRIEFING   ->  Rueckfragen
+  //   Antworten + Enter     ->  TITEL_VORSCHAU   ->  Vorschaubilder
+  //   Vorschau gewaehlt     ->  TITEL_PROMPT     ->  Master-Prompt
+  //
+  // Uebernahme, Einordnung und Pruefung sind drei Anfragen, aber eine Wartezeit - sie tragen
+  // deshalb denselben Titel. Loest eine ab, wechselt die Ueberschrift nicht, und der Schirm
+  // steht durch, statt zwischendurch abzublenden und neu aufzuziehen.
+  const TITEL_BRIEFING='Dein Briefing wird vorbereitet';
+  const TITEL_VORSCHAU='Deine Vorschau wird erstellt';
+  const TITEL_PROMPT='Dein Master-Prompt entsteht';
   const AI_TASKS={
-    review:{title:'Deine Angaben werden geprüft',kind:'review',done:'Rückfragen sind bereit'},
-    concepts:{title:'Die Richtungen werden entworfen',kind:'preview',done:'Vorschau ist bereit'},
-    'master-prompt':{title:'Dein Master-Prompt entsteht',kind:'build',done:'Master-Prompt ist bereit'},
-    website:{title:'Dein Projekt wird gebaut',kind:'build',done:'Projekt ist bereit'},
+    intake:{title:TITEL_BRIEFING,kind:'briefing'},
+    review:{title:TITEL_BRIEFING,kind:'review'},
+    concepts:{title:TITEL_VORSCHAU,kind:'preview'},
+    'master-prompt':{title:TITEL_PROMPT,kind:'build'},
+    website:{title:'Dein Projekt wird gebaut',kind:'build'},
     // Frueher hatte der freie Prompt zwei eigene Arbeitsanzeigen - eine im Fragebogen, eine im
     // Ergebnisfenster. Jetzt ist es derselbe Schirm wie bei jeder anderen KI-Wartezeit.
-    'free-prompt':{title:'Dein Prompt entsteht',kind:'freeprompt',done:'Prompt ist bereit'}
+    'free-prompt':{title:'Dein Prompt entsteht',kind:'freeprompt'}
   };
   const WAIT_KEY='promptai-ai-wait';
   let aiWaits=0,aiWatchdog=0,aiTask=null;
@@ -252,7 +278,10 @@
     // Die Aufrufe in app.js brechen selbst nach 60 bis 120 Sekunden ab; das hier ist das Netz
     // darunter.
     clearTimeout(aiWatchdog);
-    aiWatchdog=setTimeout(()=>{aiWaits=0;laufende.length=0;$('#promptAiTaskLoader')?.remove()},180000);
+    // Der Schirm wird hier nicht mehr weggeraeumt: nach 95 Sekunden sagt er selbst, dass es
+    // laenger dauert, und bietet das × an. Ein Schirm, der wortlos verschwindet, laesst den
+    // Nutzer auf einer leeren Seite zurueck, ohne zu wissen, was passiert ist.
+    aiWatchdog=setTimeout(()=>{aiWaits=0;const host=$('#promptAiTaskLoader');if(host)forceRecover(host)},180000);
   }
   function endWait(){
     if(aiWaits>0&&--aiWaits)return;
@@ -279,21 +308,19 @@
   const flowMode=()=>$('.mode-switch button.active')?.dataset.mode||document.documentElement.dataset.promptMode||'guided';
   function workflowVisible(){return Boolean($('#workflowApp')&&!$('#workflowApp').hidden)}
 
-  // Die Übergabe von der Startseite in den Ablauf. Frueher ein eigener Schirm mit Zeilenliste,
-  // jetzt derselbe wie jeder andere - damit zwischen Startseite und erster Seite nicht zwei
-  // verschiedene Ladebilder hintereinander stehen.
+  // Die Übergabe von der Startseite in den Ablauf. Sie hatte einen eigenen Schirm
+  // (#promptBriefHandoff) - eigenes Element, eigener Titel, eigener Abgang. Direkt danach ging
+  // die erste Anfrage raus und zog den naechsten auf: zwei Ladebilder fuer den Weg von Enter bis
+  // zu den Rueckfragen. Jetzt ist die Uebernahme eine Arbeit wie jede andere auf demselben
+  // Schirm, mit demselben Titel wie Einordnung und Pruefung. Es gibt nur noch ein Element.
+  const HANDOFF_KEY='promptai-handoff';
+  let handoffFertig=false;
   function ensureHandoff(){
     let simple=false;try{simple=sessionStorage.getItem(SIMPLE_START_KEY)==='1'}catch{}
     if(!simple||!workflowVisible())return;
     document.documentElement.classList.add('prompt-skip-intake-brief');
-    let overlay=$('#promptBriefHandoff');
-    if(!overlay){
-      overlay=document.createElement('section');overlay.id='promptBriefHandoff';
-      overlay.className='prompt-handoff-loader';overlay.setAttribute('aria-live','polite');
-      overlay.innerHTML=LOADER_MARKUP;document.body.appendChild(overlay);
-      overlay.dataset.shownAt=String(Date.now());
-      $('strong',overlay).textContent='Beschreibung wird übernommen';
-      startSentences(overlay,lineSet('briefing'));startFill(overlay);
+    if(!handoffFertig&&!laufende.some(x=>x.key===HANDOFF_KEY)){
+      beginTask(HANDOFF_KEY,{title:TITEL_BRIEFING,kind:'briefing'});
       // Der Schirm steht - ab hier darf die Flaeche darunter wieder sichtbar werden, sie liegt
       // ohnehin dahinter. Ohne diese Zeile bliebe sie bis zum Notausstieg weg.
       document.documentElement.classList.remove('prompt-handoff-pending');
@@ -303,18 +330,13 @@
     // Projektname, Projektart, Hauptziel, Zielgruppe und der besondere Wunsch, die die
     // Startseite gar nicht abfragt; wer darueber hinwegspringt, nimmt sie ersatzlos weg.
     if(currentStep()===1&&text.length>=20&&flowMode()!=='expert'){const panel=$('#stepProject');if(panel?.dataset.promptV2Advance!=='1'){panel.dataset.promptV2Advance='1';setTimeout(()=>{if(currentStep()===1)$('#stepProject .next-btn')?.click()},50)}}
-    // Sobald der Schritt gewechselt hat, ist die Übergabe durch. Der Schirm bleibt nur noch
-    // den gemeinsamen Mindestmoment stehen, blinkt zweimal und geht.
-    if(currentStep()!==1&&currentStep()>0&&overlay.dataset.closing!=='1'){
-      const fertig=()=>{
-        document.documentElement.classList.remove('prompt-skip-intake-brief');
-        try{sessionStorage.removeItem(SIMPLE_START_KEY)}catch{}
-      };
-      // Die Prüfung geht meist schon raus, während die Übernahme noch abschließt. Blinkt die
-      // Übernahme dann noch aus, sieht man zwei Ladebilder hintereinander für einen Weg. Läuft
-      // bereits eine Anfrage, geht dieser Schirm still - der andere steht ohnehin schon.
-      if(laufende.length){stopScreen(overlay);overlay.dataset.closing='1';overlay.remove();fertig();return}
-      finishScreen(overlay,fertig);
+    // Sobald der Schritt gewechselt hat, ist die Uebernahme durch. Laeuft schon eine Anfrage,
+    // bleibt der Schirm einfach stehen - endTask() gibt ihn nur frei, wenn nichts mehr laeuft.
+    if(currentStep()!==1&&currentStep()>0&&!handoffFertig){
+      handoffFertig=true;
+      endTask(HANDOFF_KEY);
+      document.documentElement.classList.remove('prompt-skip-intake-brief');
+      try{sessionStorage.removeItem(SIMPLE_START_KEY)}catch{}
     }
   }
 
@@ -339,13 +361,59 @@
   }
   function clarificationCancel(event){if(event.target?.id!=='clarificationDialog')return;event.preventDefault();const close=$('#clarificationDialog .close-dialog');if(close)clarificationExit({target:close,preventDefault(){},stopImmediatePropagation(){}})}
 
+  // Der Abbruch lag in transition-polish.js, zusammen mit dem Schirm, den es dort gab. Da der
+  // Schirm jetzt hier steht, steht der Abbruch auch hier: alles Laufende vergessen, Schirm weg,
+  // zurueck zur Startseite. flow-guards-ui.js hat vorher schon gefragt, ob das gewollt ist.
+  function abbrechen(event){
+    const button=event.target.closest?.('#promptWorkflowLoaderClose');
+    if(!button||button.dataset.confirmed!=='1')return;
+    laufende.length=0;aiWaits=0;clearTimeout(aiWatchdog);
+    const host=$('#promptAiTaskLoader');
+    if(host){stopScreen(host);host.remove()}
+    document.documentElement.classList.remove('prompt-workflow-loading','prompt-skip-intake-brief','prompt-handoff-pending');
+    (document.querySelector('.guided-clean-exit')||$('#brandHome'))?.click();
+  }
+
+  // app.js meldet waehrend der Bilder, was gerade wirklich passiert ("Bild 2 von 3"). Diese Zeile
+  // ist genauer als die wechselnden Saetze, also hat sie Vorrang - und der Balken zeigt dieselbe
+  // Zahl, statt weiter nach der Uhr zu laufen.
+  function bildstand(event){
+    const host=$('#promptAiTaskLoader');if(!host)return;
+    const text=String(event.detail?.text||''),ratio=event.detail?.ratio;
+    if(typeof ratio==='number'&&Number.isFinite(ratio)){
+      cancelAnimationFrame(Number(host.dataset.raf||0));host.dataset.raf='0';
+      applyFill(host,Math.max(.08,Math.min(.99,ratio)));
+    }
+    if(!text)return;
+    clearInterval(Number(host.dataset.cycle||0));host.dataset.cycle='0';
+    screenSentence(host,text);
+  }
+
   function settle(){
     ensureHandoff()
   }
-  function schedule(){clearTimeout(settleTimer);settleTimer=setTimeout(settle,24)}
+  // Gedrosselt mit hartem Deckel, nicht nur entprellt - und ohne die eigenen Schreibvorgaenge.
+  //
+  // Der Schirm schreibt jeden Frame einen Inline-Stil auf sich selbst (die Fuellung). Diese
+  // Schreibvorgaenge erreichten den Beobachter auf dem Koerper und setzten die Entprellung
+  // endlos zurueck: settle() lief nie, ensureHandoff() beendete die Uebernahme nie, und der
+  // Schirm blieb stehen. Derselbe Fehler lag frueher in transition-polish.js; er waere beim
+  // Zusammenlegen mit umgezogen. Deshalb beides: eigene Mutationen fliegen raus, und laenger
+  // als MAX_SETTLE_MS darf sich der Lauf nie verschieben.
+  const MAX_SETTLE_MS=400;
+  let settleDeadline=0;
+  const fromLoader=node=>{const el=node?.nodeType===1?node:node?.parentElement;return Boolean(el?.closest?.('#promptAiTaskLoader'))};
+  function schedule(){
+    const now=Date.now();
+    if(!settleTimer)settleDeadline=now+MAX_SETTLE_MS;
+    clearTimeout(settleTimer);
+    settleTimer=setTimeout(()=>{settleTimer=0;settle()},Math.max(0,Math.min(24,settleDeadline-now)));
+  }
   function bind(){
     document.addEventListener('click',clarificationExit,true);document.addEventListener('cancel',clarificationCancel,true);
-    new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style']});
+    document.addEventListener('click',abbrechen,true);
+    window.addEventListener('promptai:preview-stage',bildstand);
+    new MutationObserver(records=>{if(records.some(record=>!fromLoader(record.target)))schedule()}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open','style']});
     window.addEventListener('pageshow',schedule);window.addEventListener('promptai:access',schedule)
   }
   window.PromptAiLoading={beginTask,endTask,lineSet};

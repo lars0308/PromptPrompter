@@ -70,7 +70,7 @@
     html:not(.prompt-boot-gast) #promptAppBoot [data-boot="gast"],
     html.prompt-boot-gast #promptAppBoot [data-boot="konto"]{display:none!important}
     #promptAppBoot .kicker{display:block;margin-top:20px;color:var(--accent,#1689c7);font-size:9px;font-weight:850;letter-spacing:.13em}
-    #promptAppBoot strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,47px);line-height:1.14;letter-spacing:-.05em}
+    #promptAppBoot strong{display:block;margin-top:0;padding-bottom:.06em;font-size:clamp(19px,4.4vw,24px);line-height:1.2;letter-spacing:-.02em}
     .brand-ai-suffix{color:var(--accent,#1b76aa)}
     #promptAppBoot p{margin:10px auto 0;color:var(--muted,#6e6c64);font-size:13px;line-height:1.5}
     #promptAppBoot .boot-track{position:relative;width:min(260px,70vw);height:3px;margin:25px auto 0;overflow:hidden;border-radius:99px;background:color-mix(in srgb,#1689c7 13%,var(--line,#d8dcdf))}
@@ -139,7 +139,10 @@
   <!-- Global error boundary toast container -->
   <div id="error-boundary-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 999999; max-width: 400px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;" aria-live="polite" aria-atomic="true"></div>
 
-  <section id="promptAppBoot" aria-live="polite"><div><img src="./sitebrief-logo-trace.svg?v=7" alt="Prompt.ai"><strong class="prompt-fill-progress" style="--prompt-fill:6%">Prompt.ai</strong><div class="prompt-loader-sentence" data-boot="konto">Dein Arbeitsbereich wird vorbereitet.</div><div class="prompt-loader-sentence" data-boot="gast">Von einem Satz zum Prompt für deine KI.</div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div></section>
+  <!-- Der Startschirm deckt die Sekunde, bis die App steht - sonst blitzt die halbfertige Seite
+       auf. Er trug dabei das Zeichen in 104 Pixeln und die Wortmarke in bis zu 47: ein grosses
+       Logo bei jedem Oeffnen, das niemand sehen wollte. Die Deckung bleibt, die Marke geht. -->
+  <section id="promptAppBoot" aria-live="polite"><div><strong class="prompt-fill-progress" style="--prompt-fill:6%">Einen Moment</strong><div class="prompt-loader-sentence" data-boot="konto">Dein Arbeitsbereich wird vorbereitet.</div><div class="prompt-loader-sentence" data-boot="gast">Von einem Satz zum Prompt für deine KI.</div><div class="prompt-loader-pulse" aria-hidden="true"><i></i><i></i><i></i></div></div></section>
   <aside id="offerBanner" class="offer-banner" hidden>
     <div><span id="offerEyebrow">AKTION</span><strong id="offerTitle"></strong><p id="offerDescription"></p></div>
     <button type="button" class="solid-btn mini" id="offerCta">Kostenlos testen</button><button type="button" class="offer-close" id="offerClose" aria-label="Aktion ausblenden">×</button>

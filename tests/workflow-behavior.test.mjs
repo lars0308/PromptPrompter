@@ -79,7 +79,10 @@ test('only one full-screen workflow loader can ever exist; the legacy #flowTrans
     doc.documentElement.classList.add('probe-mutation');
     await wait(150);
     assert.equal(doc.getElementById('flowTransitionCompact'), null, 'ux-stability-fix.js must not create its own competing loader overlay anymore');
-    assert.ok(doc.getElementById('promptWorkflowLoader'), 'transition-polish.js should be the single loader owner while reviewing steps 3/4');
+    // Der Schirm haengt seit dem Zusammenlegen an der Anfrage, nicht am Schritt: ohne laufenden
+    // Aufruf gibt es keinen - und transition-polish.js baut auch keinen eigenen mehr.
+    assert.equal(doc.getElementById('promptWorkflowLoader'), null, 'transition-polish.js must not own a screen any more');
+    assert.equal(doc.getElementById('promptAiTaskLoader'), null, 'and a step alone must not conjure one without a running request');
   } finally {
     dom.window.close();
   }

@@ -413,45 +413,6 @@ html[data-clean-project-flow="1"] #promptBriefHandoff,
       html[data-clean-project-flow="1"] #stepReferences .next-btn:after,
       html[data-prompt-mode="guided"] #stepReferences .next-btn:after,
       html[data-prompt-mode="auto"] #stepReferences .next-btn:after{content:'→';margin-left:18px;font-size:18px;font-weight:600;line-height:1}
-      html.prompt-workflow-loading,html.prompt-workflow-loading body{overflow:hidden!important}
-      /* While the full screen is up, the small bar underneath it is a second progress display for
-         the same run. It stays in the DOM for the modes that never show the full screen. */
-      html.prompt-workflow-loading #previewProgress{display:none!important}
-      html.prompt-workflow-loading #guidedCleanHead{visibility:hidden!important}
-      :is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff){position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-      :is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff).is-leaving{opacity:0;pointer-events:none}
-      /* Solange dieser Schirm laeuft, hat der Startbildschirm mit dem grossen Logo nichts zu
-         suchen - sonst blitzt er zwischen Anmeldung und Arbeitsflaeche einmal auf. */
-      html.prompt-workflow-loading #promptAppBoot{display:none!important}
-      /* Closing blink, shared with the boot and handoff screens: the headline snaps to full and
-         flashes blue once before the screen leaves. */
-      :is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff).is-complete strong{animation:promptFillFlash .42s ease-out var(--prompt-flash-count,1)}
-      :is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff)>div{width:min(560px,100%);text-align:center}
-      #promptWorkflowLoaderClose{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--ui-line,var(--line));border-radius:50%;background:var(--ui-card,var(--surface));color:var(--ink);font:700 21px/1 Arial,sans-serif;box-shadow:none}
-      #promptWorkflowLoaderClose:hover{background:var(--ui-soft,var(--surface-soft));border-color:color-mix(in srgb,var(--ui-blue,var(--accent)) 45%,var(--ui-line,var(--line)))}
-      :is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff) .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}
-      /* line-height has to leave room for the descenders: with background-clip:text the glyphs are
-         painted inside the line box, and 1.02 cut the tails off g, p and j ("Briefing wird geprüft"). */
-      :is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff) strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,47px);line-height:1.14;letter-spacing:-.05em;color:var(--ui-blue,var(--accent,#1689c7))}
-      .prompt-loader-sentence{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}
-      .prompt-loader-sentence.is-changing{opacity:0;transform:translateY(4px)}
-      /* Same treatment as the handoff screen: the progress runs through the headline itself. */
-      .prompt-loader-bar{display:none}
-      :is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff) strong{background-image:linear-gradient(90deg,var(--ui-blue,var(--accent,#1689c7)) 0 var(--prompt-fill,0%),color-mix(in srgb,var(--ink) 26%,transparent) var(--prompt-fill,0%) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-      @supports not (background-clip:text){:is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff) strong{color:var(--ui-blue,var(--accent,#1689c7));background-image:none}.prompt-loader-bar{display:block;width:min(280px,80%);height:4px;margin:26px auto 0;border-radius:99px;background:var(--ui-line,var(--line));overflow:hidden}.prompt-loader-bar i{display:block;height:100%;width:var(--prompt-fill,0%);border-radius:99px;background:var(--ui-blue,var(--accent,#1689c7));transition:width .3s ease}}
-      /* Jedes Wort traegt seinen eigenen Verlauf, damit bei zwei Zeilen erst die obere
-         volllaeuft. Kursiv ist das <i> hier nicht - es ist nur der kuerzeste Traeger. */
-      .prompt-fill-word{font-style:normal;background-image:linear-gradient(90deg,var(--ui-blue,var(--accent,#1689c7)) 0 var(--prompt-fill,0%),var(--loader-rest,color-mix(in srgb,var(--ink) 26%,transparent)) var(--prompt-fill,0%) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-      /* Die Endung der Wortmarke laeuft in der hellen Farbe voll, nicht im Blau: "Prompt" blau,
-         ".ai" hell - so wie das Zeichen selbst zwei Toene traegt. Was "hell" heisst, entscheidet
-         der Modus: im Dunkelmodus ist es Weiss, im Hellmodus das Marineblau der Schrift. Reines
-         Weiss auf dem hellen Papierton waere unsichtbar. */
-      .prompt-fill-word.is-marken-endung{background-image:linear-gradient(90deg,var(--ink,#1e3a5f) 0 var(--prompt-fill,0%),var(--loader-rest,color-mix(in srgb,var(--ink) 26%,transparent)) var(--prompt-fill,0%) 100%)}
-      @supports not (background-clip:text){.prompt-fill-word.is-marken-endung{color:var(--ink,#1e3a5f)}}
-      @supports not (background-clip:text){.prompt-fill-word{color:var(--ui-blue,var(--accent,#1689c7));background-image:none}}
-      .prompt-loader-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-loader-pulse[hidden]{display:none}.prompt-loader-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptLoaderPulse 1.05s ease-in-out infinite}.prompt-loader-pulse i:nth-child(2){animation-delay:.13s}.prompt-loader-pulse i:nth-child(3){animation-delay:.26s}
-      @keyframes promptLoaderPulse{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
-      @media(prefers-reduced-motion:reduce){:is(#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff),.prompt-loader-sentence{transition:none!important}.prompt-loader-pulse i{animation:none!important;opacity:.7!important}.prompt-loader-bar i{transition:none!important}}
 
 /* ===== ui-regression-fixes.js · #promptRegressionStyles ===== */
 :root{--upgrade:#e9781f;--upgrade-ink:#fff}html[data-theme="dark"]{--upgrade:#ff9638;--upgrade-ink:#15100b}.upgrade-btn,#upgradeMenuBtn{border:1px solid color-mix(in srgb,var(--upgrade) 82%,#000)!important;background:var(--upgrade)!important;color:var(--upgrade-ink)!important;border-radius:12px!important;min-height:38px!important;padding:0 15px!important;font-weight:850!important;text-decoration:none!important;box-shadow:0 9px 24px color-mix(in srgb,var(--upgrade) 28%,transparent)!important}.auth-plan-heading,.auth-plan-grid{display:none!important}.auth-subscribe-compact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;margin:0 0 14px;padding:15px 16px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--accent) 6%,var(--surface))}.auth-subscribe-compact span,.auth-subscribe-compact strong,.auth-subscribe-compact small{display:block}.auth-subscribe-compact span{font-size:8px;font-weight:800;letter-spacing:.12em;color:var(--accent)}.auth-subscribe-compact strong{margin:4px 0 3px;font-size:15px}.auth-subscribe-compact small{color:var(--muted);font-size:9px;line-height:1.45}.account-dialog.auth-transitioning #accountLoggedIn{display:none!important}.account-dialog.auth-transitioning #accountLoggedOut{display:block!important}@media(max-width:820px){#plansDialog{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:5px!important;overflow:hidden!important;background:transparent!important}#plansDialog .dialog-frame{display:flex!important;flex-direction:column!important;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;min-height:0!important;margin:0!important;border-radius:18px!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important}#plansDialog .dialog-head{flex:0 0 auto!important;padding:16px 17px!important}#plansDialog .plans-grid{display:block!important;flex:0 0 auto!important;width:100%!important;max-height:none!important;overflow:visible!important;padding:14px 12px 24px!important}#plansDialog .plan-card{width:100%!important;max-height:none!important;overflow:visible!important;margin:0 0 12px!important}#plansDialog .plan-card-detail{max-height:none!important;overflow:visible!important;padding-bottom:18px!important}#plansDialog .dialog-frame>:last-child{margin-bottom:max(28px,env(safe-area-inset-bottom))!important}}@media(max-width:520px){.auth-subscribe-compact{grid-template-columns:1fr}.auth-subscribe-compact button{width:100%}.upgrade-btn{min-height:36px!important;padding:0 12px!important}}
@@ -1100,6 +1061,47 @@ html[data-clean-project-flow="1"] body{background:#f3f5f6}
       @media(prefers-reduced-motion:reduce){.prompt-thinking-status,.prompt-thinking-bar i{transition:none!important}}
 
 /* ===== promptai-loading-v2.js · #promptLoadingV2Styles ===== */
+      /* Der Ladeschirm stand im Abschnitt von transition-polish.js, weil er dort gebaut wurde.
+         Er gehoert jetzt hierher - und traegt nur noch die eine id, die es noch gibt. */
+      html.prompt-workflow-loading,html.prompt-workflow-loading body{overflow:hidden!important}
+      /* While the full screen is up, the small bar underneath it is a second progress display for
+         the same run. It stays in the DOM for the modes that never show the full screen. */
+      html.prompt-workflow-loading #previewProgress{display:none!important}
+      html.prompt-workflow-loading #guidedCleanHead{visibility:hidden!important}
+      #promptAiTaskLoader{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:28px 22px;background:var(--paper,#f4f5f6);color:var(--ink,#171814);opacity:1;transition:opacity .24s ease;contain:layout paint style;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+      #promptAiTaskLoader.is-leaving{opacity:0;pointer-events:none}
+      /* Solange dieser Schirm laeuft, hat der Startbildschirm mit dem grossen Logo nichts zu
+         suchen - sonst blitzt er zwischen Anmeldung und Arbeitsflaeche einmal auf. */
+      html.prompt-workflow-loading #promptAppBoot{display:none!important}
+      /* Closing blink, shared with the boot and handoff screens: the headline snaps to full and
+         flashes blue once before the screen leaves. */
+      #promptAiTaskLoader.is-complete strong{animation:promptFillFlash .42s ease-out var(--prompt-flash-count,1)}
+      #promptAiTaskLoader>div{width:min(560px,100%);text-align:center}
+      #promptWorkflowLoaderClose{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--ui-line,var(--line));border-radius:50%;background:var(--ui-card,var(--surface));color:var(--ink);font:700 21px/1 Arial,sans-serif;box-shadow:none}
+      #promptWorkflowLoaderClose:hover{background:var(--ui-soft,var(--surface-soft));border-color:color-mix(in srgb,var(--ui-blue,var(--accent)) 45%,var(--ui-line,var(--line)))}
+      #promptAiTaskLoader .kicker{display:block;color:var(--ui-blue,var(--accent,#1689c7));font-size:9px;font-weight:850;letter-spacing:.13em}
+      /* line-height has to leave room for the descenders: with background-clip:text the glyphs are
+         painted inside the line box, and 1.02 cut the tails off g, p and j ("Briefing wird geprüft"). */
+      #promptAiTaskLoader strong{display:block;margin-top:9px;padding-bottom:.06em;font-size:clamp(31px,8vw,47px);line-height:1.14;letter-spacing:-.05em;color:var(--ui-blue,var(--accent,#1689c7))}
+      .prompt-loader-sentence{display:block;max-width:440px;min-height:29px;margin:22px auto 0;color:var(--ink,#171814);font-size:clamp(15px,3.8vw,18px);font-weight:650;line-height:1.45;transition:opacity .16s ease,transform .16s ease}
+      .prompt-loader-sentence.is-changing{opacity:0;transform:translateY(4px)}
+      /* Same treatment as the handoff screen: the progress runs through the headline itself. */
+      .prompt-loader-bar{display:none}
+      #promptAiTaskLoader strong{background-image:linear-gradient(90deg,var(--ui-blue,var(--accent,#1689c7)) 0 var(--prompt-fill,0%),color-mix(in srgb,var(--ink) 26%,transparent) var(--prompt-fill,0%) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+      @supports not (background-clip:text){#promptAiTaskLoader strong{color:var(--ui-blue,var(--accent,#1689c7));background-image:none}.prompt-loader-bar{display:block;width:min(280px,80%);height:4px;margin:26px auto 0;border-radius:99px;background:var(--ui-line,var(--line));overflow:hidden}.prompt-loader-bar i{display:block;height:100%;width:var(--prompt-fill,0%);border-radius:99px;background:var(--ui-blue,var(--accent,#1689c7));transition:width .3s ease}}
+      /* Jedes Wort traegt seinen eigenen Verlauf, damit bei zwei Zeilen erst die obere
+         volllaeuft. Kursiv ist das <i> hier nicht - es ist nur der kuerzeste Traeger. */
+      .prompt-fill-word{font-style:normal;background-image:linear-gradient(90deg,var(--ui-blue,var(--accent,#1689c7)) 0 var(--prompt-fill,0%),var(--loader-rest,color-mix(in srgb,var(--ink) 26%,transparent)) var(--prompt-fill,0%) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+      /* Die Endung der Wortmarke laeuft in der hellen Farbe voll, nicht im Blau: "Prompt" blau,
+         ".ai" hell - so wie das Zeichen selbst zwei Toene traegt. Was "hell" heisst, entscheidet
+         der Modus: im Dunkelmodus ist es Weiss, im Hellmodus das Marineblau der Schrift. Reines
+         Weiss auf dem hellen Papierton waere unsichtbar. */
+      .prompt-fill-word.is-marken-endung{background-image:linear-gradient(90deg,var(--ink,#1e3a5f) 0 var(--prompt-fill,0%),var(--loader-rest,color-mix(in srgb,var(--ink) 26%,transparent)) var(--prompt-fill,0%) 100%)}
+      @supports not (background-clip:text){.prompt-fill-word.is-marken-endung{color:var(--ink,#1e3a5f)}}
+      @supports not (background-clip:text){.prompt-fill-word{color:var(--ui-blue,var(--accent,#1689c7));background-image:none}}
+      .prompt-loader-pulse{display:flex;justify-content:center;gap:7px;margin-top:23px}.prompt-loader-pulse[hidden]{display:none}.prompt-loader-pulse i{width:6px;height:6px;border-radius:50%;background:var(--ui-blue,var(--accent,#1689c7));opacity:.22;animation:promptLoaderPulse 1.05s ease-in-out infinite}.prompt-loader-pulse i:nth-child(2){animation-delay:.13s}.prompt-loader-pulse i:nth-child(3){animation-delay:.26s}
+      @keyframes promptLoaderPulse{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:.9;transform:translateY(-3px)}}
+      @media(prefers-reduced-motion:reduce){#promptAiTaskLoader,.prompt-loader-sentence{transition:none!important}.prompt-loader-pulse i{animation:none!important;opacity:.7!important}.prompt-loader-bar i{transition:none!important}}
 :root{--prompt-load-blue:var(--ui-blue,var(--accent,#1689c7))}
       html.prompt-skip-intake-brief #workflowApp #stepProject.active{visibility:hidden!important;pointer-events:none!important}
       /* Zwischen Startschirm und Briefing-Schirm lag ungefähr eine Sekunde nackte Arbeitsfläche,
@@ -1108,7 +1110,7 @@ html[data-clean-project-flow="1"] body{background:#f3f5f6}
          nicht steht, bleibt darunter nur die Papierfläche stehen - theme-init.js setzt die Klasse
          schon im ersten Skript und nimmt sie spätestens nach neun Sekunden wieder weg. */
       html.prompt-handoff-pending body{background:var(--paper)!important}
-      html.prompt-handoff-pending body>*:not(#promptBriefHandoff):not(#promptAppBoot):not(#promptModeHandoff){visibility:hidden!important}
+      html.prompt-handoff-pending body>*:not(#promptAiTaskLoader):not(#promptAppBoot):not(#promptModeHandoff){visibility:hidden!important}
       /* Der Uebergabe-Schirm stand nicht in der Ausnahmeliste: die Papierflaeche deckte ihn mit
          ab, obwohl er genau das ist, was sie ueberdecken soll. Sichtbar wurde er erst, wenn die
          Klasse wieder fiel - deshalb sah man erst nur den Hintergrund und die Animation kam zu

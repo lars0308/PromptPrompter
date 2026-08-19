@@ -2016,8 +2016,8 @@ html.prompt-full-redesign dialog.library-dialog>.dialog-frame{
   html.prompt-full-redesign :is(#promptWorkflowLoader>div,.prompt-handoff-loader>div,.prompt-completion-flash>div,.master-generation-inner):not(.prompt-process-lines)::before{
     width:104px!important;height:104px!important;margin-bottom:28px!important;
   }
-  html.prompt-full-redesign #promptAppBoot img,
-  html.prompt-full-redesign #promptAppBoot .prompt-boot-mark{width:104px!important;height:104px!important}
+  /* Der Startschirm traegt kein Zeichen mehr - er deckt nur die Sekunde bis die App steht.
+     Die Regel, die es hier auf 104px gebracht hat, faellt damit weg. */
 }
 
 /* ==========================================================================
@@ -2226,9 +2226,10 @@ html.prompt-full-redesign :is(.solid-btn,button.solid-btn):not(.upgrade-btn):not
    uebereinander sind trotzdem zwei: der obere blendet auf, der untere blitzt
    darunter hervor. Also gilt: wer zuerst steht, bleibt stehen; der spaetere
    wartet, bis er allein ist, und uebernimmt dann ohne Schnitt. */
-body:has(#promptModeHandoff) :is(#promptAiTaskLoader,#promptBriefHandoff,#promptWorkflowLoader),
-body:has(#promptWorkflowLoader) :is(#promptAiTaskLoader,#promptBriefHandoff),
-body:has(#promptBriefHandoff) #promptAiTaskLoader{
+/* Von den vier Schirmen sind zwei uebrig: der Ladeschirm und die Uebergabe zwischen den
+   Ablaufarten. #promptBriefHandoff und #promptWorkflowLoader gibt es nicht mehr - alles
+   Wartende laeuft ueber #promptAiTaskLoader. */
+body:has(#promptModeHandoff) #promptAiTaskLoader{
   display:none!important;
 }
 

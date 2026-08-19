@@ -67,12 +67,15 @@ test('the review/preview loader cannot be starved by its own animation frames',a
   // The loader writes an inline style on its progress bar every frame. Those writes reached the
   // body MutationObserver, which re-armed the sync() debounce forever, so the overlay stayed on
   // screen after the workflow had already moved on.
-  const src=await text('transition-polish.js');
+  // Der Schirm ist nach promptai-loading-v2.js umgezogen, die Falle also auch: dort haengt
+  // ensureHandoff() am selben Beobachter und wuerde bei endloser Entprellung nie laufen - die
+  // Uebernahme bliebe offen und der Schirm stehen.
+  const src=await text('promptai-loading-v2.js');
   assert.match(src,/const MAX_SETTLE_MS=400;/,'the debounce needs a hard ceiling');
   assert.match(src,/settleDeadline=now\+MAX_SETTLE_MS/);
   assert.match(src,/const fromLoader=node=>/,'loader-internal mutations must be filtered out');
   assert.match(src,/records\.some\(record=>!fromLoader\(record\.target\)\)/);
-  assert.doesNotMatch(src,/function schedule\(delay=STEP_STABLE_MS\)\{clearTimeout\(settleTimer\);settleTimer=setTimeout\(sync,delay\)\}/);
+  assert.doesNotMatch(src,/function schedule\(\)\{clearTimeout\(settleTimer\);settleTimer=setTimeout\(settle,24\)\}/);
 });
 test('the plans dialog always offers a way out and never opens on top of itself',async()=>{
   // plansDialog doubles as the upsell for every locked feature, so an un-dismissable variant
@@ -364,10 +367,15 @@ test('generated concept preview images are never written into persisted project 
   assert.match(src,/concepts:state\.concepts\.map\(\(\{previewImage,\.\.\.rest\}\)=>rest\),/);
 });
 test('the full-screen workflow loader cannot stay stuck forever regardless of cause',async()=>{
-  const src=await text('transition-polish.js');
+  const src=await text('promptai-loading-v2.js');
   assert.match(src,/const LOADER_TIMEOUT_MS=95000;/);
-  assert.match(src,/function forceRecover\(\)\{/);
-  assert.match(src,/if\(elapsed>LOADER_TIMEOUT_MS\)\{fillRaf=0;forceRecover\(\);return\}/);
+  assert.match(src,/function forceRecover\(host\)\{/);
+  // Die Uhr haengt jetzt am Schirm selbst, nicht an der Fuellschleife: sie wird beim Aufbau
+  // gestellt und beim Abbau geloescht, laeuft also unabhaengig davon weiter, ob gerade ein
+  // Einzelbild-Fortschritt die Fuellung uebernommen hat.
+  assert.match(src,/host\.dataset\.recover=String\(setTimeout\(\(\)=>forceRecover\(host\),LOADER_TIMEOUT_MS\)\)/);
+  assert.match(src,/startSentences\(host,lineSet\(kind\)\);startFill\(host\);armRecover\(host\);/);
+  assert.match(src,/clearTimeout\(Number\(host\.dataset\.recover\|\|0\)\);host\.dataset\.recover='0';/,'and it is cleared when the screen goes');
 });
 test('AI preview images are framed as a flat UI screenshot, not a photo of a device on a desk, and must render the real brand/headline text',async()=>{
   // The framing rule is editable in the admin console now, so it is asserted on its default.
@@ -533,32 +541,39 @@ test('a broad prompt-unified-ui dialog reset does not strip the cookie banner\'s
   assert.match(src,/dialog:not\(\.prompt-own-style\):not\(#previewLightbox\):not\(#welcomeIntroDialog\):not\(#cookieBanner\)\{border:0!important;background:transparent!important;color:var\(--ink\)!important;padding:0!important\}/);
 });
 test('a stuck review/preview loader recovers in place instead of firing a native alert() and forcibly navigating the user home',async()=>{
-  const src=await text('transition-polish.js');
+  // Der Schirm gehoert seit dem Zusammenlegen promptai-loading-v2.js; die Notbremse ist mit ihm
+  // umgezogen, statt beim Aufraeumen verloren zu gehen.
+  const src=await text('promptai-loading-v2.js');
   assert.doesNotMatch(src,/window\.alert\(/,'a native browser alert() is jarring and was reported as kicking the user out of the workflow mid-loading');
-  const body=src.match(/function forceRecover\(\)\{([\s\S]*?)\n  \}/)?.[1]||'';
+  const body=src.match(/function forceRecover\(host\)\{([\s\S]*?)\n  \}/)?.[1]||'';
   assert.ok(body,'forceRecover function body must be found');
   assert.doesNotMatch(body,/brandHome/,'forceRecover must not forcibly navigate the user away from the loader on a timeout');
   assert.doesNotMatch(body,/window\.alert/);
   assert.match(src,/const LOADER_TIMEOUT_MS=95000;/);
-  assert.match(src,/setTitle\(box,'Das dauert länger als erwartet'\);/);
+  assert.match(src,/textContent='Das dauert länger als erwartet'/);
+  // Und der Notausstieg raeumt den Schirm nicht mehr wortlos weg, sondern zeigt dieselbe Meldung.
+  assert.match(src,/aiWatchdog=setTimeout\(\(\)=>\{aiWaits=0;const host=\$\('#promptAiTaskLoader'\);if\(host\)forceRecover\(host\)\}/);
   assert.match(src,/\.prompt-loader-pulse\[hidden\]\{display:none\}/,'the pulse dots use a plain class rule elsewhere that would otherwise beat the UA [hidden] rule, the same CSS specificity trap fixed repeatedly this session');
 });
 test('loading-screen sentences stay on screen ~1.6s longer than before across every loader that cycles them',async()=>{
-  for(const file of ['transition-polish.js','promptai-experience-v1.js','mode-handoff-fix.js']){
+  for(const file of ['promptai-experience-v1.js','mode-handoff-fix.js']){
     const src=await text(file);
     assert.match(src,/const SENTENCE_MS=3000;/,`${file} must use the extended sentence duration`);
   }
+  // transition-polish.js haelt keine Saetze mehr - der eine Ladeschirm taktet sie selbst.
+  assert.match(await text('promptai-loading-v2.js'),/const SENTENCE_MS=3240;/);
+  assert.doesNotMatch(await text('transition-polish.js'),/SENTENCE_MS/);
 });
 test('the loader title/sentence text updates instantly and cleanly, with no stale per-character fill overlay that could desync from the text',async()=>{
-  const transition=await text('transition-polish.js'),v1=await text('promptai-experience-v1.js');
+  const loader=await text('promptai-loading-v2.js'),v1=await text('promptai-experience-v1.js');
   // Die Ueberschrift wird in Woerter zerlegt, damit bei zwei Zeilen erst die obere volllaeuft -
   // verglichen wird deshalb gegen den gemerkten Text, nicht gegen textContent (das enthaelt jetzt
   // die Wortelemente). Gesetzt wird weiter in einem Zug, ohne Zeichen-Overlay.
-  assert.match(transition,/function setTitle\(box,text\)\{const host=\$\('strong',box\);if\(!host\|\|host\.dataset\.fillText===text\)return;host\.textContent=text;window\.PromptAiFill\?\.words\?\.\(host,0\)\}/);
+  assert.match(loader,/if\(strong\.dataset\.fillText!==oben\.title\)\{strong\.textContent=oben\.title;window\.PromptAiFill\?\.words\?\.\(strong,0\)/);
   const theme=await text('theme-init.js');
   assert.match(theme,/words\(node,progress\)\{/,'die Wortaufteilung gehoert in den gemeinsamen Treiber');
   assert.doesNotMatch(theme,/getClientRects|getBoundingClientRect/,'Zeilen ausmessen hat frueher versetzten Text erzeugt - Woerter statt gemessener Zeilenkaesten');
-  assert.match(transition,/const apply=\(\)=>\{host\.textContent=text;host\.classList\.remove\('is-changing'\)\};/);
+  assert.match(loader,/const apply=\(\)=>\{line\.textContent=text;line\.classList\.remove\('is-changing'\)\};/);
   assert.match(v1,/const apply=\(\)=>\{host\.textContent=text;host\.classList\.remove\('is-changing'\)\};/);
 });
 test('the "Prompt genauer einstellen" free-prompt settings step is consolidated into 3 broad fields instead of 9 narrow ones',async()=>{
@@ -775,11 +790,18 @@ test('the loading screen is bound to the AI request itself, so no step can forge
   // Zwei Schirme uebereinander waeren schlimmer als keiner: parallele Aufrufe zaehlen nur mit.
   assert.match(src,/if\(aiWaits\+\+\)return;/);
   assert.match(src,/if\(aiWaits>0&&--aiWaits\)return;/);
-  // Diese vier haben ihren eigenen Schirm bzw. lassen niemanden warten.
-  for(const action of ['intake','revision-brief','sandbox-build','quota-summary'])
+  // 'intake' gehoert seit dem Zusammenlegen dazu: mode-flow-ui.js hatte dafuer einen eigenen
+  // Schirm mit eigenem Titel ("Briefing wird verstanden") - der dritte Text fuer dieselbe
+  // Wartezeit. Jetzt laeuft die Anfrage durch denselben Schirm wie Uebernahme und Pruefung.
+  assert.match(src,/intake:\{title:TITEL_BRIEFING/);
+  assert.doesNotMatch(await text('mode-flow-ui.js'),/beginTask/,'no second screen next to the shared one');
+  // Diese drei haben ihren eigenen Schirm bzw. lassen niemanden warten.
+  for(const action of ['revision-brief','sandbox-build','quota-summary'])
     assert.doesNotMatch(src,new RegExp(`'?${action}'?:\\{title:`),`${action} must not get a second screen`);
   // Haengt eine Anfrage, ohne je aufzuloesen, darf der Schirm nicht ewig stehen.
-  assert.match(src,/aiWatchdog=setTimeout\(\(\)=>\{aiWaits=0;laufende\.length=0;\$\('#promptAiTaskLoader'\)\?\.remove\(\)\},180000\)/);
+  // Der Notausstieg raeumt den Schirm nicht mehr wortlos weg - das liess den Nutzer auf einer
+  // leeren Seite zurueck. Er zeigt dieselbe Meldung wie die Uhr nach 95 Sekunden.
+  assert.match(src,/aiWatchdog=setTimeout\(\(\)=>\{aiWaits=0;const host=\$\('#promptAiTaskLoader'\);if\(host\)forceRecover\(host\)\},180000\)/);
   // usage-quota-ui.js haengt sich ebenfalls in fetch - die beiden duerfen sich nicht gegenseitig
   // aushebeln.
   assert.match(src,/if\(native\.__quotaWrapped\)wrapped\.__quotaWrapped=true;/);
@@ -830,11 +852,11 @@ test('the review/preview loader and the free-prompt thinking loader never fill t
     assert.doesNotMatch(src,/getBoundingClientRect/,`${file} must not sync overlay position/size via getBoundingClientRect anymore`);
     assert.doesNotMatch(src,/polygon\(/,`${file} must not build a reading-order polygon clip-path anymore`);
   }
-  const transition=await text('transition-polish.js');
-  assert.doesNotMatch(transition,/clip-path:/,'the review/preview loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
-  assert.match(transition,/#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff\) strong\{background-image:linear-gradient\(90deg/,'the headline itself carries the progress - on every loading screen, not just this one');
-  assert.match(transition,/if\(box\.style\.getPropertyValue\('--prompt-fill'\)!==next\)box\.style\.setProperty\('--prompt-fill',next\);/,'only write on change - assigning inside its own observer loops');
-  assert.match(transition,/@supports not \(background-clip:text\)/,'older engines keep the bar');
+  const loader=await text('promptai-loading-v2.js');
+  assert.doesNotMatch(loader,/#promptAiTaskLoader strong\{[^}]*clip-path:/,'the review/preview loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
+  assert.match(loader,/#promptAiTaskLoader strong\{background-image:linear-gradient\(90deg/,'the headline itself carries the progress - on every loading screen, not just this one');
+  assert.match(loader,/if\(host\.style\.getPropertyValue\('--prompt-fill'\)!==next\)host\.style\.setProperty\('--prompt-fill',next\);/,'only write on change - assigning inside its own observer loops');
+  assert.match(loader,/@supports not \(background-clip:text\)/,'older engines keep the bar');
   const v1=await text('promptai-experience-v1.js');
   assert.doesNotMatch(v1,/clip-path:/,'the free-prompt thinking loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
   assert.match(v1,/function applyTitleFill\(stage,progress\)\{const bar=\$\('\.prompt-thinking-bar i',stage\);if\(bar\)bar\.style\.width=`\$\{\(progress\*100\)\.toFixed\(2\)\}%`\}/);
@@ -963,8 +985,11 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   assert.doesNotMatch(css,/\.prompt-fill-progress\{[^}]*clip-path/,'clip-path cut ascenders and descenders in half');
 
   assert.match(css,/\.task-progress \.task-progress-track\{display:none\}/);
-  // Die Marke ist die Ueberschrift des Startbildschirms - sie ist es, die blau volllaeuft.
-  assert.match(html,/<strong class="prompt-fill-progress" style="--prompt-fill:6%">Prompt\.ai<\/strong>/);
+  // Der Startbildschirm traegt keine Marke mehr: Zeichen (104px) und Wortmarke (bis 47px) waren
+  // bei jedem Oeffnen ein grosses Logo, das niemand sehen wollte. Die Deckung bleibt - ohne sie
+  // blitzt die halbfertige Seite auf -, die Ueberschrift ist nur noch eine ruhige Zeile.
+  assert.match(html,/<strong class="prompt-fill-progress" style="--prompt-fill:6%">Einen Moment<\/strong>/);
+  assert.doesNotMatch(html,/id="promptAppBoot"[\s\S]{0,200}<img /,'kein Zeichen mehr auf dem Startschirm');
   // Kein Kicker mehr darueber: die Marke stand dort zweimal, einmal klein und einmal gross.
   assert.doesNotMatch(html,/id="promptAppBoot"[\s\S]{0,200}<span class="kicker">/);
   // Darunter zwei Saetze: wer noch kein Konto hat, hat auch keinen Arbeitsbereich, den man
@@ -1011,26 +1036,28 @@ test('the boot screen fills with the load it really has, then blinks blue once b
   assert.match(css,/@keyframes promptFillFlash\{0%\{opacity:1\}30%\{opacity:\.2\}/,'one blink, not a loop');
 });
 test('every loading screen ends the same way: full fill, blinking, then gone - and never flickers past',async()=>{
-  const transition=await text('transition-polish.js'),handoff=await text('mode-handoff-fix.js'),cleanup=await text('workflow-cleanup.js'),app=await text('app.js'),theme=await text('theme-init.js');
+  const loader=await text('promptai-loading-v2.js'),handoff=await text('mode-handoff-fix.js'),cleanup=await text('workflow-cleanup.js'),app=await text('app.js'),theme=await text('theme-init.js');
   // A screen that appears and disappears within 200ms reads as a glitch, so every one of them
   // stays for a shared minimum and keeps blinking until then.
   assert.match(theme,/const MIN_VISIBLE_MS=FLASH_MS\?2400:0;/);
   assert.match(theme,/return Math\.max\(FLASH_MS,MIN_VISIBLE_MS-elapsed\);/);
-  assert.match(transition,/const wait=window\.PromptAiFill\?\.tail\?\.\(shownAt\)\?\?FLASH_MS;/);
+  assert.match(loader,/const wait=window\.PromptAiFill\?\.tail\?\.\(Number\(host\.dataset\.shownAt\|\|0\)\)\?\?flash;/);
   assert.match(handoff,/const wait=window\.PromptAiFill\?\.tail\?\.\(startedAt\)\?\?flash;/);
-  assert.match(transition,/#promptWorkflowLoader,#promptAiTaskLoader,#promptBriefHandoff\)\.is-complete strong\{animation:promptFillFlash/,'every loading screen blinks the same way');
-  assert.match(transition,/if\(box\.classList\.contains\('is-complete'\)\)return;/,'sync() calls hide() repeatedly - restarting the blink would keep the screen up forever');
-  assert.match(transition,/box\.classList\.remove\('is-leaving','is-complete'\)/,'resumed work cancels the blink');
+  assert.match(loader,/#promptAiTaskLoader\.is-complete strong\{animation:promptFillFlash/,'every loading screen blinks the same way');
+  assert.match(loader,/if\(!host\|\|host\.dataset\.closing==='1'\)\{after\?\.\(\);return\}/,'a second call must not restart the blink and keep the screen up forever');
+  assert.match(loader,/host\.classList\.remove\('is-complete','is-leaving'\)/,'resumed work cancels the blink');
   assert.match(handoff,/\.prompt-mode-handoff\.is-complete strong\{animation:promptFillFlash/);
   assert.match(handoff,/setTimeout\(\(\)=>leave\(box\),flash\?wait:0\)/);
-  for(const [name,src] of [['transition-polish.js',transition],['mode-handoff-fix.js',handoff]])
-    assert.match(src,/'--prompt-flash-count',String\(Math\.max\(2,/,`${name}: zweimal blinken, wie ueberall`);
+  for(const [name,src] of [['promptai-loading-v2.js',loader],['mode-handoff-fix.js',handoff]])
+    assert.match(src,/'--prompt-flash-count',String\((FLASH_COUNT|Math\.max\(2,)/,`${name}: zweimal blinken, wie ueberall`);
   const v2=await text('promptai-loading-v2.js');
   assert.match(v2,/const FLASH_COUNT=2;/);
   // Ein zweiter Schirm ueber dem ersten waeren zwei Ladebilder fuer einen Uebergang.
   assert.match(handoff,/if\(document\.querySelector\('#promptWorkflowLoader,#promptAiTaskLoader'\)\)\{leave\(box\);return\}/);
   const design=await text('promptai-full-app-design.css');
-  assert.match(design,/body:has\(#promptWorkflowLoader\) :is\(#promptAiTaskLoader,#promptBriefHandoff\)/);
+  // Von vier Schirmen sind zwei uebrig: der Ladeschirm und die Uebergabe zwischen den Ablaufarten.
+  // Treffen sie doch aufeinander, tritt der Ladeschirm zurueck - die Uebergabe deckt den Neuladen.
+  assert.match(design,/body:has\(#promptModeHandoff\) #promptAiTaskLoader\{\s*display:none!important;/);
   // Das Zusammensetzen meldet sich beim gemeinsamen Ladeschirm an und wieder ab; das Ausformulieren
   // danach nimmt den Schirm nicht mehr - der Auftrag steht zu dem Zeitpunkt schon vollstaendig da.
   assert.match(cleanup,/window\.PromptAiLoading\?\.endTask\?\.\(ZUSAMMENBAU\)/);
@@ -1111,13 +1138,17 @@ test('building a website is its own tool on the home page, not a card at the end
 });
 
 test('one loading screen carries the run from the questions to the finished previews',async()=>{
-  const loader=await text('transition-polish.js'),app=await text('app.js'),html=await text('index.html');
-  // The same "Briefing wird geprüft" screen used to come back after the clarification dialog.
-  assert.match(loader,/let reviewAnswered=false,stageText='';/);
-  assert.match(loader,/show\(reviewAnswered\?'preview':'review'\)/);
-  assert.match(loader,/#saveClarificationsBtn,#deferClarificationsBtn'\)\)\{reviewAnswered=true/);
-  // Steps 4 and 5 are skipped automatically, so the screen must not blink away between them.
-  assert.match(loader,/if\(step===4\|\|step===5\|\|\(step===6&&document\.body\.dataset\.previewGenerating==='1'\)\)\{pendingFromReferences=false;if\(cleanMode\(\)\)show\('preview'\);else hide\(\)/);
+  const loader=await text('promptai-loading-v2.js'),app=await text('app.js'),html=await text('index.html');
+  // Frueher entschied der Schritt, welcher Schirm steht - und beim Schrittwechsel ging einer weg
+  // und ein anderer kam. Jetzt entscheidet die Anfrage: die Liste haelt fest, was laeuft, und
+  // weg ist der Schirm erst, wenn nichts mehr laeuft. Ein Wechsel taucht ihn nicht ab.
+  assert.match(loader,/const laufende=\[\];/);
+  assert.match(loader,/if\(laufende\.length\)\{renderTask\(host\);return\}/,'an ending task must not close a screen another task still needs');
+  // Uebernahme, Einordnung und Pruefung sind drei Anfragen mit einem Titel - so wechselt die
+  // Ueberschrift zwischen ihnen nicht, und der Weg von Enter bis zu den Rueckfragen ist ein Bild.
+  assert.match(loader,/intake:\{title:TITEL_BRIEFING/);
+  assert.match(loader,/review:\{title:TITEL_BRIEFING/);
+  assert.match(loader,/beginTask\(HANDOFF_KEY,\{title:TITEL_BRIEFING/);
   assert.match(loader,/promptai:preview-stage/,'the screen says what the run is really doing');
   assert.match(app,/previewStage\(imagesOnly\?`Bild 1 von \$\{count\} wird erstellt\.`:"Briefing wird verarbeitet\."\)/);
   assert.match(app,/Bild \$\{Math\.min\(done\+1,total\)\} von \$\{total\} wird erstellt\./);
@@ -1130,12 +1161,14 @@ test('one loading screen carries the run from the questions to the finished prev
 });
 
 test('a loading screen always finishes its fill, and its headline is not clipped',async()=>{
-  const loader=await text('transition-polish.js'),handoff=await text('mode-handoff-fix.js');
-  // A passing sync() used to remove the login screen ~120ms after hide(), so it flashed by.
-  assert.match(loader,/function hide\(immediate=false,force=false\)/);
-  assert.match(loader,/if\(!force&&flashTimer&&box\.classList\.contains\('is-complete'\)\)return;/);
-  assert.match(loader,/#promptWorkflowLoaderClose'\)\)\{userExited=true;pendingFromReferences=false;hide\(true,true\)/,'only the user may cut the blink short');
-  assert.match(loader,/if\(!shownAt\|\|box\.classList\.contains\('is-complete'\)\)shownAt=Date\.now\(\);/,'the login screen gets the shared minimum showtime too');
+  const loader=await text('promptai-loading-v2.js'),handoff=await text('mode-handoff-fix.js');
+  // Der Abgang laeuft ueber finishScreen(): fuellen, blinken, weg - und nur einmal, auch wenn
+  // mehrere Aufrufe ihn anstossen. Sonst startet das Blinken neu und der Schirm bleibt stehen.
+  assert.match(loader,/function finishScreen\(host,after\)/);
+  assert.match(loader,/host\.dataset\.closing='1';stopScreen\(host\);rampToFull\(host\);/);
+  // Nur der Nutzer darf den Abgang abkuerzen - ueber das ×, und erst nach der Rueckfrage.
+  assert.match(loader,/if\(!button\|\|button\.dataset\.confirmed!=='1'\)return;/,'only the user may cut the blink short');
+  assert.match(loader,/host\.dataset\.shownAt=String\(Date\.now\(\)\);/,'every screen gets the shared minimum showtime');
   // background-clip:text paints the glyphs inside the line box: 1.02 cut the tails off g and p.
   for(const src of [loader,handoff])assert.match(src,/padding-bottom:\.06em;font-size:clamp\(31px,8vw,4[78]px\);line-height:1\.14/);
 });
@@ -1451,8 +1484,9 @@ test('restoring a saved project state never lands on the old description form',a
 });
 test('the gap between start screen and briefing screen is covered',async()=>{
   const src=await text('promptai-loading-v2.js');
-  // Der Uebergabe-Schirm gehoert seit dem leeren Hintergrund mit in die Ausnahmeliste.
-  assert.match(src,/html\.prompt-handoff-pending body>\*:not\(#promptBriefHandoff\):not\(#promptAppBoot\):not\(#promptModeHandoff\)\{visibility:hidden!important\}/);
+  // Der Ladeschirm gehoert seit dem leeren Hintergrund mit in die Ausnahmeliste - und seit dem
+  // Zusammenlegen ist das #promptAiTaskLoader, auch fuer die Uebergabe von der Startseite.
+  assert.match(src,/html\.prompt-handoff-pending body>\*:not\(#promptAiTaskLoader\):not\(#promptAppBoot\):not\(#promptModeHandoff\)\{visibility:hidden!important\}/);
   assert.match(src,/document\.documentElement\.classList\.remove\('prompt-handoff-pending'\)/,'lifted as soon as the briefing screen stands');
   assert.match(src,/setTimeout\(\(\)=>document\.documentElement\.classList\.remove\('prompt-handoff-pending'\),4000\)/,'and never left standing if it does not');
 });
@@ -1623,15 +1657,17 @@ test('the mode handoff falls back to the keys a project start actually writes',a
 test('the free prompt waits behind the same loading screen as every other AI call',async()=>{
   const src=await text('free-prompt-ui.js'),loader=await text('promptai-loading-v2.js');
   assert.doesNotMatch(src,/startWorking|stopWorking|freePromptWorking/);
-  assert.match(loader,/'free-prompt':\{title:'Dein Prompt entsteht',kind:'freeprompt',done:'Prompt ist bereit'\}/);
+  assert.match(loader,/'free-prompt':\{title:'Dein Prompt entsteht',kind:'freeprompt'\}/);
   // Und das Ergebnisfenster geht erst mit dem fertigen Prompt auf, nicht schon davor.
   assert.doesNotMatch(src,/markWorking/);
 });
 
 test('workflow AI intake and refinement show a full loading surface before their requests',async()=>{
-  const flow=await text('mode-flow-ui.js'),app=await text('app.js'),loader=await text('promptai-loading-v2.js');
-  assert.ok(flow.indexOf("beginTask?.('workflow-intake'")<flow.indexOf("fetch('/api/models'"),'intake loader must start before the request');
-  assert.match(flow,/finally\{clearTimeout\(timer\);intakeBusy=false;window\.PromptAiLoading\?\.endTask\?\.\('workflow-intake'/);
+  const app=await text('app.js'),loader=await text('promptai-loading-v2.js');
+  // Der Intake braucht keinen eigenen Aufruf mehr: die Anfrage traegt action 'intake', und der
+  // fetch-Mantel zieht den Schirm auf, bevor sie rausgeht - frueher geht es nicht.
+  assert.match(loader,/intake:\{title:TITEL_BRIEFING/);
+  assert.match(loader,/beginWait\(task\);\n\s*try\{return await native\(input,init\)\}finally\{endWait\(\)\}/);
   assert.ok(app.indexOf("beginTask?.('workflow-refinement'")<app.indexOf('action:"refine"'),'refinement loader must start before the request');
   assert.match(app,/endTask\?\.\('workflow-refinement'/);
   assert.match(loader,/window\.PromptAiLoading=\{[\s\S]*beginTask,endTask/);
