@@ -132,3 +132,22 @@ test('kein Projekt schleppt die Vorlage des vorigen mit',async()=>{
   for(const feld of ['clarifications','projectReview','urls','images','documents','sourceUrls','understanding','refinements','selectedConceptId','selectedModuleIds','selectedSkillIds','templateId'])
     assert.match(reset,new RegExp(`state\\.${feld}\\s*=`),`beim Projektwechsel bleibt state.${feld} stehen`);
 });
+
+test('bei Widerspruch steht die Rangfolge fest im Auftrag',async()=>{
+  // Trifft ein Farbwunsch auf eine Kontrastanforderung, entschied die bauende KI bisher selbst -
+  // mal so, mal anders. Die Rangfolge steht unabhaengig davon da, ob ein Widerspruch gefunden wurde.
+  const text=await bau();
+  assert.match(text,/## RANGFOLGE BEI WIDERSPRUCH/);
+  const rang=text.slice(text.indexOf('## RANGFOLGE BEI WIDERSPRUCH'));
+  for(const [platz,wort] of [[1,/Belegte Fakten, Sicherheit/],[2,/Barrierefreiheit/],[3,/Funktion/],[4,/Das Hauptziel/],[5,/Gestaltungspräferenzen/]])
+    assert.match(rang,new RegExp(`${platz}\\. ${wort.source}`),`Platz ${platz} fehlt oder steht falsch`);
+  assert.ok(rang.indexOf('Barrierefreiheit')<rang.indexOf('Gestaltungspräferenzen'),'Barrierefreiheit steht über dem Gestaltungswunsch');
+});
+
+test('Rechtstexte werden nicht sprachlich überarbeitet, Inhaltstexte schon',async()=>{
+  // Zwei Regeln standen nebeneinander und widersprachen sich: Quelltexte duerfen ueberarbeitet
+  // werden - und Rechtstexte stammen ausschliesslich aus den Quellen.
+  const text=await bau();
+  assert.match(text,/Trennung der Textarten:[\s\S]{0,260}unverändert übernommen/);
+  assert.match(text,/Impressum, Datenschutz, AGB, Widerruf/);
+});
