@@ -2488,7 +2488,7 @@
 
   const AGENT_INSTRUCTIONS = {
     claude:`Arbeite wie ein sorgfältiger Implementierungsagent. Lies vorhandene Projekt- und Regeldateien zuerst. Leite aus diesem Briefing einen kurzen Umsetzungsplan ab, arbeite danach direkt am Projekt und erhalte bestehende Konventionen, sofern sie nicht dem Briefing widersprechen. Prüfe die fertige Oberfläche und behebe offensichtliche Fehler vor Abschluss.`,
-    codex:`Behandle dies als ausführbaren Repo-Auftrag. Prüfe zuerst Repository, Projektanweisungen und vorhandene Struktur. Implementiere die Aufgabe vollständig in den vorhandenen Dateien, führe passende Checks/Builds aus und behebe gefundene Fehler. Lass keine Platzhalter oder unnötigen TODOs zurück.`,
+    codex:`Behandle dies als ausführbaren Repo-Auftrag. Prüfe zuerst Repository, Projektanweisungen und vorhandene Struktur. Implementiere die Aufgabe vollständig in den vorhandenen Dateien, führe passende Checks/Builds aus und behebe gefundene Fehler. Lass keine technischen Provisorien zurück - kein Blindtext, keine TODO-Marken ohne Adressaten, keine halb verdrahteten Knöpfe. Ausdrücklich offene Angaben des Auftraggebers sind davon ausgenommen und bleiben sichtbar.`,
     gemini:`Nutze das Briefing als verbindliche Produktspezifikation. Analysiere zuerst Struktur, Referenzregeln und aktive Skills, bevor du Code oder Dateien erzeugst. Halte Designentscheidung und Implementierung konsistent und prüfe Desktop sowie Mobile.`,
     chatgpt:`Nutze dieses Dokument als Master-Briefing. Erstelle keine neue generische Interpretation, sondern halte die gewählte Richtung, Verbote und Referenzregeln ein. Wenn Code erzeugt wird, liefere zusammenhängende, ausführbare Änderungen statt isolierter Snippets.`,
     cursor:`Nutze das Briefing zusammen mit allen vorhandenen Repository-/Cursor-Regeln. Prüfe den bestehenden Code vor Änderungen, halte Dateistruktur und Konventionen ein und verifiziere die betroffenen Flows nach der Umsetzung.`,
@@ -2570,7 +2570,7 @@
     const heroLine=minimal
       ?`Hero: eine einzige vollflächige Bildfläche mit genau einer kurzen Überschrift darin. Keine Navigationsleiste, keine weiteren Abschnitte, keine Fußzeile - ${c.hero||"ein Bild, das die Seite trägt"}.`
       :`Hero: ${c.hero||"eine klare Aussage plus ein passendes Bild"}.${c.mirror?" Bild links, Text rechts.":""} Genau eine Überschrift, ein erklärender Satz und eine Primäraktion.`;
-    return `### Bauvorgabe für Aufbau und Bausteine (verbindlich, deckungsgleich mit der Bildvorschau)
+    return `### Bauvorgabe für Aufbau und Bausteine (verbindlich${hatVorschau()?", deckungsgleich mit der Bildvorschau":""})
 ${nav}
 ${heroLine}
 ${rhythm}
@@ -2762,6 +2762,20 @@ Eigenständigkeit (${orig}/100): Diese Vorgaben beschreiben das Gerüst, nicht e
   // Diese Funktion führt den Befund und das, was seither passiert ist, zusammen. Jede Frage und
   // jeder Hinweis bekommt einen Stand: RESOLVED (beantwortet oder inzwischen gegenstandslos),
   // BLOCKED (bewusst offen gelassen) oder OPEN. In den Auftrag geht nur, was nicht RESOLVED ist.
+  // Farbwörter, die in einer Beschreibung tatsächlich als Gestaltungswunsch vorkommen. Kein
+  // Farbraum-Rateverfahren: „schwarz auf weiß" als Redewendung wäre ein Fehlgriff, deshalb zählt
+  // nur, was mit einem Gestaltungswort in derselben Angabe steht oder allein dasteht.
+  //
+  // Achtung bei \b: „ß", „ä", „ö" und „ü" sind fuer JavaScript keine Wortzeichen. /\bweiß\b/
+  // findet „weiß" deshalb nicht - die Grenze hinter dem ß existiert nicht. Darum Umschau-Gruppen
+  // mit den deutschen Buchstaben statt \b.
+  const FARBWOERTER=/(?<![\wäöüß])(weiß|weiss|schwarz|grau|anthrazit|beige|creme|sand|braun|rot|bordeaux|orange|gelb|gold|grün|gruen|oliv|petrol|türkis|tuerkis|blau|marine|navy|lila|violett|flieder|rosa|pink|kupfer|silber|bronze)(?![\wäöüß])/gi;
+  const FARB_REDEWENDUNG=/schwarz auf weiß|schwarz auf weiss|grau in grau|ins schwarze|rote zahlen/i;
+  function genannteFarben(){
+    const p=project(),text=[p.description,p.special,p.goal].filter(Boolean).join(' ');
+    if(!text||FARB_REDEWENDUNG.test(text))return [];
+    return [...new Set((text.match(FARBWOERTER)||[]).map(x=>x.toLowerCase()))];
+  }
   const RESOLVERS=[
     // Ein fehlender Link ist erledigt, sobald irgendeine Quelle vorliegt - egal ob sie aus dem
     // Formular oder aus einer Antwort kam.
@@ -2774,6 +2788,17 @@ Eigenständigkeit (${orig}/100): Diese Vorgaben beschreiben das Gerüst, nicht e
     {match:/designrichtung|gestaltungsrichtung|stil|richtung|entwurf|layout/i,
      done:()=>Boolean(selectedConcept()),
      why:()=>`Richtung gewählt: ${selectedConcept()?.name||''}`},
+    // „Website … in weiß" steht in der Beschreibung - und trotzdem stand „Welche Farben sollen
+    // verwendet werden?" weiter als offene Frage im Auftrag. Wer eine Farbe nennt, hat die Frage
+    // beantwortet. Offen bleibt dann höchstens die Akzentfarbe, und genau das steht dann da,
+    // nicht noch einmal die ganze Frage.
+    {match:/\bfarb(?:e|en|wahl|gebung|schema|welt)\b|\bcolou?r/i,
+     done:()=>genannteFarben().length>0||Boolean(selectedConcept()?.palette?.length),
+     why:()=>{
+       const genannt=genannteFarben();
+       if(genannt.length)return `Farbe festgelegt: ${joinTerms(genannt)}${genannt.length===1?' — offen ist höchstens eine ergänzende Akzentfarbe':''}`;
+       return `Farbwelt der Richtung „${selectedConcept()?.name||''}“: ${(selectedConcept()?.palette||[]).join(' / ')}`;
+     }},
     {match:/projektname|name des projekts|firmenname|auftraggeber/i,
      done:()=>Boolean(project().client?.name||project().name),
      why:()=>`Auftraggeber steht fest: ${project().client?.name||project().name}`},
@@ -2813,8 +2838,29 @@ Eigenständigkeit (${orig}/100): Diese Vorgaben beschreiben das Gerüst, nicht e
   // Ein fehlendes Feld ist ein offener Punkt und wird auch so benannt.
   const feldOderOffen=value=>{
     const text=String(value??'').trim();
-    return text&&text!=='undefined'&&text!=='null'?text:'nicht festgelegt — aus Projekt und Zielgruppe herleiten, nichts erfinden';
+    return text&&text!=='undefined'&&text!=='null'?text:'nicht festgelegt — aus Projekt und Zielgruppe herleiten';
   };
+  // Ohne Bildvorschau redete der Auftrag trotzdem von ihr: „deckungsgleich mit der Bildvorschau",
+  // ein Abschnitt „Feinschliff nach der Vorschau", eine Regel gegen Artefakte des Bildmodells und
+  // eine Abnahme, die verlangte, „die gewählte Vorschau-Richtung" wiederzuerkennen. Vier Vorgaben
+  // zu etwas, das nicht existiert - die bauende KI sucht danach und findet nichts.
+  //
+  // Eine Vorschau gibt es genau dann, wenn ein Bild dazu vorliegt. Sonst verschwinden diese
+  // Stellen vollständig, statt in abgeschwächter Form stehen zu bleiben.
+  const hatVorschau=()=>Boolean(selectedConcept()?.previewImage);
+  // Und ohne Vorschau kann es auch keinen Feinschliff danach gegeben haben. Der Abschnitt fällt
+  // ganz weg, statt „Keine zusätzlichen Änderungen nach der Vorschau" zu melden.
+  // Die Nummer bleibt: andere Stellen verweisen auf „Abschnitt 6" und „Abschnitt 9", eine
+  // Umnummerierung würde diese Verweise ins Leere zeigen lassen. Was verschwindet, ist die
+  // Behauptung, es habe eine Vorschau gegeben.
+  function feinschliffBlock(){
+    const eintraege=state.refinements||[];
+    const titel=hatVorschau()?'FEINSCHLIFF NACH DER VORSCHAU':'NACHGETRAGENE ÄNDERUNGEN';
+    const text=eintraege.length
+      ? eintraege.map((r,i)=>`${i+1}. ${r.text}`).join('\n')
+      : (hatVorschau()?'Keine zusätzlichen Änderungen nach der Vorschau.':'Nach der Auswahl der Richtung wurden keine Änderungen nachgetragen.');
+    return `## 7. ${titel}\n${text}\n\n`;
+  }
   function projectStandpoint(){
     const review=state.projectReview||{};
     const antworten=new Map((state.clarifications||[]).map(x=>[x.question,x]));
@@ -2859,7 +2905,13 @@ Eigenständigkeit (${orig}/100): Diese Vorgaben beschreiben das Gerüst, nicht e
   }
   function clarificationPromptBlock(){
     const stand=projectStandpoint();
-    const festgelegt=stand.questions.filter(q=>q.state==='RESOLVED'&&q.answer).map(q=>clarificationFact(q.question,q.answer)).filter(Boolean);
+    // Eine Frage kann sich auch ohne Antwort erledigt haben: die Farbe steht in der Beschreibung,
+    // die Quelle wurde nachgetragen, die Richtung ist gewählt. Solche Punkte verschwanden bisher
+    // spurlos - sie standen weder als offen noch als festgelegt da. Jetzt steht die Festlegung da,
+    // mit dem Grund, aus dem sie gilt.
+    const festgelegt=stand.questions.filter(q=>q.state==='RESOLVED')
+      .map(q=>q.answer?clarificationFact(q.question,q.answer):(q.resolvedBy?`${q.topic}: ${endSentence(q.resolvedBy)}`:''))
+      .filter(Boolean);
     const offen=stand.questions.filter(q=>q.state==='OPEN');
     const blockiert=stand.questions.filter(q=>q.state==='BLOCKED');
     const hinweise=stand.notes.filter(n=>n.state!=='RESOLVED');
@@ -2909,10 +2961,27 @@ Eigenständigkeit (${orig}/100): Diese Vorgaben beschreiben das Gerüst, nicht e
     const p=project();
     return `Du bist ein erfahrener Senior-Webdesigner und Frontend-Entwickler und übernimmst dieses Projekt wie einen echten, bezahlten Kundenauftrag. Ziel ist eine tatsächlich funktionierende ${p.type||"Website"} für „${masterBrandName()||"dieses Projekt"}“, die das Hauptziel „${p.goal||"des Projekts"}“ bei „${p.audience||"der beschriebenen Zielgruppe"}“ wirklich erreicht – kein Showcase, kein Platzhalter-Entwurf.
 
-Spielraum: Seitenstruktur, Navigation, CMS-Wahl, konkrete Farbnutzung innerhalb der Richtung, Schriftgrößen, Komponenten, Bildplatzierung und Formulierungen entscheidest du eigenständig, zugeschnitten auf genau dieses eine Projekt. Kein Ergebnis darf wie eine austauschbare Vorlage oder wie ein anderes Prompt.ai-Projekt aussehen – Struktur, Aufbau, Buttons, Farben, Texte, Schriftarten und Bildplatzierung müssen sich immer wieder neu auf dieses Projekt einstellen.
+Spielraum: der Aufbau innerhalb einer Seite - Reihenfolge der Abschnitte, Navigation, CMS-Wahl, konkrete Farbnutzung innerhalb der Richtung, Schriftgrößen, Komponenten, Bildplatzierung und Formulierungen - entscheidest du eigenständig. Welche Seiten es gibt, ist dagegen entschieden und steht in \`SEITENSTRUKTUR.md\`; auch die dort genannten Pfade sind festgelegt, nicht Vorschläge, zugeschnitten auf genau dieses eine Projekt. Kein Ergebnis darf wie eine austauschbare Vorlage oder wie ein anderes Prompt.ai-Projekt aussehen – Struktur, Aufbau, Buttons, Farben, Texte, Schriftarten und Bildplatzierung müssen sich immer wieder neu auf dieses Projekt einstellen.
 Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), die verbindlichen Anti-Slop-Regeln (Abschnitt 9), die aktiven Pflichtprüfungen (Abschnitt 4) und das Verbot erfundener Fakten.`;
   }
 
+  // Die Abnahme verlangte „alle Buttons, Links, Formulare, Navigationen und CMS-Inhalte" - auch
+  // bei einem Projekt ohne ein einziges Formular und ohne CMS. Eine Abnahmeforderung zu etwas,
+  // das es nicht gibt, ist entweder nicht erfuellbar oder eine Aufforderung, es zu bauen.
+  //
+  // Geprueft wird deshalb, was das Projekt wirklich hat: ein Formular nur, wenn eines vorgesehen
+  // ist, ein CMS nur, wenn eines entschieden wurde. Buttons, Links und Navigation hat jede Seite.
+  function aktiveFunktionen(){
+    const antworten=(state.clarifications||[]).map(x=>x.answer||'').join(' ').toLowerCase();
+    const text=[project().description,project().special,project().goal,antworten].filter(Boolean).join(' ').toLowerCase();
+    const teile=['alle Buttons','Links','Navigationen'];
+    if(/formular|kontaktformular|anfrage|buchung|termin|newsletter|anmeldung/.test(text))teile.push('Formulare');
+    if(/sanity|wordpress|webflow|\bcms\b|redaktion|selbst pflegen|selber pflegen/.test(text))teile.push('CMS-Inhalte');
+    // Ohne Wortgrenze traf „karte" wieder mitten in „Speisekarte" - dieselbe Falle wie bei den
+    // Antwortbegriffen.
+    if(/\banfahrt\b|\bmaps\b|\bkarte\b|\bstadtplan\b/.test(text))teile.push('die Kartendarstellung');
+    return joinTerms(teile);
+  }
   function cmsPromptBlock(){
     const answers=state.clarifications.map(x=>x.answer||"").join(" ").toLowerCase();
     if(/sanity/.test(answers))return `CMS: Sanity ist entschieden. Leite die Schemas aus den tatsächlich benötigten Inhalten ab, statt eine Universalstruktur zu kopieren. Trenne globale Einstellungen, Navigation, Seiten und wiederholbare Inhaltstypen sinnvoll. Verwende für Betreiber verständliche Feldtitel und Beschreibungen, eine logische Feldreihenfolge, Validierungen und hilfreiche Vorschauen. Konfiguriere Project ID, Dataset, API-Version, CORS, Draft/Preview-Verhalten und Environment Variables ohne Secrets im Client. Für dieses Projekt besonders prüfen: Beiträge/Fototagebuch, Bildmetadaten, Alt-Texte, Veröffentlichungsdatum, Kategorien und SEO-Felder.`;
@@ -3219,8 +3288,8 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
 
 Diese Datei gehört zu MASTER-PROMPT.md und ist die verbindliche Seitenliste für dieses Projekt.
 
-- Baue keine Seite, die hier nicht steht, und lasse keine hier genannte Seite weg.
-- Die Pfade sind Vorschläge aus der bestehenden Website; du darfst sie umbenennen, aber nicht zusammenlegen, ohne es zu begründen.
+- Baue keine Seite, die hier nicht steht, und lasse keine hier genannte Seite weg.\n- Verbindlich ist die Liste der Seiten und ihre Pfade. Wie die Inhalte innerhalb einer Seite angeordnet werden, entscheidest du - das ist der gestalterische Spielraum aus dem Master-Prompt.
+- Die Pfade sind entschieden; du darfst sie weder umbenennen noch zusammenlegen, ohne es zu begründen.
 - „Offen“ ist kein Freibrief zum Erfinden. Eine Seite ohne belegten Inhalt entsteht mit sichtbarer Lücke, oder sie entsteht nicht – und die Entscheidung wird im Ergebnis benannt.
 - Alle Kontakt-, Zeit- und Ortsangaben stammen ausschließlich aus dem Abschnitt „Gesicherte Fakten aus den Quellen“ im Master-Prompt.
 
@@ -3351,9 +3420,9 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     const moduleBlock=mods.length?`\n## AKTIVE PROMPT-MODULE\n${mods.map((m,i)=>`### ${i+1}. ${m.name}${m.tag?` [${m.tag}]`:""}\n${m.prompt}`).join("\n\n")}\n`:"";
     const skillBlock=skills.length?`\n## AKTIVE AGENT-SKILLS\nDiese Regeln sind zusätzlich verbindlich, wenn ihr Trigger zur Aufgabe passt. Wenn ein Skill aus einer Datei importiert wurde, behandle den eingebetteten Inhalt wie die gelesene Skill-/Agent-Datei.\n\n${skills.map((s,i)=>`### ${i+1}. ${s.name}\nAgent: ${s.agent==="all"?"Alle Agents":AGENT_NAMES[s.agent]||s.agent}\nTrigger: ${s.trigger||"bei passender Aufgabe"}${s.sourceFile?`\nQuelle: ${s.sourceFile}`:""}\n\n${s.prompt}`).join("\n\n")}\n`:"";
     const refinementBlock=state.refinements.length?state.refinements.map((r,i)=>`${i+1}. ${r.text}`).join("\n"):"Keine zusätzlichen Änderungen nach der Vorschau.";
-    const finalCompliance=state.settings.finalChecklist?`\n9. alle unter „Pflichtprüfungen & rechtlicher Rahmen“ aktivierten Bereiche geprüft und offene Punkte transparent benannt wurden,\n10. keine rechtliche Konformität, Einwilligung oder Pflichtinformation erfunden wurde,\n11. generische KI-Texte, künstliche Dreiermuster und unnötige Standardsektionen entfernt wurden,\n12. alle Buttons, Links, Formulare, Navigationen und CMS-Inhalte im echten Ablauf funktionieren,\n13. Mobile, Tastaturbedienung, reduzierte Bewegung, Build, Console und 404-Pfade geprüft wurden.`:"";
+    const finalCompliance=state.settings.finalChecklist?`\n9. alle unter „Pflichtprüfungen & rechtlicher Rahmen“ aktivierten Bereiche geprüft und offene Punkte transparent benannt wurden,\n10. keine rechtliche Konformität, Einwilligung oder Pflichtinformation erfunden wurde,\n11. generische KI-Texte, künstliche Dreiermuster und unnötige Standardsektionen entfernt wurden,\n12. ${aktiveFunktionen()} im echten Ablauf funktionieren,\n13. Mobile, Tastaturbedienung, reduzierte Bewegung, Build, Console und 404-Pfade geprüft wurden.`:"";
     const agentQuestionRule=state.settings.aiClarifications?"Wenn während der Umsetzung ein fehlender, widersprüchlicher oder nicht machbarer Punkt auftaucht, stelle eine kurze konkrete Gegenfrage, sofern die Antwort das Ergebnis wesentlich verändert. Bei einem Blocker erkläre das Problem knapp und nenne eine machbare Alternative, wenn eine existiert.":"Stelle keine zusätzlichen Präferenzfragen. Wenn ein echter Blocker auftritt, benenne ihn knapp und markiere die nötige Entscheidung; erfinde keine fehlenden Fakten.";
-    return agentDocument(`# PROMPT.AI MASTER-PROMPT — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhältst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fünf neue Richtungen. Setze die ausgewählte Richtung konsequent um und nutze Referenzen nur für die ausdrücklich freigegebenen Eigenschaften.\n\n## SO IST DIESES BRIEFING AUFGEBAUT\nVier Arten von Angaben, mit unterschiedlichem Gewicht:\n1. ENTSCHIEDEN — Projekt, gewählte Designrichtung, Feinschliff, Module, Skills. Das ist gesetzt und wird umgesetzt, nicht neu verhandelt.\n2. BELEGT — gesicherte Fakten aus den Quellen und die Seitenliste. Nur daraus dürfen Kontakt-, Orts-, Zeit- und Preisangaben stammen.\n3. RAHMEN — Reihenfolge, Umfang, Pflichtprüfungen, Anti-Slop-Regeln, Arbeitsweise deiner Ziel-KI. Das begrenzt, wie weit du gehst.\n4. OFFEN — alles unter „noch zu liefern“ und jede als offen markierte Stelle. Diese Punkte werden sichtbar gemacht, niemals gefüllt.\n\nBei Widerspruch gilt: belegt schlägt entschieden, entschieden schlägt Rahmen, und offen wird nie stillschweigend geschlossen.\n\n## ROLLE, AUFTRAG & SPIELRAUM\n${rolePromptBlock()}\n${templateBlock}\n## 1. PROJEKT\nName der Marke auf der Seite: ${masterBrandName()||"nicht festgelegt"}${masterBrandName()&&p.name&&masterBrandName()!==p.name?`\nInterner Projekttitel (nicht auf der Website verwenden): ${p.name}`:""}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${projectAudience()||"nicht ausdrücklich angegeben"}\n\nBeschreibung und besonderer Wunsch stehen unbearbeitet in den eigenen Worten des Auftraggebers. Lies sie fachlich, erschliesse daraus Vorhaben, Ort, Branche und Gestaltungswunsch und formuliere sie in deiner Arbeit selbst aus. Uebernimm die Formulierung nicht woertlich und ergaenze nichts, was dort nicht steht.\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusätzlicher Wunsch."}\n${verifiedFactsBlock()}\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritäten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}${situationsBlock()}\n\n## 3. PROJEKTPRÜFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÜFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese Entwicklungsprüfung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen Prüfpunkt statt Sicherheit vorzutäuschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Übernimm nur die jeweils ausgewählten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÄHLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nKomposition: ${feldOderOffen(c.layoutVariant)}\nLayoutprinzip: ${feldOderOffen(c.layout)}\nHero: ${feldOderOffen(c.hero)}\nTypografie: ${feldOderOffen(c.type)}\nPalette: ${(c.palette||[]).join(" / ")||"nicht festgelegt — Farben aus Marke, Material und Zielgruppe herleiten"}\nPreview-Headline: ${feldOderOffen(c.headline)}\nPreview-Subline: ${feldOderOffen(c.subline)}\n\n${componentSpecBlock(c,ctrl)}`:"Es wurde noch keine Designrichtung ausgewählt."}\n\n## 7. FEINSCHLIFF NACH DER VORSCHAU\n${refinementBlock}\n\n## 8. DESIGNREGLER\n- Originalität: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und drei Karten; keine austauschbare Navigationsfolge oder künstliche Kennzahlenzeile.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-Flächen, Glow-Effekte, Farbverläufe, pillenförmigen Dauer-Buttons, symmetrischen Standardkarten, starren Text-Bild-Zickzackfolgen oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als Standardlösung für beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Preise, Öffnungszeiten, Kundenlogos, Zertifikate, Kunden, Referenzen, Auszeichnungen oder sonstige Unternehmensfakten. Fehlende Inhalte als offene Punkte kennzeichnen.\n- Keine generischen Marketingfloskeln oder künstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewählten Richtung gehören.\n- Bildsprache und Typografie müssen den Charakter tragen; Container dürfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenständig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÜR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n${buildOrderBlock()}${scopeBlock()}\n## 11. UMSETZUNGSANFORDERUNGEN\n${languageRequirement()}\n- Responsive ab kleinen Mobilgeräten bis große Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und Bildgrößen bewusst behandeln; unnötige Abhängigkeiten vermeiden.\n- Zentrale Design-Tokens für Farben, Typografie, Abstände, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Jede angezeigte Telefonnummer, E-Mail, Adresse, Öffnungszeit, Preis- und Jahresangabe stammt aus „Gesicherte Fakten aus den Quellen“ oder aus \`PROJEKT-QUELLEN.md\`. Nicht auffindbare Werte bleiben sichtbar offene Punkte statt Platzhalter, die echt aussehen.\n- Texte, Zahlen und Namen aus dem Vorschaubild sind Artefakte des Bildmodells und werden nie übernommen.\n- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. die gewählte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist,\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berücksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster übrig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsächlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen,\n8. jede angezeigte Kontakt-, Orts-, Zeit- und Preisangabe auf eine benannte Quelle zurückführbar ist und der Rest sichtbar als offen markiert wurde.${finalCompliance}\n${acceptanceBlock()}${contentNeedsBlock()}${RANGFOLGE}\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`,state.targetAgent);
+    return agentDocument(`# PROMPT.AI MASTER-PROMPT — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhältst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fünf neue Richtungen. Setze die ausgewählte Richtung konsequent um und nutze Referenzen nur für die ausdrücklich freigegebenen Eigenschaften.\n\n## SO IST DIESES BRIEFING AUFGEBAUT\nVier Arten von Angaben, mit unterschiedlichem Gewicht:\n1. ENTSCHIEDEN — Projekt, gewählte Designrichtung, Feinschliff, Module, Skills. Das ist gesetzt und wird umgesetzt, nicht neu verhandelt.\n2. BELEGT — gesicherte Fakten aus den Quellen und die Seitenliste. Nur daraus dürfen Kontakt-, Orts-, Zeit- und Preisangaben stammen.\n3. RAHMEN — Reihenfolge, Umfang, Pflichtprüfungen, Anti-Slop-Regeln, Arbeitsweise deiner Ziel-KI. Das begrenzt, wie weit du gehst.\n4. OFFEN — alles unter „noch zu liefern“ und jede als offen markierte Stelle. Diese Punkte werden sichtbar gemacht, niemals gefüllt.\n\nBei Widerspruch gilt: belegt schlägt entschieden, entschieden schlägt Rahmen, und offen wird nie stillschweigend geschlossen.\n\n## ROLLE, AUFTRAG & SPIELRAUM\n${rolePromptBlock()}\n${templateBlock}\n## 1. PROJEKT\nName der Marke auf der Seite: ${masterBrandName()||"nicht festgelegt"}${masterBrandName()&&p.name&&masterBrandName()!==p.name?`\nInterner Projekttitel (nicht auf der Website verwenden): ${p.name}`:""}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${projectAudience()||"nicht ausdrücklich angegeben"}\n\nBeschreibung und besonderer Wunsch stehen unbearbeitet in den eigenen Worten des Auftraggebers. Lies sie fachlich, erschliesse daraus Vorhaben, Ort, Branche und Gestaltungswunsch und formuliere sie in deiner Arbeit selbst aus. Uebernimm die Formulierung nicht woertlich und ergaenze nichts, was dort nicht steht.\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusätzlicher Wunsch."}\n${verifiedFactsBlock()}\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritäten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}${situationsBlock()}\n\n## 3. PROJEKTPRÜFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÜFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese Entwicklungsprüfung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen Prüfpunkt statt Sicherheit vorzutäuschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Übernimm nur die jeweils ausgewählten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÄHLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nKomposition: ${feldOderOffen(c.layoutVariant)}\nLayoutprinzip: ${feldOderOffen(c.layout)}\nHero: ${feldOderOffen(c.hero)}\nTypografie: ${feldOderOffen(c.type)}\nPalette: ${(c.palette||[]).join(" / ")||"nicht festgelegt — Farben aus Marke, Material und Zielgruppe herleiten"}\n${hatVorschau()?"Preview-":"Vorgeschlagene "}Headline: ${feldOderOffen(c.headline)}\n${hatVorschau()?"Preview-":"Vorgeschlagene "}Subline: ${feldOderOffen(c.subline)}\n\n${componentSpecBlock(c,ctrl)}`:"Es wurde noch keine Designrichtung ausgewählt."}\n\n${feinschliffBlock()}## 8. DESIGNREGLER\n- Originalität: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und drei Karten; keine austauschbare Navigationsfolge oder künstliche Kennzahlenzeile.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-Flächen, Glow-Effekte, Farbverläufe, pillenförmigen Dauer-Buttons, symmetrischen Standardkarten, starren Text-Bild-Zickzackfolgen oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als Standardlösung für beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Preise, Öffnungszeiten, Kundenlogos, Zertifikate, Kunden, Referenzen, Auszeichnungen oder sonstige Unternehmensfakten. Fehlende Inhalte als offene Punkte kennzeichnen.\n- Keine generischen Marketingfloskeln oder künstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewählten Richtung gehören.\n- Bildsprache und Typografie müssen den Charakter tragen; Container dürfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenständig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÜR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n${buildOrderBlock()}${scopeBlock()}\n## 11. UMSETZUNGSANFORDERUNGEN\n${languageRequirement()}\n- Responsive ab kleinen Mobilgeräten bis große Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und Bildgrößen bewusst behandeln; unnötige Abhängigkeiten vermeiden.\n- Zentrale Design-Tokens für Farben, Typografie, Abstände, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Jede angezeigte Telefonnummer, E-Mail, Adresse, Öffnungszeit, Preis- und Jahresangabe stammt aus „Gesicherte Fakten aus den Quellen“ oder aus \`PROJEKT-QUELLEN.md\`. Nicht auffindbare Werte bleiben sichtbar offene Punkte statt Platzhalter, die echt aussehen.\n- Zwei Arten von Lücken, die nicht verwechselt werden dürfen: technische Provisorien (auskommentierter Code, Blindtext, TODO-Marken ohne Adressaten, halb verdrahtete Knöpfe) gehören nicht ins fertige Ergebnis. Fehlende Angaben des Auftraggebers dagegen bleiben ausdrücklich offen, sichtbar gekennzeichnet und am Ende in einer Liste benannt — sie wegzulassen oder auszufüllen wäre beides falsch.\n- Fehlt eine Pflichtangabe (Impressum, Datenschutz), ist das Projekt technisch fertig, aber nicht veröffentlichungsbereit. Sage das am Ende in einem Satz, statt Fertigstellung zu melden oder den Text selbst zu schreiben.\n${hatVorschau()?"- Texte, Zahlen und Namen aus dem Vorschaubild sind Artefakte des Bildmodells und werden nie übernommen.\n":""}- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. ${hatVorschau()?"die gewählte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist":"die gewählte Designrichtung im realen Layout klar wiederzuerkennen ist"},\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berücksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster übrig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsächlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen,\n8. jede angezeigte Kontakt-, Orts-, Zeit- und Preisangabe auf eine benannte Quelle zurückführbar ist und der Rest sichtbar als offen markiert wurde.${finalCompliance}\n${acceptanceBlock()}${contentNeedsBlock()}${RANGFOLGE}\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`,state.targetAgent);
   }
 
   // The app assembles every fact deterministically; with a cloud connection the AI then writes the

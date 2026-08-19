@@ -85,7 +85,9 @@ test('eine Stichwortantwort wird zur Aussage, eine Verneinung bleibt stehen',asy
 
 test('unbeantwortete Rückfragen stehen offen und in der Nachreichliste',async()=>{
   const frage='Welche Farben sollen verwendet werden?';
-  const text=await bau({projectReview:{questions:[{question:frage}]},clarifications:[{question:frage,answer:''}]});
+  // Ohne Farbwort in der Beschreibung bleibt die Frage offen - mit einem waere sie beantwortet.
+  const text=await bau({projectReview:{questions:[{question:frage}]},clarifications:[{question:frage,answer:''}]},
+    {description:'Website für einen Dönerladen in Stadthagen, sauber strukturiert'});
   assert.match(text,/Noch offen \(nicht erfinden, sichtbar als offen führen\):[\s\S]{0,120}Farben/);
   assert.match(text,/## NOCH ZU LIEFERN[\s\S]{0,600}Antwort auf: Farben/,'sonst fällt sie genau dort heraus, wo sie nachgereicht würde');
 });
@@ -153,4 +155,55 @@ test('Rechtstexte werden nicht sprachlich überarbeitet, Inhaltstexte schon',asy
   const text=await bau();
   assert.match(text,/Trennung der Textarten:[\s\S]{0,260}unverändert übernommen/);
   assert.match(text,/Impressum, Datenschutz, AGB, Widerruf/);
+});
+
+test('eine in der Beschreibung genannte Farbe beantwortet die Farbfrage',async()=>{
+  // „Website … in weiß" stand in der Beschreibung - und trotzdem fragte der Auftrag weiter
+  // „Welche Farben sollen verwendet werden?". Ein aufgeloester Punkt darf nicht offen erscheinen.
+  const frage='Welche Farben sollen verwendet werden?';
+  const text=await bau({projectReview:{questions:[{question:frage}]},clarifications:[{question:frage,answer:''}]});
+  assert.doesNotMatch(text,/Noch offen[\s\S]{0,200}Farben/);
+  assert.match(text,/Farben: Farbe festgelegt: weiß/);
+  assert.match(text,/offen ist höchstens eine ergänzende Akzentfarbe/,'offen bleibt das Genaue, nicht die ganze Frage');
+  assert.doesNotMatch(text,/Antwort auf: Farben/);
+});
+
+test('ohne Bildvorschau spricht der Auftrag nicht von einer',async()=>{
+  // Vier Vorgaben zu etwas, das nicht existiert: „deckungsgleich mit der Bildvorschau", ein
+  // Abschnitt „Feinschliff nach der Vorschau", eine Regel gegen Artefakte des Bildmodells und
+  // eine Abnahme, die verlangte, die Vorschau-Richtung wiederzuerkennen.
+  const ohne=await bau({__concept:{name:'Klar',mood:'ruhig',palette:['#fff'],headline:'H'}});
+  for(const behauptung of [/deckungsgleich mit der Bildvorschau/,/FEINSCHLIFF NACH DER VORSCHAU/,/Vorschaubild/,/Vorschau-Richtung/,/Preview-Headline/])
+    assert.doesNotMatch(ohne,behauptung,`spricht ohne Vorschau von einer: ${behauptung}`);
+  assert.match(ohne,/## 7\. NACHGETRAGENE ÄNDERUNGEN/,'die Nummer bleibt - andere Stellen verweisen auf „Abschnitt 6" und „Abschnitt 9"');
+  assert.match(ohne,/die gewählte Designrichtung im realen Layout klar wiederzuerkennen ist/);
+  // Mit Vorschau kommen sie alle zurueck.
+  const mit=await bau({__concept:{name:'Klar',mood:'ruhig',palette:['#fff'],headline:'H',previewImage:'data:image/png;base64,AA'}});
+  for(const behauptung of [/deckungsgleich mit der Bildvorschau/,/FEINSCHLIFF NACH DER VORSCHAU/,/Vorschaubild/,/Vorschau-Richtung/,/Preview-Headline/])
+    assert.match(mit,behauptung,`fehlt trotz Vorschau: ${behauptung}`);
+});
+
+test('die Abnahme verlangt nur Funktionen, die das Projekt hat',async()=>{
+  const ohne=await bau({},{description:'Website für einen Dönerladen, Speisekarte und Öffnungszeiten zeigen',special:''});
+  assert.match(ohne,/alle Buttons, Links und Navigationen im echten Ablauf funktionieren/);
+  assert.doesNotMatch(ohne,/Formulare(?:, | und )CMS/,'ein Projekt ohne Formular und CMS wird nicht danach abgenommen');
+  // „Speisekarte" darf keine Kartendarstellung ausloesen - dieselbe Wortgrenzen-Falle wie zuvor.
+  assert.doesNotMatch(ohne,/die Kartendarstellung/);
+  const mit=await bau({},{description:'Website mit Kontaktformular und Anfahrt über eine Karte',special:'das Team pflegt die Inhalte selbst per WordPress'});
+  assert.match(mit,/Formulare/);
+  assert.match(mit,/CMS-Inhalte/);
+  assert.match(mit,/die Kartendarstellung/);
+});
+
+test('die Seitenliste ist verbindlich, der Seitenaufbau ist frei',async()=>{
+  // Der Auftrag gab „Seitenstruktur" als Spielraum frei, waehrend SEITENSTRUKTUR.md sie
+  // gleichzeitig verbindlich machte - ein Widerspruch mitten im selben Dokument.
+  const api=await bauer();
+  api.set(GRUND,KUNDE);
+  const text=api.buildMasterPrompt(),struktur=api.structureDocument();
+  assert.match(text,/Spielraum: der Aufbau innerhalb einer Seite/);
+  assert.doesNotMatch(text,/Spielraum: Seitenstruktur/);
+  assert.match(text,/Welche Seiten es gibt, ist dagegen entschieden/);
+  assert.match(struktur,/Verbindlich ist die Liste der Seiten und ihre Pfade/);
+  assert.doesNotMatch(struktur,/Die Pfade sind Vorschläge/,'einmal entschieden ist kein Vorschlag mehr');
 });
