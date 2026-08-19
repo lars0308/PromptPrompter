@@ -37,18 +37,19 @@ test('master prompt transition is a short intentional handoff',async()=>{
   const src=await text('workflow-cleanup.js');
   assert.match(src,/const MASTER_TITEL='Dein Master-Prompt entsteht'/);
   // Der Master-Prompt entsteht in zwei Zuegen (zusammensetzen, dann von der KI ausschreiben).
-  // Den Ladeschirm bekommt nur der erste: bis er durch ist, steht nichts da. Nach ihm liegt ein
-  // vollstaendiger Auftrag im Feld, und den hinter einem Vollbildschirm wegzusperren laesst
-  // zwanzig Sekunden lang auf etwas warten, das man laengst kopieren koennte.
+  // Beide teilen sich denselben Ladeschirm, damit er durchlaeuft statt zwischendurch wegzugehen -
+  // und er endet, sobald genug geschrieben ist, um mitlesen zu koennen.
   assert.match(src,/const ZUSAMMENBAU='master-zusammenbau';/);
-  assert.doesNotMatch(src,/KI_LAUF/,'the rewrite no longer takes the screen');
+  assert.doesNotMatch(src,/KI_LAUF/,'the rewrite shares the one screen, it does not open a second');
   assert.match(src,/note\.className='master-ai-note'/,'it says what it does in a line next to the prompt');
   assert.match(src,/meta\.insertAdjacentElement\('afterend',note\)/,'beside #promptMeta, whose innerHTML is rewritten');
-  assert.match(src,/der Auftrag unten ist bereits vollständig und kann kopiert werden/);
+  assert.match(src,/Wird gerade geschrieben – du kannst schon mitlesen\./);
+  assert.match(src,/const MASTER_KI_MAX_WAIT=30000;/,'…and the writing phase has its own bounded wait');
   assert.doesNotMatch(src,/master-generation-spinner/,'keine eigene Anzeige mehr mitten in der Schrittseite');
   assert.doesNotMatch(src,/classList\.add\('master-generating'\)/);
   assert.match(src,/const MASTER_MAX_WAIT=8000;/,'the overlay must always be released after a bounded wait');
-  assert.match(src,/Date\.now\(\)-start>=MASTER_MAX_WAIT/,'the wait cap must actually be checked in the poll');
+  assert.match(src,/const wartezeit=kiSchreibt\?MASTER_KI_MAX_WAIT:MASTER_MAX_WAIT;/);
+  assert.match(src,/Date\.now\(\)-start>=wartezeit/,'the wait cap must actually be checked in the poll');
   assert.doesNotMatch(src,/elapsed<3200/,'a finished master prompt must never be hidden behind an artificial minimum delay');
   assert.doesNotMatch(src,/elapsed<30000/,'a failed build must not leave the user on a spinner for 30s');
 });
@@ -975,7 +976,7 @@ test('every loading screen shows its progress in the headline, not in a thin bar
   assert.match(themeBoot,/is-marken-endung/);
   const layers=await readFile(path.join(root,'promptai-ui-layers.css'),'utf8');
   assert.match(layers,/\.prompt-fill-word\.is-marken-endung\{background-image:linear-gradient\(90deg,var\(--ink,#1e3a5f\)/);
-  assert.match(cleanup,/beginTask\?\.\(ZUSAMMENBAU,\{title:MASTER_TITEL,kind:'build'\}\)/,'der Master-Prompt nutzt den gemeinsamen Ladeschirm');
+  assert.match(cleanup,/beginTask\?\.\(ZUSAMMENBAU,\{title:kiSchreibt\?MASTER_KI_TITEL:MASTER_TITEL,kind:'build'\}\)/,'der Master-Prompt nutzt den gemeinsamen Ladeschirm - beide Zuege denselben');
   assert.match(app,/box\?\.style\.setProperty\('--prompt-fill',`\$\{pct\}%`\);label\?\.classList\.add\('prompt-fill-progress'\)/,'inline task progress');
 });
 test('starting a new project does not ask first, and finished projects are marked as such',async()=>{
@@ -1172,6 +1173,33 @@ test('a first-time visitor gets three sentences before the first empty field',as
   assert.match(intro,/#cookieBanner\[open\],#appActionDialog\[open\],#maintenanceDialog\[open\]/,'never on top of something that has to be answered first');
   assert.match(loader,/\.\/welcome-intro-ui\.js\?v=\d{8}-\d+/);
   assert.ok(sw.includes('/welcome-intro-ui.js'));
+});
+
+// Der Master-Prompt braucht rund eine Minute. Frueher lief in dieser Minute ein Ladeschirm, danach
+// stand der zusammengesetzte Auftrag da, und noch spaeter sprang die ausformulierte Fassung an
+// seine Stelle - dreimal etwas anderes. Jetzt laeuft der Ladeschirm durch, bis ein Viertel des
+// Textes da ist, und danach schreibt sich der Text ins Feld.
+test('the master prompt is written into the field instead of appearing twice',async()=>{
+  const app=await text('app.js'),ablauf=await text('workflow-cleanup.js'),route=await text('api/generate.js');
+  assert.match(app,/const MASTER_VORLAUF=0\.25/,'a quarter is the head start; the first character alone looks like twitching');
+  assert.match(app,/voll\.length>=schwelle\)oeffne\(\)/,'the reveal hangs on the received share, not on a timer');
+  assert.match(app,/state:'writing'/,'…and it announces itself, so the overlay knows when to go');
+  // Solange die KI schreibt, bleibt das Feld leer - sonst laege der zusammengesetzte Auftrag
+  // darin und wuerde eine Minute spaeter ersetzt.
+  assert.match(app,/const kiAmWerk=!written&&\(masterAiRunning\|\|willMasterAiWrite\(\)\);/);
+  assert.match(app,/else if\(!masterAiRunning\)el\.masterPrompt\.value='';/,'geleert wird einmal am Anfang, nicht bei jedem Neuzeichnen');
+  // Und wenn der Stream ausfaellt, bevor etwas zu sehen war, holt der gewoehnliche Weg den Text.
+  assert.match(app,/catch\(error\)\{if\(schreiber\.sichtbar\)throw error;written=await fetchMasterPrompt\(assembled\)\}/);
+  assert.match(app,/const MASTER_GEDULD_MS=25000/,'a stream that never reaches the quarter must not hold the screen forever');
+  assert.match(app,/schreiber\.aufgeben\(assembled\)/,'…the assembled briefing takes over in that case');
+  assert.match(ablauf,/if\(state==='start'\)kiSchreibt=true/);
+  assert.match(ablauf,/if\(state==='writing'\)\{[\s\S]{0,200}endTask\?\.\(ZUSAMMENBAU\)/,'the overlay ends when there is something to read');
+  assert.match(route,/action==='master-prompt'&&req\.body\?\.stream===true\)return masterPromptStream/);
+  // runSystemProfiles faengt die ganze Antwort in einem Zwischenspeicher auf - das Gegenteil von
+  // durchreichen. Der Streamweg muss davor abzweigen.
+  assert.ok(route.indexOf('stream===true')<route.indexOf("action==='master-prompt')return runSystemProfiles"),'the stream must branch off before the buffering route');
+  const sw=await text('sw.js');
+  assert.ok(sw.includes('/workflow-cleanup.js'));
 });
 
 test('the footer year does not depend on an inline script at the end of a cached document',async()=>{

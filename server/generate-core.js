@@ -635,3 +635,7 @@ module.exports = async function handler(req,res){
 };
 
 
+
+// Der Streamweg (server/master-prompt-stream.js) baut denselben Auftrag, nur mit umgestellter
+// Schlusszeile. Zwei getrennte Vorlagen waeren zwei Staende derselben Anweisung.
+module.exports.makeMasterPromptPrompt=makeMasterPromptPrompt;

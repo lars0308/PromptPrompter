@@ -1,6 +1,6 @@
 (()=>{
   'use strict';
-  const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];let masterTimer=0,lastMasterSignature='',observer=null,masterStepActive=false;
+  const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];let masterTimer=0,lastMasterSignature='',observer=null,masterStepActive=false,kiSchreibt=false;
   const MASTER_MAX_WAIT=8000;
   const setText=(node,value)=>{if(node&&node.textContent!==value)node.textContent=value};
   
@@ -48,11 +48,15 @@
     const ready=()=>($('#masterPrompt')?.value?.trim()||'');
     // The prompt is assembled synchronously, so in practice it is already there. Never hold the
     // finished result behind an artificial delay, and always release the overlay after the cap.
-    if(ready().length>=80||($('#projectValidation')?.textContent||'').trim()){done(ready());return}
-    window.PromptAiLoading?.beginTask?.(ZUSAMMENBAU,{title:MASTER_TITEL,kind:'build'});
+    if((ready().length>=80&&!kiSchreibt)||($('#projectValidation')?.textContent||'').trim()){done(ready());return}
+    window.PromptAiLoading?.beginTask?.(ZUSAMMENBAU,{title:kiSchreibt?MASTER_KI_TITEL:MASTER_TITEL,kind:'build'});
     const start=Date.now(),check=()=>{
       const prompt=ready();
-      if(prompt.length>=80||($('#projectValidation')?.textContent||'').trim()||Date.now()-start>=MASTER_MAX_WAIT){done(prompt);return}
+      // Schreibt die KI, wird nicht auf den Text gewartet, sondern auf ihr Zeichen: sie meldet
+      // sich, sobald genug da ist, um zusehen zu koennen. Die Obergrenze faengt nur den Fall ab,
+      // dass diese Meldung ausbleibt.
+      const wartezeit=kiSchreibt?MASTER_KI_MAX_WAIT:MASTER_MAX_WAIT;
+      if((prompt.length>=80&&!kiSchreibt)||($('#projectValidation')?.textContent||'').trim()||Date.now()-start>=wartezeit){done(prompt);return}
       masterTimer=setTimeout(check,200);
     };
     masterTimer=setTimeout(check,120);
@@ -60,29 +64,43 @@
   // Der Master-Prompt entsteht in zwei Zuegen: erst wird das Material zusammengesetzt (das geht
   // sofort), dann schreibt die KI daraus den fertigen Text.
   //
-  // Der erste Zug bekommt den Ladeschirm - bis er durch ist, steht nichts da. Der zweite nicht
-  // mehr. Nach dem Zusammensetzen liegt ein vollstaendiger, benutzbarer Auftrag im Feld; ihn
-  // hinter einem Vollbildschirm wegzusperren, waehrend die KI ihn nur noch schoener schreibt,
-  // laesst zwanzig Sekunden lang etwas warten, das man laengst kopieren koennte. Wer in der Zeit
-  // schon kopiert, hat den vollstaendigen Auftrag - nur eben den zusammengesetzten.
+  // Frueher bekam nur der erste Zug den Ladeschirm. Danach stand der zusammengesetzte Auftrag im
+  // Feld, und eine Minute spaeter sprang der ausformulierte Text an seine Stelle - zweimal etwas
+  // anderes zu lesen ist schlechter, als einmal zuzusehen, wie es entsteht.
   //
-  // Sichtbar bleibt der zweite Zug trotzdem: als Zeile ueber dem Feld, die sagt, was noch laeuft.
+  // Jetzt laeuft der Ladeschirm durch, bis die KI genug geschrieben hat, um mitlesen zu koennen
+  // (ein Viertel, siehe app.js). Dann geht er weg und der Text schreibt sich ins Feld. Laeuft
+  // keine KI, bleibt alles wie vorher: zusammensetzen, anzeigen, fertig.
   const ZUSAMMENBAU='master-zusammenbau';
   const MASTER_TITEL='Dein Master-Prompt entsteht';
+  const MASTER_KI_TITEL='Dein Master-Prompt wird geschrieben';
+  const MASTER_KI_MAX_WAIT=30000;
   function masterAiOverlay(state){
+    if(state==='start')kiSchreibt=true;
+    if(state==='writing'||state==='done')kiSchreibt=false;
     const step=$('#stepPrompt');if(!step||!step.classList.contains('active')||!ablaufSichtbar())return;
     const meta=$('#promptMeta');if(!meta)return;
     let note=$('#masterAiNote');
     if(state==='start'){
+      // Der Ladeschirm laeuft schon oder faengt jetzt an - je nachdem, ob der Schritt gerade
+      // betreten wurde oder die Eingaben sich nachtraeglich geaendert haben.
+      window.PromptAiLoading?.beginTask?.(ZUSAMMENBAU,{title:MASTER_KI_TITEL,kind:'build'});
+      note?.remove();
+      return;
+    }
+    if(state==='writing'){
+      clearTimeout(masterTimer);
+      window.PromptAiLoading?.endTask?.(ZUSAMMENBAU);
       if(!note){
         note=document.createElement('p');note.id='masterAiNote';note.className='master-ai-note';
         // Neben #promptMeta, nicht darin: updateMasterPrompt() schreibt dessen innerHTML neu und
         // haette die Zeile im selben Moment wieder entfernt, in dem sie entsteht.
         meta.insertAdjacentElement('afterend',note);
       }
-      note.textContent='Wird noch ausformuliert – der Auftrag unten ist bereits vollständig und kann kopiert werden.';
+      note.textContent='Wird gerade geschrieben – du kannst schon mitlesen.';
       return;
     }
+    window.PromptAiLoading?.endTask?.(ZUSAMMENBAU);
     note?.remove();
   }
   function settle(){clean();previews();previewPage()}

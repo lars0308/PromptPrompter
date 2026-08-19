@@ -3275,26 +3275,107 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
   // eigene Angabe.
   let masterAiSignature='',masterAiText='',masterAiRunning=false;
   const masterInputSignature=()=>`${projectSignature()}|${state.selectedConceptId}|${state.targetAgent}`;
+  // Ab welchem Anteil der erwarteten Länge der Text erscheint. Beim ersten Zeichen anzufangen sieht
+  // nicht nach Schreiben aus, sondern nach Zucken: zwei Wörter, Pause, drei Wörter, Pause. Ein
+  // Viertel ist genug Vorlauf, dass danach ohne Stocken durchgeschrieben wird.
+  const MASTER_VORLAUF=0.25;
+  const MASTER_TAKT_MS=28;
+  // Wenn nach dieser Zeit noch kein Viertel da ist, war die Wette falsch. Dann kommt der
+  // zusammengesetzte Auftrag ins Feld und der Ladeschirm geht weg - besser ein fertiger Text als
+  // ein Ladebalken, der nicht aufhört.
+  const MASTER_GEDULD_MS=25000;
+  function masterSchreibmaschine(erwartet){
+    const feld=el.masterPrompt;
+    let voll='',gezeigt=0,offen=false,abgebrochen=false,uhr=0,fertig=null;
+    const schwelle=Math.max(400,Math.round(erwartet*MASTER_VORLAUF));
+    const oeffne=()=>{
+      if(offen||abgebrochen)return;
+      offen=true;feld.value='';
+      window.dispatchEvent(new CustomEvent('promptai:master-ai',{detail:{state:'writing'}}));
+    };
+    // Aufgeholt wird immer ein Bruchteil des Rückstands: kommt die KI schnell, schreibt das Feld
+    // schnell mit; kommt sie langsam, bleibt der Takt ruhig. Ein fester Wert pro Zeichen würde
+    // entweder hinterherhinken oder in Blöcken springen.
+    const takt=()=>{
+      uhr=0;
+      if(abgebrochen)return;
+      const rest=voll.length-gezeigt;
+      if(rest<=0){if(fertig)fertig();return}
+      gezeigt=Math.min(voll.length,gezeigt+Math.max(4,Math.ceil(rest/14)));
+      feld.value=voll.slice(0,gezeigt);
+      uhr=setTimeout(takt,MASTER_TAKT_MS);
+    };
+    const laufen=()=>{if(offen&&!uhr&&!abgebrochen)uhr=setTimeout(takt,MASTER_TAKT_MS)};
+    return {
+      nimm(stueck){voll+=stueck;if(voll.length>=schwelle)oeffne();laufen()},
+      get text(){return voll},
+      get sichtbar(){return offen},
+      // Die Geduld ist abgelaufen: der zusammengesetzte Auftrag übernimmt das Feld, der Rest des
+      // Streams wird am Ende in einem Zug eingesetzt - so wie vor dem Streamen.
+      aufgeben(ersatz){
+        if(offen)return false;
+        abgebrochen=true;clearTimeout(uhr);uhr=0;
+        feld.value=ersatz;
+        window.dispatchEvent(new CustomEvent('promptai:master-ai',{detail:{state:'writing'}}));
+        return true;
+      },
+      // Wartet, bis das Feld den ganzen Text zeigt - sonst stünde am Ende „fertig" über einem
+      // Text, der noch halb geschrieben ist.
+      async ausschreiben(){
+        if(abgebrochen||!offen)return voll;
+        if(gezeigt>=voll.length){feld.value=voll;return voll}
+        await new Promise(fort=>{fertig=fort;laufen()});
+        feld.value=voll;return voll;
+      }
+    };
+  }
+  async function streamMasterPrompt(assembled,schreiber){
+    const response=await sitebriefApiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'master-prompt',stream:true,assembled,project:project(),concept:conceptForExport(selectedConcept()),engine:state.engine}),timeoutMs:180000});
+    if(!response.ok||!response.body)throw new Error('Der Stream steht nicht zur Verfügung.');
+    const leser=response.body.getReader(),entpacker=new TextDecoder();
+    for(;;){
+      const {done,value}=await leser.read();
+      if(done)break;
+      const stueck=entpacker.decode(value,{stream:true});
+      if(stueck)schreiber.nimm(stueck);
+    }
+    return schreiber.text.trim();
+  }
+  async function fetchMasterPrompt(assembled){
+    const response=await sitebriefApiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'master-prompt',assembled,project:project(),concept:conceptForExport(selectedConcept()),engine:state.engine}),timeoutMs:90000});
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'Master-Prompt konnte nicht ausformuliert werden.');
+    return String(data.prompt||'').trim();
+  }
+  // Dieselbe Bedingung wie unten, aber vorher abfragbar: updateMasterPrompt muss wissen, ob es das
+  // Feld füllen soll oder ob gleich geschrieben wird.
+  const willMasterAiWrite=()=>cloudReady()&&!masterAiRunning&&masterAiSignature!==masterInputSignature();
   async function writeMasterPromptWithAi(assembled){
     if(!cloudReady()||masterAiRunning)return;
     const signature=masterInputSignature();
     if(masterAiSignature===signature)return;
     masterAiRunning=true;
+    const schreiber=masterSchreibmaschine(assembled.length);
+    const geduld=setTimeout(()=>schreiber.aufgeben(assembled),MASTER_GEDULD_MS);
     window.dispatchEvent(new CustomEvent('promptai:master-ai',{detail:{state:'start'}}));
     try{
-      const response=await sitebriefApiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'master-prompt',assembled,project:project(),concept:conceptForExport(selectedConcept()),engine:state.engine}),timeoutMs:90000});
-      const data=await response.json();
-      if(!response.ok)throw new Error(data.error||'Master-Prompt konnte nicht ausformuliert werden.');
-      const written=String(data.prompt||'').trim();
+      let written='';
+      // Der gewöhnliche Weg bleibt als Netz: fällt der Stream aus, bevor etwas zu sehen war,
+      // holt er den Text am Stück. War schon Text zu sehen, wird nicht neu angefangen.
+      try{written=await streamMasterPrompt(assembled,schreiber)}
+      catch(error){if(schreiber.sichtbar)throw error;written=await fetchMasterPrompt(assembled)}
+      clearTimeout(geduld);
       // Never accept a version that lost half the briefing on the way.
       if(written.length>=Math.round(assembled.length*0.6)){
+        await schreiber.ausschreiben();
         masterAiSignature=signature;masterAiText=written;
         el.masterPrompt.value=written;
         renderPromptHandoff();
         saveState();
-      }
-    }catch{/* the assembled prompt is already in place */}
+      }else if(!el.masterPrompt.value.trim())el.masterPrompt.value=assembled;
+    }catch{if(!el.masterPrompt.value.trim())el.masterPrompt.value=assembled}
     finally{
+      clearTimeout(geduld);
       masterAiRunning=false;
       window.dispatchEvent(new CustomEvent('promptai:master-ai',{detail:{state:'done'}}));
     }
@@ -3382,7 +3463,17 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
       // Steht die ausformulierte Fassung zum selben Stand der Eingaben schon da, bleibt sie stehen.
       // Sonst wäre jeder weitere Aufruf ein Rückschritt auf die zusammengesetzte Rohfassung.
       const written=masterAiText&&masterAiSignature===masterInputSignature()?masterAiText:'';
-      el.masterPrompt.value=written||prompt;
+      // Solange die KI schreibt, bleibt das Feld leer - und der Ladeschirm bleibt stehen.
+      //
+      // Vorher stand hier der zusammengesetzte Auftrag, der Ladeschirm ging weg, und eine Minute
+      // später sprang der ausformulierte Text an seine Stelle. Zweimal etwas anderes zu lesen ist
+      // schlechter als einmal zuzusehen, wie es entsteht. Läuft die KI nicht (kein Konto, keine
+      // Verbindung), kommt der zusammengesetzte Auftrag sofort - wie bisher.
+      // Solange die KI schreibt, gehört das Feld ihr: updateMasterPrompt() läuft bei jeder
+      // Änderung erneut und hätte den entstehenden Text sonst mit der Rohfassung überschrieben.
+      const kiAmWerk=!written&&(masterAiRunning||willMasterAiWrite());
+      if(!kiAmWerk)el.masterPrompt.value=written||prompt;
+      else if(!masterAiRunning)el.masterPrompt.value='';
       if(!written)writeMasterPromptWithAi(prompt);
       const c=selectedConcept();
       el.promptMeta.innerHTML=`<span>${escapeHtml(AGENT_NAMES[state.targetAgent])} · ${escapeHtml(c?.name||"keine Richtung")}</span><span>${el.masterPrompt.value.length.toLocaleString("de-DE")} Zeichen · Quellen separat · ${selectedModules().length} Module · ${selectedSkills().length} Skills</span>`;

@@ -2,6 +2,7 @@ const core=require('../server/generate-core');
 const previewImage=require('../server/preview-image');
 const sandboxBuild=require('../server/sandbox-build');
 const freePrompt=require('../server/free-prompt-v2');
+const masterPromptStream=require('../server/master-prompt-stream');
 const {taskForAction,listProfiles}=require('../server/system-ai-profiles');
 const {getQuotaSummary,getTokenBudget,assertQuota,consumeWebsiteGeneration,consumePreviewRun,quotaErrorPayload}=require('../server/quota');
 const {getEntitlements}=require('../server/entitlements');
@@ -98,4 +99,9 @@ module.exports=async function generateRouter(req,res){if(req.method==='POST'){
   const plan=authed?await planOf(req):'guest';
   const perMinute=plan==='ultimate'?90:plan==='pro'?45:20;
   if(!rateLimit(req,res,authed?{key:`generate-${plan}`,limit:perMinute,windowMs:60000}:{key:'generate-guest',limit:24,windowMs:900000}))return;
-  const action=String(req.body?.action||'');if(['quota-summary','quota-check','quota-consume'].includes(action))return quotaRoute(req,res,action);if(action==='free-prompt'){if(!await enforce(req,res,'free_prompts'))return;return freePrompt(req,res)}if(action==='preview-image'){if(!await enforce(req,res,'ai_previews'))return;return previewImage(req,res)}if(action==='concepts')return websiteConceptRoute(req,res);if(action==='master-prompt')return runSystemProfiles(req,res);if(action==='sandbox-build')return sandboxBuild(req,res);if(req.body?.systemAiProfileId&&req.body?.useOwnApi!==true)return runSystemProfiles(req,res)}return core(req,res)};
+  const action=String(req.body?.action||'');if(['quota-summary','quota-check','quota-consume'].includes(action))return quotaRoute(req,res,action);if(action==='free-prompt'){if(!await enforce(req,res,'free_prompts'))return;return freePrompt(req,res)}if(action==='preview-image'){if(!await enforce(req,res,'ai_previews'))return;return previewImage(req,res)}if(action==='concepts')return websiteConceptRoute(req,res);
+    // Der Stream geht an runSystemProfiles vorbei: der Weg dort faengt die ganze Antwort in einem
+    // Zwischenspeicher auf, um bei einem Fehler die naechste Route zu versuchen - genau das
+    // Gegenteil von durchreichen. Der Streamweg waehlt seine Kette deshalb selbst.
+    if(action==='master-prompt'&&req.body?.stream===true)return masterPromptStream(req,res);
+    if(action==='master-prompt')return runSystemProfiles(req,res);if(action==='sandbox-build')return sandboxBuild(req,res);if(req.body?.systemAiProfileId&&req.body?.useOwnApi!==true)return runSystemProfiles(req,res)}return core(req,res)};
