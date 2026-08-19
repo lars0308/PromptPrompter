@@ -848,9 +848,18 @@
       state.cloudProjects=bundle.projects||[];
       state.aiConnections=bundle.aiConnections||[];
       window.SiteBriefCloud.aiConnections=[...state.aiConnections];
-      if(!autoEngineApplied&&["pro","ultimate"].includes(state.plan)&&state.engine==="local"&&el.generatorEngine){
-        const preferred=["gateway","openai","gemini"].find(p=>state.aiConnections.some(x=>x.provider===p));
-        if(preferred){autoEngineApplied=true;el.generatorEngine.value=preferred;updateEngineUi();}
+      // Diese Umstellung setzte bisher eine EIGENE KI-Verbindung voraus - und die hat ein normal
+      // zahlendes Konto nicht, weil der Zugang im Tarif ueber den Server laeuft. Der Generator
+      // blieb damit auf "Lokal" stehen, und daran haengt mehr, als es aussieht: beide Stellen,
+      // die die KI-Rueckfragen ausloesen, ueberspringen sie bei "Lokal" stillschweigend, und die
+      // Vorschau kommt dann als HTML statt als KI-Bild. Genau das Bild vom Testlauf: Ladeschirm
+      // "Rueckfragen werden erstellt", danach keine einzige Frage. Eine eigene Verbindung wird
+      // weiter bevorzugt; ohne eine solche uebernimmt der Gateway-Weg ueber den Server. Admins
+      // zaehlen mit, deren state.plan steht nicht zwingend auf "pro"/"ultimate".
+      const tarifMitKi=state.isAdmin||["pro","ultimate"].includes(state.plan);
+      if(!autoEngineApplied&&tarifMitKi&&state.engine==="local"&&el.generatorEngine){
+        const preferred=["gateway","openai","gemini"].find(p=>state.aiConnections.some(x=>x.provider===p))||"gateway";
+        autoEngineApplied=true;el.generatorEngine.value=preferred;updateEngineUi();
       }
       if(pushLocalIfEmpty){
         const missing=(local,remote)=>local.filter(item=>!(remote||[]).some(saved=>saved.id===item.id));
@@ -1772,6 +1781,17 @@
   // ohne Rueckfragen weiterspringen, waehrend eine spaetere Antwort den Dialog erst auf einer
   // schon weitergesprungenen Seite aufriss. Ein laufender Aufruf wird jetzt geteilt statt
   // verdoppelt: ein zweiter Aufruf waehrend der erste noch laeuft bekommt dasselbe Versprechen.
+  // Ob die KI-Rueckfragen fuer dieses Konto ueberhaupt laufen duerfen. Diese Bedingung stand
+  // bisher an zwei Stellen im Code - und zwar unterschiedlich: der automatische Sprung von
+  // Schritt 3 zu 4 verlangte einen externen Generator, generateConcepts() liess zusaetzlich
+  // Free-Konten mit Guthaben durch. Ein bezahltes Konto auf "Lokal" fiel dadurch durch beide
+  // Raster und bekam nirgends Rueckfragen. Jetzt entscheidet eine Stelle fuer beide.
+  function rueckfragenErlaubt(){
+    if(!state.settings.aiClarifications)return false;
+    if(state.engine!=="local")return true;
+    if(state.isAdmin||state.plan!=="free")return true;
+    return state.reviewCredits>0 || (cloudReady()&&budgetLeft());
+  }
   let reviewInFlight=null;
   function runProjectReview(force=false){
     if(reviewInFlight)return reviewInFlight;
@@ -2286,9 +2306,7 @@
       // Free bekommt einen echten KI-Durchlauf im Monat: solange das Guthaben reicht, prüft die
       // KI wirklich, statt nur lokal zu raten. Danach übernimmt wieder der lokale Weg - der
       // Server entscheidet das ebenso, hier steht nur, wann es sich lohnt zu fragen.
-      const freeAiRun=state.plan==="free" && !state.isAdmin && cloudReady() && budgetLeft();
-      const paidReview=state.plan==="free" && !state.isAdmin && (state.reviewCredits>0 || freeAiRun);
-      if((state.engine!=="local"||paidReview) && state.settings.aiClarifications && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
+      if(rueckfragenErlaubt() && state.reviewSignature!==projectSignature() && !state.reviewDeferred){
         // Ein Fehler hier blieb bisher unsichtbar: kein try/catch fing ihn, also lief die Funktion
         // ohne jede Meldung aus, der Ladeschirm ging (sein eigenes finally in wrapFetch raeumt ihn
         // unabhaengig auf) und die Seite stand wieder bei "Noch keine Vorschauen erzeugt." - als
@@ -4401,7 +4419,7 @@ ${agentMemoryDocument()}`;
       const next=Number(b.dataset.next);
       try{
         if(state.currentStep===1){importDescriptionUrls();if(!state.understanding){const ok=await analyzeProject();if(!ok)return;}}
-        if(state.mode!=="expert"&&state.currentStep===3&&next===4&&state.engine!=="local"&&state.settings.aiClarifications){const ok=await runProjectReview(false);if(!ok)return;}
+        if(state.mode!=="expert"&&state.currentStep===3&&next===4&&rueckfragenErlaubt()){const ok=await runProjectReview(false);if(!ok)return;}
         if(state.mode==="expert"&&state.currentStep===4&&next===5&&state.settings.aiClarifications)await runProjectReview(false);
         // Last gate before the briefing is written: in guided mode the project data is shown once
         // more, with a warning if name, customer, website or analysis do not match the description.
@@ -4410,18 +4428,14 @@ ${agentMemoryDocument()}`;
       }catch(err){
         const message=err?.message||"Es gab ein Problem. Bitte versuch es erneut.";
         el.projectValidation.textContent=message;
-        // #projectValidation sitzt fest auf Schritt 1 (index.html) - in Gefuehrt/Automatik ist der
-        // Nutzer beim Scheitern dieses Klicks aber oft laengst auf einem spaeteren, teils
-        // unsichtbaren Schritt (Automatik blendet Schritt 3 z.B. bewusst aus). Ohne diesen Zweig
-        // schlug der automatische Sprung von Schritt 3 zu 4 lautlos fehl: kein Fehler, keine
-        // Rueckfragen, nur eine leere Seite - genau das aus der Bildschirmaufnahme.
-        const flowPanel=document.getElementById('modeFlowPanel');
-        if(flowPanel&&state.mode!=="expert"){
-          flowPanel.hidden=false;flowPanel.classList.remove('busy');
-          const strong=flowPanel.querySelector('strong'),small=flowPanel.querySelector('small');
-          if(strong)strong.textContent="Es gab ein Problem";
-          if(small)small.textContent=message;
-        }
+        // #projectValidation sitzt fest auf Schritt 1 (index.html) und ist von jedem spaeteren
+        // Schritt aus unsichtbar - in Gefuehrt/Automatik sind die Schritte 3 und 4 zudem bewusst
+        // per CSS ausgeblendet, weil der Ablauf normalerweise in Sekundenbruchteilen darueber
+        // hinweggeht. Scheitert dieser Klick dort, stand bisher nur eine leere Seite da. Ein
+        // erster Versuch schrieb die Meldung zusaetzlich in #modeFlowPanel - das war wirkungslos,
+        // denn workflow-cleanup.js blendet dieses Feld per display:none dauerhaft aus. Ein Dialog
+        // ist die einzige Anzeige, die in jedem Schritt und in jedem Modus wirklich ankommt.
+        if(state.mode!=="expert")customAlert(message,{title:'Es gab ein Problem',kicker:'PROMPT.AI'});
       }
     }));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     el.skipReferencesBtn?.addEventListener("click",()=>goStep(3));

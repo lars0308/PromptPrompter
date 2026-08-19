@@ -650,8 +650,10 @@ test('the monthly budget is a cost brake with a visible share, not a wall',async
   assert.match(home,/Dieser Auftrag verbraucht etwa \$\{share\} % deines Monats/);
   assert.match(home,/if\(!info\|\|info\.percent>15\)return;/,'die Warnung kommt einmal, nicht dauernd');
   assert.match(home,/\.prompt-budget-bar\{/);
-  // Free bekommt einen echten Durchlauf, aber nur angemeldet und nur mit Guthaben.
-  assert.match(app,/const freeAiRun=state\.plan==="free" && !state\.isAdmin && cloudReady\(\) && budgetLeft\(\)/);
+  // Free bekommt einen echten Durchlauf, aber nur angemeldet und nur mit Guthaben. Die Bedingung
+  // stand frueher als freeAiRun/paidReview direkt in generateConcepts(); sie sitzt jetzt in
+  // rueckfragenErlaubt(), damit der Sprung von Schritt 3 zu 4 dieselbe Regel benutzt.
+  assert.match(app,/return state\.reviewCredits>0 \|\| \(cloudReady\(\)&&budgetLeft\(\)\);/);
   // Und die Karten sagen vorher, was nach dem Vorrat passiert.
   assert.match(html,/plan-card-fairuse/);
   assert.match(html,/Ein echter KI-Durchlauf im Monat/);

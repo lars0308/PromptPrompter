@@ -2,7 +2,7 @@
   'use strict';
   const INTAKE_KEY='prompt-ai-mode-intake-v1';
   const MANIFEST_MARK='## VERBINDLICHE NUTZEREINGABEN AUS PROMPT.AI';
-  let intakeBusy=false,lastStep=0,autoTimer=0;
+  let intakeLaeuft=null,lastStep=0,autoTimer=0;
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 
   function currentMode(){return $('.mode-switch button.active')?.dataset.mode||'guided'}
@@ -47,10 +47,21 @@
     const panel=$('#modeFlowPanel');if(panel&&data.decisions?.length)panel.querySelector('small').textContent=data.decisions.slice(0,4).join(' · ');
   }
 
-  async function prepareIntake(){
-    if(currentMode()==='expert'||intakeBusy||beimVerlassen())return null;const project=projectPayload();if(project.description.length<20)return null;
+  // Ein zweiter Aufruf, waehrend der erste noch laeuft, stieg hier frueher sofort mit null aus
+  // ("laeuft schon"). route() hat das als "fertig" gelesen und 120ms spaeter auf Weiter geklickt -
+  // mitten in die noch laufende Anfrage hinein. Genau diese Anfrage stellt aber die Startwerte
+  // ein, darunter den Generator; beim Klick stand er deshalb noch auf "Lokal", und die
+  // KI-Rueckfragen wurden stillschweigend uebersprungen. Ein laufender Aufruf wird jetzt geteilt
+  // statt abgewiesen: der zweite Aufruf wartet auf dasselbe Ergebnis.
+  function prepareIntake(){
+    if(intakeLaeuft)return intakeLaeuft;
+    intakeLaeuft=prepareIntakeOnce().finally(()=>{intakeLaeuft=null});
+    return intakeLaeuft;
+  }
+  async function prepareIntakeOnce(){
+    if(currentMode()==='expert'||beimVerlassen())return null;const project=projectPayload();if(project.description.length<20)return null;
     const signature=intakeSignature(),cached=savedIntake();if(cached?.signature===signature){applyIntake(cached.data);return cached.data}
-    intakeBusy=true;setStatus('KI analysiert dein Briefing','Projektart, Ziel, Agent, Ausgabe, Regler und Richtungsumfang werden aus deinen Angaben abgeleitet.',true);
+    setStatus('KI analysiert dein Briefing','Projektart, Ziel, Agent, Ausgabe, Regler und Richtungsumfang werden aus deinen Angaben abgeleitet.',true);
     // Kein eigener Schirm mehr: die Anfrage geht als 'intake' raus und traegt damit denselben
     // Titel wie Uebernahme und Pruefung. "Briefing wird verstanden" war ein dritter Text fuer
     // dieselbe Wartezeit.
@@ -60,7 +71,7 @@
       const response=await fetch('/api/models',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify({action:'intake',project,typeOptions:options($('#projectType')),goalOptions:options($('#projectGoal')),agentOptions,outputOptions}),signal:controller.signal}),data=await response.json();if(!response.ok)throw new Error(data.error||'KI-Intake nicht verfügbar');
       applyIntake(data);storeIntake(data,signature);setStatus('Briefing verstanden',data.summary||'Die technischen Startwerte wurden automatisch gesetzt.',false);return data;
     }catch(error){const message=error?.name==='AbortError'?'KI-Intake hat zu lange gedauert und wurde abgebrochen.':(error.message||'KI-Intake war nicht erreichbar. Deine Eingaben bleiben vollständig erhalten.');setStatus('Automatik nutzt sichere Standardwerte',message,false);return null}
-    finally{clearTimeout(timer);intakeBusy=false}
+    finally{clearTimeout(timer)}
   }
 
   function activeNext(step){return $(`[data-step-panel="${step}"] .next-btn`)}

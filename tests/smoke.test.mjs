@@ -315,16 +315,47 @@ test('a step-8 master-prompt build failure surfaces an error instead of leaving 
 });
 test('an auto-piloted step transition that throws does not fail silently on a hidden step',async()=>{
   // #projectValidation sits on step 1's panel (index.html) and stays invisible once Guided/Auto
-  // has auto-piloted past it. A screen recording showed exactly this: the "Rückfragen werden
-  // erstellt" loading screen finished, then a blank page - no error, no dialog, nothing - because
-  // runProjectReview() threw during the automatic step 3 -> 4 click and the only place the error
-  // went was that invisible span. #modeFlowPanel sits above every step's content and is only
-  // hidden in Expert mode or on step 8, so it now also gets the error message.
-  const src=await text('app.js');
+  // has auto-piloted past it - steps 3 and 4 are deliberately visibility:hidden there. A first
+  // attempt also wrote the message into #modeFlowPanel; that was useless, because
+  // workflow-cleanup.js keeps that panel at display:none for good. A dialog is the only surface
+  // that actually reaches the user on every step and in every mode.
+  const src=await text('app.js'),css=await text('promptai-ui-layers.css');
   const handler=src.slice(src.indexOf("$$('.next-btn').forEach"),src.indexOf("$$('.back-btn').forEach"));
   assert.match(handler,/catch\(err\)\{\s*const message=err\?\.message\|\|"Es gab ein Problem\. Bitte versuch es erneut\.";\s*el\.projectValidation\.textContent=message;/);
-  assert.match(handler,/const flowPanel=document\.getElementById\('modeFlowPanel'\);/);
-  assert.match(handler,/if\(flowPanel&&state\.mode!=="expert"\)\{\s*flowPanel\.hidden=false;flowPanel\.classList\.remove\('busy'\);/);
+  assert.match(handler,/if\(state\.mode!=="expert"\)customAlert\(message,\{title:'Es gab ein Problem'/);
+  assert.doesNotMatch(handler,/getElementById\('modeFlowPanel'\)/,'that panel is display:none, so a message written there is never seen');
+  assert.match(css,/#modeDescription,#modeRouteCard,#modeFlowPanel\{display:none!important\}/,'the reason the panel cannot be used to report anything');
+});
+test('a paid account does not stay on the local generator just because it has no own API key',async()=>{
+  // Reproduced against the real flow: a signed-in Ultimate/admin account stayed on engine
+  // "local", because this switch demanded an own AI connection - and a normally paying customer
+  // has none, the plan covers server-side access. Both places that start the AI clarification
+  // review skip it while the engine is "local", so the run went briefing -> loading screen ->
+  // previews with not a single question, and the previews came out as HTML instead of AI images.
+  const src=await text('app.js');
+  assert.match(src,/const tarifMitKi=state\.isAdmin\|\|\["pro","ultimate"\]\.includes\(state\.plan\);/,'admins do not necessarily carry plan "pro"/"ultimate"');
+  assert.match(src,/find\(p=>state\.aiConnections\.some\(x=>x\.provider===p\)\)\|\|"gateway"/,'own connection still wins, gateway is the fallback instead of giving up');
+});
+test('both entry points into the AI clarification review share one condition',async()=>{
+  // They used to differ: the step 3 -> 4 jump required an external generator, generateConcepts()
+  // additionally let free accounts with credit through. A paid account on the local engine fell
+  // through both and got no questions anywhere.
+  const src=await text('app.js');
+  assert.match(src,/function rueckfragenErlaubt\(\)\{/);
+  assert.match(src,/if\(state\.isAdmin\|\|state\.plan!=="free"\)return true;/,'a paid account always gets its questions');
+  assert.match(src,/state\.currentStep===3&&next===4&&rueckfragenErlaubt\(\)/);
+  assert.match(src,/if\(rueckfragenErlaubt\(\) && state\.reviewSignature!==projectSignature\(\)/);
+  assert.doesNotMatch(src,/state\.engine!=="local"&&state\.settings\.aiClarifications\)\{const ok=await runProjectReview/,'the old engine-only gate is gone');
+});
+test('the auto-pilot waits for the running intake instead of clicking Weiter into it',async()=>{
+  // route() called prepareIntake() twice; the second call bailed out with null ("already busy"),
+  // route() read that as "done" and clicked Weiter 120ms later - while the request that sets the
+  // generator was still in flight. At the moment of the click the engine was therefore still
+  // "local" and the clarification review was skipped without a word.
+  const src=await text('mode-flow-ui.js');
+  assert.match(src,/function prepareIntake\(\)\{\s*if\(intakeLaeuft\)return intakeLaeuft;/);
+  assert.match(src,/intakeLaeuft=prepareIntakeOnce\(\)\.finally\(\(\)=>\{intakeLaeuft=null\}\);/);
+  assert.doesNotMatch(src,/intakeBusy/,'the old "bail out while busy" flag is what caused the race');
 });
 test('submitting the clarification dialog with only optional questions left blank does not reopen it forever',async()=>{
   const src=await text('app.js');
@@ -1529,10 +1560,11 @@ test('an opened settings section shows its last block instead of clipping it',as
 
 test('the one-off purchase tops up the monthly budget instead of selling a single check',async()=>{
   const app=await text('app.js'),home=await text('promptai-home-final.js');
-  // Der gekaufte Einzelcheck oeffnet denselben Weg wie der freie Monatslauf.
-  assert.match(app,/const paidReview=state\.plan==="free" && !state\.isAdmin && \(state\.reviewCredits>0 \|\| freeAiRun\);/);
-  assert.match(app,/const freeAiRun=state\.plan==="free" && !state\.isAdmin && cloudReady\(\) && budgetLeft\(\);/);
-  assert.match(app,/if\(\(state\.engine!=="local"\|\|paidReview\) && state\.settings\.aiClarifications/,'a free account has no external generator, so the review never ran for it');
+  // Der gekaufte Einzelcheck oeffnet denselben Weg wie der freie Monatslauf. Die Bedingung stand
+  // frueher als freeAiRun/paidReview direkt in generateConcepts(); sie sitzt jetzt in
+  // rueckfragenErlaubt(), damit beide Aufrufstellen dieselbe Regel benutzen.
+  assert.match(app,/return state\.reviewCredits>0 \|\| \(cloudReady\(\)&&budgetLeft\(\)\);/,'a free account has no external generator, so the review never ran for it');
+  assert.match(app,/if\(rueckfragenErlaubt\(\) && state\.reviewSignature!==projectSignature\(\)/);
   assert.match(app,/function publishReviewCredits\(\)/);
   assert.match(app,/window\.dispatchEvent\(new CustomEvent\('promptai:credits'/);
   assert.match(home,/function creditNote\(\)/);
