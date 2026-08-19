@@ -248,23 +248,34 @@ function architectPrompt(input,{advanced=false}={}){
   return `Du bist der Prompt.ai Master-Prompt-Architekt. Verwandle die untenstehenden Rohangaben in EINEN professionellen, sofort kopierbaren Prompt für das genannte Ziel-Tool.\n\nWICHTIG: Die Rohangaben stammen direkt vom Nutzer und können Tippfehler, Umgangssprache, Satzfragmente oder Wiederholungen enthalten. Im finalen Prompt darfst du sie NICHT roh kopieren. Formuliere jede enthaltene Angabe fachlich sauber neu, ohne ihre Bedeutung zu verändern oder Informationen hinzuzuerfinden.\n\nAUSGABETYP\n${input.categoryLabel}${industryFor(input)?`\n\nERKANNTE BRANCHE (nutze sie für Fachsprache, Motive und Pflichtinhalte)\n${industryFor(input)}`:''}\n\nZIEL-KI / TOOL\n${tool}\n\nSPRACHE DES FERTIGEN PROMPTS\n${input.language}\n\nPASSENDE FACHROLLE FÜR DEN ZIEL-AGENTEN\n${role}\n\nROHANGABEN DES NUTZERS\n${fields||`Beschreibung:\n${input.description}`}\n\nUNIVERSELLES PROMPT.AI MASTER-GERÜST\n${asBullets(universalRules())}\n\nSPEZIFISCHE MASTER-REGELN FÜR ${input.categoryLabel.toUpperCase()}\n${asBullets(categoryRules(input))}${syntax?`\n\nSYNTAX UND PARAMETER VON ${tool.toUpperCase()}\nDer fertige Prompt muss dieser Schreibweise folgen, sonst ignoriert das Zielwerkzeug die entscheidenden Angaben.\n- ${syntax}`:''}\n\nAUFBAU DES FINALEN PROMPTS\n${promptText('free-prompt-structure',{mode:advanced?'PRO-MODUS: Nutze sämtliche gelieferten Zusatzfelder. Verknüpfe sie sinnvoll, löse Dopplungen auf und mache Konflikte sichtbar.':'FREE-MODUS: Nutze ausschließlich Ausgabetyp, Ziel-Tool, Beschreibung und Sprache. Füge keine nicht gelieferten Ziele, Zielgruppen, Referenzen oder Stilwünsche hinzu.'})}\n\nErstelle jetzt den finalen Prompt.`;
 }
 
-function localProfessionalize(value){
+// Diese Funktion hiess localProfessionalize, und der Name war eine Falschaussage.
+//
+// Sie setzt einen Grossbuchstaben an den Anfang, raeumt Leerzeichen auf und haengt einen Punkt an.
+// Aus "Website in Stadthagen fuer Doenerladen schoen und sauber strukturiert in weiss" wird
+// derselbe Satz mit Punkt. Unter der Ueberschrift "PROFESSIONELL AUFBEREITETE BESCHREIBUNG" stand
+// damit die Eingabe des Kunden - eins zu eins, nur mit grossem Anfangsbuchstaben.
+//
+// Umformulieren kann hier niemand: der Weg hierher ist genau der, auf dem keine KI erreichbar war.
+// Was bleibt, ist Ehrlichkeit - die Rohangabe wird als Rohangabe ausgewiesen, und die Ziel-KI
+// bekommt den Auftrag, sie selbst fachlich zu lesen statt sie abzuschreiben.
+function saubereZeile(value){
   const text=String(value||'').replace(/\s+/g,' ').trim();if(!text)return '';
   const first=text.charAt(0).toUpperCase()+text.slice(1);return /[.!?]$/.test(first)?first:`${first}.`;
 }
 function localFallback(input,{advanced=false}={}){
-  const tool=input.customTool||input.targetTool||'Universell',role=roleFor(input),description=localProfessionalize(input.description),syntax=toolRules(tool);
+  const tool=input.customTool||input.targetTool||'Universell',role=roleFor(input),description=saubereZeile(input.description),syntax=toolRules(tool);
   const extra=advanced?[
-    input.goal&&`Ziel: ${localProfessionalize(input.goal)}`,
-    input.audience&&`Zielgruppe / Empfänger: ${localProfessionalize(input.audience)}`,
-    input.context&&`Kontext / Referenzen: ${localProfessionalize(input.context)}`,
-    input.style&&`Stil / Wirkung: ${localProfessionalize(input.style)}`,
-    input.mustInclude&&`Muss enthalten: ${localProfessionalize(input.mustInclude)}`,
-    input.avoid&&`Vermeiden: ${localProfessionalize(input.avoid)}`,
-    input.outputFormat&&`Ausgabeformat: ${localProfessionalize(input.outputFormat)}`,
-    input.constraints&&`Weitere Grenzen: ${localProfessionalize(input.constraints)}`
+    input.goal&&`Ziel: ${saubereZeile(input.goal)}`,
+    input.audience&&`Zielgruppe / Empfänger: ${saubereZeile(input.audience)}`,
+    input.context&&`Kontext / Referenzen: ${saubereZeile(input.context)}`,
+    input.style&&`Stil / Wirkung: ${saubereZeile(input.style)}`,
+    input.mustInclude&&`Muss enthalten: ${saubereZeile(input.mustInclude)}`,
+    input.avoid&&`Vermeiden: ${saubereZeile(input.avoid)}`,
+    input.outputFormat&&`Ausgabeformat: ${saubereZeile(input.outputFormat)}`,
+    input.constraints&&`Weitere Grenzen: ${saubereZeile(input.constraints)}`
   ].filter(Boolean).join('\n'):'';
-  return `ROLLE\nDu bist ${role}. Arbeite fachlich, eigenständig und auf professionellem Niveau.\n\nAUFGABE\nErstelle ${input.categoryLabel} für ${tool}.\n\nPROFESSIONELL AUFBEREITETE BESCHREIBUNG\n${description}${extra?`\n\nWEITERE VERBINDLICHE ANGABEN\n${extra}`:''}\n\nPROMPT.AI GRUNDREGELN\n${asBullets(universalRules())}\n\nFACHREGELN FÜR DIESEN BEREICH\n${asBullets(categoryRules(input))}${syntax?`\n\nSCHREIBWEISE FÜR ${tool.toUpperCase()}\n- ${syntax}`:''}\n\nABSCHLUSS\nPrüfe intern Ziel, Angaben, Verbote, Sicherheit und Ausgabeformat. Gib danach ausschließlich das direkt nutzbare Ergebnis zurück.`;
+  const lesehinweis='Die folgenden Angaben stehen in den eigenen Worten des Auftraggebers, ungeglättet. Lies sie fachlich: erschließe daraus Vorhaben, Ort, Branche, Zielgruppe und Gestaltungswunsch und formuliere sie in deiner Arbeit selbst professionell aus. Übernimm die Formulierung nicht wörtlich und erfinde nichts hinzu, was dort nicht steht.';
+  return `ROLLE\nDu bist ${role}. Arbeite fachlich, eigenständig und auf professionellem Niveau.\n\nAUFGABE\nErstelle ${input.categoryLabel} für ${tool}.\n\nANGABEN DES AUFTRAGGEBERS (Originalwortlaut)\n${lesehinweis}\n\n${description}${extra?`\n\nWEITERE VERBINDLICHE ANGABEN\n${extra}`:''}\n\nPROMPT.AI GRUNDREGELN\n${asBullets(universalRules())}\n\nFACHREGELN FÜR DIESEN BEREICH\n${asBullets(categoryRules(input))}${syntax?`\n\nSCHREIBWEISE FÜR ${tool.toUpperCase()}\n- ${syntax}`:''}\n\nABSCHLUSS\nPrüfe intern Ziel, Angaben, Verbote, Sicherheit und Ausgabeformat. Gib danach ausschließlich das direkt nutzbare Ergebnis zurück.`;
 }
 function safeModel(value,fallback){const model=String(value||fallback||'').trim();return model&&model.length<190&&/^[a-zA-Z0-9@._:/-]+$/.test(model)?model:fallback}
 // Umformulieren ist keine Denkaufgabe.

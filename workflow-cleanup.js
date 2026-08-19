@@ -77,7 +77,7 @@
   const MASTER_KI_MAX_WAIT=30000;
   function masterAiOverlay(state){
     if(state==='start')kiSchreibt=true;
-    if(state==='writing'||state==='done')kiSchreibt=false;
+    if(state!=='start')kiSchreibt=false;
     const step=$('#stepPrompt');if(!step||!step.classList.contains('active')||!ablaufSichtbar())return;
     const meta=$('#promptMeta');if(!meta)return;
     let note=$('#masterAiNote');
@@ -86,6 +86,18 @@
       // betreten wurde oder die Eingaben sich nachtraeglich geaendert haben.
       window.PromptAiLoading?.beginTask?.(ZUSAMMENBAU,{title:MASTER_KI_TITEL,kind:'build'});
       note?.remove();
+      return;
+    }
+    if(state==='raw'){
+      // Die KI hat nicht geschrieben - im Feld steht die zusammengesetzte Fassung, und darin
+      // stehen die Angaben des Kunden wörtlich. Verschweigen wäre das Schlimmste: der Auftrag ist
+      // brauchbar, aber er ist nicht der ausformulierte, für den er gehalten wird.
+      window.PromptAiLoading?.endTask?.(ZUSAMMENBAU);
+      if(!note){
+        note=document.createElement('p');note.id='masterAiNote';note.className='master-ai-note is-raw';
+        meta.insertAdjacentElement('afterend',note);
+      }
+      note.textContent='Nicht von der KI ausformuliert – es war gerade keine erreichbar. Deine Angaben stehen im Originalwortlaut im Auftrag. Eine Änderung an den Eingaben startet einen neuen Versuch.';
       return;
     }
     if(state==='writing'){

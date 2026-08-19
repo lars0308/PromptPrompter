@@ -191,3 +191,40 @@ test('once something is on screen the typewriter never gives up under it',async(
   assert.equal(schreiber.aufgeben('ERSATZ'),false,'replacing a text the reader is following would be worse than waiting');
   assert.notEqual(feld.value,'ERSATZ');
 });
+
+// „Website in Stadthagen für Dönerladen schön und sauber strukturiert in weiß" - genau so getippt,
+// genau so im fertigen Prompt. Darüber stand „PROFESSIONELL AUFBEREITETE BESCHREIBUNG", und die
+// Oberfläche meldete „Professioneller Prompt erstellt". Beides war falsch: umformuliert hatte
+// niemand, es war nur ein großer Anfangsbuchstabe dazugekommen.
+test('raw customer wording is never presented as if the AI had rewritten it',async()=>{
+  const src=await readFile(fileURLToPath(new URL('../server/free-prompt-v2.js',import.meta.url)),'utf8');
+  // Nur die ausgegebene Vorlage, nicht die ganze Datei: der alte Wortlaut steht im Kommentar
+  // darüber, und dort gehört er hin - er erklärt, was hier einmal falsch war.
+  const vorlage=src.slice(src.indexOf('function localFallback('),src.indexOf('function safeModel('));
+  assert.doesNotMatch(vorlage,/PROFESSIONELL AUFBEREITETE BESCHREIBUNG/,'the heading claimed work that never happened');
+  assert.doesNotMatch(vorlage,/localProfessionalize/,'…and so did the name of the function under it');
+  assert.match(vorlage,/ANGABEN DES AUFTRAGGEBERS \(Originalwortlaut\)/,'raw wording is labelled as raw');
+  // Und die Ziel-KI bekommt den Auftrag, den Rohtext fachlich zu lesen statt ihn abzuschreiben -
+  // das ist das Beste, was ohne erreichbare KI noch geht.
+  assert.match(vorlage,/Übernimm die Formulierung nicht wörtlich/);
+  assert.match(vorlage,/formuliere sie in deiner Arbeit selbst professionell aus/);
+  assert.match(src,/polished:false/,'the server still reports which case it was');
+});
+
+test('the unpolished case reaches the screen instead of being swallowed',async()=>{
+  const ui=await readFile(fileURLToPath(new URL('../free-prompt-ui.js',import.meta.url)),'utf8');
+  assert.match(ui,/data\.polished===false/,'the flag existed and nobody read it');
+  assert.match(ui,/Keine KI war erreichbar – der Prompt trägt deine Angaben im Originalwortlaut\./);
+  assert.match(ui,/function zeigeRohhinweis/);
+  assert.match(ui,/Nochmal versuchen/,'…and a second attempt is one click away');
+  const app=await readFile(fileURLToPath(new URL('../app.js',import.meta.url)),'utf8');
+  assert.match(app,/state:roh\?'raw':'done'/,'the master prompt reports the same case');
+  const ablauf=await readFile(fileURLToPath(new URL('../workflow-cleanup.js',import.meta.url)),'utf8');
+  assert.match(ablauf,/if\(state==='raw'\)\{/);
+  assert.match(ablauf,/Nicht von der KI ausformuliert/);
+  assert.match(ablauf,/master-ai-note is-raw/,'and it does not keep pulsing as if work were still running');
+  // Und der zusammengesetzte Auftrag selbst trägt denselben Leseauftrag: auch wenn die Fassung
+  // stehen bleibt, soll die Ziel-KI die Worte des Kunden deuten statt sie abzuschreiben.
+  assert.match(app,/stehen unbearbeitet in den eigenen Worten des Auftraggebers/);
+  assert.match(app,/Uebernimm die Formulierung nicht woertlich/);
+});
