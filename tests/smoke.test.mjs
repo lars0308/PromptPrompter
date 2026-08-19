@@ -1135,7 +1135,10 @@ test('modules and skills reach the prompt in every mode, not only in the expert 
   assert.match(app,/if\(state\.mode!=="expert"\)recommendModules\(true\)/);
   // "always active" was only applied when a dropdown in the library changed.
   assert.match(app,/function applyLibraryDefaults\(\)/);
-  assert.match(app,/state\.selectedModuleIds=\[\];state\.selectedSkillIds=\[\];state\.recommendedModuleIds=\[\];\r?\n    applyLibraryDefaults\(\);/,'a new project starts from the library defaults');
+  assert.match(app,/state\.selectedModuleIds=\[\];state\.selectedSkillIds=\[\];state\.recommendedModuleIds=\[\];/);
+  // Die eigene Master-Vorlage gehört zur selben Auswahl: ihr Text steht wörtlich im Auftrag, und
+  // sie blieb als einzige stehen, wenn ein neues Projekt begann.
+  assert.match(app,/state\.templateId="";\r?\n    applyLibraryDefaults\(\);/,'a new project starts from the library defaults');
   assert.match(app,/window\.PromptAiProjectExtras=\{list:projectExtrasList,set:setProjectExtra,active:activeExtraNames\}/);
   // Never a silent activation: the confirmation names what travels with the briefing.
   assert.match(app,/Bausteine & Skills: \$\{activeExtraNames\(\)\.join\(', '\)\|\|'keine aktiv'\}/);
