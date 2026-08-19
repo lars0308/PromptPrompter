@@ -100,9 +100,12 @@ test('der Auftrag nennt den Bestand, die Inhalte bleiben in der Quellendatei',as
   assert.match(text,/Beigelegt sind 1 Referenzlink, 2 Bilder und 1 Unterlage/,'der Bestand steht da, damit ein Fehlen auffaellt');
   assert.match(text,/PROJEKT-QUELLEN\.md/);
   assert.match(text,/fordere sie an; rate ihren Inhalt nicht/);
-  // Kein Dateiname, kein Aspekt, keine Seitenzahl - das steht alles in der Quellendatei.
-  for(const doppelt of [/laden-aussen\.jpg/,/speisekarte\.pdf/,/beispiel-referenz\.de/,/die Animationen/])
+  // Kein Aspekt, kein Verbot, keine Seitenzahl - das steht alles in der Quellendatei.
+  for(const doppelt of [/laden-aussen\.jpg/,/beispiel-referenz\.de/,/die Animationen/,/Übernehmen: Typografie/])
     assert.doesNotMatch(text,doppelt,`steht doppelt im Auftrag: ${doppelt}`);
+  // Unterlagen sind die Ausnahme: ihr Auswertungsstand gehoert in den Auftrag, weil daran haengt,
+  // ob ihr Inhalt als vorhanden gelten darf.
+  assert.match(text,/## BEIGELEGTE UNTERLAGEN[\s\S]{0,200}speisekarte\.pdf/);
   const leer=await bau();
   assert.match(leer,/Es liegen keine Referenzen, Bilder oder Unterlagen bei\./);
 });
@@ -144,9 +147,13 @@ test('bei Widerspruch steht die Rangfolge fest im Auftrag',async()=>{
   const text=await bau();
   assert.match(text,/## RANGFOLGE BEI WIDERSPRUCH/);
   const rang=text.slice(text.indexOf('## RANGFOLGE BEI WIDERSPRUCH'));
-  for(const [platz,wort] of [[1,/Belegte Fakten, Sicherheit/],[2,/Barrierefreiheit/],[3,/Funktion/],[4,/Das Hauptziel/],[5,/Gestaltungspräferenzen/]])
+  for(const [platz,wort] of [[1,/Sicherheit sowie zwingende/],[2,/Die aktuelle ausdrückliche Entscheidung/],[3,/Die aktuell verifizierte Projektquelle/],[4,/Eine früher bestätigte Entscheidung/],[5,/Eine zulässige Ableitung/],[6,/Eine von Prompt\.ai vorgeschlagene/],[7,/Standard- und Rückfallregeln/]])
     assert.match(rang,new RegExp(`${platz}\\. ${wort.source}`),`Platz ${platz} fehlt oder steht falsch`);
-  assert.ok(rang.indexOf('Barrierefreiheit')<rang.indexOf('Gestaltungspräferenzen'),'Barrierefreiheit steht über dem Gestaltungswunsch');
+  // Die Nutzerentscheidung steht ueber der Quelle - eine alte Nummer auf der Bestandsseite darf
+  // eine aktuelle Angabe nicht ueberschreiben. Und der Konflikt wird benannt, nicht stillgelegt.
+  assert.ok(rang.indexOf('ausdrückliche Entscheidung')<rang.indexOf('verifizierte Projektquelle'));
+  assert.match(rang,/benenne den Widerspruch im Ergebnis mit beiden Werten und ihrer Herkunft/);
+  assert.match(rang,/Sie wird nie zu einer Aussage über das Unternehmen/,'eine Ableitung steuert, sie behauptet nicht');
 });
 
 test('Rechtstexte werden nicht sprachlich überarbeitet, Inhaltstexte schon',async()=>{
@@ -206,4 +213,73 @@ test('die Seitenliste ist verbindlich, der Seitenaufbau ist frei',async()=>{
   assert.match(text,/Welche Seiten es gibt, ist dagegen entschieden/);
   assert.match(struktur,/Verbindlich ist die Liste der Seiten und ihre Pfade/);
   assert.doesNotMatch(struktur,/Die Pfade sind Vorschläge/,'einmal entschieden ist kein Vorschlag mehr');
+});
+
+test('eine nur erwähnte Datei traegt kein Projektziel',async()=>{
+  // „speisekarte.pdf liegt bei" und „Hauptziel: Speisekarte mit Preisen" standen nebeneinander,
+  // ohne dass jemand prüfte, ob je ein Wort daraus gelesen wurde. Die bauende KI liest daraus:
+  // die Speisen liegen vor. Tun sie nicht - und dann entstehen Gerichte und Preise aus dem Nichts.
+  const ungelesen=await bau({documents:[{name:'speisekarte.pdf'}]},{goal:'Speisekarte mit Preisen zeigen'});
+  assert.match(ungelesen,/## BEIGELEGTE UNTERLAGEN/);
+  assert.match(ungelesen,/speisekarte\.pdf: \*\*liegt bei, ist aber nicht ausgelesen\*\*/);
+  assert.match(ungelesen,/CONTENT-BLOCKER: speisekarte\.pdf/);
+  assert.match(ungelesen,/weder Positionen noch Preise noch Bezeichnungen/);
+  // Ausgelesen ist dieselbe Datei eine Quelle und kein Blocker.
+  const gelesen=await bau({documents:[{name:'speisekarte.pdf',text:'Döner 6,50 · Dürüm 7,00 · Falafel 6,00 · Ayran 1,50 · Pommes 3,00 · Salatteller 8,50 · alle Preise inklusive Mehrwertsteuer und Verpackung'}]},{goal:'Speisekarte mit Preisen zeigen'});
+  assert.match(gelesen,/speisekarte\.pdf: ausgelesen/);
+  assert.doesNotMatch(gelesen,/CONTENT-BLOCKER/);
+  // Und eine Datei, an der kein Ziel haengt, ist ein Hinweis, kein Blocker.
+  const nebensache=await bau({documents:[{name:'logo-entwurf.pdf'}]},{goal:'Öffnungszeiten zeigen'});
+  assert.match(nebensache,/logo-entwurf\.pdf: liegt bei, ist aber nicht ausgelesen/);
+  assert.doesNotMatch(nebensache,/CONTENT-BLOCKER/);
+});
+
+test('die Startseite gilt nicht als fehlend, wenn sie aus Fakten entstehen darf',async()=>{
+  // „Aufbau aus Briefing und gesicherten Fakten ableiten" ist eine Anweisung, keine Luecke.
+  // Beides nebeneinander hiess: bau ihn und liefere ihn nach.
+  const api=await bauer();
+  api.set(GRUND,KUNDE);
+  const text=api.buildMasterPrompt(),struktur=api.structureDocument();
+  assert.match(struktur,/Aufbau aus Briefing und gesicherten Fakten ableiten/,'die Erlaubnis steht weiter da');
+  assert.doesNotMatch(text,/- Inhalt für „Startseite“/,'…und darf dann nicht zugleich als fehlend gelten');
+  // Und die pauschale Zaehlung ist weg.
+  assert.doesNotMatch(text,/Davon mit belegtem Inhalt/);
+  assert.match(text,/Was auf welcher Seite belegt ist und was fehlt, steht dort einzeln/);
+});
+
+test('feste Pixelwerte gelten nur mit Vorlage, sonst bleiben die Regeln',async()=>{
+  // Jedes Projekt bekam dieselben Zahlen - das ist eine Prompt.ai-Schablone, genau das, was die
+  // Anti-Slop-Regeln verhindern sollen.
+  const ohne=await bau({__concept:{name:'Klar',mood:'ruhig',palette:['#fff'],layoutVariant:'einspaltig'}});
+  assert.match(ohne,/Regeln verbindlich, genannte Zahlen sind Richtwerte/);
+  for(const zahl of [/96-120px/,/clamp\(38px/,/Richtwert 44-52px/,/Eckenradius 8-10px/])
+    assert.doesNotMatch(ohne,zahl,`Schablonenwert ohne Vorlage: ${zahl}`);
+  // Die Regeln und die Mindestwerte aus der Barrierefreiheit bleiben.
+  assert.match(ohne,/Höhe mindestens 44px \(Tippfläche, nicht verhandelbar\)/);
+  assert.match(ohne,/Fließtext 16-17px mit Zeilenhöhe 1\.55-1\.7 \(Lesbarkeit, nicht verhandelbar\)/);
+  assert.match(ohne,/Der Abstand ist über alle Abschnitte derselbe/);
+  assert.doesNotMatch(ohne,/Hero plus zwei bis vier Bänder/,'die Anzahl der Bänder kommt aus dem Inhalt');
+  // Mit freigegebener Referenz sind die Werte verbindlich.
+  const mit=await bau({urls:[{url:'https://ref.de',aspects:['Typografie','Layout']}],
+    __concept:{name:'Klar',mood:'ruhig',palette:['#fff'],layoutVariant:'einspaltig'}});
+  assert.match(mit,/abgeleitet aus der freigegebenen Referenz/);
+  assert.match(mit,/clamp\(38px/);
+});
+
+test('Ortsangaben bleiben an Belege gebunden',async()=>{
+  const text=await bau();
+  assert.match(text,/Erfinde keinen Kilometer-Radius, keine Nachbarorte, kein Einzugsgebiet/);
+  assert.match(text,/wird daraus nicht „30 km rund um Stadthagen"/);
+});
+
+test('die Pruefung geht ueber alle drei Dateien, nicht nur ueber den Auftrag',async()=>{
+  const app=await readFile(fileURLToPath(new URL('../app.js',import.meta.url)),'utf8');
+  assert.match(app,/function crossFileBlock\(text\)/);
+  assert.match(app,/const struktur=structureDocument\(\),quellen=attachmentPromptBlock\(\)/);
+  assert.match(app,/NICHT DECKUNGSGLEICH ZWISCHEN DEN DATEIEN/);
+  // Beide Pruefungen laufen, die alte bleibt erhalten.
+  assert.match(app,/for\(const block of \[consistencyBlock\(text\),crossFileBlock\(text\)\]\)/);
+  // Und im Normalfall meldet sie nichts - die drei Dateien kommen aus demselben Stand.
+  const sauber=await bau();
+  assert.doesNotMatch(sauber,/NICHT DECKUNGSGLEICH/);
 });

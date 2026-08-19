@@ -1915,7 +1915,7 @@ test('the master prompt says in which order to build, how much, what counts as d
     assert.ok(app.includes(`function ${fn}(`),`${fn} fehlt`);
   // Und sie muessen auch wirklich im Prompt landen, nicht nur existieren.
   assert.match(app,/\$\{buildOrderBlock\(\)\}\$\{scopeBlock\(\)\}/);
-  assert.match(app,/\$\{acceptanceBlock\(\)\}\$\{contentNeedsBlock\(\)\}/);
+  assert.match(app,/\$\{acceptanceBlock\(\)\}\$\{attachmentStatusBlock\(\)\}\$\{contentNeedsBlock\(\)\}/);
   assert.match(app,/\$\{situationsBlock\(\)\}/);
   // Die Reihenfolge haengt am Hauptziel, nicht an einer festen Liste.
   assert.match(app,/const GOAL_PAGE=\{'Anfragen':'contact','Verkaufen':'offer'/);
@@ -1926,7 +1926,11 @@ test('the master prompt says in which order to build, how much, what counts as d
   // Und oben steht, wie das Briefing zu lesen ist - was gesetzt ist, was belegt, was Rahmen,
   // was offen. Ohne das sind zwoelf Abschnitte gleichrangig.
   assert.match(app,/## SO IST DIESES BRIEFING AUFGEBAUT/);
-  assert.match(app,/belegt schlägt entschieden, entschieden schlägt Rahmen/);
+  // Die Rangfolge steht jetzt vollstaendig am Ende des Auftrags: Sicherheit/Recht, dann die
+  // aktuelle Nutzerentscheidung, dann die verifizierte Quelle. „Belegt schlaegt entschieden" war
+  // zu pauschal - eine alte Nummer auf der Bestandsseite darf keine aktuelle Angabe ueberschreiben.
+  assert.match(app,/Bei Widerspruch gilt die Rangfolge am Ende dieses Dokuments/);
+  assert.match(app,/Die aktuelle ausdrückliche Entscheidung des Auftraggebers/);
 });
 
 // Nutzungssituationen und Abgrenzung kommen aus der Pruefung, die ohnehin laeuft - kein
