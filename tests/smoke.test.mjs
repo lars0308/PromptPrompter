@@ -311,7 +311,20 @@ test('Stripe checkout returns to the app and keeps add-on gated to Pro',async()=
 test('a step-8 master-prompt build failure surfaces an error instead of leaving the UI silently stuck',async()=>{
   const src=await text('app.js');
   assert.match(src,/if\(step===8\)\{try\{updateMasterPrompt\(\);renderCompletionSummary\(\)\}catch\(err\)\{const message=err\?\.message\|\|"Der Master-Prompt konnte nicht zusammengestellt werden\. Bitte versuch es erneut\.";el\.projectValidation\.textContent=message;if\(el\.masterPrompt\)el\.masterPrompt\.value=/);
-  assert.match(src,/goStep\(next\);\s*\}catch\(err\)\{el\.projectValidation\.textContent=err\?\.message\|\|"Es gab ein Problem\. Bitte versuch es erneut\.";\}/);
+  assert.match(src,/goStep\(next\);\s*\}catch\(err\)\{/);
+});
+test('an auto-piloted step transition that throws does not fail silently on a hidden step',async()=>{
+  // #projectValidation sits on step 1's panel (index.html) and stays invisible once Guided/Auto
+  // has auto-piloted past it. A screen recording showed exactly this: the "Rückfragen werden
+  // erstellt" loading screen finished, then a blank page - no error, no dialog, nothing - because
+  // runProjectReview() threw during the automatic step 3 -> 4 click and the only place the error
+  // went was that invisible span. #modeFlowPanel sits above every step's content and is only
+  // hidden in Expert mode or on step 8, so it now also gets the error message.
+  const src=await text('app.js');
+  const handler=src.slice(src.indexOf("$$('.next-btn').forEach"),src.indexOf("$$('.back-btn').forEach"));
+  assert.match(handler,/catch\(err\)\{\s*const message=err\?\.message\|\|"Es gab ein Problem\. Bitte versuch es erneut\.";\s*el\.projectValidation\.textContent=message;/);
+  assert.match(handler,/const flowPanel=document\.getElementById\('modeFlowPanel'\);/);
+  assert.match(handler,/if\(flowPanel&&state\.mode!=="expert"\)\{\s*flowPanel\.hidden=false;flowPanel\.classList\.remove\('busy'\);/);
 });
 test('submitting the clarification dialog with only optional questions left blank does not reopen it forever',async()=>{
   const src=await text('app.js');

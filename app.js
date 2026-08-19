@@ -4407,7 +4407,22 @@ ${agentMemoryDocument()}`;
         // more, with a warning if name, customer, website or analysis do not match the description.
         if(next===8&&!await confirmProjectData())return;
         goStep(next);
-      }catch(err){el.projectValidation.textContent=err?.message||"Es gab ein Problem. Bitte versuch es erneut.";}
+      }catch(err){
+        const message=err?.message||"Es gab ein Problem. Bitte versuch es erneut.";
+        el.projectValidation.textContent=message;
+        // #projectValidation sitzt fest auf Schritt 1 (index.html) - in Gefuehrt/Automatik ist der
+        // Nutzer beim Scheitern dieses Klicks aber oft laengst auf einem spaeteren, teils
+        // unsichtbaren Schritt (Automatik blendet Schritt 3 z.B. bewusst aus). Ohne diesen Zweig
+        // schlug der automatische Sprung von Schritt 3 zu 4 lautlos fehl: kein Fehler, keine
+        // Rueckfragen, nur eine leere Seite - genau das aus der Bildschirmaufnahme.
+        const flowPanel=document.getElementById('modeFlowPanel');
+        if(flowPanel&&state.mode!=="expert"){
+          flowPanel.hidden=false;flowPanel.classList.remove('busy');
+          const strong=flowPanel.querySelector('strong'),small=flowPanel.querySelector('small');
+          if(strong)strong.textContent="Es gab ein Problem";
+          if(small)small.textContent=message;
+        }
+      }
     }));$$('.back-btn').forEach(b=>b.addEventListener("click",()=>goStep(Number(b.dataset.back),true)));
     el.skipReferencesBtn?.addEventListener("click",()=>goStep(3));
     $$('.step-nav').forEach(b=>b.addEventListener("click",()=>{const n=Number(b.dataset.step);if(state.mode==="expert"||n<=state.maxVisited)goStep(n,true)}));$$('.mode-switch button').forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
