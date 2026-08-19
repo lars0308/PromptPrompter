@@ -760,7 +760,9 @@ html.prompt-full-redesign :is(
 html.prompt-full-redesign :is(.intro-dialog,.announcement-dialog){border:1px solid var(--line)!important;border-radius:18px!important;box-shadow:var(--shadow)!important}
 html.prompt-full-redesign :is(.intro-frame,.announcement-frame,.project-extras-body){color:var(--ink)!important}
 html.prompt-full-redesign :is(.intro-kicker,.announcement-kicker,.admin-prompt-group,.project-extras-mark){color:var(--accent-strong)!important}
-html.prompt-full-redesign .intro-steps b{background:var(--surface-soft)!important;color:var(--accent-strong)!important}
+html.prompt-full-redesign .intro-side.is-result{border-color:color-mix(in srgb,var(--accent-strong) 34%,var(--line))!important;background:var(--surface-soft)!important}
+html.prompt-full-redesign :is(.intro-side.is-result .intro-side-tag,.intro-arrow){color:var(--accent-strong)!important}
+html.prompt-full-redesign .intro-arrow{background:var(--accent-strong)!important}
 html.prompt-full-redesign .install-invite{border:1px solid var(--line)!important;border-radius:14px!important;box-shadow:var(--shadow-soft)!important}
 html.prompt-full-redesign .save-toast{border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:var(--shadow-soft)!important}
 html.prompt-full-redesign .admin-prompt-layout,

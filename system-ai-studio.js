@@ -33,11 +33,12 @@
     {label:'Ultimate · Rückfragen & Freier Prompt',slot:'stark',tasks:['questions','freeprompt'],plans:['ultimate'],priority:20},
     {label:'Ultimate · Master-Prompt & Website',slot:'spitze',tasks:['prompt','website'],plans:['ultimate'],priority:20},
     {label:'Ultimate · Reserve',slot:'stark',tasks:['prompt','website'],plans:['ultimate'],priority:30},
-    // Ohne einen ausdrücklich markierten Spareintrag dreht der Ablauf bei aufgebrauchtem Budget die
-    // Kette einfach um - und ganz hinten steht der Notausgang, also das teuerste Modell. Genau
-    // deshalb gehört die Sparwahl in die Vorlage, für jede Aufgabe und jeden Tarif.
-    {label:'Sparwahl (Budget aufgebraucht)',slot:'schnell',tasks:ALLE_TEXTAUFGABEN,plans:ALLE_TARIFE,priority:800,saver:true},
-    {label:'Notausgang (alle Tarife)',slot:'stark',tasks:ALLE_TEXTAUFGABEN,plans:ALLE_TARIFE,priority:900}
+    // Ganz hinten steht bewusst das schwächste Modell, und dasselbe antwortet bei aufgebrauchtem
+    // Budget. Beides ist derselbe Fall: eine Antwort vom günstigsten Modell ist besser als keine
+    // Antwort - und besser, als für einen Notfall den teuersten Preis zu zahlen. Ohne den
+    // ausdrücklich markierten Spareintrag dreht der Ablauf die Kette bei leerem Budget einfach um
+    // und stellte damit früher das teuerste Modell nach vorn.
+    {label:'Rückfall & Sparwahl (alle Tarife)',slot:'schnell',tasks:ALLE_TEXTAUFGABEN,plans:ALLE_TARIFE,priority:900,saver:true}
   ];
   // Eine Modell-ID, die das Gateway nicht kennt, wäre eine Aufgabe, die im Betrieb still ausfällt.
   // Darum wird jede Wunschliste gegen die echte Modellliste geprüft und die erste vorhandene

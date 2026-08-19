@@ -54,6 +54,32 @@ async function laufe(browser,breite,hoehe,label){
       text:(document.getElementById('appActionMessage')?.textContent||'')}));
     pruefe(`${label}: „Kostenlos" fragt nach der Zustimmung`,da&&n.offen&&n.titel==='Kostenlos testen',JSON.stringify(n));
     pruefe(`${label}: die Frage nennt Nutzungsbedingungen und Datenschutz`,/Nutzungsbedingungen/.test(n.text)&&/Datenschutz/.test(n.text));
+    // Die Begrüßung hing am Klick statt am Ergebnis: sie legte sich über die noch offene Frage
+    // und schloss dabei die Einstiegsseite. „Abbrechen" landete dann in der App - ohne Zusage.
+    pruefe(`${label}: die Begrüßung wartet die Zustimmung ab`,!(await p.evaluate(()=>!!document.getElementById('welcomeIntroDialog')?.open)));
+    await p.click('#appActionCancelBtn');
+    await p.waitForTimeout(900);
+    const nein=await p.evaluate(()=>({gate:!!document.getElementById('accountDialog')?.open,
+      begruessung:!!document.getElementById('welcomeIntroDialog')?.open,
+      merker:sessionStorage.getItem('prompt-ai-entry-gate-v1')}));
+    pruefe(`${label}: „Abbrechen" bleibt auf der Einstiegsseite`,nein.gate&&!nein.begruessung,JSON.stringify(nein));
+    pruefe(`${label}: „Abbrechen" merkt sich keinen Eintritt`,nein.merker!=='1',JSON.stringify(nein));
+    // Und mit Ja kommt sie - einmal, und ohne die Einstiegsseite zu wiederholen.
+    await tippe(p,'free');
+    await p.waitForTimeout(500);
+    await p.click('#appActionConfirmBtn');
+    await p.waitForTimeout(1100);
+    const ja=await p.evaluate(()=>{
+      const d=document.getElementById('welcomeIntroDialog');
+      return {offen:!!d?.open,seiten:d?.querySelectorAll('.intro-side').length||0,
+        konsole:!!d?.querySelector('.intro-console'),
+        auftrag:/Fertig, wenn/.test(d?.textContent||''),
+        ueberlauf:d?d.scrollWidth>d.clientWidth+1:false};
+    });
+    pruefe(`${label}: nach dem Ja kommt die Begrüßung`,ja.offen,JSON.stringify(ja));
+    pruefe(`${label}: sie stellt Eingabe und Auftrag nebeneinander`,ja.seiten===2&&ja.auftrag,JSON.stringify(ja));
+    pruefe(`${label}: sie wiederholt die Konsolen-Erklärung nicht`,!ja.konsole);
+    pruefe(`${label}: sie passt ohne Querlauf auf den Bildschirm`,!ja.ueberlauf);
     await ctx.close();
   }
   // Pro und Ultimate: die Kachel trägt drei Stichpunkte, die Tarifseite die ganze Liste. Wer

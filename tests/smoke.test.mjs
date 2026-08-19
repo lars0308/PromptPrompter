@@ -1158,10 +1158,18 @@ test('the modes are named after what they do',async()=>{
 
 test('a first-time visitor gets three sentences before the first empty field',async()=>{
   const intro=await text('welcome-intro-ui.js'),loader=await text('admin-console.js'),sw=await text('sw.js');
-  assert.match(intro,/#gateGuestBtn,#gateSignUpPick,#signUpBtn,#startFreeBtn,#offerCta/,'shown on register and on free trial');
+  // Der Auslöser ist das Ergebnis, nicht der Klick. Am Klick zu hängen hieß: die Begrüßung legte
+  // sich über die noch offene Zustimmungsfrage, schloss dabei die Einstiegsseite (jedes Fenster
+  // schließt beim Öffnen die anderen), und „Abbrechen" landete in der App - ohne Zusage.
+  assert.match(intro,/window\.addEventListener\('promptai:onboarding-start'/,'the entry is announced, not the click');
+  assert.doesNotMatch(intro,/#gateGuestBtn/,'no click listener may run ahead of the consent');
+  const app=await text('app.js');
+  assert.match(app,/function announceOnboarding\(reason\)/);
+  assert.match(app,/el\.accountDialog\.close\(\);announceOnboarding\('guest'\)/,'announced once the guest run is confirmed');
+  assert.match(app,/announceOnboarding\('signup'\)/,'…and once an account with a session exists');
   assert.match(intro,/const SEEN_KEY='prompt-ai-intro-seen-v1'/);
   assert.match(intro,/if\(seen\(\)\)return;/,'once per device, never again');
-  assert.match(intro,/#cookieBanner\[open\],#maintenanceDialog\[open\]/,'never on top of something that has to be answered first');
+  assert.match(intro,/#cookieBanner\[open\],#appActionDialog\[open\],#maintenanceDialog\[open\]/,'never on top of something that has to be answered first');
   assert.match(loader,/\.\/welcome-intro-ui\.js\?v=\d{8}-\d+/);
   assert.ok(sw.includes('/welcome-intro-ui.js'));
 });
@@ -1356,12 +1364,17 @@ test('registering asks for the name that ends up in the client documents',async(
   assert.match(cloud,/async signUp\(email, password, profile\)/);
   assert.match(cloud,/meta\.display_name = profile\.displayName/,'the name survives an unconfirmed email in the user metadata');
 });
-test('the first-run intro explains the console before the three steps',async()=>{
-  const intro=await text('welcome-intro-ui.js');
-  assert.match(intro,/class="intro-console"/);
-  assert.match(intro,/Das Menü oben<\/b> legt die Arbeitsart fest/);
-  assert.match(intro,/Das große Feld<\/b> ist alles, was du ausfüllen musst/);
-  assert.match(intro,/Das Plus darunter<\/b> hängt Bilder, PDFs oder den Link/);
+// Die Begrüßung erklärte dieselbe Konsole ein zweites Mal - mit denselben drei Nummern, die die
+// Einstiegsseite unmittelbar davor schon gezeigt hatte. Wer etwas zweimal liest, liest es beim
+// zweiten Mal nicht. Hier steht jetzt das, was dort fehlt: das Ergebnis.
+test('the first-run intro shows the result instead of repeating the entry page',async()=>{
+  const intro=await text('welcome-intro-ui.js'),gate=await text('entry-gate-ui.js');
+  assert.doesNotMatch(intro,/class="intro-console"/,'the console is the entry page’s job');
+  assert.match(gate,/class="gate-hint"/,'…and it does explain the console there');
+  assert.match(intro,/class="intro-compare"/);
+  assert.match(intro,/class="intro-side"[\s\S]{0,200}Deine Eingabe/,'left: what the visitor types');
+  assert.match(intro,/class="intro-side is-result"[\s\S]{0,200}Dein Master-Prompt/,'right: what comes out');
+  assert.match(intro,/## Fertig, wenn/,'the excerpt shows the acceptance section, not just a headline');
   assert.match(intro,/overflow-y:auto;overscroll-behavior:contain/,'the longer content scrolls instead of being cut off');
 });
 

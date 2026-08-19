@@ -444,7 +444,18 @@
   }
   // Nur dieser Weg ist eine Entscheidung: der Besucher geht bewusst ohne Konto weiter. Erst
   // damit hört die Anmeldeseite auf, beim nächsten Laden wiederzukommen.
-  function closeAccountGate(){try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close()}
+  function closeAccountGate(){try{sessionStorage.setItem(ENTRY_GATE_KEY,'1')}catch{}el.accountDialog.classList.remove("guest-gate");if(el.accountDialog.open)el.accountDialog.close();announceOnboarding('guest')}
+  // Die Begrüßung hing am Klick auf „Kostenlos testen“ - nicht am Ergebnis.
+  //
+  // Zwischen Klick und Eintritt liegt aber die Zustimmung zu den Nutzungsbedingungen. Die
+  // Begrüßung kam trotzdem, nach 700 ms, mitten über die noch offene Frage. Und weil jedes
+  // Fenster beim Öffnen die anderen zumacht (siehe showModal weiter oben), nahm sie dabei die
+  // Einstiegsseite mit. Wer dann auf „Abbrechen“ drückte, stand auf der Startseite - ohne je
+  // zugestimmt zu haben.
+  //
+  // Angesagt wird deshalb der Eintritt, nicht der Klick: hier, wenn der Gastlauf bestätigt ist,
+  // und nach dem Anlegen eines Kontos mit Sitzung.
+  function announceOnboarding(reason){try{window.dispatchEvent(new CustomEvent('promptai:onboarding-start',{detail:{reason}}))}catch{}}
   // Ohne Konto gibt es keinen Haken beim Anlegen und keine Bestätigungsmail - der kostenlose Test
   // ist der einzige Moment, in dem die Zustimmung überhaupt eingeholt werden kann. Sie steht
   // deshalb hier, mit Ja und Nein, und die beiden Texte sind von hier aus erreichbar.
@@ -967,6 +978,7 @@
         // Schreibversuch ab. Die Angaben liegen in dem Fall bereits in den Nutzer-Metadaten.
         try{await window.SiteBriefCloud.saveUserProfile(profile);state.userProfile=profile}catch{}
         el.authMessage.textContent="Konto angelegt und angemeldet.";
+        announceOnboarding('signup');
       }else el.authMessage.textContent="Konto angelegt. Bitte bestätige die E-Mail und melde dich danach an.";
       el.authMessage.className="auth-message good";setAuthMode(false);
     }catch(err){el.authMessage.textContent=err?.message||"Konto konnte nicht angelegt werden.";el.authMessage.className="auth-message error";}
