@@ -1205,6 +1205,28 @@ test('the master prompt is written into the field instead of appearing twice',as
   assert.ok(sw.includes('/workflow-cleanup.js'));
 });
 
+// Das Fach „Freier Prompt" nahm jeden Eintrag, der diese Aufgabe irgendwo mitträgt. Seit die
+// Tarif-Vorlage mehrere Aufgaben bündelt, saugte es fünf von neun Texteinträgen aus den Tarifen ab:
+// bei „Kostenlos" stand eine KI, obwohl Free zwei hat. Am Betrieb änderte das nichts - die Kette
+// entsteht aus Tarif und Priorität im Server -, aber prüfen ließ sich die Leiter so nicht mehr.
+test('the admin console sorts the AIs by tariff, not by whoever touches the free prompt',async()=>{
+  const src=await text('system-ai-studio.js');
+  const von=src.indexOf('  const GROUPS=['),bis=src.indexOf('  function rowHtml(');
+  assert.ok(von>=0&&bis>von,'the grouping must stay findable');
+  const api=new Function(`const PLANS={free:'Kostenlos',pro:'Pro',ultimate:'Ultimate'};${src.slice(von,bis)}\nreturn {GROUPS,groupOf}`)();
+  const fach=(tasks,plans)=>api.groupOf({tasks,plans});
+  // Ein Tarif-Eintrag bleibt bei seinem Tarif, auch wenn er den freien Prompt mitbedient.
+  assert.equal(fach(['prompt','freeprompt'],['free']),'free');
+  assert.equal(fach(['prompt','website','freeprompt'],['pro']),'pro');
+  assert.equal(fach(['questions','freeprompt'],['ultimate']),'ultimate');
+  // Ein eigenes Fach bekommt nur, wer ausschließlich den freien Prompt bedient.
+  assert.equal(fach(['freeprompt'],['pro']),'freeprompt');
+  // Und was für mehrere Tarife gilt, bleibt im Fallback-Fach.
+  assert.equal(fach(['analysis','questions','prompt','freeprompt','website','learning'],['free','pro','ultimate']),'all');
+  assert.equal(fach(['image'],['pro','ultimate']),'all');
+  assert.match(src,/'Nur freier Prompt'/,'…und das Fach heißt, was es enthält');
+});
+
 test('the footer year does not depend on an inline script at the end of a cached document',async()=>{
   const theme=await text('theme-init.js'),html=await text('index.html');
   assert.match(theme,/const setYear=\(\)=>\{const node=document\.getElementById\('currentYear'\)/);

@@ -110,13 +110,22 @@
     ['free','Kostenlos','Nur für Free-Konten'],
     ['pro','Pro','Nur für Pro-Konten'],
     ['ultimate','Ultimate','Nur für Ultimate-Konten'],
-    ['freeprompt','Freier Prompt','Text, Bild, Video, Musik, Logo – alles außerhalb des Website-Ablaufs'],
+    ['freeprompt','Nur freier Prompt','Einträge, die ausschließlich Text, Bild, Video, Musik oder Logo bedienen – ohne den Website-Ablauf. Steht hier nichts, übernehmen das die Tarif-Einträge oben.'],
     ['all','Für alle Tarife (Fallback)','Springt ein, wenn für den Tarif nichts Eigenes greift']
   ];
   function groupOf(profile){
-    // Der freie Prompt bekommt ein eigenes Fach, egal für welchen Tarif der Eintrag gilt: er ist
-    // die einzige Aufgabe, die ohne Projekt läuft, und wird getrennt eingestellt.
-    if((profile.tasks||[]).includes('freeprompt'))return 'freeprompt';
+    // Das Fach „Freier Prompt" nahm bisher jeden Eintrag, der diese Aufgabe irgendwo mitträgt.
+    //
+    // Das war richtig, solange ein Eintrag genau eine Aufgabe hatte. Seit die Tarif-Vorlage
+    // mehrere Aufgaben bündelt, saugte es fünf von neun Texteinträgen aus den Tarifen ab: bei
+    // „Kostenlos" stand eine KI, obwohl Free zwei hat, und die Leiter Free → Pro → Ultimate war
+    // auf dem Bildschirm nicht mehr zu lesen. Am Betrieb änderte das nichts - die Kette entsteht
+    // aus Tarif und Priorität im Server, nicht aus dieser Anzeige -, aber prüfen ließ sie sich so
+    // nicht mehr.
+    //
+    // Ein eigenes Fach bekommt jetzt nur noch, wer ausschließlich den freien Prompt bedient.
+    const tasks=(profile.tasks||[]).filter(Boolean);
+    if(tasks.length&&tasks.every(task=>task==='freeprompt'))return 'freeprompt';
     const plans=(profile.plans||[]).filter(x=>PLANS[x]);
     return plans.length===1?plans[0]:'all';
   }
