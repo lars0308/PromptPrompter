@@ -2571,10 +2571,10 @@
       ?"Kopfzeile mit Logo auf der einen und einem Hamburger-Menü auf der anderen Seite - keine offene Menüleiste mit sichtbaren Punkten."
       :"Vollständige Kopfzeile: Logo plus sichtbare Navigationspunkte als Textlinks.";
     const rhythm=density>=65
-      ?`Dichter Rhythmus: mehrere klar getrennte Inhaltsbänder, kompakte Abstände${wert(" (Abschnittsabstand etwa 64-80px auf Desktop)")}. Der Abstand ist über alle Abschnitte derselbe.`
+      ?`Dichter Rhythmus: mehrere klar getrennte Inhaltsbänder, kompakte Abstände${wert(" (Abschnittsabstand etwa 64-80px auf Desktop)")}.`
       :density>=35
-      ?`Ausgewogener Rhythmus: Hero plus so viele Bänder, wie der Inhalt trägt, großzügige Abstände${wert(" (Abschnittsabstand etwa 96-120px auf Desktop)")}. Der Abstand ist über alle Abschnitte derselbe.`
-      :`Ruhiger Rhythmus: wenige Bänder, viel Weißraum${wert(" (Abschnittsabstand etwa 128-160px auf Desktop)")}. Der Abstand ist über alle Abschnitte derselbe.`;
+      ?`Ausgewogener Rhythmus: Hero plus so viele Bänder, wie der Inhalt trägt, großzügige Abstände${wert(" (Abschnittsabstand etwa 96-120px auf Desktop)")}.`
+      :`Ruhiger Rhythmus: wenige Bänder, viel Weißraum${wert(" (Abschnittsabstand etwa 128-160px auf Desktop)")}.`;
     const cards=anti>=70
       ? "Karten nur, wo mehrere gleichartige Dinge nebeneinanderstehen (Leistungen, Objekte, Team). Keine Drei-Karten-Reihe als Dekoration, keine Glasflächen, keine Verläufe, keine schwebenden Schatten. Eine Karte trägt eine Kante ODER eine Fläche, nicht beides."
       : "Karten sparsam und immer mit einem inhaltlichen Grund. Kante und Fläche zurückhaltend, kein Schatten als Effekt.";
@@ -2583,6 +2583,7 @@
     const forms="Formularfelder: eine Spalte, sichtbare Beschriftung über dem Feld (kein reiner Platzhalter als Label), Höhe wie die Buttons, gleiche Eckenradien, sichtbarer Fokuszustand, Fehlermeldung unter dem Feld im Klartext. Pflichtfelder gekennzeichnet, keine Felder ohne Zweck.";
     const type=`Typografie: ${c.type||"eine klare Schriftpaarung"}. Eine durchgehende Skala mit klar unterscheidbaren Stufen${wert(" - H1 clamp(38px,6vw,68px), H2 clamp(26px,3.4vw,40px), H3 20-24px, Kleintext 13px")}; Fließtext 16-17px mit Zeilenhöhe 1.55-1.7 (Lesbarkeit, nicht verhandelbar). Die Größen leiten sich aus diesem Projekt ab, nicht aus einer Vorlage. Maximal zwei Schriftfamilien und höchstens drei Schriftstärken.`;
     const footer="Fußzeile: Firmenname, Anschrift, Kontakt, Öffnungszeiten sofern vorhanden, dazu Impressum und Datenschutz als eigene Links. Keine erfundenen Siegel, Bewertungen oder Zahlungslogos.";
+    const spacing="Abstände: ein System aus wenigen abgestuften Werten (etwa vier Stufen), das im ganzen Projekt gilt. Welche Stufe wo greift, richtet sich nach Zusammengehörigkeit und Hierarchie - Beschriftung und Feld stehen enger beieinander als zwei Abschnitte, ein Abschnittswechsel deutlicher als ein Absatz. Konsistent heißt dasselbe System, nicht überall derselbe Abstand.";
     const states="Zustände sind Pflicht, nicht Kür: Hover, aktiver Fokus (sichtbar, nicht nur Farbe), deaktiviert, Ladezustand und Leerzustand jeder Liste.";
     const mobile="Mobil ist eine eigene Anordnung, keine geschrumpfte Desktopseite: Navigation als Menü, einspaltige Bänder, Primäraktion in Daumenreichweite, Bilder mit sinnvollem Bildausschnitt statt gestauchtem Original.";
     const heroLine=minimal
@@ -2592,6 +2593,7 @@
 ${nav}
 ${heroLine}
 ${rhythm}
+${spacing}
 Karten und Flächen: ${cards}
 ${buttons}
 ${forms}
@@ -2993,7 +2995,12 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     const antworten=(state.clarifications||[]).map(x=>x.answer||'').join(' ').toLowerCase();
     const text=[project().description,project().special,project().goal,antworten].filter(Boolean).join(' ').toLowerCase();
     const teile=['alle Buttons','Links','Navigationen'];
-    if(/formular|kontaktformular|anfrage|buchung|termin|newsletter|anmeldung/.test(text))teile.push('Formulare');
+    // „Anfragen bekommen" ist ein Ziel, kein Formular. „Anmeldung mit E-Mail" ist ein Konto, kein
+    // Kontaktformular. Beides zog frueher ein Formular in die Abnahme - eine Funktion, die niemand
+    // bestellt hatte und die die bauende KI dann baut, samt Empfaenger und Einwilligung.
+    if(/\bformular\b|kontaktformular|anfrageformular|buchungsformular|newsletter/.test(text))teile.push('Formulare');
+    if(/\bkonto\b|\bkonten\b|benutzerkonto|anmeldung|registrierung|\blogin\b|passwort/.test(text))teile.push('Anmeldung und Konten');
+    if(/terminbuchung|online.{0,12}(?:buchen|reservieren)|buchungssystem|reservierungssystem/.test(text))teile.push('die Terminbuchung');
     if(/sanity|wordpress|webflow|\bcms\b|redaktion|selbst pflegen|selber pflegen/.test(text))teile.push('CMS-Inhalte');
     // Ohne Wortgrenze traf „karte" wieder mitten in „Speisekarte" - dieselbe Falle wie bei den
     // Antwortbegriffen.
@@ -3014,7 +3021,11 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   // once, each with the page it came from, and the ones that are genuinely missing are named as
   // missing instead of quietly left open for the model to fill in.
   const FACT_MAIL=/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
-  const FACT_PHONE=/(?:tel\.?|telefon|fon|phone|mobil)[^0-9+]{0,12}(\+?[\d][\d\s().\/-]{6,24}\d)/gi;
+  // "Rufen Sie an unter 0541 998877" stand auf der Kontaktseite und wurde nicht gefunden - das
+  // Muster verlangte das Wort Telefon davor. Im Auftrag stand dann "Telefon: nicht in den Quellen
+  // gefunden", und der Auftraggeber wurde nach seiner eigenen Nummer gefragt. Ein Ansagewort
+  // bleibt noetig: eine nackte Zahlenfolge waere ebenso oft eine Jahreszahl oder ein Preis.
+  const FACT_PHONE=/(?:tel\.?|telefon(?:isch)?|fon|phone|mobil|handy|rufnummer|rufen sie (?:uns )?an(?: unter)?|erreichen (?:sie )?uns(?: unter)?|anruf(?:en)?(?: unter)?|☎|📞)[^0-9+]{0,12}(\+?[\d][\d\s().\/-]{6,24}\d)/gi;
   const FACT_STREET=/\b([A-ZÄÖÜ][\wäöüß.-]*(?:stra(?:ß|ss)e|str\.|weg|allee|platz|ring|gasse|damm|chaussee)\s+\d+\s*[a-z]?)\b/gi;
   const FACT_ZIP=/\b(\d{5})\s+([A-ZÄÖÜ][a-zäöüß]+(?:[- ][A-ZÄÖÜ][a-zäöüß]+)?)\b/g;
   // „Mo-Sa 11-22 Uhr" ist die haeufigste Schreibweise an einer Ladentuer - und sie fiel durch,
@@ -3116,12 +3127,32 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
   // Without this the builder decides the site map itself every time - the same briefing produced a
   // one-pager once and six pages the next time, and a page whose source was never read got filled
   // with invented content instead of being marked as open.
+  // Eine Funktion darf nur dann in der Seitenliste stehen, wenn sie bestaetigt ist.
+  //
+  // Beim Kontakt stand fest „Telefon, E-Mail, Formular" - bestaetigt waren aber nur Telefon und
+  // E-Mail. Ein Kontaktformular ist keine Kleinigkeit: es braucht einen Empfaenger, eine
+  // Datenschutzgrundlage und eine Einwilligung. Es einfach dazuzuschreiben heisst, die bauende KI
+  // eine Funktion bauen zu lassen, die niemand bestellt hat.
+  function bestaetigteKontaktwege(){
+    const facts=verifiedFacts();
+    const gesagt=[project().description,project().special,project().goal,
+      ...(state.clarifications||[]).map(x=>x.answer||'')].filter(Boolean).join(' ').toLowerCase();
+    const wege=[];
+    if(facts.phone.length||/\btelefon|\banruf|\brueckruf|\brückruf/.test(gesagt))wege.push('Telefon');
+    if(facts.mail.length||/\be-?mail\b|\bmail\b/.test(gesagt))wege.push('E-Mail');
+    if(/kontaktformular|anfrageformular|\bformular\b/.test(gesagt))wege.push('Formular');
+    if(/whats-?app/.test(gesagt))wege.push('WhatsApp');
+    if(/termin(?:buchung|vereinbarung)|online.{0,12}buchen|buchungssystem/.test(gesagt))wege.push('Terminbuchung');
+    return wege.length
+      ? `${joinTerms(wege)} — keine weiteren Wege ergänzen, insbesondere kein Formular, das hier nicht steht`
+      : 'noch kein Kontaktweg belegt — nichts erfinden, die Seite bleibt sichtbar offen';
+  }
   const PAGE_TYPES=[
     {key:'start',label:'Startseite',match:/^\/?$|startseite|home|index/i,purpose:'Einstieg: wer das ist, was es gibt, wie man hinkommt oder bestellt.'},
     {key:'offer',label:'Angebot / Leistungen',match:/speisekarte|menu(?:karte)?|karte|leistung|service|angebot|produkt|preise|shop|sortiment/i,purpose:'Das eigentliche Angebot mit echten Bezeichnungen und Preisen.'},
     {key:'about',label:'Über uns',match:/ueber-uns|über-uns|about|team|geschichte|restaurant|betrieb|philosophie|wir/i,purpose:'Wer dahintersteht - der Teil, der das Projekt von einer Vorlage unterscheidet.'},
     {key:'hours',label:'Öffnungszeiten',match:/oeffnungszeit|öffnungszeit|opening|zeiten/i,purpose:'Wann geöffnet ist. Nur echte Zeiten.'},
-    {key:'contact',label:'Kontakt',match:/kontakt|contact|anfrage|termin|buchung|reservierung/i,purpose:'Der Weg zur Anfrage: Telefon, E-Mail, Formular.'},
+    {key:'contact',label:'Kontakt',match:/kontakt|contact|anfrage|termin|buchung|reservierung/i,purpose:()=>`Der Weg zur Anfrage: ${bestaetigteKontaktwege()}.`},
     {key:'directions',label:'Anfahrt',match:/anfahrt|standort|location|wegbeschreibung|karte-anfahrt/i,purpose:'Adresse, Anfahrt, Parken.'},
     {key:'gallery',label:'Galerie / Referenzen',match:/galerie|gallery|referenz|projekte|portfolio|bilder/i,purpose:'Echte Bilder oder Arbeiten - keine Stockfotos als Füllung.'},
     {key:'news',label:'Aktuelles',match:/aktuell|news|blog|neuigkeit|lage/i,purpose:'Nur anlegen, wenn es wirklich gepflegt wird.'},
@@ -3272,20 +3303,29 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     const p=project();
     const ziel=[p.goal,p.description,p.special,...(state.understanding?.priorities||[])].filter(Boolean).join(' ').toLowerCase();
     const stamm=name=>String(name||'').replace(/\.[a-z0-9]+$/i,'').replace(/[-_]+/g,' ').trim().toLowerCase();
+    // Vier Zustaende, die nicht dasselbe sind - und der Unterschied entscheidet, was die bauende
+    // KI tun soll. „Datei fehlt" heisst: beim Auftraggeber anfordern. „Liegt vor, aber nicht
+    // ausgewertet" heisst: die Datei ist da, nur ihr Text nicht - eine Anforderung beim
+    // Auftraggeber waere hier eine falsche Bitte um etwas, das er laengst geschickt hat.
     const zeilen=[],blocker=[];
     for(const item of unterlagen){
-      const gelesen=anhangGelesen(item);
       const wort=stamm(item.name).split(/\s+/).filter(x=>x.length>=5)[0]||'';
       const traegtZiel=Boolean(wort&&ziel.includes(wort));
-      if(gelesen)zeilen.push(`- ${item.name}: ausgelesen, Inhalt liegt in \`PROJEKT-QUELLEN.md\`. Nutze die echten Werte daraus.`);
-      else if(traegtZiel){
-        zeilen.push(`- ${item.name}: **liegt bei, ist aber nicht ausgelesen** — und ein Ziel dieses Projekts hängt daran.`);
-        blocker.push(item.name);
-      }
-      else zeilen.push(`- ${item.name}: liegt bei, ist aber nicht ausgelesen. Inhalt nicht annehmen.`);
+      const zustand=!item.present&&item.present!==undefined?'FEHLT'
+        :anhangGelesen(item)?'AUSGEWERTET'
+        :item.parseError?'AUSWERTUNG_FEHLGESCHLAGEN':'VORHANDEN_NICHT_AUSGEWERTET';
+      if(zustand==='AUSGEWERTET'){zeilen.push(`- ${item.name} — ausgewertet: Inhalt liegt in \`PROJEKT-QUELLEN.md\`. Nutze die echten Werte daraus.`);continue}
+      if(zustand==='FEHLT'){zeilen.push(`- ${item.name} — Datei fehlt: sie wird im Projekt genannt, liegt dem Paket aber nicht bei. Beim Auftraggeber anfordern.`);blocker.push({name:item.name,zustand});continue}
+      const text=zustand==='AUSWERTUNG_FEHLGESCHLAGEN'
+        ? `- ${item.name} — Auswertung fehlgeschlagen: die Datei liegt vor, ihr Text konnte nicht gelesen werden. Lies sie selbst aus, wenn du kannst; erfinde ihren Inhalt nicht.`
+        : `- ${item.name} — Unterlage vorhanden, Inhalt noch nicht ausgewertet: die Datei liegt dem Paket bei, ihr Text steht noch in keiner Quelle. Lies sie selbst aus, wenn du kannst; nimm ihren Inhalt nicht an.`;
+      zeilen.push(traegtZiel?`${text} **Ein Ziel dieses Projekts hängt daran.**`:text);
+      if(traegtZiel)blocker.push({name:item.name,zustand});
     }
+    const namen=blocker.map(x=>x.name);
+    const nurFehlend=blocker.length>0&&blocker.every(x=>x.zustand==='FEHLT');
     const hinweis=blocker.length
-      ? `\n\nCONTENT-BLOCKER: ${joinTerms(blocker)} ${blocker.length===1?'trägt':'tragen'} Inhalt, den dieses Projekt braucht, und ${blocker.length===1?'ist':'sind'} nicht ausgewertet. Erfinde daraus nichts — weder Positionen noch Preise noch Bezeichnungen. Baue die Stelle als sichtbar leere Struktur, benenne die fehlende Datei im Ergebnis, und melde das Projekt bis dahin nicht als inhaltlich vollständig.`
+      ? `\n\nCONTENT-BLOCKER: ${joinTerms(namen)} ${namen.length===1?'trägt':'tragen'} Inhalt, den dieses Projekt braucht, und ${namen.length===1?'ist':'sind'} nicht ausgewertet. Erfinde daraus nichts — weder Positionen noch Preise noch Bezeichnungen. Baue die Stelle als sichtbar leere Struktur, ${nurFehlend?'fordere die fehlende Datei im Ergebnis an':'benenne im Ergebnis, dass die vorhandene Unterlage noch ausgewertet werden muss'}, und melde das Projekt bis dahin nicht als inhaltlich vollständig.`
       : '';
     return `\n## BEIGELEGTE UNTERLAGEN\n${zeilen.join('\n')}${hinweis}\n`;
   }
@@ -3327,15 +3367,52 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
 
   // 5. Was die Pruefung im Hintergrund schon herausgefunden hat. "Zielgruppe: Familien" steuert
   //    nichts; drei konkrete Situationen steuern Reihenfolge, Textlaenge und Tonfall.
+  // Nicht jede mögliche Deutung muss weitergereicht werden.
+  //
+  // „Kein Lieferdienst, Abholung vor Ort" war als unbelegte Ableitung gekennzeichnet - und stand
+  // trotzdem im Auftrag. Eine Kennzeichnung hilft nur, wenn sie gelesen wird; eine Aussage, die
+  // gar nicht dasteht, kann niemand übernehmen. Belastbar ist eine Ableitung dann, wenn ihre
+  // tragenden Wörter im Belegten vorkommen: in der Beschreibung, den Antworten, den gesicherten
+  // Fakten. Steht dort nichts von Lieferung oder Abholung, ist die Aussage eine Erfindung mit
+  // Fußnote - und die fällt vor der Ausgabe raus.
+  const FUELLWOERTER=/^(und|oder|der|die|das|den|dem|des|ein|eine|einen|einem|eines|kein|keine|keinen|nicht|nur|auch|für|fuer|mit|ohne|vor|nach|bei|auf|an|in|im|am|zum|zur|es|ist|sind|wird|werden|hat|haben|man|sich|als|wie|mehr|sehr|ort|vorort)$/i;
+  function belastbar(aussage){
+    const woerter=WORDS(String(aussage||'').toLowerCase()).filter(w=>w.length>=4&&!FUELLWOERTER.test(w));
+    if(!woerter.length)return false;
+    const facts=verifiedFacts();
+    const beleg=[project().description,project().special,project().goal,project().audience,
+      ...(state.clarifications||[]).map(x=>`${x.question||''} ${x.answer||''}`),
+      ...(state.understanding?.priorities||[]),
+      ...facts.hours.map(x=>x.value),...facts.social.map(x=>x.value),
+      ...(state.urls||[]).map(x=>`${(x.aspects||[]).join(' ')} ${x.like||''} ${x.dislike||''}`)
+    ].filter(Boolean).join(' ').toLowerCase();
+    // Ein Stamm von fünf Zeichen reicht: „Lieferdienst" findet „liefern", „Abholung" findet
+    // „abholen". Wer die Hälfte seiner tragenden Wörter im Belegten wiederfindet, deutet; wer
+    // keines wiederfindet, erfindet.
+    const getroffen=woerter.filter(w=>beleg.includes(w.slice(0,5))).length;
+    return getroffen*2>=woerter.length;
+  }
+  // Zwei Arten von Ableitung, mit zwei verschiedenen Massstaeben.
+  //
+  // Eine Nutzungssituation sagt etwas ueber Menschen vor dem Bildschirm: „abends nachsehen, ob
+  // noch offen ist". Sie steuert Reihenfolge und Tonfall und behauptet nichts ueber den Betrieb -
+  // dafuer braucht sie keinen Beleg. Eine Abgrenzung wie „kein Lieferdienst" behauptet dagegen
+  // etwas ueber das Unternehmen und braucht einen.
+  //
+  // Geprueft wird deshalb nicht die Herkunft, sondern die Art der Aussage: sobald eine Situation
+  // ins Geschaeftliche kippt, gilt fuer sie derselbe Massstab wie fuer die Abgrenzung.
+  const GESCHAEFTSBEHAUPTUNG=/liefer|abhol|versand|filiale|niederlassung|sortiment|preis|kosten|rabatt|zertifi|auszeichnung|erfahrung|mitarbeiter|marktf|guenstig|günstig|billig|24\/7|rund um die uhr|inhaber|gegruendet|gegründet/i;
+  const nutzungAussage=text=>!GESCHAEFTSBEHAUPTUNG.test(String(text||''))||belastbar(text);
   function situationsBlock(){
     const review=state.projectReview||{};
-    const situationen=Array.isArray(review.situations)?review.situations.filter(Boolean):[];
-    const abgrenzung=String(review.differentiation||'').trim();
+    const situationen=(Array.isArray(review.situations)?review.situations:[]).filter(x=>x&&nutzungAussage(x));
+    const roh=String(review.differentiation||'').trim();
+    const abgrenzung=roh&&belastbar(roh)?roh:'';
     if(!situationen.length&&!abgrenzung)return '';
     // Die Abgrenzung stand da wie ein Unternehmensfakt: „Kein Lieferdienst, Abholung vor Ort". Das
     // ist eine Ableitung aus „bestellt wird telefonisch" - belegt ist sie nicht. Steuern darf sie
     // Aufbau und Tonfall; auf der fertigen Seite behauptet werden darf sie nicht.
-    return `${situationen.length?`\n\nNutzungssituationen (aus der Projektprüfung abgeleitet - danach richten sich Reihenfolge, Textlänge und Tonfall):\n${situationen.map(x=>`- ${x}`).join('\n')}`:''}${abgrenzung?`\n\nAbgrenzung zum Üblichen der Branche (abgeleitet, nicht belegt — sie steuert Aufbau, Reihenfolge und Tonfall und wird nirgends als Aussage über das Unternehmen auf die Seite geschrieben):\n${abgrenzung}`:''}`;
+    return `${situationen.length?`\n\nNutzungssituationen (aus der Projektprüfung abgeleitet - danach richten sich Reihenfolge, Textlänge und Tonfall):\n${situationen.map(x=>`- ${x}`).join('\n')}`:''}${abgrenzung?`\n\nAbgrenzung zum Üblichen der Branche (aus dem Belegten abgeleitet — sie steuert Aufbau, Reihenfolge und Tonfall und wird nirgends als Aussage über das Unternehmen auf die Seite geschrieben):\n${abgrenzung}`:''}`;
   }
 
   function structureDocument(){
@@ -3343,7 +3420,7 @@ Nicht verhandelbar sind dagegen: die ausgewählte Designrichtung (Abschnitt 6), 
     const body=pages.map((entry,index)=>{
       const open=pageOpenPoints(entry,facts);
       const source=entry.crawled?`ausgelesene Seite: ${entry.url}`:entry.url?`verlinkt, nicht ausgelesen: ${entry.url}`:'keine Bestandsseite – neu aus Briefing und gesicherten Fakten';
-      return `## ${index+1}. ${entry.type.label}\nEmpfohlener Pfad: ${entry.path||'/'}\nZweck: ${entry.type.purpose}\nInhaltsquelle: ${source}\nOffen:${open.length?`\n${open.map(item=>`- ${item}`).join('\n')}`:' nichts – die Angaben liegen vollständig vor.'}`;
+      return `## ${index+1}. ${entry.type.label}\nPfad: ${entry.path||'/'}\nZweck: ${typeof entry.type.purpose==='function'?entry.type.purpose():entry.type.purpose}\nInhaltsquelle: ${source}\nOffen:${open.length?`\n${open.map(item=>`- ${item}`).join('\n')}`:' nichts – die Angaben liegen vollständig vor.'}`;
     }).join('\n\n');
     return `# PROMPT.AI SEITENSTRUKTUR
 
@@ -3354,7 +3431,7 @@ Diese Datei gehört zu MASTER-PROMPT.md und ist die verbindliche Seitenliste fü
 - „Offen“ ist kein Freibrief zum Erfinden. Eine Seite ohne belegten Inhalt entsteht mit sichtbarer Lücke, oder sie entsteht nicht – und die Entscheidung wird im Ergebnis benannt.
 - Alle Kontakt-, Zeit- und Ortsangaben stammen ausschließlich aus dem Abschnitt „Gesicherte Fakten aus den Quellen“ im Master-Prompt.
 
-${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle: keine Bestandsseite.\nOffen:\n- Keine Quellen vorhanden. Struktur vollständig aus dem Briefing ableiten.'}
+${body||'## 1. Startseite\nPfad: /\nZweck: Einstieg.\nInhaltsquelle: keine Bestandsseite.\nOffen:\n- Keine Quellen vorhanden. Struktur vollständig aus dem Briefing ableiten.'}
 `;
   }
 
@@ -3509,7 +3586,7 @@ ${body||'## 1. Startseite\nEmpfohlener Pfad: /\nZweck: Einstieg.\nInhaltsquelle:
     const refinementBlock=state.refinements.length?state.refinements.map((r,i)=>`${i+1}. ${r.text}`).join("\n"):"Keine zusätzlichen Änderungen nach der Vorschau.";
     const finalCompliance=state.settings.finalChecklist?`\n9. alle unter „Pflichtprüfungen & rechtlicher Rahmen“ aktivierten Bereiche geprüft und offene Punkte transparent benannt wurden,\n10. keine rechtliche Konformität, Einwilligung oder Pflichtinformation erfunden wurde,\n11. generische KI-Texte, künstliche Dreiermuster und unnötige Standardsektionen entfernt wurden,\n12. ${aktiveFunktionen()} im echten Ablauf funktionieren,\n13. Mobile, Tastaturbedienung, reduzierte Bewegung, Build, Console und 404-Pfade geprüft wurden.`:"";
     const agentQuestionRule=state.settings.aiClarifications?"Wenn während der Umsetzung ein fehlender, widersprüchlicher oder nicht machbarer Punkt auftaucht, stelle eine kurze konkrete Gegenfrage, sofern die Antwort das Ergebnis wesentlich verändert. Bei einem Blocker erkläre das Problem knapp und nenne eine machbare Alternative, wenn eine existiert.":"Stelle keine zusätzlichen Präferenzfragen. Wenn ein echter Blocker auftritt, benenne ihn knapp und markiere die nötige Entscheidung; erfinde keine fehlenden Fakten.";
-    return agentDocument(`# PROMPT.AI MASTER-PROMPT — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhältst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fünf neue Richtungen. Setze die ausgewählte Richtung konsequent um und nutze Referenzen nur für die ausdrücklich freigegebenen Eigenschaften.\n\n## SO IST DIESES BRIEFING AUFGEBAUT\nVier Arten von Angaben, mit unterschiedlichem Gewicht:\n1. ENTSCHIEDEN — Projekt, gewählte Designrichtung, Feinschliff, Module, Skills. Das ist gesetzt und wird umgesetzt, nicht neu verhandelt.\n2. BELEGT — gesicherte Fakten aus den Quellen und die Seitenliste. Nur daraus dürfen Kontakt-, Orts-, Zeit- und Preisangaben stammen.\n3. RAHMEN — Reihenfolge, Umfang, Pflichtprüfungen, Anti-Slop-Regeln, Arbeitsweise deiner Ziel-KI. Das begrenzt, wie weit du gehst.\n4. OFFEN — alles unter „noch zu liefern“ und jede als offen markierte Stelle. Diese Punkte werden sichtbar gemacht, niemals gefüllt.\n\nBei Widerspruch gilt die Rangfolge am Ende dieses Dokuments. Offen wird nie stillschweigend geschlossen.\n\n## ROLLE, AUFTRAG & SPIELRAUM\n${rolePromptBlock()}\n${templateBlock}\n## 1. PROJEKT\nName der Marke auf der Seite: ${masterBrandName()||"nicht festgelegt"}${masterBrandName()&&p.name&&masterBrandName()!==p.name?`\nInterner Projekttitel (nicht auf der Website verwenden): ${p.name}`:""}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${projectAudience()||"nicht ausdrücklich angegeben"}\n\nBeschreibung und besonderer Wunsch stehen unbearbeitet in den eigenen Worten des Auftraggebers. Lies sie fachlich, erschliesse daraus Vorhaben, Ort, Branche und Gestaltungswunsch und formuliere sie in deiner Arbeit selbst aus. Uebernimm die Formulierung nicht woertlich und ergaenze nichts, was dort nicht steht.\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusätzlicher Wunsch."}\n${verifiedFactsBlock()}\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritäten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}${situationsBlock()}\n\n## 3. PROJEKTPRÜFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÜFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese Entwicklungsprüfung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen Prüfpunkt statt Sicherheit vorzutäuschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Übernimm nur die jeweils ausgewählten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÄHLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nKomposition: ${feldOderOffen(c.layoutVariant)}\nLayoutprinzip: ${feldOderOffen(c.layout)}\nHero: ${feldOderOffen(c.hero)}\nTypografie: ${feldOderOffen(c.type)}\nPalette: ${(c.palette||[]).join(" / ")||"nicht festgelegt — Farben aus Marke, Material und Zielgruppe herleiten"}\n${hatVorschau()?"Preview-":"Vorgeschlagene "}Headline: ${feldOderOffen(c.headline)}\n${hatVorschau()?"Preview-":"Vorgeschlagene "}Subline: ${feldOderOffen(c.subline)}\n\n${componentSpecBlock(c,ctrl)}`:"Es wurde noch keine Designrichtung ausgewählt."}\n\n${feinschliffBlock()}## 8. DESIGNREGLER\n- Originalität: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und drei Karten; keine austauschbare Navigationsfolge oder künstliche Kennzahlenzeile.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-Flächen, Glow-Effekte, Farbverläufe, pillenförmigen Dauer-Buttons, symmetrischen Standardkarten, starren Text-Bild-Zickzackfolgen oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als Standardlösung für beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Preise, Öffnungszeiten, Kundenlogos, Zertifikate, Kunden, Referenzen, Auszeichnungen oder sonstige Unternehmensfakten. Fehlende Inhalte als offene Punkte kennzeichnen.\n- Keine generischen Marketingfloskeln oder künstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewählten Richtung gehören.\n- Bildsprache und Typografie müssen den Charakter tragen; Container dürfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenständig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÜR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n${buildOrderBlock()}${scopeBlock()}\n## 11. UMSETZUNGSANFORDERUNGEN\n${languageRequirement()}\n- Responsive ab kleinen Mobilgeräten bis große Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und Bildgrößen bewusst behandeln; unnötige Abhängigkeiten vermeiden.\n- Zentrale Design-Tokens für Farben, Typografie, Abstände, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Jede angezeigte Telefonnummer, E-Mail, Adresse, Öffnungszeit, Preis- und Jahresangabe stammt aus „Gesicherte Fakten aus den Quellen“ oder aus \`PROJEKT-QUELLEN.md\`. Nicht auffindbare Werte bleiben sichtbar offene Punkte statt Platzhalter, die echt aussehen.\n- Ortsangaben nur, soweit belegt. Verwende die Orte und Gebiete, die in „Gesicherte Fakten aus den Quellen" oder in einer Festlegung des Auftraggebers stehen — genau so, wie sie dort stehen. Erfinde keinen Kilometer-Radius, keine Nachbarorte, kein Einzugsgebiet und keine Region, die nirgends genannt ist. Steht dort „Stadthagen und Umgebung", wird daraus nicht „30 km rund um Stadthagen".\n- Ableitungen bleiben Ableitungen. Aus „bestellt wird telefonisch" folgt nicht „kein Lieferdienst", aus einer Zielgruppe folgt keine Kundenzahl, aus einer Branche folgt keine Leistung. Was das Unternehmen tut, anbietet oder nicht anbietet, steht nur dann auf der Seite, wenn es in „Gesicherte Fakten aus den Quellen" oder in einer Festlegung des Auftraggebers steht.\n- Zwei Arten von Lücken, die nicht verwechselt werden dürfen: technische Provisorien (auskommentierter Code, Blindtext, TODO-Marken ohne Adressaten, halb verdrahtete Knöpfe) gehören nicht ins fertige Ergebnis. Fehlende Angaben des Auftraggebers dagegen bleiben ausdrücklich offen, sichtbar gekennzeichnet und am Ende in einer Liste benannt — sie wegzulassen oder auszufüllen wäre beides falsch.\n- Fehlt eine Pflichtangabe (Impressum, Datenschutz), ist das Projekt technisch fertig, aber nicht veröffentlichungsbereit. Sage das am Ende in einem Satz, statt Fertigstellung zu melden oder den Text selbst zu schreiben.\n${hatVorschau()?"- Texte, Zahlen und Namen aus dem Vorschaubild sind Artefakte des Bildmodells und werden nie übernommen.\n":""}- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. ${hatVorschau()?"die gewählte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist":"die gewählte Designrichtung im realen Layout klar wiederzuerkennen ist"},\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berücksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster übrig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsächlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen,\n8. jede angezeigte Kontakt-, Orts-, Zeit- und Preisangabe auf eine benannte Quelle zurückführbar ist und der Rest sichtbar als offen markiert wurde.${finalCompliance}\n${acceptanceBlock()}${attachmentStatusBlock()}${contentNeedsBlock()}${RANGFOLGE}\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`,state.targetAgent);
+    return agentDocument(`# PROMPT.AI MASTER-PROMPT — ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n\nDu erhältst ein bereits entschiedenes Website-/Web-App-Briefing. Entwickle nicht wieder fünf neue Richtungen. Setze die ausgewählte Richtung konsequent um und nutze Referenzen nur für die ausdrücklich freigegebenen Eigenschaften.\n\n## SO IST DIESES BRIEFING AUFGEBAUT\nVier Arten von Angaben, mit unterschiedlichem Gewicht:\n1. ENTSCHIEDEN — Projekt, gewählte Designrichtung, Feinschliff, Module, Skills. Das ist gesetzt und wird umgesetzt, nicht neu verhandelt.\n2. BELEGT — gesicherte Fakten aus den Quellen und die Seitenliste. Nur daraus dürfen Kontakt-, Orts-, Zeit- und Preisangaben stammen.\n3. RAHMEN — Reihenfolge, Umfang, Pflichtprüfungen, Anti-Slop-Regeln, Arbeitsweise deiner Ziel-KI. Das begrenzt, wie weit du gehst.\n4. OFFEN — alles unter „noch zu liefern“ und jede als offen markierte Stelle. Diese Punkte werden sichtbar gemacht, niemals gefüllt.\n\nBei Widerspruch gilt die Rangfolge am Ende dieses Dokuments. Offen wird nie stillschweigend geschlossen.\n\n## ROLLE, AUFTRAG & SPIELRAUM\n${rolePromptBlock()}\n${templateBlock}\n## 1. PROJEKT\nName der Marke auf der Seite: ${masterBrandName()||"nicht festgelegt"}${masterBrandName()&&p.name&&masterBrandName()!==p.name?`\nInterner Projekttitel (nicht auf der Website verwenden): ${p.name}`:""}\nArt: ${p.type}\nHauptziel: ${p.goal}\nZielgruppe: ${projectAudience()||"nicht ausdrücklich angegeben"}\n\nBeschreibung und besonderer Wunsch stehen unbearbeitet in den eigenen Worten des Auftraggebers. Lies sie fachlich, erschliesse daraus Vorhaben, Ort, Branche und Gestaltungswunsch und formuliere sie in deiner Arbeit selbst aus. Uebernimm die Formulierung nicht woertlich und ergaenze nichts, was dort nicht steht.\n\nBeschreibung:\n${p.description||"Keine Beschreibung vorhanden."}\n\nBesonderer Wunsch:\n${p.special||"Kein zusätzlicher Wunsch."}\n${verifiedFactsBlock()}\n## 2. VERSTANDENES ZIEL\n${u.summary}\n\nPrioritäten:\n${u.priorities.map(x=>`- ${x}`).join("\n")}${situationsBlock()}\n\n## 3. PROJEKTPRÜFUNG & GEGENFRAGEN\n${clarificationPromptBlock()}\n\n## 4. PFLICHTPRÜFUNGEN & RECHTLICHER RAHMEN\n${compliancePromptBlock()}\n\nWICHTIG: Diese Entwicklungsprüfung ersetzt keine Rechtsberatung. Wenn aktuelle oder projektspezifische rechtliche Anforderungen unklar sind, markiere sie als offenen Prüfpunkt statt Sicherheit vorzutäuschen.\n\n## 5. REFERENZEN\nReferenzen sind Inspirationsquellen, keine Erlaubnis zum 1:1-Kopieren. Übernimm nur die jeweils ausgewählten Aspekte.\n\n${referencePromptBlock()}\n\n## 6. AUSGEWÄHLTE DESIGNRICHTUNG\n${c?`Name: ${c.name}\nCharakter: ${c.mood}\nSeitencharakter: ${feldOderOffen(c.layoutVariant)}${c.layoutVariant?" — das beschreibt die Anmutung der Seite, nicht das Raster jedes Inhalts. Strukturierte Inhalte (Preis- und Leistungslisten, Speisekarten, Öffnungszeiten, Team, Galerien) dürfen auf breiten Bildschirmen ein passendes Raster nutzen, wenn sie sich damit besser lesen lassen. Auf dem Handy zählt Lesbarkeit vor Anordnung.":""}\nLayoutprinzip: ${feldOderOffen(c.layout)}\nHero: ${feldOderOffen(c.hero)}\nTypografie: ${feldOderOffen(c.type)}\nPalette: ${(c.palette||[]).join(" / ")||"nicht festgelegt — Farben aus Marke, Material und Zielgruppe herleiten"}\n${hatVorschau()?"Preview-":"Vorgeschlagene "}Headline: ${feldOderOffen(c.headline)}\n${hatVorschau()?"Preview-":"Vorgeschlagene "}Subline: ${feldOderOffen(c.subline)}\n\n${componentSpecBlock(c,ctrl)}`:"Es wurde noch keine Designrichtung ausgewählt."}\n\n${feinschliffBlock()}## 8. DESIGNREGLER\n- Originalität: ${ctrl.originality}/100\n- KI-/Template-Look vermeiden: ${ctrl.antiSlop}/100\n- Bewegung / Animation: ${ctrl.motion}/100\n- Informationsdichte: ${ctrl.density}/100\n${moduleBlock}\n## 9. VERBINDLICHE ANTI-SLOP-REGELN\n- Keine austauschbare SaaS-Hero-Section aus Badge, zentrierter Riesenheadline, zwei Standardbuttons und drei Karten; keine austauschbare Navigationsfolge oder künstliche Kennzahlenzeile.\n- Keine dekorativen Gradient-Orbs, Glassmorphism-Flächen, Glow-Effekte, Farbverläufe, pillenförmigen Dauer-Buttons, symmetrischen Standardkarten, starren Text-Bild-Zickzackfolgen oder schwebenden Dekoobjekte ohne konkreten Projektbezug.\n- Keine 3er-/4er-Card-Grids als Standardlösung für beliebige Inhalte.\n- Keine erfundenen Bewertungen, Statistiken, Preise, Öffnungszeiten, Kundenlogos, Zertifikate, Kunden, Referenzen, Auszeichnungen oder sonstige Unternehmensfakten. Fehlende Inhalte als offene Punkte kennzeichnen.\n- Keine generischen Marketingfloskeln oder künstlich pathetische Sprache.\n- Border-Radius, Schatten, Icons und Animationen nur einsetzen, wenn sie zur gewählten Richtung gehören.\n- Bildsprache und Typografie müssen den Charakter tragen; Container dürfen nicht die einzige Hierarchie erzeugen.\n- Mobile ist eine eigene Komposition. Nicht einfach Desktop-Elemente untereinander stapeln.\n- Referenzen nie pixelgenau kopieren. Prinzipien extrahieren und eigenständig kombinieren.\n${skillBlock}\n## 10. ARBEITSWEISE FÜR ${AGENT_NAMES[state.targetAgent].toUpperCase()}\n${AGENT_INSTRUCTIONS[state.targetAgent]}\n\n${agentQuestionRule}\n\n${buildOrderBlock()}${scopeBlock()}\n## 11. UMSETZUNGSANFORDERUNGEN\n${languageRequirement()}\n- Responsive ab kleinen Mobilgeräten bis große Desktop-Breiten.\n- Semantische Struktur und tastaturbedienbare Interaktionen.\n- Performance und Bildgrößen bewusst behandeln; unnötige Abhängigkeiten vermeiden.\n- Zentrale Design-Tokens für Farben, Typografie, Abstände, Linien und Bewegungswerte.\n- Keine Lorem-Ipsum-/Fake-Inhalte im fertigen Stand, wenn reale Informationen aus dem Briefing vorhanden sind.\n- Jede angezeigte Telefonnummer, E-Mail, Adresse, Öffnungszeit, Preis- und Jahresangabe stammt aus „Gesicherte Fakten aus den Quellen“ oder aus \`PROJEKT-QUELLEN.md\`. Nicht auffindbare Werte bleiben sichtbar offene Punkte statt Platzhalter, die echt aussehen.\n- Ortsangaben nur, soweit belegt. Verwende die Orte und Gebiete, die in „Gesicherte Fakten aus den Quellen" oder in einer Festlegung des Auftraggebers stehen — genau so, wie sie dort stehen. Erfinde keinen Kilometer-Radius, keine Nachbarorte, kein Einzugsgebiet und keine Region, die nirgends genannt ist. Steht dort „Stadthagen und Umgebung", wird daraus nicht „30 km rund um Stadthagen".\n- Ableitungen bleiben Ableitungen. Aus „bestellt wird telefonisch" folgt nicht „kein Lieferdienst", aus einer Zielgruppe folgt keine Kundenzahl, aus einer Branche folgt keine Leistung. Was das Unternehmen tut, anbietet oder nicht anbietet, steht nur dann auf der Seite, wenn es in „Gesicherte Fakten aus den Quellen" oder in einer Festlegung des Auftraggebers steht.\n- Zwei Arten von Lücken, die nicht verwechselt werden dürfen: technische Provisorien (auskommentierter Code, Blindtext, TODO-Marken ohne Adressaten, halb verdrahtete Knöpfe) gehören nicht ins fertige Ergebnis. Fehlende Angaben des Auftraggebers dagegen bleiben ausdrücklich offen, sichtbar gekennzeichnet und am Ende in einer Liste benannt — sie wegzulassen oder auszufüllen wäre beides falsch.\n- Fehlt eine Pflichtangabe (Impressum, Datenschutz), ist das Projekt technisch fertig, aber nicht veröffentlichungsbereit. Sage das am Ende in einem Satz, statt Fertigstellung zu melden oder den Text selbst zu schreiben.\n${hatVorschau()?"- Texte, Zahlen und Namen aus dem Vorschaubild sind Artefakte des Bildmodells und werden nie übernommen.\n":""}- Bestehende Projektstruktur respektieren, falls bereits ein Repository existiert.\n\n## 12. DEFINITION OF DONE\nDas Ergebnis ist erst fertig, wenn:\n1. ${hatVorschau()?"die gewählte Vorschau-Richtung im realen Layout klar wiederzuerkennen ist":"die gewählte Designrichtung im realen Layout klar wiederzuerkennen ist"},\n2. Referenzregeln und explizite Verbote eingehalten sind,\n3. aktive Module und relevante Skills berücksichtigt wurden,\n4. Desktop und Mobile bewusst gestaltet sind,\n5. keine offensichtlichen Standard-KI-/Template-Muster übrig sind,\n6. Kernfunktionen und Hauptziel des Projekts tatsächlich funktionieren,\n7. relevante Checks/Builds ohne vermeidbare Fehler durchlaufen,\n8. jede angezeigte Kontakt-, Orts-, Zeit- und Preisangabe auf eine benannte Quelle zurückführbar ist und der Rest sichtbar als offen markiert wurde.${finalCompliance}\n${acceptanceBlock()}${attachmentStatusBlock()}${contentNeedsBlock()}${RANGFOLGE}\nBeginne jetzt mit der Umsetzung auf Basis dieses Briefings.\n`,state.targetAgent);
   }
 
   // The app assembles every fact deterministically; with a cloud connection the AI then writes the

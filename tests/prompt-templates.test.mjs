@@ -440,7 +440,8 @@ test('the page list is derived from the existing site, not decided again on ever
   }]},{name:'Kunde'});
   const doc=api.structureDocument();
   // A crawled "/" is the home page - it used to match nothing and vanish from the list.
-  assert.match(doc,/## 1\. Startseite\nEmpfohlener Pfad: \/\nZweck:[^\n]*\nInhaltsquelle: ausgelesene Seite: https:\/\/kunde\.de\//);
+  // Entschiedene Pfade heissen nicht mehr „empfohlen" - beides zugleich waere zwei Zustaende.
+  assert.match(doc,/## 1\. Startseite\nPfad: \/\nZweck:[^\n]*\nInhaltsquelle: ausgelesene Seite: https:\/\/kunde\.de\//);
   assert.match(doc,/## 2\. Angebot \/ Leistungen[\s\S]*ausgelesene Seite: https:\/\/kunde\.de\/speisekarte\//);
   // The linked PDF is the content of the offer page, and it is flagged as unread there.
   assert.match(doc,/karte\.pdf[\s\S]*erfinde keine Positionen und keine Preise/);

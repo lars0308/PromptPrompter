@@ -221,16 +221,17 @@ test('eine nur erwähnte Datei traegt kein Projektziel',async()=>{
   // die Speisen liegen vor. Tun sie nicht - und dann entstehen Gerichte und Preise aus dem Nichts.
   const ungelesen=await bau({documents:[{name:'speisekarte.pdf'}]},{goal:'Speisekarte mit Preisen zeigen'});
   assert.match(ungelesen,/## BEIGELEGTE UNTERLAGEN/);
-  assert.match(ungelesen,/speisekarte\.pdf: \*\*liegt bei, ist aber nicht ausgelesen\*\*/);
+  assert.match(ungelesen,/speisekarte\.pdf — Unterlage vorhanden, Inhalt noch nicht ausgewertet/);
+  assert.match(ungelesen,/\*\*Ein Ziel dieses Projekts hängt daran\.\*\*/);
   assert.match(ungelesen,/CONTENT-BLOCKER: speisekarte\.pdf/);
   assert.match(ungelesen,/weder Positionen noch Preise noch Bezeichnungen/);
   // Ausgelesen ist dieselbe Datei eine Quelle und kein Blocker.
   const gelesen=await bau({documents:[{name:'speisekarte.pdf',text:'Döner 6,50 · Dürüm 7,00 · Falafel 6,00 · Ayran 1,50 · Pommes 3,00 · Salatteller 8,50 · alle Preise inklusive Mehrwertsteuer und Verpackung'}]},{goal:'Speisekarte mit Preisen zeigen'});
-  assert.match(gelesen,/speisekarte\.pdf: ausgelesen/);
+  assert.match(gelesen,/speisekarte\.pdf — ausgewertet/);
   assert.doesNotMatch(gelesen,/CONTENT-BLOCKER/);
   // Und eine Datei, an der kein Ziel haengt, ist ein Hinweis, kein Blocker.
   const nebensache=await bau({documents:[{name:'logo-entwurf.pdf'}]},{goal:'Öffnungszeiten zeigen'});
-  assert.match(nebensache,/logo-entwurf\.pdf: liegt bei, ist aber nicht ausgelesen/);
+  assert.match(nebensache,/logo-entwurf\.pdf — Unterlage vorhanden, Inhalt noch nicht ausgewertet/);
   assert.doesNotMatch(nebensache,/CONTENT-BLOCKER/);
 });
 
@@ -257,7 +258,7 @@ test('feste Pixelwerte gelten nur mit Vorlage, sonst bleiben die Regeln',async()
   // Die Regeln und die Mindestwerte aus der Barrierefreiheit bleiben.
   assert.match(ohne,/Höhe mindestens 44px \(Tippfläche, nicht verhandelbar\)/);
   assert.match(ohne,/Fließtext 16-17px mit Zeilenhöhe 1\.55-1\.7 \(Lesbarkeit, nicht verhandelbar\)/);
-  assert.match(ohne,/Der Abstand ist über alle Abschnitte derselbe/);
+  assert.match(ohne,/Konsistent heißt dasselbe System, nicht überall derselbe Abstand/);
   assert.doesNotMatch(ohne,/Hero plus zwei bis vier Bänder/,'die Anzahl der Bänder kommt aus dem Inhalt');
   // Mit freigegebener Referenz sind die Werte verbindlich.
   const mit=await bau({urls:[{url:'https://ref.de',aspects:['Typografie','Layout']}],
@@ -282,4 +283,127 @@ test('die Pruefung geht ueber alle drei Dateien, nicht nur ueber den Auftrag',as
   // Und im Normalfall meldet sie nichts - die drei Dateien kommen aus demselben Stand.
   const sauber=await bau();
   assert.doesNotMatch(sauber,/NICHT DECKUNGSGLEICH/);
+});
+
+// ── Regressionen, die der Auswertung nach erkannt werden müssen ───────────────────────────────
+
+test('entschieden und empfohlen stehen nie gleichzeitig da',async()=>{
+  const api=await bauer();api.set(GRUND,KUNDE);
+  const struktur=api.structureDocument();
+  assert.match(struktur,/^Pfad: \//m);
+  assert.doesNotMatch(struktur,/Empfohlener Pfad/,'ein entschiedener Pfad ist kein Vorschlag');
+  assert.doesNotMatch(struktur,/Die Pfade sind Vorschläge/);
+});
+
+test('eine nicht bestätigte Funktion kommt weder in die Seitenliste noch in die Abnahme',async()=>{
+  // „Anfragen bekommen" ist ein Ziel, kein Formular. „Anmeldung mit E-Mail" ist ein Konto.
+  const ohne=await bau({},{goal:'Anfragen für Dachsanierungen bekommen',description:'Dachdecker aus Osnabrück, bodenständig'});
+  // Eine Kontaktseite entsteht nur, wenn es eine gibt - also mit ausgelesener Bestandsseite.
+  const seite={url:'https://otte.de/kontakt',kind:'Kontakt',title:'Kontakt',
+    summary:'Dachdeckerei Otte, Feldstr. 12 in 49074 Osnabrück. Rufen Sie an unter 0541 998877 oder schreiben Sie an buero@otte.de. Wir arbeiten seit 1987 im Familienbetrieb und decken Dächer in Stadt und Landkreis.'};
+  const api=await bauer();
+  api.set({...GRUND,sourceUrls:[{url:'https://otte.de',title:'Otte',links:[],pages:[seite]}]},
+    {...KUNDE,goal:'Anfragen für Dachsanierungen bekommen',description:'Dachdecker aus Osnabrück',special:''});
+  const kontakt=(api.structureDocument().match(/Der Weg zur Anfrage: [^\n]+/)||[])[0]||'';
+  assert.match(kontakt,/Telefon und E-Mail/);
+  // Vor dem Gedankenstrich stehen die Wege, dahinter die Warnung - im Weg selbst darf kein
+  // Formular auftauchen, in der Warnung schon.
+  assert.doesNotMatch(kontakt.split('—')[0],/Formular/,'kein Formular als Kontaktweg');
+  assert.match(kontakt,/keine weiteren Wege ergänzen, insbesondere kein Formular/);
+  assert.doesNotMatch(ohne,/und Formulare im echten Ablauf/,'kein Formular in der Abnahme');
+  // Bestätigt kommt es sehr wohl vor.
+  const mit=await bau({clarifications:[{question:'Kontakt?',answer:'Telefon und ein Kontaktformular'}]});
+  assert.match(mit,/Formulare im echten Ablauf/);
+  const api2=await bauer();
+  api2.set({...GRUND,sourceUrls:[{url:'https://otte.de',title:'Otte',links:[],pages:[seite]}],
+    clarifications:[{question:'Kontakt?',answer:'Telefon und ein Kontaktformular'}]},KUNDE);
+  assert.match(api2.structureDocument(),/Der Weg zur Anfrage: [^\n]*Formular/);
+});
+
+test('ein vorhandener, nicht ausgelesener Anhang heisst nie „fehlt"',async()=>{
+  const text=await bau({documents:[{name:'speisekarte.pdf'}]},{goal:'Speisekarte mit Preisen zeigen'});
+  assert.match(text,/speisekarte\.pdf — Unterlage vorhanden, Inhalt noch nicht ausgewertet/);
+  assert.doesNotMatch(text,/speisekarte\.pdf — Datei fehlt/);
+  assert.doesNotMatch(text,/fordere die fehlende Datei im Ergebnis an/,'sie ist nicht fehlend, sondern unausgewertet');
+  assert.match(text,/dass die vorhandene Unterlage noch ausgewertet werden muss/);
+  // Wirklich fehlend ist etwas anderes, und dann steht auch etwas anderes da.
+  const fehlt=await bau({documents:[{name:'speisekarte.pdf',present:false}]},{goal:'Speisekarte mit Preisen zeigen'});
+  assert.match(fehlt,/speisekarte\.pdf — Datei fehlt/);
+  assert.match(fehlt,/fordere die fehlende Datei im Ergebnis an/);
+  // Und ein gescheiterter Leseversuch ist wieder etwas anderes.
+  const kaputt=await bau({documents:[{name:'speisekarte.pdf',parseError:'kein Text'}]},{goal:'Speisekarte mit Preisen zeigen'});
+  assert.match(kaputt,/speisekarte\.pdf — Auswertung fehlgeschlagen/);
+});
+
+test('eine schwach belegte Ableitung erreicht den Auftrag nicht',async()=>{
+  // Aus „bestellt wird telefonisch" wurde „Kein Lieferdienst, Abholung vor Ort". Eine Kennzeichnung
+  // hilft nur, wenn sie gelesen wird - eine Aussage, die nicht dasteht, kann niemand übernehmen.
+  const schwach=await bau({projectReview:{questions:[],differentiation:'Kein Lieferdienst, Abholung vor Ort',situations:[]},
+    clarifications:[{question:'Bestellung?',answer:'bestellt wird telefonisch'}]});
+  assert.doesNotMatch(schwach,/Kein Lieferdienst/);
+  assert.doesNotMatch(schwach,/Abgrenzung zum Üblichen/);
+  // Eine Abgrenzung, die im Belegten steht, kommt durch.
+  const belegt=await bau({projectReview:{questions:[],differentiation:'Frisch zubereitet, kein Lieferdienst',situations:[]}},
+    {description:'Dönerladen in Stadthagen, alles frisch zubereitet, kein Lieferdienst, nur Abholung'});
+  assert.match(belegt,/Abgrenzung zum Üblichen/);
+  assert.match(belegt,/Frisch zubereitet, kein Lieferdienst/);
+  // Eine Nutzungssituation behauptet nichts über den Betrieb und braucht keinen Beleg.
+  const nutzung=await bau({projectReview:{questions:[],situations:['Abends schnell nachsehen, ob noch offen ist']}});
+  assert.match(nutzung,/Abends schnell nachsehen/);
+  // Kippt sie ins Geschäftliche, gilt derselbe Maßstab.
+  const kippt=await bau({projectReview:{questions:[],situations:['Kunden bestellen per Lieferdienst nach Hause']}});
+  assert.doesNotMatch(kippt,/Lieferdienst nach Hause/);
+});
+
+test('universelle Designregeln erzwingen kein Inhaltsraster',async()=>{
+  const text=await bau({__concept:{name:'Klar',mood:'ruhig',palette:['#fff'],layoutVariant:'einspaltig'}});
+  // Der Seitencharakter beschreibt die Anmutung, nicht das Raster jedes Inhalts.
+  assert.match(text,/Seitencharakter: einspaltig/);
+  assert.doesNotMatch(text,/^Komposition: /m);
+  assert.match(text,/Strukturierte Inhalte \(Preis- und Leistungslisten, Speisekarten[^)]*\) dürfen auf breiten Bildschirmen ein passendes Raster nutzen/);
+  // Abstände sind ein System, keine Gleichmacherei.
+  assert.doesNotMatch(text,/Der Abstand ist über alle Abschnitte derselbe/);
+  assert.match(text,/Konsistent heißt dasselbe System, nicht überall derselbe Abstand/);
+  assert.match(text,/richtet sich nach Zusammengehörigkeit und Hierarchie/);
+});
+
+test('das Zustandsmodell haelt ueber verschiedene Branchen',async()=>{
+  // Nicht weiter auf ein Beispiel hin optimieren: vier deutlich verschiedene Projektarten, und
+  // in keiner darf der Auftrag sich selbst widersprechen.
+  const FAELLE=[
+    ['Kanzlei ohne Quelle',{},{name:'Kanzlei Reimers',type:'Website',goal:'Leistungen zeigen',audience:'Selbstständige',
+      description:'Steuerkanzlei in Hannover, seriös und zurückhaltend',special:'',client:{name:'Kanzlei Reimers',type:'Kunde'}}],
+    ['Handwerk mit Bestandsseite',{sourceUrls:[{url:'https://otte.de',title:'Otte',links:[],pages:[{url:'https://otte.de/kontakt',kind:'Kontakt',title:'Kontakt',
+      summary:'Dachdeckerei Otte, Feldstr. 12 in 49074 Osnabrück. Rufen Sie an unter 0541 998877 oder schreiben Sie an buero@otte.de. Geöffnet Mo-Fr 7-16 Uhr. Wir arbeiten seit 1987 im Familienbetrieb.'}]}]},
+      {name:'Dachdeckerei Otte',type:'Website',goal:'Anfragen bekommen',audience:'Hausbesitzer',description:'Dachdecker aus Osnabrück',special:'',client:{name:'Otte',type:'Kunde',website:'https://otte.de'}}],
+    ['Web-App ohne Ort',{outputTarget:'next-vercel'},{name:'Schichtplaner',type:'Web-App',goal:'Schichten planen',audience:'Pflegeteams',
+      description:'Interne Anwendung zur Schichtplanung, sachlich, viel Tabelle',special:'',client:{name:'Klinikum Nord',type:'Kunde'}}],
+    ['Verein, fast nichts angegeben',{},{name:'Turnverein',type:'Website',goal:'',audience:'',description:'Seite für unseren Turnverein',special:'',client:{}}]
+  ];
+  for(const [name,zustand,kunde] of FAELLE){
+    const api=await bauer();
+    api.set({...GRUND,...zustand},{...KUNDE,...kunde});
+    const text=api.buildMasterPrompt(),struktur=api.structureDocument();
+    assert.doesNotMatch(text,/undefined|\[object Object\]/,`${name}: undefined im Auftrag`);
+    assert.doesNotMatch(struktur,/undefined/,`${name}: undefined in der Seitenliste`);
+    assert.doesNotMatch(struktur,/Empfohlener Pfad/,`${name}: entschieden und empfohlen zugleich`);
+    assert.doesNotMatch(text,/Vorschau/,`${name}: spricht ohne Bild von einer Vorschau`);
+    assert.doesNotMatch(text,/NICHT DECKUNGSGLEICH/,`${name}: die drei Dateien widersprechen sich`);
+    const genannt=Number((text.match(/Seiten: genau (\d+)/)||[])[1]||0);
+    const gelistet=(struktur.match(/^## \d+\. /gm)||[]).length;
+    assert.equal(genannt,gelistet,`${name}: Auftrag nennt ${genannt} Seiten, die Liste ${gelistet}`);
+    assert.match(text,/## RANGFOLGE BEI WIDERSPRUCH/,`${name}: ohne Rangfolge`);
+  }
+});
+
+test('eine angesagte Telefonnummer gilt als gefunden, eine Jahreszahl nicht',async()=>{
+  const seite=(satz)=>({url:'https://otte.de/kontakt',kind:'Kontakt',title:'Kontakt',
+    summary:`Dachdeckerei Otte, Feldstr. 12 in 49074 Osnabrück. ${satz} Wir arbeiten seit 1987 im Familienbetrieb und decken Dächer in Stadt und Landkreis, seit vielen Jahren am selben Ort.`});
+  for(const satz of ['Rufen Sie an unter 0541 998877.','Sie erreichen uns unter 0541 998877.','Tel.: 0541 998877.']){
+    const text=await bau({sourceUrls:[{url:'https://otte.de',title:'Otte',links:[],pages:[seite(satz)]}]});
+    assert.match(text,/- Telefon: 0541 998877/,`nicht gefunden in: ${satz}`);
+  }
+  // Ohne Ansagewort bleibt eine Zahlenfolge eine Zahlenfolge.
+  const ohne=await bau({sourceUrls:[{url:'https://otte.de',title:'Otte',links:[],pages:[seite('Preise ab 1200 Euro pro Dach.')]}]});
+  assert.match(ohne,/- Telefon: nicht in den Quellen gefunden/);
 });
