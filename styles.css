@@ -495,6 +495,10 @@ body{padding-bottom:60px}
     -webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;
   }
   .prompt-fill-progress{background-image:linear-gradient(90deg,var(--prompt-fill-on) 0 var(--prompt-fill,0%),var(--prompt-fill-off) var(--prompt-fill,0%) 100%)}
+  /* Der Verlauf ueber die ganze Ueberschrift wird abgeschaltet, sobald sie in Woerter zerlegt
+     ist - aber nicht hier, sondern in PromptAiFill.words() als Inline-Regel. Ueber ein
+     Stylesheet war es nicht zuverlaessig zu treffen: jede der drei Ladeflaechen setzt ihren
+     Verlauf ueber eine eigene id bzw. Klasse, teils in verschachtelten @supports-Bloecken. */
   .prompt-fill-sweep{background-image:linear-gradient(90deg,var(--prompt-fill-off) 0 35%,var(--prompt-fill-on) 50%,var(--prompt-fill-off) 65% 100%);background-size:280% 100%;animation:promptFillSweep 2.1s linear infinite}
   @keyframes promptFillSweep{from{background-position:120% 0}to{background-position:-120% 0}}
   /* The end of every wait: the fill snaps to full and the whole line blinks blue once, so the

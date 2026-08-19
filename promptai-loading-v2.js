@@ -247,8 +247,12 @@
   // Uebernahme, Einordnung und Pruefung sind drei Anfragen, aber eine Wartezeit - sie tragen
   // deshalb denselben Titel. Loest eine ab, wechselt die Ueberschrift nicht, und der Schirm
   // steht durch, statt zwischendurch abzublenden und neu aufzuziehen.
-  const TITEL_BRIEFING='Dein Briefing wird vorbereitet';
-  const TITEL_VORSCHAU='Deine Vorschau wird erstellt';
+  const TITEL_BRIEFING='Rückfragen werden erstellt';
+  const TITEL_VORSCHAU='Briefing wird verarbeitet';
+  // Der Vorschaulauf ist eine Anfrage, aber zwei erkennbare Abschnitte: erst wird das Briefing
+  // verarbeitet, dann entstehen die Bilder. app.js meldet den Wechsel selbst, sobald das erste
+  // Bild losgeht - dann springt die Ueberschrift um, statt bis zum Schluss dasselbe zu behaupten.
+  const TITEL_BILDER='Vorschaubilder werden erstellt';
   const TITEL_PROMPT='Dein Master-Prompt entsteht';
   const AI_TASKS={
     intake:{title:TITEL_BRIEFING,kind:'briefing'},
@@ -380,6 +384,17 @@
   function bildstand(event){
     const host=$('#promptAiTaskLoader');if(!host)return;
     const text=String(event.detail?.text||''),ratio=event.detail?.ratio;
+    // Sobald das erste Bild losgeht, ist der Abschnitt "Briefing verarbeiten" vorbei. Die
+    // Ueberschrift springt dann um - und faengt fuer den neuen Abschnitt wieder bei null an,
+    // sonst stuende sie beim Umspringen schon halb voll da.
+    if(/^Bild\s/i.test(text)){
+      const oben=laufende[laufende.length-1];
+      if(oben&&oben.title!==TITEL_BILDER){
+        oben.title=TITEL_BILDER;
+        const strong=$('strong',host);
+        if(strong){strong.dataset.fillText='';strong.textContent=TITEL_BILDER;window.PromptAiFill?.words?.(strong,0)}
+      }
+    }
     if(typeof ratio==='number'&&Number.isFinite(ratio)){
       cancelAnimationFrame(Number(host.dataset.raf||0));host.dataset.raf='0';
       applyFill(host,Math.max(.08,Math.min(.99,ratio)));

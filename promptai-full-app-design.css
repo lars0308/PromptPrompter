@@ -2,9 +2,14 @@
    This file changes presentation only. Existing IDs, controls and workflows stay untouched. */
 
 html.prompt-full-redesign{
-  /* Zwei Farben aus dem Vorschlag: Marine trägt die Schrift, Dunst das Beiläufige. */
+  /* Zwei Farben aus dem Vorschlag: Marine trägt die Schrift, Dunst das Beiläufige.
+     Dunst war in beiden Modi #8b9dc3. Auf dem dunklen Grund stimmt das; auf dem hellen
+     (--surface:#f5f7f9) sind es 2,4:1 - und siebzehn Regeln setzen damit echten Fließtext,
+     darunter die Begründung unter jeder Rückfrage in 12,5px. Das war nicht schwach
+     lesbar, das war nicht lesbar. Im Hellmodus deshalb ein dunklerer Blaugrauton mit
+     5,1:1; im Dunkelmodus bleibt der helle Wert unverändert. */
   --navy:#1e3a5f;
-  --mist:#8b9dc3;
+  --mist:#5a6b80;
   /* Kein Weiß im Hellmodus. Der Grund ist ein ruhiges, leicht kühles Grau, die
      Karten stehen eine Stufe heller darüber - so entsteht die Tiefe aus Flächen
      statt aus Schatten, und nichts blendet. */

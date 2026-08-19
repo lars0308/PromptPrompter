@@ -118,6 +118,13 @@
           const endung=/^\.ai$/i.test(teil)?' is-marken-endung':'';
           return `<i class="prompt-fill-word${endung}" style="--von:${von};--bis:${bis}">${teil.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</i>`;
         }).join('');
+        // Ab hier traegt jedes Wort seinen eigenen Verlauf. Der Verlauf ueber die ganze
+        // Ueberschrift muss weg: er liegt dahinter, und weil die Restfarbe der Woerter
+        // halbdurchsichtig ist, schien er durch - auf dem Bildschirm lief dann jede Zeile an
+        // derselben Stelle voll statt eine nach der anderen. Genau das soll die Wortaufteilung
+        // verhindern. Inline und mit important, weil jede der drei Ladeflaechen ihren Verlauf
+        // ueber eine eigene id oder Klasse setzt, teils in verschachtelten @supports-Bloecken.
+        node.style.setProperty('background-image','none','important');
       }
       const p=Math.max(0,Math.min(1,Number(progress)||0));
       for(const wort of node.querySelectorAll('.prompt-fill-word')){

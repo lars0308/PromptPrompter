@@ -832,10 +832,13 @@ test('opening the hamburger menu re-syncs plan UI from window.PromptAiAccess, so
   const src=await text('app.js');
   assert.match(src,/const access=window\.PromptAiAccess;if\(access\)\{if\(access\.plan\)state\.plan=access\.plan;state\.isAdmin=Boolean\(access\.isAdmin\)\|\|isOwnerAccount\(\);if\(access\.ownApiKeys\)state\.ownApiKeys=true;\}applyPlanUi\(\);/);
 });
-test('the "Projekt wird vorbereitet" mode-handoff loader fills the headline itself via background-clip (never clip-path, which cut ascenders/descenders like g, t, f) and tracks real elapsed time',async()=>{
+test('the mode-handoff loader fills the headline itself via background-clip (never clip-path, which cut ascenders/descenders like g, t, f) and tracks real elapsed time',async()=>{
   const src=await text('mode-handoff-fix.js');
   assert.doesNotMatch(src,/clip-path:/,'the mode-handoff loader must not tint text via clip-path anymore - that technique clipped ascenders/descenders (g, t, f) incompletely');
-  assert.match(src,/<strong>Projekt wird vorbereitet<\/strong>/);
+  // Der Deckschirm des Neuladens traegt denselben Titel wie die Wartezeit, die direkt danach
+  // kommt. Mit einem eigenen ("Projekt wird vorbereitet") las sich ein Vorgang als zwei Bilder.
+  assert.match(src,/<strong>Rückfragen werden erstellt<\/strong>/);
+  assert.match(await text('promptai-loading-v2.js'),/const TITEL_BRIEFING='Rückfragen werden erstellt';/,'beide Stellen muessen denselben Titel tragen');
   // The thin bar was replaced by the headline filling blue. background-clip:text follows the real
   // glyph outlines, unlike the clip-path attempt that sliced letters in half.
   assert.match(src,/\.prompt-mode-handoff strong\{background-image:linear-gradient\(90deg/);
