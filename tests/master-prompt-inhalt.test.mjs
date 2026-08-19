@@ -90,16 +90,19 @@ test('unbeantwortete Rückfragen stehen offen und in der Nachreichliste',async()
   assert.match(text,/## NOCH ZU LIEFERN[\s\S]{0,600}Antwort auf: Farben/,'sonst fällt sie genau dort heraus, wo sie nachgereicht würde');
 });
 
-test('ausgewählte Referenzen, Bilder und Unterlagen stehen im Auftrag selbst',async()=>{
-  // Wer den Master-Prompt allein in ein Chatfenster einfügt, gab die Auswahl sonst nicht weiter.
-  const text=await bau({urls:[{url:'https://beispiel-referenz.de',aspects:['Typografie'],like:'ruhige Bilder',dislike:'die Animationen'}],
-    images:[{name:'laden-aussen.jpg'}],documents:[{name:'speisekarte.pdf'}]});
-  assert.match(text,/https:\/\/beispiel-referenz\.de/);
-  assert.match(text,/Übernehmen: Typografie/);
-  assert.match(text,/Ausdrücklich nicht übernehmen: die Animationen/);
-  assert.match(text,/laden-aussen\.jpg/);
-  assert.match(text,/speisekarte\.pdf/);
-  assert.match(text,/PROJEKT-QUELLEN\.md/,'die vollen Seiteninhalte bleiben trotzdem getrennt');
+test('der Auftrag nennt den Bestand, die Inhalte bleiben in der Quellendatei',async()=>{
+  // Beides war schon falsch: der blosse Verweis sagte nicht, ob ueberhaupt etwas beiliegt; die
+  // volle Liste stand doppelt da und machte den Auftrag lang, ohne ihm etwas hinzuzufuegen.
+  const text=await bau({urls:[{url:'https://beispiel-referenz.de',aspects:['Typografie'],dislike:'die Animationen'}],
+    images:[{name:'laden-aussen.jpg'},{name:'theke.jpg'}],documents:[{name:'speisekarte.pdf'}]});
+  assert.match(text,/Beigelegt sind 1 Referenzlink, 2 Bilder und 1 Unterlage/,'der Bestand steht da, damit ein Fehlen auffaellt');
+  assert.match(text,/PROJEKT-QUELLEN\.md/);
+  assert.match(text,/fordere sie an; rate ihren Inhalt nicht/);
+  // Kein Dateiname, kein Aspekt, keine Seitenzahl - das steht alles in der Quellendatei.
+  for(const doppelt of [/laden-aussen\.jpg/,/speisekarte\.pdf/,/beispiel-referenz\.de/,/die Animationen/])
+    assert.doesNotMatch(text,doppelt,`steht doppelt im Auftrag: ${doppelt}`);
+  const leer=await bau();
+  assert.match(leer,/Es liegen keine Referenzen, Bilder oder Unterlagen bei\./);
 });
 
 test('Öffnungszeiten mit vollen Stunden gelten als gefunden',async()=>{

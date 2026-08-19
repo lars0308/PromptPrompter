@@ -307,7 +307,10 @@ test('copying hands over the master prompt, and says where the other two files a
   assert.match(html,/class="prompt-actions-note">Kopieren gibt dir den Master-Prompt/,'and the note says where the rest is');
   // The briefing must not claim the sources file rides along with a paste any more.
   assert.doesNotMatch(app,/hängt diese Datei direkt unter diesem Auftrag als zweite Datei an/);
-  assert.match(app,/Sie liegt im Übergabe-ZIP aus Prompt\.ai; wurde nur dieser Auftrag eingefügt, frage sie an/);
+  // Der Auftrag nennt den Bestand und die Datei - die Inhalte selbst stehen nur dort, sonst
+  // stuende alles doppelt und der Auftrag waere doppelt so lang.
+  assert.match(app,/PROJEKT-QUELLEN\.md\\` liegt im Übergabe-ZIP aus Prompt\.ai/);
+  assert.match(app,/Fehlt dir diese Datei, fordere sie an; rate ihren Inhalt nicht/);
 });
 
 test('a new project starts empty even though browsers restore form values across the reload',async()=>{
